@@ -1705,7 +1705,6 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .jp-ph{word-break:keep-all!important;overflow-wrap:anywhere}
 .stack-actions{display:flex;flex-direction:column;gap:8px}.stack-actions>.btn{width:100%}
-.page-actions>.btn,.ext-links>.btn{white-space:normal;text-align:center;line-height:1.35;padding-top:8px;padding-bottom:8px}
 .btn{max-width:100%}
 @media (max-width:520px){.kv{grid-template-columns:1fr;gap:2px 0}.kv dt{font-size:12.5px;margin-top:10px}.kv dt:first-child{margin-top:0}}
 
@@ -1802,6 +1801,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px}
 .sp-prem{margin-top:28px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
 .sp-prem b{display:block;font-size:14.5px;margin-bottom:4px}.sp-prem .btn{margin-top:10px}
+.st-tile b,.st-tile small{max-width:100%;overflow:hidden}
 </style>
 </head>
 <body>
@@ -11077,7 +11077,7 @@ if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root'
 (function(){
   if(!window.Intl||!Intl.Segmenter)return;
   const seg=new Intl.Segmenter('ja',{granularity:'word'});
-  const SEL='p,dd,li,td,.hint,.notice,label>span,.agree-line>span,.ps-agree>span,.modal-body p';
+  const SEL='p,dd,li,td,small,h2,h3,.hint,.notice,label>span,.agree-line>span,.ps-agree>span,.modal-body p';
   const JP=/[぀-ヿ㐀-鿿]/, HIRA=/^[぀-ゟー]+$/, CLOSE=/^[、。，．・）」』】〕！？!?,.:：；)\]ー〜…]+$/;
   const done=new WeakMap();
   function phr(t){
@@ -11091,6 +11091,18 @@ if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root'
     }
     return out.join('​');
   }
+  /* ボタンなどの文字が入りきらないときは、改行させずに文字を少しだけ小さくする */
+  const FIT='.btn,.st-tile b,.seg-opt,.au-go,.ing-kind,.tab';
+  function fit(root){
+    root.querySelectorAll(FIT).forEach(el=>{
+      if(!el.getClientRects().length)return;
+      if(el.dataset.fs){el.style.fontSize='';el.style.paddingLeft='';el.style.paddingRight='';delete el.dataset.fs;}
+      if(!el.clientWidth||el.scrollWidth<=el.clientWidth+1)return;
+      let fs=parseFloat(getComputedStyle(el).fontSize);const min=Math.max(10.5,fs*0.74);el.dataset.fs='1';
+      if(el.classList.contains('btn')&&parseFloat(getComputedStyle(el).paddingLeft)>10){el.style.paddingLeft=el.style.paddingRight='10px';}
+      let g=0;while(el.scrollWidth>el.clientWidth+1&&fs>min&&g++<14){fs-=0.5;el.style.fontSize=fs+'px';}
+    });
+  }
   function run(root){
     (root.querySelectorAll?root:document).querySelectorAll(SEL).forEach(el=>{
       if(el.closest('input,textarea,[contenteditable],.no-ph'))return;
@@ -11101,8 +11113,8 @@ if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root'
       if(hit||list.length)el.classList.add('jp-ph');
     });
   }
-  let q=0;const mo=new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;mo.disconnect();try{run(document.body)}finally{mo.observe(document.body,{childList:true,subtree:true,characterData:true})}})});
-  const start=()=>{run(document.body);mo.observe(document.body,{childList:true,subtree:true,characterData:true})};
+  let q=0;const mo=new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;mo.disconnect();try{run(document.body);fit(document.body)}finally{mo.observe(document.body,{childList:true,subtree:true,characterData:true})}})});
+  const start=()=>{run(document.body);fit(document.body);let rt=0;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>fit(document.body),150)});mo.observe(document.body,{childList:true,subtree:true,characterData:true})};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
   /* コピーしたときに見えない区切り文字が混ざらないように */
   document.addEventListener('copy',e=>{const s=String(getSelection()||'');if(s.includes('​')){e.clipboardData.setData('text/plain',s.replace(/​/g,''));e.preventDefault()}});
