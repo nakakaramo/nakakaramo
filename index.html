@@ -1763,6 +1763,20 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 @keyframes auInF{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .au-in-r{animation:auInR .3s cubic-bezier(.2,.8,.2,1) both}.au-in-l{animation:auInL .3s cubic-bezier(.2,.8,.2,1) both}.au-in-f{animation:auInF .28s ease both}
 @media (prefers-reduced-motion:reduce){.au-in-r,.au-in-l,.au-in-f{animation:none}.au-ov{transition:none}}
+
+/* ダークモード：明るい背景のまま文字が読めなくなっていた箱を直す */
+:root[data-theme="dark"] .ir-pr{background:var(--green-p);border-color:#2E4535}
+:root[data-theme="dark"] .ps-list{background:var(--green-s);color:var(--ink)}
+:root[data-theme="dark"] .au-info{background:var(--green-s)}
+:root[data-theme="dark"] .adv-box.good{background:#1E2C22}
+:root[data-theme="dark"] .adv-box.bad{background:#33231D}
+:root[data-theme="dark"] .adv-box.bad small{color:#E59A82}
+:root[data-theme="dark"] .adv-c{background:var(--surface2);color:var(--ink)}
+:root[data-theme="dark"] .adv-c.bad{color:#F0A58E}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ir-pr{background:var(--green-p);border-color:#2E4535}:root:not([data-theme="light"]) .ps-list{background:var(--green-s);color:var(--ink)}:root:not([data-theme="light"]) .au-info{background:var(--green-s)}:root:not([data-theme="light"]) .adv-box.good{background:#1E2C22}:root:not([data-theme="light"]) .adv-box.bad{background:#33231D}:root:not([data-theme="light"]) .adv-box.bad small{color:#E59A82}:root:not([data-theme="light"]) .adv-c{background:var(--surface2);color:var(--ink)}:root:not([data-theme="light"]) .adv-c.bad{color:#F0A58E}}
+:root[data-theme="dark"] .btn-danger{color:#2A120C}
+:root[data-theme="dark"] .prem-sub{color:#3A2A08}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-danger{color:#2A120C}:root:not([data-theme="light"]) .prem-sub{color:#3A2A08}}
 </style>
 </head>
 <body>
@@ -4042,7 +4056,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       if (a === 'close') return finish(false);
       if (a === 'back') { st.step = 'email'; st.err = ''; st.info = ''; return paint('back'); }
       if (a === 'tologin' || a === 'tosignup') { st.email = pv('#au-email').trim() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint('fade'); }
-      if (a === 'google') { finish(false); return googleLogin(); }
+      if (a === 'google') { if (swState) { try { swSave(true); } catch (e) { /* 何もしない */ } } finish(false); return googleLogin(); } // はじめの質問の答えは、Googleの画面へ移る前に保存しておく
       if (a === 'next') {
         const em = pv('#au-email').trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください');
