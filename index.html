@@ -1868,8 +1868,9 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 #sw-body .sw-opts > :last-child .sw-opt,#sw-body .sw-opts > .sw-opt:last-child{border-bottom:0}
 
 .start-simple .st-head{align-items:center;margin-bottom:12px}
-.start-simple .st-go{width:100%;min-height:52px;font-size:16px;font-weight:700}
-.start-simple .st-go svg{width:18px;height:18px}
+.start-simple .st-go{width:100%;min-height:44px;height:44px;font-size:14px;font-weight:600;padding:0 6px;background:#B8622F;border-color:#B8622F;color:#fff;box-shadow:none}
+.start-simple .st-go:active{background:#9F5428}
+.start-simple .st-go svg{width:16px;height:16px}
 .start-simple .hap-keep{display:block;width:100%}
 /* 今日の記録がまだないとき：3Dの顔だけを真ん中に */
 .t3-grid:not(:has(.t3-side)){grid-template-columns:1fr;justify-items:center}
@@ -1878,6 +1879,9 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .t3-stage .f3-expand{top:0;right:0;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(255,255,255,.88);box-shadow:0 1px 6px rgba(0,0,0,.08)}
 :root[data-theme="dark"] .t3-stage .f3-expand{background:rgba(40,46,42,.88)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .t3-stage .f3-expand{background:rgba(40,46,42,.88)}}
+/* アンケート：質問の下の説明文は出さない */
+#sw-body .sw-card .sw-sub{display:none}
+#sw-body .sw-card .sw-q{margin-bottom:12px}
 </style>
 </head>
 <body>
