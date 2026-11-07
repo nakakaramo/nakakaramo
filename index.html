@@ -1832,6 +1832,27 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .ps-price{display:flex;flex-direction:column;gap:2px}
 .ps-cancel{font-size:13px;color:var(--muted)}
 #prem-sheet #ps-t{margin-right:44px}
+
+/* はじめにやること：アンケート1つだけ */
+.start-card .st-grid{grid-template-columns:1fr}
+.start-card .st-tile{flex-direction:row;align-items:center;gap:12px;padding:14px}
+.start-card .st-tile .st-ic{margin:0;flex:none;width:40px;height:40px;border-radius:12px}
+.start-card .st-tile b{display:block;font-size:15.5px;white-space:normal}
+.start-card .st-tile small{display:block;font-size:12px;white-space:normal;margin-top:2px}
+.start-card .st-tile .st-txt{display:flex;flex-direction:column;min-width:0;flex:1}
+/* アンケート：1ページ */
+.sw-intro{margin:0 0 14px;font-size:13.5px;color:var(--ink2);line-height:1.8}
+.sw-card{padding:16px 0 18px;border-top:1px solid var(--line);counter-increment:swq}
+#sw-body{counter-reset:swq}
+.sw-card .sw-q{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:16px}
+.sw-card .sw-q::before{content:counter(swq);flex:none;width:24px;height:24px;border-radius:50%;background:var(--green-d);color:#fff;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.sw-card .sw-sub{margin:0 0 12px}
+.sw-card.sw-bad{background:rgba(192,86,59,.06);border-radius:12px;padding-left:10px;padding-right:10px}
+#sw-body .sw-dots{display:none}
+.start-card .st-chev{flex:none;font-style:normal;font-size:22px;color:var(--muted);line-height:1}
+.start-card .st-tile b,.start-card .st-tile small{overflow:visible}
+.sw-card .sw-sub,.sw-card .sw-sec{text-align:left}
+.sw-card .sw-sub{padding-left:32px}
 </style>
 </head>
 <body>
@@ -4008,7 +4029,7 @@ let swState = null;
 function openSetupWizard() {
   const st = state.settings;
   swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
-  openModal({title:'はじめの質問', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
+  openModal({title:'アンケート', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
   root.querySelector('.modal-head [data-action="close-modal"]').setAttribute('data-action', 'setup-later');
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
@@ -4053,7 +4074,6 @@ async function swAuth() {
     }
   } catch (e) { swState.busy = false; swPaint(); bad(e && e.message === 'offline' ? '通信できませんでした。電波のよい場所で、もう一度お試しください' : authErrMsg(e)); return; }
   swState.busy = false;
-  if (next) { swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
   swPaint();
 }
 // ===== お問い合わせ：プレミアムの人はAIサポートに質問できる。答えられない内容はメールへ案内する =====
@@ -4289,10 +4309,8 @@ function otpPrompt(email, {resendFirst = false} = {}) {
 // 研究への協力の質問は、年代で18歳以上を選んだ人にだけ出す
 const swSteps = () => SW_ALL.filter(s => (s !== 'research' || isAdultBand(swState && swState.v.ageBand)) && (s !== 'account' || (swState && swState.acct))); // 新規登録は、まだログインしていない人にだけ
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : v === '' ? !!(swState && swState.none && swState.none[key]) && cur === '' : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
-function swPaint() {
-  const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
-  const step = swSteps()[s.i], v = s.v;
-  const dots = `<div class="sw-dots">${swSteps().map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
+function swStepHtml(step) {
+  const s = swState, v = s.v;
   let h = '';
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
   if (step === 'account') {
@@ -4314,26 +4332,41 @@ function swPaint() {
     <ul class="sw-list"><li><b>送るもの</b>：肌質・年代、肌の状態の平均、成分ごとの肌の変化（数字だけ）</li><li><b>送らないもの</b>：名前・メール・写真・メモ・日付・商品名・位置</li><li>5人以上をまとめた統計にしてから使います。いつでも設定からやめられて、やめると送ったデータも消えます</li></ul>`
     + swOpts('research', [['no', '同意しない'], ['yes', '同意する']], v.research);
   if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
-  b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
-  f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
-    : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">ナカカラモをはじめる</button>`
-    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['account', 'gender', 'age', 'skin', 'concerns', 'research'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
+  return h;
+}
+// アンケート：質問を1ページに並べて、スクロールしながら答えられるようにする
+function swGrab() { // 入力欄の今の値を覚えておく（描き直しても消えないように）
+  const v = swState.v, g = id => { const e = $('#' + id); return e ? e.value : null; };
+  const h = g('sw-h'), w = g('sw-w'), sl = g('sw-sleep'), bg = g('sw-budget');
+  if (h !== null) v.height = h; if (w !== null) v.weight = w; if (sl !== null) v.sleepNeed = Number(sl) || 420; if (bg !== null) v.budget = bg;
+}
+function swPaint() {
+  const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
+  const mb = $('#modal-root .modal-body'), top = mb ? mb.scrollTop : 0;
+  if (b.firstChild) swGrab();
+  const list = swSteps().filter(x => x !== 'hello' && x !== 'done');
+  b.innerHTML = `<p class="sw-intro">あてはまるものを選んでください（1分ほど）。答えた内容は、あなたに合うケアの提案に使います。あとから「設定」で変えられます。</p>`
+    + list.map(step => `<section class="sw-card" id="sw-s-${step}">${swStepHtml(step)}</section>`).join('')
+    + '<p class="sw-err" id="sw-err" hidden></p>';
+  f.innerHTML = `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-action="setup-finish">保存してはじめる</button>`;
+  if (mb) mb.scrollTop = top;
 }
 const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
-  const v = swState.v, step = swSteps()[swState.i], err = $('#sw-err');
-  const bad = m => { if (err) { err.hidden = false; err.textContent = m; } return false; };
-  if (step === 'body') {
+  const v = swState.v, err = $('#sw-err');
+  const bad = (m, at) => { const sec = $('#sw-s-' + at); if (sec) { sec.classList.add('sw-bad'); const p = document.createElement('p'); p.className = 'sw-err sw-err-in'; p.textContent = m; sec.appendChild(p); sec.scrollIntoView({block:'center', behavior:'smooth'}); } else if (err) { err.hidden = false; err.textContent = m; } return false; };
+  $$('.sw-card.sw-bad').forEach(x => x.classList.remove('sw-bad')); $$('.sw-err-in').forEach(x => x.remove()); if (err) err.hidden = true;
+  if ($('#sw-h')) {
     const h = toHalf($('#sw-h').value).trim(), w = toHalf($('#sw-w').value).trim();
-    if (h && !(Number(h) >= 80 && Number(h) <= 250)) return bad('身長は80〜250の数字で入れてください（空欄でも大丈夫です）');
-    if (w && !(Number(w) >= 20 && Number(w) <= 250)) return bad('体重は20〜250の数字で入れてください（空欄でも大丈夫です）');
+    if (h && !(Number(h) >= 80 && Number(h) <= 250)) return bad('身長は80〜250の数字で入れてください（空欄でも大丈夫です）', 'body');
+    if (w && !(Number(w) >= 20 && Number(w) <= 250)) return bad('体重は20〜250の数字で入れてください（空欄でも大丈夫です）', 'body');
     v.height = h ? Math.round(Number(h) * 10) / 10 : ''; v.weight = w ? Math.round(Number(w) * 10) / 10 : '';
   }
-  if (step === 'life') {
+  if ($('#sw-sleep')) {
     v.sleepNeed = Number($('#sw-sleep').value) || 420;
     const bg = toHalf($('#sw-budget').value).replace(/[,円\s]/g, '');
-    if (bg && !/^\d{1,7}$/.test(bg)) return bad('予算は半角の数字で入れてください（空欄でも大丈夫です）');
+    if (bg && !/^\d{1,7}$/.test(bg)) return bad('予算は半角の数字で入れてください（空欄でも大丈夫です）', 'life');
     v.budget = bg ? Number(bg) : '';
   }
   return true;
@@ -4341,7 +4374,7 @@ function swRead() {
 function swClick(e) {
   if (!swState) return;
   const sa = e.target.closest('[data-swauth]');
-  if (sa) { openAuth(sa.dataset.swauth).then(ok => { if (!ok || !swState) return; swState.authMsg = ''; swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }); return; }
+  if (sa) { openAuth(sa.dataset.swauth).then(ok => { if (!ok || !swState) return; swState.authMsg = ''; swPaint(); }); return; }
   const md = e.target.closest('[data-swmode]');
   if (md) { const em = $('#sw-email'); if (em) swState.email = em.value; swState.acctMode = md.dataset.swmode; swState.authMsg = ''; swPaint(); return; }
   const o = e.target.closest('[data-sw]');
@@ -4363,6 +4396,7 @@ function swSave(done) {
     if (v.ageBand === '17歳以下' && researchState().on) setTimeout(() => researchWithdraw(), 0); // 17歳以下は協力しない（送ったデータも消す）
     if (v.research === 'yes' && isAdultBand(v.ageBand)) { const r = researchState(); if (!r.on) { r.adult = true; r.on = true; r.lastHash = ''; setTimeout(() => researchSend(true), 0); } }
   }
+  if (v && done) st.surveyDone = true;
   st.onboarded = true; swState = null; save(); closeModal(); render();
 }
 // ---------- お気に入り ----------
@@ -6772,22 +6806,17 @@ function careDone(k) {
 }
 // ===== はじめにやること（4つ。全部終わるか「閉じる」で消える） =====
 function startItems() {
-  const life = state.lifeLogs.filter(l => !l.demo);
+  const st = state.settings;
   return [
-    {k:'concern', l:'肌悩みに答える', s:'合うケアと成分がわかる', done:state.settings.concerns.length > 0, a:'setup'},
-    {k:'skin', l:'肌を記録', s:'1分で今日の調子を残す', done:state.skinLogs.some(l => !l.demo), a:'new-log'},
-    {k:'my', l:'化粧品を登録', s:'使っている物を1つ', done:state.myProducts.some(p => !p.isSample), a:'add-sheet', id:'my'},
-    {k:'meal', l:'食事を記録', s:'栄養のバランスがわかる', done:life.some(l => (l.foods || []).length || MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)), a:'life-edit', id:'meal'},
-    {k:'a2hs', l:'ホーム画面に追加', s:'アプリのように開ける', done:isStandalone() || !!state.settings.a2hsDone, a:'a2hs-guide'},
+    {k:'survey', l:'アンケートに答える', s:'肌質や肌悩みを教えると、あなたに合うケアと成分がわかります（1分ほど）', done:!!st.surveyDone || (st.onboarded && (st.concerns.length > 0 || !!st.skinType)), a:'setup'},
   ];
 }
 function startHtml() {
   if (state.settings.startHidden) return '';
   const it = startItems(), n = it.filter(x => x.done).length; if (n === it.length) return '';
-  const IC = {concern:'spark', skin:'note', my:'bottle', meal:'leaf', a2hs:'home'};
-  return `<div class="card start-card"><div class="st-head"><div><h2>はじめにやること</h2><p class="st-sub">あと${it.length - n}つで準備完了です</p></div><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
-    <div class="st-steps" aria-hidden="true" style="grid-template-columns:repeat(${it.length},1fr)">${it.map((x, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>
-    <div class="st-grid">${it.map((x, i) => `<button type="button" class="start-row st-tile ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="st-ic">${icon(x.done ? 'check' : IC[x.k] || 'spark')}</span><b>${esc(x.l)}</b><small>${x.done ? 'できました' : esc(x.s)}</small></button>`).join('')}</div>
+  const IC = {survey:'spark'};
+  return `<div class="card start-card"><div class="st-head"><div><h2>はじめにやること</h2></div><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
+    <div class="st-grid">${it.map((x, i) => `<button type="button" class="start-row st-tile ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="st-ic">${icon(x.done ? 'check' : IC[x.k] || 'spark')}</span><span class="st-txt"><b>${esc(x.l)}</b><small>${x.done ? 'できました' : esc(x.s)}</small></span><i class="st-chev" aria-hidden="true">›</i></button>`).join('')}</div>
     ${state.skinLogs.some(l => l.demo) ? '<p class="small muted start-demo">見本のデータが入っています。<button type="button" class="link small" data-action="demo-remove">見本を消す</button></p>' : !state.skinLogs.some(l => !l.demo) ? '<p class="small muted start-demo">記録がたまるとどう見えるか先に知りたいときは <button type="button" class="link small" data-action="demo-add">見本のデータで試す</button>（あとで消せます）</p>' : ''}
     </div>`;
 }
@@ -10273,7 +10302,7 @@ const actions = {
   'add-sheet': kind => openAddSheet(kind),
   'setup': () => openSetupWizard(),
   'setup-later': () => swSave(false),
-  'setup-finish': () => { swSave(true); hapticSaved(); },
+  'setup-finish': () => { if (swState && !swRead()) return; swSave(true); hapticSaved(); toast('アンケートを保存しました'); },
   'add-full': kind => { findState = null; closeModal(); setTimeout(() => (actions[kind === 'my' ? 'new-my' : 'new-cat'])(), 200); },
   'find-pick': i => findPick(i),
   'find-more': () => { if (findState) { findState.more = true; findPaint(); } },
