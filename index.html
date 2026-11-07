@@ -1736,8 +1736,8 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .au-pw+.au-lbl,.au-hint+.au-lbl{margin-top:18px}
 .au-in{width:100%;height:54px;border-radius:10px;border:1.5px solid var(--line2);background:var(--surface);color:var(--ink);font-size:17px;padding:0 14px;outline:none}
 .au-in:focus{border-color:var(--green-d)}
-.au-pw{position:relative}.au-pw .au-in{padding-right:64px}
-.au-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;padding:8px 10px;font:inherit;font-size:13px;color:var(--green-d);cursor:pointer}
+.au-pw{position:relative}.au-pw .au-in{padding-right:54px}
+.au-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}.au-eye.on{color:var(--green-d)}
 .au-hint{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
 .au-go{display:flex;align-items:center;justify-content:center;width:100%;height:54px;margin-top:22px;border:0;border-radius:999px;background:var(--green-d);color:#fff;font:inherit;font-size:16.5px;font-weight:700;cursor:pointer}
 .au-go:disabled{opacity:.6}
@@ -1758,6 +1758,11 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .auth-entry .btn{width:100%}
 .auth-entry{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .plan-table td:not(:first-child),.plan-table th:not(:first-child){white-space:nowrap;text-align:center}
+@keyframes auInR{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes auInL{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+@keyframes auInF{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.au-in-r{animation:auInR .3s cubic-bezier(.2,.8,.2,1) both}.au-in-l{animation:auInL .3s cubic-bezier(.2,.8,.2,1) both}.au-in-f{animation:auInF .28s ease both}
+@media (prefers-reduced-motion:reduce){.au-in-r,.au-in-l,.au-in-f{animation:none}.au-ov{transition:none}}
 </style>
 </head>
 <body>
@@ -1785,6 +1790,17 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 <div id="drawer-root"></div>
 
 <script>
+// Googleログインやメールのリンクから戻ってきたとき、URLの「#access_token=…」を最初に受け取っておく
+// （画面の切り替えの仕組みがURLを書きかえる前に取っておかないと、ログインが消えてしまうため）
+let AUTH_RET = (() => {
+  try {
+    const h = location.hash || '';
+    if (!/(access_token|error_description|error_code)=/.test(h)) return null;
+    const p = new URLSearchParams(h.replace(/^#\/?/, '')), o = {}; p.forEach((v, k) => { o[k] = v; });
+    history.replaceState(null, '', location.pathname + location.search + (o.type === 'recovery' ? '#/plan' : '#/home'));
+    return o;
+  } catch (e) { return null; }
+})();
 'use strict';
 /* =========================================================
    ナカカラモ 第2版（単一HTMLファイル / localStorage保存）
@@ -3979,8 +3995,10 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
     const ov = document.createElement('div'); ov.className = 'au-ov';
     document.body.appendChild(ov); lockScroll && lockScroll();
     const finish = v => { ov.classList.add('out'); setTimeout(() => { ov.remove(); if (!$('#modal-root .modal-backdrop') && typeof unlockScroll === 'function') unlockScroll(); }, 220); resolve(v); };
-    const eye = id => `<button type="button" class="au-eye" data-eye="${id}" aria-label="パスワードを表示">表示</button>`;
-    const paint = () => {
+    const EYE_ON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>', EYE_OFF = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.5 4.5-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+    const eye = id => `<button type="button" class="au-eye" data-eye="${id}" aria-label="パスワードを表示">${EYE_ON}</button>`;
+    let first = true;
+    const paint = (dir) => {
       const up = st.mode === 'signup', s1 = st.step === 'email';
       const title = up ? '新しいアカウントをつくる' : 'ログイン';
       let body = '';
@@ -4004,12 +4022,15 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <label class="check agree-line au-chk"><input type="checkbox" id="au-sync" ${sync ? 'checked' : ''}><span>記録をクラウドに保存する（写真は送りません）</span></label>
         <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
         <button type="button" class="au-go" data-au="signup" ${st.busy ? 'disabled' : ''}>${st.busy ? '登録しています…' : '登録する'}</button>`;
+      const keep = {}; if (!dir) ov.querySelectorAll('input').forEach(i => { if (i.id) keep[i.id] = i.type === 'checkbox' ? i.checked : i.value; });
       ov.innerHTML = `<div class="au-page" role="dialog" aria-modal="true" aria-labelledby="au-t">
         <div class="au-head"><button type="button" class="au-back" data-au="${s1 ? 'close' : 'back'}" aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="au-t">${title}</h2><span></span></div>
         <div class="au-body">${st.info ? `<p class="au-info">${esc(st.info)}</p>` : ''}${body}<p class="au-err" ${st.err ? '' : 'hidden'}>${esc(st.err)}</p></div>
         <div class="au-foot">${s1 ? (up ? '<p>既にアカウントをお持ちですか？</p><button type="button" data-au="tologin">ログイン</button>' : '<p>アカウントをまだ持っていませんか？</p><button type="button" data-au="tosignup">登録</button>') : ''}</div>
       </div>`;
-      requestAnimationFrame(() => ov.classList.add('in'));
+      Object.keys(keep).forEach(id => { const i = ov.querySelector('#' + id); if (i) { if (i.type === 'checkbox') i.checked = keep[id]; else i.value = keep[id]; } });
+      if (first) { first = false; requestAnimationFrame(() => ov.classList.add('in')); }
+      else if (dir) ov.querySelectorAll('.au-body,.au-foot,.au-head h2').forEach(el => el.classList.add(dir === 'fwd' ? 'au-in-r' : dir === 'back' ? 'au-in-l' : 'au-in-f'));
       const f = ov.querySelector(s1 ? '#au-email' : '#au-pw'); if (f && !st.busy) setTimeout(() => { try { f.focus({preventScroll:true}); } catch (e) { /* 何もしない */ } }, 260);
       ov.querySelectorAll('.au-go,.au-sso').forEach(b => { try { hapticize(b); } catch (e) { /* 何もしない */ } });
     };
@@ -4019,13 +4040,13 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
     const act = async a => {
       const pv = id => (ov.querySelector(id) || {}).value || '';
       if (a === 'close') return finish(false);
-      if (a === 'back') { st.step = 'email'; st.err = ''; st.info = ''; return paint(); }
-      if (a === 'tologin' || a === 'tosignup') { st.email = pv('#au-email').trim() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint(); }
+      if (a === 'back') { st.step = 'email'; st.err = ''; st.info = ''; return paint('back'); }
+      if (a === 'tologin' || a === 'tosignup') { st.email = pv('#au-email').trim() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint('fade'); }
       if (a === 'google') { finish(false); return googleLogin(); }
       if (a === 'next') {
         const em = pv('#au-email').trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください');
-        st.email = em; st.step = 'pw'; st.err = ''; st.info = ''; return paint();
+        st.email = em; st.step = 'pw'; st.err = ''; st.info = ''; return paint('fwd');
       }
       if (a === 'forgot') {
         setErr('');
@@ -4055,7 +4076,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         try {
           const c = await client(); const {data, error} = await c.auth.signUp({email:st.email, password:pw, options:{emailRedirectTo:appUrl()}});
           if (error) throw error;
-          if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) { st.busy = false; st.mode = 'login'; st.step = 'pw'; st.info = 'このメールアドレスは登録済みです。パスワードを入れてログインしてください。'; return paint(); }
+          if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) { st.busy = false; st.mode = 'login'; st.step = 'pw'; st.info = 'このメールアドレスは登録済みです。パスワードを入れてログインしてください。'; return paint('fade'); }
           state.settings.cloudSync = wantSync; save();
           if (data.session) return done('登録しました');
           st.busy = false; paint();
@@ -4066,7 +4087,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
     };
     ov.addEventListener('click', e => {
       const ey = e.target.closest('[data-eye]');
-      if (ey) { const i = ov.querySelector('#' + ey.dataset.eye); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; ey.textContent = show ? '隠す' : '表示'; return; }
+      if (ey) { const i = ov.querySelector('#' + ey.dataset.eye); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; ey.innerHTML = show ? EYE_OFF : EYE_ON; ey.setAttribute('aria-label', show ? 'パスワードを隠す' : 'パスワードを表示'); ey.classList.toggle('on', show); return; }
       const b = e.target.closest('[data-au]'); if (b) act(b.dataset.au);
     });
     ov.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.isComposing) return; const go = ov.querySelector('.au-go'); if (go && e.target.matches('input')) { e.preventDefault(); act(go.dataset.au); } });
@@ -9116,7 +9137,19 @@ async function initCloud() {
   acct.status = 'loading'; rerenderAcct();
   try {
     if (!window.supabase) await loadScript(CLOUD.sdk);
-    acct.client = window.supabase.createClient(CLOUD.url, CLOUD.key, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storageKey:CLOUD.storageKey}});
+    acct.client = window.supabase.createClient(CLOUD.url, CLOUD.key, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:false, storageKey:CLOUD.storageKey}});
+    if (AUTH_RET) { // Google・メールのリンクから戻ってきた
+      const r = AUTH_RET; AUTH_RET = null;
+      if (r.access_token && r.refresh_token) {
+        const {error} = await acct.client.auth.setSession({access_token:r.access_token, refresh_token:r.refresh_token});
+        if (error) setTimeout(() => toast('ログインできませんでした。もう一度お試しください', 'error'), 300);
+        else if (r.type === 'recovery') { acct.recovery = true; setTimeout(() => { location.hash = '#/plan'; toast('新しいパスワードを決めてください'); }, 300); }
+        else setTimeout(() => toast(r.type === 'signup' ? 'メールアドレスを確認できました。ログインしました' : 'ログインしました'), 300);
+      } else if (r.error_description || r.error_code) {
+        const d = String(r.error_description || r.error_code).replace(/\+/g, ' ');
+        setTimeout(() => toast(/expired|invalid/i.test(d) ? 'リンクの有効期限が切れています。もう一度お試しください' : 'ログインできませんでした（' + d + '）', 'error'), 300);
+      }
+    }
     acct.client.auth.onAuthStateChange((event, session) => {
       const before = acct.user && acct.user.id;
       acct.user = session ? session.user : null;
@@ -10935,7 +10968,7 @@ const setTimeOfDay = () => { const h = new Date().getHours(); document.documentE
 setTimeOfDay(); setInterval(setTimeOfDay, 10 * 60 * 1000);
 setTbh(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(setTbh);
 if (researchState() && researchState().on) setTimeout(() => { if (researchState().lastSent !== todayStr()) researchSend(); }, 5000); // 研究に協力中なら、1日1回まで統計を新しくする
-if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
+if (hasSavedLogin() || AUTH_RET) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = SERVICE;
 render();
 // はじめて開いたときは、先に「はじめの質問」を出す
