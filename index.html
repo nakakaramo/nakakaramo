@@ -4005,7 +4005,7 @@ async function swAuth() {
     if (acct.status !== 'ready') await initCloud();
     if (!acct.client) throw new Error('offline');
     if (up) {
-      const {data, error} = await acct.client.auth.signUp({email, password:pw, options:{emailRedirectTo:appUrl()}});
+      const {data, error} = await withTO(acct.client.auth.signUp({email, password:pw, options:{emailRedirectTo:appUrl()}}));
       if (error) throw error;
       if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('already registered');
       state.settings.cloudSync = wantSync; save();
@@ -4016,7 +4016,7 @@ async function swAuth() {
       }
       else { toast('登録しました'); next = true; }
     } else {
-      const {error} = await acct.client.auth.signInWithPassword({email, password:pw});
+      const {error} = await withTO(acct.client.auth.signInWithPassword({email, password:pw}));
       if (error && /Email not confirmed/i.test(error.message || '')) { swState.busy = false; swPaint(); if (!(await otpPrompt(email, {resendFirst:true}))) throw error; }
       else if (error) throw error;
       toast('ログインしました'); next = true;
@@ -4030,9 +4030,15 @@ async function swAuth() {
 const SUPPORT_Q = ['解約したい', 'ログインできない', '確認メールが届かない', '機種変更したい', '写真の読み取り回数'];
 let supportLog = []; // 会話はこの画面を開いている間だけ（どこにも保存しない）
 function supportMail(withLog) {
-  const who = acct.user && acct.user.email ? `\n\n---\n登録メールアドレス：${acct.user.email}` : '';
-  const log = withLog && supportLog.length ? '\n\n---\nAIサポートとのやりとり：\n' + supportLog.slice(-8).map(m => `${m.role === 'ai' ? 'AI' : '自分'}：${m.text}`).join('\n') : '';
-  return `mailto:${LEGAL.email}?subject=${encodeURIComponent('【ナカカラモ】お問い合わせ')}&body=${encodeURIComponent('（お問い合わせ内容をお書きください）' + log + who)}`;
+  const line = '――――――――――';
+  const parts = ['ナカカラモ お問い合わせ窓口 御中', '', '（ここにお問い合わせの内容をお書きください）', '', '', ''];
+  if (acct.user && acct.user.email) parts.push(line, `ご登録のメールアドレス：${acct.user.email}`);
+  if (withLog && supportLog.length) {
+    parts.push(line, '【AIサポートとのやりとり】', '');
+    supportLog.slice(-8).forEach(m => { parts.push(`■ ${m.role === 'ai' ? 'AIサポート' : 'わたし'}`, String(m.text).replace(/\n{2,}/g, '\n').trim(), ''); });
+  }
+  if (parts.length > 6) parts.push(line);
+  return `mailto:${LEGAL.email}?subject=${encodeURIComponent('【ナカカラモ】お問い合わせ')}&body=${encodeURIComponent(parts.join('\n'))}`;
 }
 function openSupport() {
   const ov = document.createElement('div'); ov.className = 'au-ov sp-ov';
@@ -4158,7 +4164,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       }
       if (a === 'forgot') {
         setErr('');
-        try { const c = await client(); const {error} = await c.auth.resetPasswordForEmail(st.email, {redirectTo:appUrl()}); if (error) throw error; st.info = `${st.email} にパスワード再設定のメールを送りました。メールのボタンを押して、新しいパスワードを決めてください。`; paint(); }
+        try { const c = await client(); const {error} = await withTO(c.auth.resetPasswordForEmail(st.email, {redirectTo:appUrl()})); if (error) throw error; st.info = `${st.email} にパスワード再設定のメールを送りました。メールのボタンを押して、新しいパスワードを決めてください。`; paint(); }
         catch (e) { setErr(authErrMsg(e)); }
         return;
       }
@@ -4168,7 +4174,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         if (!pw) return setErr('パスワードを入力してください');
         st.busy = true; st.err = ''; paint();
         try {
-          const c = await client(); const {error} = await c.auth.signInWithPassword({email:st.email, password:pw});
+          const c = await client(); const {error} = await withTO(c.auth.signInWithPassword({email:st.email, password:pw}));
           if (error && /Email not confirmed/i.test(error.message || '')) { st.busy = false; paint(); if (await otpPrompt(st.email, {resendFirst:true})) return done('ログインしました'); throw error; }
           if (error) throw error;
           return done('ログインしました');
@@ -4182,7 +4188,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         const wantSync = !!(ov.querySelector('#au-sync') || {}).checked;
         st.busy = true; st.err = ''; paint();
         try {
-          const c = await client(); const {data, error} = await c.auth.signUp({email:st.email, password:pw, options:{emailRedirectTo:appUrl()}});
+          const c = await client(); const {data, error} = await withTO(c.auth.signUp({email:st.email, password:pw, options:{emailRedirectTo:appUrl()}}));
           if (error) throw error;
           if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) { st.busy = false; st.mode = 'login'; st.step = 'pw'; st.info = 'このメールアドレスは登録済みです。パスワードを入れてログインしてください。'; return paint('fade'); }
           state.settings.cloudSync = wantSync; save();
@@ -4223,7 +4229,7 @@ function otpPrompt(email, {resendFirst = false} = {}) {
     requestAnimationFrame(() => { ov.classList.add('in'); setTimeout(() => inp.focus(), 250); });
     const resend = async () => {
       const b = $o('.otp-re'); if (b.disabled) return; b.disabled = true; msg('');
-      try { const {error} = await acct.client.auth.resend({type:'signup', email, options:{emailRedirectTo:appUrl()}}); if (error) throw error; msg('新しいコードを送りました。', true); }
+      try { const {error} = await withTO(acct.client.auth.resend({type:'signup', email, options:{emailRedirectTo:appUrl()}})); if (error) throw error; msg('新しいコードを送りました。', true); }
       catch (e) { msg(authErrMsg(e)); }
       setTimeout(() => { b.disabled = false; }, 30000);
     };
@@ -4232,8 +4238,8 @@ function otpPrompt(email, {resendFirst = false} = {}) {
       if (code.length < 6) return msg('メールに書かれた6桁の数字を入力してください');
       ok.disabled = true; ok.textContent = '確認しています…'; msg('');
       try {
-        let r = await acct.client.auth.verifyOtp({email, token:code, type:'email'});
-        if (r.error) r = await acct.client.auth.verifyOtp({email, token:code, type:'signup'});
+        let r = await withTO(acct.client.auth.verifyOtp({email, token:code, type:'email'}));
+        if (r.error) r = await withTO(acct.client.auth.verifyOtp({email, token:code, type:'signup'}));
         if (r.error) throw r.error;
         for (let i = 0; i < 10 && !acct.user; i++) await new Promise(x => setTimeout(x, 150));
         end(true);
@@ -4261,7 +4267,7 @@ function swPaint() {
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
   if (step === 'account') {
     h = `<p class="sw-q">アカウントを作成</p><p class="sw-sub">登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。あとからでも登録できます</p>
-    <div class="auth-entry sw-entry"><button type="button" class="btn btn-primary" data-swauth="signup">今すぐ登録</button><button type="button" class="btn btn-ghost" data-swauth="login">ログイン</button></div>
+    <div class="auth-entry sw-entry"><button type="button" class="btn btn-primary" data-swauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-swauth="login">ログイン</button></div>
     ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}`; }
   if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
   if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない']]), v.ageBand);
@@ -9354,7 +9360,7 @@ function openPremiumSheet(feature) {
     <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b>　いつでも解約できます</p>
     <ul class="ps-list"><li>顔の写真を撮るだけで、AIが今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養をAIが計算</li><li>記録から、あなた専用のケアと献立をAIが提案</li></ul>
     ${logged ? '' : `<div class="ps-auth"><p class="small ps-note">申し込むには、先にアカウントを作ってください（無料・登録済みの人はログイン）</p>
-      <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">今すぐ登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
+      <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
     <form id="ps-form" novalidate ${logged ? '' : 'hidden'}>
       ${logged ? `<p class="small muted ps-me">${esc(acct.user.email || '')} で申し込みます</p>` : ''}
       <label class="ps-agree"><input type="checkbox" name="agree"> <span><a href="#/terms" target="_blank">利用規約</a>・<a href="#/privacy" target="_blank">プライバシーポリシー</a>・<a href="#/law" target="_blank">特定商取引法の表記</a>を確認し、毎月自動で更新されること（解約はアカウントからいつでも可能）に同意します</span></label>
@@ -9382,12 +9388,29 @@ function openPremiumSheet(feature) {
       for (let i = 0; i < 20 && !acct.client; i++) await new Promise(r => setTimeout(r, 300));
       if (!acct.client) throw new Error('サーバーに接続できませんでした。インターネットの接続を確認してください。');
       btn.textContent = 'お支払いの画面へ移動しています…';
-      const d = await callBilling('checkout'); location.href = d.url;
+      const d = await callBilling('checkout'); goExternal(d.url);
     } catch (err) { toast(err && /^[　-鿿]/.test(err.message || '') ? err.message : authErrMsg(err), 'error'); btn.disabled = false; btn.textContent = '申し込む（カードの入力へ）'; }
   };
 }
+// ===== 外の画面（Stripeなど）へ移るとき =====
+// ホーム画面に追加したアプリでは、外の画面がアプリの上に重なって開き、「×」で閉じるとこの画面にそのまま戻る。
+// そのとき「準備しています…」のまま押せなくならないように、戻ってきたら（または移れなかったら）ボタンを元に戻す
+// 通信の返事が来ないまま「準備しています…」で止まらないように、時間を区切る
+const withTO = (pr, ms = 25000) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('fetch timeout')), ms))]);
+let extLeaving = 0;
+function goExternal(url) { extLeaving = Date.now(); location.href = url; setTimeout(() => { if (extLeaving && document.visibilityState === 'visible') extBack(); }, 8000); }
+function extBack() {
+  if (!extLeaving) return; extLeaving = 0;
+  acct.busy = false;
+  document.querySelectorAll('.ps-go').forEach(b => { b.disabled = false; b.textContent = '申し込む（カードの入力へ）'; });
+  document.querySelectorAll('.hap-ov input').forEach(i => { i.checked = false; });
+  if (acct.user) refreshSub(); else render();
+}
+window.addEventListener('pageshow', e => { if (e.persisted) { extLeaving = extLeaving || 1; extBack(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && extLeaving && Date.now() - extLeaving > 800) extBack(); });
+window.addEventListener('focus', () => { if (extLeaving && Date.now() - extLeaving > 800) extBack(); });
 async function callBilling(action) {
-  const {data, error} = await acct.client.functions.invoke('billing', {body:{action}});
+  const {data, error} = await withTO(acct.client.functions.invoke('billing', {body:{action}}), 30000);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
     try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* 何もしない */ }
@@ -9459,7 +9482,7 @@ function viewPlan(query) {
     return html + `<div class="card"><div class="card-h"><h2>アカウント</h2></div>
       <p class="small">登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。</p>
       ${acct.msg ? `<div class="notice green" style="margin-top:12px">${esc(acct.msg)}</div>` : ''}
-      <div class="auth-entry"><button type="button" class="btn btn-primary" data-action="auth-open" data-id="signup">今すぐ登録</button><button type="button" class="btn btn-ghost" data-action="auth-open" data-id="login">ログイン</button></div>
+      <div class="auth-entry"><button type="button" class="btn btn-primary" data-action="auth-open" data-id="signup">新規登録</button><button type="button" class="btn btn-ghost" data-action="auth-open" data-id="login">ログイン</button></div>
       </div>` + (EMBED ? notes + cmpFold : '');
   }
   // ログイン中
@@ -9555,7 +9578,7 @@ async function handlePwSubmit(form) {
   if (p1 !== p2) errors.pw2 = 'パスワードが一致しません。';
   if (!showErrors(form, errors)) return;
   acct.busy = true; render();
-  try { const {error} = await acct.client.auth.updateUser({password:p1}); if (error) throw error; acct.recovery = false; toast('パスワードを変更しました'); }
+  try { const {error} = await withTO(acct.client.auth.updateUser({password:p1})); if (error) throw error; acct.recovery = false; toast('パスワードを変更しました'); }
   catch (e) { toast(authErrMsg(e), 'error'); }
   acct.busy = false; render();
 }
@@ -10304,13 +10327,13 @@ const actions = {
     if (!cb || !cb.checked) { toast('内容を確認し、同意のチェックを入れてください', 'error'); return; }
     if (acct.busy) return;
     acct.busy = true; render();
-    try { const d = await callBilling('checkout'); location.href = d.url; }
+    try { const d = await callBilling('checkout'); goExternal(d.url); }
     catch (e) { toast(e.message, 'error'); acct.busy = false; render(); }
   },
   'acct-portal': async () => {
     if (acct.busy) return;
     acct.busy = true; render();
-    try { const d = await callBilling('portal'); location.href = d.url; }
+    try { const d = await callBilling('portal'); goExternal(d.url); }
     catch (e) { toast(e.message, 'error'); acct.busy = false; render(); }
   },
   'acct-delete': async () => {
