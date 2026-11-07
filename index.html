@@ -1723,6 +1723,41 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .otp-x{color:var(--muted)}
 .otp-note{margin:6px 0 0;font-size:12px;color:var(--muted)}
 .g-note{margin:6px 0 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
+
+/* ===== ログイン・新規登録の全画面 ===== */
+.au-ov{position:fixed;inset:0;z-index:2400;background:var(--bg);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain}
+.au-ov.in{transform:none}.au-ov.out{transform:translateX(100%)}
+.au-page{min-height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom))}
+.au-head{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;min-height:56px}
+.au-head h2{margin:0;text-align:center;font-size:17px;font-weight:700;color:var(--ink)}
+.au-back{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.au-body{padding-top:28px}
+.au-lbl{display:block;font-size:19px;font-weight:700;color:var(--ink);margin:0 0 10px}
+.au-pw+.au-lbl,.au-hint+.au-lbl{margin-top:18px}
+.au-in{width:100%;height:54px;border-radius:10px;border:1.5px solid var(--line2);background:var(--surface);color:var(--ink);font-size:17px;padding:0 14px;outline:none}
+.au-in:focus{border-color:var(--green-d)}
+.au-pw{position:relative}.au-pw .au-in{padding-right:64px}
+.au-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;padding:8px 10px;font:inherit;font-size:13px;color:var(--green-d);cursor:pointer}
+.au-hint{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+.au-go{display:flex;align-items:center;justify-content:center;width:100%;height:54px;margin-top:22px;border:0;border-radius:999px;background:var(--green-d);color:#fff;font:inherit;font-size:16.5px;font-weight:700;cursor:pointer}
+.au-go:disabled{opacity:.6}
+.hap-wrap:has(>.au-go),.hap-wrap:has(>.au-sso){display:block;width:100%}
+.au-or{margin:30px 0 16px;text-align:center;font-size:13.5px;color:var(--ink2)}
+.au-sso{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:54px;border-radius:999px;border:1.5px solid var(--line2);background:var(--surface);color:var(--ink);font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.au-sso svg{position:absolute;left:20px}
+.au-fine{margin:10px 4px 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
+.au-who{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 22px;padding:12px 14px;border-radius:12px;background:var(--surface2);font-size:14.5px;color:var(--ink);word-break:break-all}
+.au-chg{flex:none;background:none;border:0;font:inherit;font-size:13.5px;color:var(--green-d);text-decoration:underline;cursor:pointer;padding:4px}
+.au-chk{margin-top:16px;font-size:13.5px}
+.au-link{display:block;margin:18px auto 0;background:none;border:0;font:inherit;font-size:14px;color:var(--green-d);text-decoration:underline;cursor:pointer;padding:6px}
+.au-err{margin:14px 0 0;font-size:13.5px;color:var(--danger,#C0392B);line-height:1.6}
+.au-info{margin:0 0 18px;padding:12px 14px;border-radius:12px;background:var(--green-l,#E6F0EA);color:var(--green-d);font-size:13.5px;line-height:1.7}
+.au-foot{margin-top:auto;padding-top:40px;text-align:center}
+.au-foot p{margin:0 0 6px;font-size:14px;color:var(--ink2)}
+.au-foot button{background:none;border:0;font:inherit;font-size:16px;font-weight:700;color:var(--ink);padding:8px 16px;cursor:pointer}
+.auth-entry .btn{width:100%}
+.auth-entry{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.plan-table td:not(:first-child),.plan-table th:not(:first-child){white-space:nowrap;text-align:center}
 </style>
 </head>
 <body>
@@ -3935,6 +3970,109 @@ async function swAuth() {
   if (next) { swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
   swPaint();
 }
+// ===== ログイン・新規登録の画面（全画面）：メールアドレス → 続行 → パスワード の順に進む =====
+// openAuth('login' | 'signup') … ログインできたら true、閉じたら false を返す
+const GICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.5z"/><path fill="#34A853" d="M12 23.5c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.4 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v3a11.5 11.5 0 0 0 10.2 6.3z"/><path fill="#FBBC05" d="M5.6 14.2a6.9 6.9 0 0 1 0-4.4v-3H1.8a11.5 11.5 0 0 0 0 10.4z"/><path fill="#EA4335" d="M12 4.6c1.7 0 3.2.6 4.4 1.7l3.3-3.3A11.5 11.5 0 0 0 1.8 6.8l3.8 3C6.5 6.6 9 4.6 12 4.6z"/></svg>';
+function openAuth(mode = 'login', {email = '', sync = true} = {}) {
+  return new Promise(resolve => {
+    const st = {mode, step:'email', email, busy:false, err:'', info:''};
+    const ov = document.createElement('div'); ov.className = 'au-ov';
+    document.body.appendChild(ov); lockScroll && lockScroll();
+    const finish = v => { ov.classList.add('out'); setTimeout(() => { ov.remove(); if (!$('#modal-root .modal-backdrop') && typeof unlockScroll === 'function') unlockScroll(); }, 220); resolve(v); };
+    const eye = id => `<button type="button" class="au-eye" data-eye="${id}" aria-label="パスワードを表示">表示</button>`;
+    const paint = () => {
+      const up = st.mode === 'signup', s1 = st.step === 'email';
+      const title = up ? '新しいアカウントをつくる' : 'ログイン';
+      let body = '';
+      if (s1) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
+        <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(st.email)}">
+        <button type="button" class="au-go" data-au="next">続行</button>
+        ${CLOUD.google ? `<p class="au-or">または以下の方法でも${up ? '登録' : 'ログイン'}できます</p>
+        <button type="button" class="au-sso" data-au="google">${GICON}<span>Googleで続行</span></button>
+        ${up ? '<p class="au-fine">Googleで続行すると、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意したことになります。</p>' : ''}` : ''}`;
+      else if (!up) body = `<p class="au-who">${esc(st.email)}<button type="button" class="au-chg" data-au="back">変更</button></p>
+        <label class="au-lbl" for="au-pw">パスワード</label>
+        <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72">${eye('au-pw')}</div>
+        <button type="button" class="au-go" data-au="login" ${st.busy ? 'disabled' : ''}>${st.busy ? 'ログインしています…' : 'ログイン'}</button>
+        <button type="button" class="au-link" data-au="forgot">パスワードを忘れた場合</button>`;
+      else body = `<p class="au-who">${esc(st.email)}<button type="button" class="au-chg" data-au="back">変更</button></p>
+        <label class="au-lbl" for="au-pw">パスワード</label>
+        <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="new-password" maxlength="72">${eye('au-pw')}</div>
+        <p class="au-hint">8文字以上で、英字と数字を組み合わせてください</p>
+        <label class="au-lbl" for="au-pw2">パスワード（確認）</label>
+        <div class="au-pw"><input class="au-in" id="au-pw2" type="password" autocomplete="new-password" maxlength="72">${eye('au-pw2')}</div>
+        <label class="check agree-line au-chk"><input type="checkbox" id="au-sync" ${sync ? 'checked' : ''}><span>記録をクラウドに保存する（写真は送りません）</span></label>
+        <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
+        <button type="button" class="au-go" data-au="signup" ${st.busy ? 'disabled' : ''}>${st.busy ? '登録しています…' : '登録する'}</button>`;
+      ov.innerHTML = `<div class="au-page" role="dialog" aria-modal="true" aria-labelledby="au-t">
+        <div class="au-head"><button type="button" class="au-back" data-au="${s1 ? 'close' : 'back'}" aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="au-t">${title}</h2><span></span></div>
+        <div class="au-body">${st.info ? `<p class="au-info">${esc(st.info)}</p>` : ''}${body}<p class="au-err" ${st.err ? '' : 'hidden'}>${esc(st.err)}</p></div>
+        <div class="au-foot">${s1 ? (up ? '<p>既にアカウントをお持ちですか？</p><button type="button" data-au="tologin">ログイン</button>' : '<p>アカウントをまだ持っていませんか？</p><button type="button" data-au="tosignup">登録</button>') : ''}</div>
+      </div>`;
+      requestAnimationFrame(() => ov.classList.add('in'));
+      const f = ov.querySelector(s1 ? '#au-email' : '#au-pw'); if (f && !st.busy) setTimeout(() => { try { f.focus({preventScroll:true}); } catch (e) { /* 何もしない */ } }, 260);
+      ov.querySelectorAll('.au-go,.au-sso').forEach(b => { try { hapticize(b); } catch (e) { /* 何もしない */ } });
+    };
+    const setErr = m => { st.err = m || ''; const e = ov.querySelector('.au-err'); if (e) { e.hidden = !m; e.textContent = m || ''; } };
+    const client = async () => { if (acct.status !== 'ready' || !acct.client) await initCloud(); if (!acct.client) throw new Error('fetch failed'); return acct.client; };
+    const done = msg => { toast(msg); finish(true); };
+    const act = async a => {
+      const pv = id => (ov.querySelector(id) || {}).value || '';
+      if (a === 'close') return finish(false);
+      if (a === 'back') { st.step = 'email'; st.err = ''; st.info = ''; return paint(); }
+      if (a === 'tologin' || a === 'tosignup') { st.email = pv('#au-email').trim() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint(); }
+      if (a === 'google') { finish(false); return googleLogin(); }
+      if (a === 'next') {
+        const em = pv('#au-email').trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください');
+        st.email = em; st.step = 'pw'; st.err = ''; st.info = ''; return paint();
+      }
+      if (a === 'forgot') {
+        setErr('');
+        try { const c = await client(); const {error} = await c.auth.resetPasswordForEmail(st.email, {redirectTo:appUrl()}); if (error) throw error; st.info = `${st.email} にパスワード再設定のメールを送りました。メールのボタンを押して、新しいパスワードを決めてください。`; paint(); }
+        catch (e) { setErr(authErrMsg(e)); }
+        return;
+      }
+      if (st.busy) return;
+      const pw = pv('#au-pw');
+      if (a === 'login') {
+        if (!pw) return setErr('パスワードを入力してください');
+        st.busy = true; st.err = ''; paint();
+        try {
+          const c = await client(); const {error} = await c.auth.signInWithPassword({email:st.email, password:pw});
+          if (error && /Email not confirmed/i.test(error.message || '')) { st.busy = false; paint(); if (await otpPrompt(st.email, {resendFirst:true})) return done('ログインしました'); throw error; }
+          if (error) throw error;
+          return done('ログインしました');
+        } catch (e) { st.busy = false; paint(); setErr(authErrMsg(e)); }
+        return;
+      }
+      if (a === 'signup') {
+        if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return setErr('パスワードは8文字以上で、英字と数字を組み合わせてください');
+        if (pv('#au-pw2') !== pw) return setErr('パスワード（確認）が一致しません');
+        if (!(ov.querySelector('#au-agree') || {}).checked) return setErr('利用規約とプライバシーポリシーへの同意にチェックを入れてください');
+        const wantSync = !!(ov.querySelector('#au-sync') || {}).checked;
+        st.busy = true; st.err = ''; paint();
+        try {
+          const c = await client(); const {data, error} = await c.auth.signUp({email:st.email, password:pw, options:{emailRedirectTo:appUrl()}});
+          if (error) throw error;
+          if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) { st.busy = false; st.mode = 'login'; st.step = 'pw'; st.info = 'このメールアドレスは登録済みです。パスワードを入れてログインしてください。'; return paint(); }
+          state.settings.cloudSync = wantSync; save();
+          if (data.session) return done('登録しました');
+          st.busy = false; paint();
+          if (await otpPrompt(st.email)) return done('登録しました');
+          st.mode = 'login'; st.step = 'pw'; st.info = `${st.email} に確認のメールを送りました。メールのボタンを押すか、ログインして6桁のコードを入力すると登録が完了します。`; paint();
+        } catch (e) { st.busy = false; paint(); setErr(authErrMsg(e)); }
+      }
+    };
+    ov.addEventListener('click', e => {
+      const ey = e.target.closest('[data-eye]');
+      if (ey) { const i = ov.querySelector('#' + ey.dataset.eye); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; ey.textContent = show ? '隠す' : '表示'; return; }
+      const b = e.target.closest('[data-au]'); if (b) act(b.dataset.au);
+    });
+    ov.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.isComposing) return; const go = ov.querySelector('.au-go'); if (go && e.target.matches('input')) { e.preventDefault(); act(go.dataset.au); } });
+    paint();
+  });
+}
 // ===== メールに届いた6桁のコードで登録を完了する（リンクを押さなくてもアプリの中だけで終わる） =====
 // 登録・ログインの画面の上に重ねて出す。コードが合っていたら true、閉じたら false を返す
 function otpPrompt(email, {resendFirst = false} = {}) {
@@ -3992,19 +4130,10 @@ function swPaint() {
   const dots = `<div class="sw-dots">${swSteps().map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
   let h = '';
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
-  if (step === 'account') { const a = swState.acctMode || 'signup', up = a === 'signup';
-    h = `<p class="sw-q">${up ? 'アカウントを作成' : 'ログイン'}</p><p class="sw-sub">${up ? 'メールアドレスで登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。あとからでも登録できます' : '登録済みのメールアドレスとパスワードを入れてください'}</p>
-    <div class="sw-auth">
-      ${googleBtnHtml()}
-      <div class="seg sw-seg" role="radiogroup"><button type="button" class="seg-opt ${up ? 'on' : ''}" data-swmode="signup">新規登録</button><button type="button" class="seg-opt ${up ? '' : 'on'}" data-swmode="login">ログイン</button></div>
-      <label class="lbl" for="sw-email">メールアドレス</label><input class="input" id="sw-email" type="email" autocomplete="email" inputmode="email" maxlength="254" value="${esc(swState.email || '')}" placeholder="例：name@example.com">
-      <label class="lbl" for="sw-pw">パスワード</label><input class="input" id="sw-pw" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" maxlength="72" placeholder="${up ? '8文字以上・英字と数字' : ''}">
-      ${up ? `<label class="lbl" for="sw-pw2">パスワード（確認）</label><input class="input" id="sw-pw2" type="password" autocomplete="new-password" maxlength="72">
-      <label class="check"><input type="checkbox" id="sw-sync" checked> 記録をクラウドに保存する（写真は送りません）</label>
-      <label class="check"><input type="checkbox" id="sw-agree"> <span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>` : ''}
-      <button type="button" class="btn btn-primary sw-auth-go" data-action="sw-auth" ${swState.busy ? 'disabled' : ''}>${swState.busy ? '送信中…' : up ? '登録する' : 'ログインする'}</button>
-      ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}
-    </div>`; }
+  if (step === 'account') {
+    h = `<p class="sw-q">アカウントを作成</p><p class="sw-sub">登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。あとからでも登録できます</p>
+    <div class="auth-entry sw-entry"><button type="button" class="btn btn-primary" data-swauth="signup">今すぐ登録</button><button type="button" class="btn btn-ghost" data-swauth="login">ログイン</button></div>
+    ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}`; }
   if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
   if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない']]), v.ageBand);
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
@@ -4046,6 +4175,8 @@ function swRead() {
 }
 function swClick(e) {
   if (!swState) return;
+  const sa = e.target.closest('[data-swauth]');
+  if (sa) { openAuth(sa.dataset.swauth).then(ok => { if (!ok || !swState) return; swState.authMsg = ''; swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }); return; }
   const md = e.target.closest('[data-swmode]');
   if (md) { const em = $('#sw-email'); if (em) swState.email = em.value; swState.acctMode = md.dataset.swmode; swState.authMsg = ''; swPaint(); return; }
   const o = e.target.closest('[data-sw]');
@@ -9198,19 +9329,11 @@ function viewPlan(query) {
   }
   if (!acct.user) {
     const signup = acct.mode === 'signup';
-    return html + `<div class="card"><div class="card-h"><h2>${signup ? '新しくアカウントを作る' : 'ログイン'}</h2></div>
-      <div class="tabs"><button class="tab ${!signup ? 'active' : ''}" data-action="acct-mode" data-id="login">ログイン</button><button class="tab ${signup ? 'active' : ''}" data-action="acct-mode" data-id="signup">新規登録</button></div>
-      ${acct.msg ? `<div class="notice green">${esc(acct.msg)}</div>` : ''}
-      ${googleBtnHtml()}
-      <form id="acct-form" novalidate><div class="form-grid">
-        ${field('メールアドレス', '<input type="email" class="input" id="f_email" name="email" autocomplete="email" inputmode="email" maxlength="254">', {name:'email', required:true})}
-        ${field('パスワード', `<input type="password" class="input" id="f_password" name="password" autocomplete="${signup ? 'new-password' : 'current-password'}">`, {name:'password', required:true, hint:signup ? '8文字以上で、英字と数字を組み合わせてください' : ''})}
-        ${signup ? `${field('パスワード（確認）', '<input type="password" class="input" id="f_password2" name="password2" autocomplete="new-password">', {name:'password2', required:true})}
-          <div class="field" data-field="agree"><label class="check agree-line"><input type="checkbox" name="agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label><div class="field-error" data-err="agree"></div></div>` : ''}
-      </div>
-      <button type="submit" class="btn btn-primary" style="margin-top:14px;width:100%;justify-content:center" ${acct.busy ? 'disabled' : ''}>${acct.busy ? (signup ? 'アカウントを作っています…' : 'ログインしています…') : signup ? 'アカウントを作る' : 'ログイン'}</button>
-      ${signup ? '<p class="hint">登録すると、すぐにログインした状態になります。</p>' : '<p style="margin-top:12px"><a href="#" class="small" data-action="acct-forgot">パスワードを忘れた場合</a></p>'}
-      </form></div>` + (EMBED ? notes + cmpFold : '');
+    return html + `<div class="card"><div class="card-h"><h2>アカウント</h2></div>
+      <p class="small">登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。</p>
+      ${acct.msg ? `<div class="notice green" style="margin-top:12px">${esc(acct.msg)}</div>` : ''}
+      <div class="auth-entry"><button type="button" class="btn btn-primary" data-action="auth-open" data-id="signup">今すぐ登録</button><button type="button" class="btn btn-ghost" data-action="auth-open" data-id="login">ログイン</button></div>
+      </div>` + (EMBED ? notes + cmpFold : '');
   }
   // ログイン中
   const s = acct.sub;
@@ -10032,6 +10155,7 @@ const actions = {
   'store-add': i => openStoreAddForm(Number(i)),
   'clear-geo': () => { ui.geo = null; if (ui.storeRes && ui.storeRes.center && ui.storeRes.center.label === '現在地') ui.storeRes = null; render(); },
   'acct-retry': () => { acct.status = 'idle'; initCloud(); },
+  'auth-open': v => { acct.msg = ''; openAuth(v === 'signup' ? 'signup' : 'login').then(ok => { if (ok) render(); }); },
   'acct-mode': v => { acct.mode = v === 'signup' ? 'signup' : 'login'; acct.msg = ''; render(); },
   'acct-forgot': async () => {
     const el = $('#f_email'), email = el ? el.value.trim() : '';
@@ -10824,7 +10948,7 @@ if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root'
 (function(){
   if(!window.Intl||!Intl.Segmenter)return;
   const seg=new Intl.Segmenter('ja',{granularity:'word'});
-  const SEL='p,dd,li,.hint,.notice,label>span,.agree-line>span,.ps-agree>span,.modal-body p';
+  const SEL='p,dd,li,td,.hint,.notice,label>span,.agree-line>span,.ps-agree>span,.modal-body p';
   const JP=/[぀-ヿ㐀-鿿]/, HIRA=/^[぀-ゟー]+$/, CLOSE=/^[、。，．・）」』】〕！？!?,.:：；)\]ー〜…]+$/;
   const done=new WeakMap();
   function phr(t){
@@ -10833,6 +10957,7 @@ if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root'
       const last=out.length-1;
       if(last>=0&&(HIRA.test(g)||CLOSE.test(g))&&!/[、。！？]$/.test(out[last]))out[last]+=g;
       else if(last>=0&&/[（「『【〔(]$/.test(out[last]))out[last]+=g;
+      else if(last>=0&&!JP.test(g)&&!JP.test(out[last].slice(-1)))out[last]+=g; /* 英数字やメールアドレスの途中には区切りを入れない */
       else out.push(g);
     }
     return out.join('​');
