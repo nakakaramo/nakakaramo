@@ -851,7 +851,7 @@ body.m-dragging{touch-action:none}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
 /* ボタンを押すと、少し凹む（小さくなる） */
-button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:active,a.btn:active,.tab:active,.seg-opt:active span,.used-tile:active .thumb,.mrow:active,.pcard:active,.sc-opt:active,.ls-main:active,.acc-row:active,.fchip:active{transform:scale(.96)}
+button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:active,a.btn:active,.tab:active,.seg-opt:active span,.used-tile:active,.mrow:active,.pcard:active,.sc-opt:active,.ls-main:active,.acc-row:active,.fchip:active{transform:scale(.96)}
 .hap-wrap:active > .btn{transform:scale(.96)}
 .sbar-in:active{transform:translateY(-50%) scale(.92)}
 /* 閉じる（×）ボタン：文字ではなく線で描いて、丸の真ん中にぴったり置く */
@@ -1802,6 +1802,28 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .sp-prem{margin-top:28px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
 .sp-prem b{display:block;font-size:14.5px;margin-bottom:4px}.sp-prem .btn{margin-top:10px}
 .st-tile b,.st-tile small{max-width:100%;overflow:hidden}
+
+/* 支出のまとめ（見やすく） */
+.mb-total b{font-size:28px}
+.mb-meter{margin-top:12px}
+.mb-mhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--muted)}
+.mb-mhead b{font-size:14px;color:var(--green-d)}
+.mb-meter.over .mb-mhead b{color:#C0563B}
+.mb-track{margin-top:6px;height:10px;border-radius:999px;background:var(--surface);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.mb-track i{display:block;height:100%;min-width:0;border-radius:999px;background:var(--green);transition:width .4s ease}
+.mb-meter.over .mb-track i{background:#C0563B}
+.mb-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+.mb-meta .up{color:#C0563B}.mb-meta .down{color:var(--green-d)}
+.mb-edit2{display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:6px 0;font:inherit;font-size:13px;font-weight:600;color:var(--green-d);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.mb-edit2 svg{width:14px;height:14px}
+.mb-empty{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.8}
+.t3-empty{margin:0 0 10px;line-height:1.8}
+/* 今日使った化粧品・塗り薬：押すと、写真とチェックマークが一緒にへこむ */
+.used-tile{transition:transform .15s ease}
+.used-tile:active{transform:scale(.95)}
+/* 下のバー：指でなぞっても、バーごと画面が動かないようにする */
+.bottom-nav{touch-action:none;overscroll-behavior:none}
+.food-pick.food-add-row{display:flex;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -3564,7 +3586,7 @@ function viewHome() {
   const L = todayLog;
   const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
-    : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
+    : `<div class="t3-side"><p class="small muted t3-empty">今日の記録がまだありません。<br>1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
@@ -7713,7 +7735,7 @@ function openLifeForm(id, part, forDate) {
     <div class="food-list" data-mfoods="${m.k}"></div>
     <div class="food-quick" data-fquick="${m.k}"></div>
     <div class="food-ac"><input class="input" data-fq="${m.k}" placeholder="食べたものを入力（例：ごはん、サラダ）" autocomplete="off" enterkeyhint="done" aria-label="${m.l}に食べたもの"><div class="food-sug" data-fsug="${m.k}" hidden></div></div>
-    <div class="food-pick"><select class="select vh" data-fsel="${m.k}" aria-hidden="true" tabindex="-1">${foodOptions()}</select><button type="button" class="btn btn-soft btn-sm" data-fadd="${m.k}">追加</button></div>
+    <div class="food-pick food-add-row"><select class="select vh" data-fsel="${m.k}" aria-hidden="true" tabindex="-1">${foodOptions()}</select><button type="button" class="btn btn-soft btn-sm" data-fadd="${m.k}">追加</button></div>
     <div class="spot-row" data-fcustom="${m.k}" hidden>
       <label class="mini" style="grid-column:1/-1">食品名<input class="input" data-cf="name" maxlength="30" placeholder="例：〇〇のサラダチキン"></label>
       <label class="mini">エネルギー（kcal）<input class="input" data-cf="kcal" inputmode="decimal"></label>
@@ -9776,7 +9798,10 @@ function moneyCardHtml() {
   const items = allPurchases().filter(x => monthKey(x.date) === sel);
   const byCat = {}; items.forEach(x => byCat[x.category || 'その他'] = (byCat[x.category || 'その他'] || 0) + x.price);
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  const budgetLine = budget > 0 ? (() => { const g = total - budget; return `<span class="mb-chip ${g <= 0 ? 'good' : 'bad'}">${g <= 0 ? '予算内' : '予算オーバー'} ${signEn(g)}</span><button class="mb-edit" data-action="acc-budget-edit">予算 ${en(budget)}・変更</button>`; })() : `<button class="mb-edit" data-action="acc-budget-edit">${icon('plus')}予算を設定</button>`;
+  // 予算：使った割合をバーで見せ、「残り〇円」「〇円オーバー」をはっきり書く
+  const budgetLine = budget > 0 ? (() => { const g = total - budget, pct = Math.min(100, total / budget * 100);
+    return `<div class="mb-meter ${g > 0 ? 'over' : ''}"><div class="mb-mhead"><span>予算 ${en(budget)}</span><b>${g > 0 ? `${en(g)} オーバー` : `残り ${en(-g)}`}</b></div>
+      <div class="mb-track" role="img" aria-label="予算の${Math.round(total / budget * 100)}%を使用"><i style="width:${pct.toFixed(1)}%"></i></div></div>`; })() : '';
   // 予算は、この場で入力して保存できる（別の画面に移らない）
   const budgetForm = ui.budgetEdit ? `<form id="acc-budget-form" class="mb-bform" novalidate><label class="small" for="acc-budget-in">1か月のスキンケア予算</label>
       <div class="mb-brow"><input class="input" id="acc-budget-in" name="budget" inputmode="numeric" value="${budget || ''}" placeholder="例：10000" aria-describedby="acc-budget-err"><span>円</span>
@@ -9786,10 +9811,11 @@ function moneyCardHtml() {
     <div class="mb-chart">${bl}<div class="mb-cols">${bars}</div></div>
     <div class="mb-sum" id="mb-sum">
       <div class="mb-total"><span>${ml(sel)}の合計</span><b>${en(total)}</b></div>
-      <div class="mb-sub"><span class="mb-chip ${d > 0 ? 'bad' : d < 0 ? 'good' : ''}">先月比 ${signEn(d)}</span>${budgetLine}</div>${budgetForm}
+      ${budgetLine}
+      <div class="mb-meta"><span class="${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d === 0 ? '先月と同じ' : `先月より ${en(Math.abs(d))} ${d > 0 ? '多い' : '少ない'}`}</span><button class="mb-edit2" data-action="acc-budget-edit">${budget > 0 ? '予算を変更' : `${icon('plus')}予算を設定`}</button></div>${budgetForm}
       ${cats.length ? `<div class="mb-cats">${cats.map(([c, v]) => `<div class="mb-cat"><span>${esc(c)}</span><span class="mb-catbar"><i style="width:${(v / total * 100).toFixed(1)}%"></i></span><b>${en(v)}</b></div>`).join('')}</div>` : ''}
       ${items.length ? `<ul class="mb-list">${items.map(x => `<li><span><b>${esc(truncate(x.name, 30))}</b><small>${esc(fmtMD(x.date))}${x.brand ? '・' + esc(x.brand) : ''}</small></span><em>${en(x.price)}</em></li>`).join('')}</ul>`
-        : `<p class="small muted" style="margin:10px 0 0">この月の購入の記録はありません。Myアイテムに購入価格を入れると、ここに表示されます。</p>`}
+        : `<p class="mb-empty">この月の購入記録はありません。<br>Myアイテムに購入価格を入れると、ここに表示されます。</p>`}
     </div>
     <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/spending">${icon('wallet')}支出をくわしく見る・購入を記録</a>`;
 }
@@ -10980,6 +11006,8 @@ function ptrRepaint() {
 // 状態を4つに分けて管理する：idle（ふだん）→ pulling（引っぱり中）→ refreshing（更新中：画面の位置を保つ）→ settling（更新後に元へ戻る）
 // 画面の動きは、CSSのトランジションではなく、毎フレーム自分で位置を計算して動かす（iPhoneでも途中で飛ばないように）
 // 決まった距離まで引っぱった時点で（指を離すのを待たずに）更新を始める。iPhoneの標準アプリと同じ動き
+// 下のバーの上で指を上下に動かすと、iPhoneではバーごと画面が引っぱられることがあるため止める（タップはそのまま効く）
+(function lockBottomNav() { const nav = document.getElementById('bottom-nav'); if (nav) nav.addEventListener('touchmove', e => { if (e.cancelable) e.preventDefault(); }, {passive:false}); })();
 (function pullToRefresh() {
   const page = document.getElementById('page'), ptr = document.getElementById('ptr'); if (!page || !ptr) return;
   const arc = ptr.querySelector('.ptr-arc'), svg = ptr.querySelector('svg');
