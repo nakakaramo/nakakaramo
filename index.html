@@ -1700,6 +1700,28 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 
 /* マウスがある端末だけ、ホバーで色を変える（スマホで「2回押さないと反応しない」ことを防ぐ） */
 @media (hover:hover){:root[data-theme="dark"] .btn-primary:hover{background:#4C8660}:root:not([data-theme="light"]) .btn-primary:hover{background:#4C8660}.sn-item:hover{background:var(--surface2)}.btn-primary:hover{background:#355C42}.btn-ghost:hover{background:var(--surface2)}.back:hover{color:var(--ink)}.shortcut:hover{border-color:var(--green);background:var(--green-p)}.ac-item.on,.ac-item:hover{background:var(--surface2)}.pcard:hover{transform:translateY(-2px);border-color:var(--line2)}.mitem:hover{border-color:var(--line2)}.face [data-area]:hover{fill:#EAF1EA}}
+
+/* スマホで文字が切れたり、変なところで改行されないように */
+body{line-break:strict;word-break:normal;overflow-wrap:break-word}
+.jp-ph{word-break:keep-all!important;overflow-wrap:anywhere}
+.stack-actions{display:flex;flex-direction:column;gap:8px}.stack-actions>.btn{width:100%}
+.page-actions>.btn,.ext-links>.btn{white-space:normal;text-align:center;line-height:1.35;padding-top:8px;padding-bottom:8px}
+.btn{max-width:100%}
+@media (max-width:520px){.kv{grid-template-columns:1fr;gap:2px 0}.kv dt{font-size:12.5px;margin-top:10px}.kv dt:first-child{margin-top:0}}
+
+.otp-ov{position:fixed;inset:0;z-index:2500;background:rgba(20,26,22,.42);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .2s}
+.otp-ov.in{opacity:1}.otp-ov.out{opacity:0}
+.otp-card{width:min(400px,100%);background:var(--surface);border-radius:22px;padding:24px 20px 18px;box-shadow:0 18px 50px rgba(0,0,0,.22);transform:translateY(10px);transition:transform .2s}
+.otp-ov.in .otp-card{transform:none}
+.otp-t{margin:0 0 6px;font-size:18px;font-weight:700;color:var(--ink)}
+.otp-s{margin:0 0 14px;font-size:13.5px;color:var(--ink2);line-height:1.7}.otp-s b{word-break:break-all}
+.otp-in{width:100%;text-align:center;font-size:26px!important;letter-spacing:.35em;font-weight:700;height:58px}
+.otp-err{margin:8px 0 0;font-size:13px;color:var(--warn,#B4532A)}.otp-err.good{color:var(--green-d)}
+.otp-ok{width:100%;margin-top:14px}
+.otp-sub{display:flex;justify-content:space-between;margin-top:12px}
+.otp-link{background:none;border:0;padding:8px 2px;font:inherit;font-size:13.5px;color:var(--green-d);cursor:pointer;text-decoration:underline}.otp-link:disabled{opacity:.45}
+.otp-x{color:var(--muted)}
+.otp-note{margin:6px 0 0;font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -3895,17 +3917,70 @@ async function swAuth() {
       if (error) throw error;
       if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('already registered');
       state.settings.cloudSync = wantSync; save();
-      if (!data.session) { swState.authMsg = `${email} に確認のメールを送りました。メールのリンクを押すと登録が完了します（あとで大丈夫です）。そのまま質問を続けてください。`; acct.mode = 'login'; }
+      if (!data.session) {
+        swState.busy = false; swPaint();
+        if (await otpPrompt(email)) { toast('登録しました'); next = true; }
+        else { swState.authMsg = `${email} に確認のメールを送りました。メールのボタンを押すか、届いた6桁のコードを「ログイン」で入力すると登録が完了します（あとで大丈夫です）。そのまま質問を続けてください。`; acct.mode = 'login'; swState.acctMode = 'login'; }
+      }
       else { toast('登録しました'); next = true; }
     } else {
       const {error} = await acct.client.auth.signInWithPassword({email, password:pw});
-      if (error) throw error;
+      if (error && /Email not confirmed/i.test(error.message || '')) { swState.busy = false; swPaint(); if (!(await otpPrompt(email, {resendFirst:true}))) throw error; }
+      else if (error) throw error;
       toast('ログインしました'); next = true;
     }
   } catch (e) { swState.busy = false; swPaint(); bad(e && e.message === 'offline' ? '通信できませんでした。電波のよい場所で、もう一度お試しください' : authErrMsg(e)); return; }
   swState.busy = false;
   if (next) { swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
   swPaint();
+}
+// ===== メールに届いた6桁のコードで登録を完了する（リンクを押さなくてもアプリの中だけで終わる） =====
+// 登録・ログインの画面の上に重ねて出す。コードが合っていたら true、閉じたら false を返す
+function otpPrompt(email, {resendFirst = false} = {}) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div'); ov.className = 'otp-ov';
+    ov.innerHTML = `<div class="otp-card" role="dialog" aria-modal="true" aria-labelledby="otp-t">
+      <p class="otp-t" id="otp-t">確認コードを入力</p>
+      <p class="otp-s"><b>${esc(email)}</b> に届いたメールの、6桁の数字を入力してください。メールのボタンを押しても登録できます。</p>
+      <input class="input otp-in" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456" aria-label="確認コード">
+      <p class="otp-err" hidden></p>
+      <button type="button" class="btn btn-primary otp-ok">登録を完了する</button>
+      <div class="otp-sub"><button type="button" class="otp-link otp-re">コードをもう一度送る</button><button type="button" class="otp-link otp-x">あとで</button></div>
+      <p class="otp-note">メールが届かないときは、迷惑メールのフォルダも確認してください。</p>
+    </div>`;
+    document.body.appendChild(ov);
+    const $o = q => ov.querySelector(q), inp = $o('.otp-in'), ok = $o('.otp-ok'), er = $o('.otp-err');
+    const msg = (m, good) => { er.hidden = !m; er.textContent = m || ''; er.classList.toggle('good', !!good); };
+    const end = v => { ov.classList.add('out'); setTimeout(() => ov.remove(), 200); resolve(v); };
+    requestAnimationFrame(() => { ov.classList.add('in'); setTimeout(() => inp.focus(), 250); });
+    const resend = async () => {
+      const b = $o('.otp-re'); if (b.disabled) return; b.disabled = true; msg('');
+      try { const {error} = await acct.client.auth.resend({type:'signup', email, options:{emailRedirectTo:appUrl()}}); if (error) throw error; msg('新しいコードを送りました。', true); }
+      catch (e) { msg(authErrMsg(e)); }
+      setTimeout(() => { b.disabled = false; }, 30000);
+    };
+    const verify = async () => {
+      const code = inp.value.replace(/\D/g, '');
+      if (code.length < 6) return msg('メールに書かれた6桁の数字を入力してください');
+      ok.disabled = true; ok.textContent = '確認しています…'; msg('');
+      try {
+        let r = await acct.client.auth.verifyOtp({email, token:code, type:'email'});
+        if (r.error) r = await acct.client.auth.verifyOtp({email, token:code, type:'signup'});
+        if (r.error) throw r.error;
+        for (let i = 0; i < 10 && !acct.user; i++) await new Promise(x => setTimeout(x, 150));
+        end(true);
+      } catch (e) {
+        ok.disabled = false; ok.textContent = '登録を完了する';
+        msg(/expired|invalid|token/i.test(String(e && e.message)) ? 'コードが違うか、有効期限が切れています。もう一度確かめるか、「コードをもう一度送る」を押してください。' : authErrMsg(e));
+      }
+    };
+    inp.addEventListener('input', () => { const d = inp.value.replace(/\D/g, ''); if (d !== inp.value) inp.value = d; if (d.length === 6) verify(); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') verify(); });
+    ok.addEventListener('click', verify);
+    $o('.otp-re').addEventListener('click', resend);
+    $o('.otp-x').addEventListener('click', () => end(false));
+    if (resendFirst) resend();
+  });
 }
 // 研究への協力の質問は、年代で18歳以上を選んだ人にだけ出す
 const swSteps = () => SW_ALL.filter(s => (s !== 'research' || isAdultBand(swState && swState.v.ageBand)) && (s !== 'account' || (swState && swState.acct))); // 新規登録は、まだログインしていない人にだけ
@@ -8169,6 +8244,7 @@ document.addEventListener('click', e => {
   const box = document.getElementById('menu-box'); if (box) patchHtml(box, menuHtml());
 });
 // 中身を作り直すとき、変わっていない部分（写真など）はそのまま残す（写真がチカチカしないように）
+const phNorm = h => h.replace(/\u200B/g, '').replace(/ ?jp-ph/g, '').replace(/ class=""/g, '');
 function patchHtml(box, html) {
   const tpl = document.createElement('template'); tpl.innerHTML = html;
   const nw = [...tpl.content.childNodes], old = [...box.childNodes];
@@ -8176,11 +8252,11 @@ function patchHtml(box, html) {
   nw.forEach((n, i) => {
     const o = old[i];
     if (o.nodeType !== n.nodeType || o.nodeName !== n.nodeName) { box.replaceChild(n, o); return; }
-    if (n.nodeType !== 1) { if (o.textContent !== n.textContent) o.textContent = n.textContent; return; }
-    if (o.outerHTML === n.outerHTML) return;
+    if (n.nodeType !== 1) { if (o.textContent.replace(/\u200B/g,'') !== n.textContent) o.textContent = n.textContent; return; }
+    if (o.outerHTML === n.outerHTML || phNorm(o.outerHTML) === n.outerHTML) return;
     // 同じ箱なら、その中の子どもも同じように比べる（変わったところだけ入れ替える）
     const oc = o.children.length, nc = n.children.length;
-    if (oc && oc === nc && [...o.attributes].map(a => a.name + a.value).join() === [...n.attributes].map(a => a.name + a.value).join()) patchHtml(o, n.innerHTML);
+    if (oc && oc === nc && phNorm([...o.attributes].map(a => a.name + a.value).join()) === [...n.attributes].map(a => a.name + a.value).join()) patchHtml(o, n.innerHTML);
     else box.replaceChild(n, o);
   });
 }
@@ -9033,11 +9109,14 @@ function openPremiumSheet(feature) {
       if (!acct.user) {
         const si = await acct.client.auth.signInWithPassword({email, password:pw});
         if (si.error) {
-          if (!/Invalid login credentials/i.test(si.error.message || '')) throw si.error;
+          if (/Email not confirmed/i.test(si.error.message || '')) { if (!(await otpPrompt(email, {resendFirst:true}))) throw si.error; }
+          else if (!/Invalid login credentials/i.test(si.error.message || '')) throw si.error;
+          else {
           const {data, error} = await acct.client.auth.signUp({email, password:pw, options:{emailRedirectTo:appUrl()}});
           if (error) throw error;
           if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('このメールアドレスは登録済みです。パスワードが違います。');
-          if (!data.session) throw new Error(`${email} に確認のメールを送りました。メールのリンクを押してから、もう一度申し込んでください。`);
+          if (!data.session && !(await otpPrompt(email))) throw new Error(`${email} に確認のメールを送りました。メールのボタンを押すか6桁のコードを入力して登録を完了してから、もう一度申し込んでください。`);
+          }
         }
         for (let i = 0; i < 10 && !acct.user; i++) await new Promise(r => setTimeout(r, 200));
         await refreshSub();
@@ -9061,7 +9140,7 @@ async function callBilling(action) {
 function authErrMsg(e) {
   const m = String((e && e.message) || '');
   if (/Invalid login credentials/i.test(m)) return 'メールアドレスまたはパスワードが違います。';
-  if (/Email not confirmed/i.test(m)) return 'メールアドレスの確認が済んでいません。届いたメールのリンクを押してから、ログインしてください。';
+  if (/Email not confirmed/i.test(m)) return 'メールアドレスの確認が済んでいません。届いたメールのボタンを押すか、6桁のコードを入力してください。';
   if (/already (been )?registered/i.test(m)) return 'このメールアドレスは登録済みです。「ログイン」からお入りください。';
   if (/not authorized|error sending|sending (confirmation|recovery)/i.test(m)) return '確認メールを送れませんでした。準備中のため、しばらくしてからもう一度お試しください（登録せずに「スキップ」で使うこともできます）。';
   if (/rate limit|too many|security purposes/i.test(m)) return '短い時間に操作が集中しました。しばらく待ってから、もう一度お試しください。';
@@ -9174,8 +9253,8 @@ function viewPlan(query) {
         <dt>返金</dt><dd>月の途中で解約しても、日割りでの返金はありません<span class="small muted">（※仮の内容。本番前に確定します）</span></dd>
       </dl>
       <p class="small" style="margin-top:8px"><a href="#/law" target="_blank" rel="noopener">特定商取引法に基づく表記</a></p>
-      <label class="check" style="margin-top:14px"><input type="checkbox" id="acct-agree"> 上記の内容と、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</label>
-      <div class="page-actions" style="margin-top:14px"><button class="btn btn-primary" data-action="acct-checkout" ${acct.busy || !acct.price ? 'disabled' : ''}>同意して、決済画面へ進む</button><button class="btn btn-ghost" data-action="acct-confirm-cancel">やめる</button></div>
+      <label class="check agree-line" style="margin-top:14px"><input type="checkbox" id="acct-agree"><span>上記の内容と、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
+      <div class="stack-actions" style="margin-top:14px"><button class="btn btn-primary" data-action="acct-checkout" ${acct.busy || !acct.price ? 'disabled' : ''}>同意して、決済画面へ進む</button><button class="btn btn-ghost" data-action="acct-confirm-cancel">やめる</button></div>
       <p class="hint">次の画面（Stripe）でカード情報を入力し、ボタンを押すと申し込みが確定します。</p>`}
     </div>`;
   return done(html);
@@ -9205,10 +9284,15 @@ async function handleAuthSubmit(form) {
       const {data, error} = await lim(acct.client.auth.signUp({email, password, options:{emailRedirectTo:appUrl()}}));
       if (error) throw error;
       if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('already registered');
-      if (!data.session) { acct.mode = 'login'; acct.msg = `${email} に確認のメールを送りました。メール内のリンクを押して登録を完了してから、ログインしてください。メールが届かない場合は、迷惑メールのフォルダも確認してください。`; }
+      if (!data.session) {
+        acct.busy = false; render();
+        if (await otpPrompt(email)) toast('登録しました');
+        else { acct.mode = 'login'; acct.msg = `${email} に確認のメールを送りました。メールのボタンを押すか、ログインして6桁のコードを入力すると登録が完了します。メールが届かない場合は、迷惑メールのフォルダも確認してください。`; }
+      }
     } else {
       const {error} = await lim(acct.client.auth.signInWithPassword({email, password}));
-      if (error) throw error;
+      if (error && /Email not confirmed/i.test(error.message || '')) { acct.busy = false; render(); if (!(await otpPrompt(email, {resendFirst:true}))) throw error; }
+      else if (error) throw error;
       toast('ログインしました');
     }
   } catch (e) { toast(authErrMsg(e), 'error'); }
@@ -10733,5 +10817,41 @@ render();
 if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML) openSetupWizard(); }, 400);
 </script>
 <script>['gesturestart','gesturechange','gestureend'].forEach(e=>document.addEventListener(e,ev=>ev.preventDefault(),{passive:false}));document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});</script>
+
+<script>
+/* 日本語の文章を「文節」の区切りでだけ改行させる（「ありま／せん」のような変な改行を防ぐ） */
+(function(){
+  if(!window.Intl||!Intl.Segmenter)return;
+  const seg=new Intl.Segmenter('ja',{granularity:'word'});
+  const SEL='p,dd,li,.hint,.notice,label>span,.agree-line>span,.ps-agree>span,.modal-body p';
+  const JP=/[぀-ヿ㐀-鿿]/, HIRA=/^[぀-ゟー]+$/, CLOSE=/^[、。，．・）」』】〕！？!?,.:：；)\]ー〜…]+$/;
+  const done=new WeakMap();
+  function phr(t){
+    const out=[];
+    for(const {segment:g} of seg.segment(t)){
+      const last=out.length-1;
+      if(last>=0&&(HIRA.test(g)||CLOSE.test(g))&&!/[、。！？]$/.test(out[last]))out[last]+=g;
+      else if(last>=0&&/[（「『【〔(]$/.test(out[last]))out[last]+=g;
+      else out.push(g);
+    }
+    return out.join('​');
+  }
+  function run(root){
+    (root.querySelectorAll?root:document).querySelectorAll(SEL).forEach(el=>{
+      if(el.closest('input,textarea,[contenteditable],.no-ph'))return;
+      let hit=false;
+      const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;const list=[];
+      while(n=w.nextNode()){if(done.get(n)!==n.nodeValue&&JP.test(n.nodeValue)&&n.nodeValue.length>6&&!n.nodeValue.includes('​'))list.push(n)}
+      list.forEach(t=>{const v=phr(t.nodeValue);if(v!==t.nodeValue){t.nodeValue=v;hit=true}done.set(t,t.nodeValue)});
+      if(hit||list.length)el.classList.add('jp-ph');
+    });
+  }
+  let q=0;const mo=new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;mo.disconnect();try{run(document.body)}finally{mo.observe(document.body,{childList:true,subtree:true,characterData:true})}})});
+  const start=()=>{run(document.body);mo.observe(document.body,{childList:true,subtree:true,characterData:true})};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+  /* コピーしたときに見えない区切り文字が混ざらないように */
+  document.addEventListener('copy',e=>{const s=String(getSelection()||'');if(s.includes('​')){e.clipboardData.setData('text/plain',s.replace(/​/g,''));e.preventDefault()}});
+})();
+</script>
 </body>
 </html>
