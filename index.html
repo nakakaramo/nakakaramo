@@ -1709,7 +1709,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .btn{max-width:100%}
 @media (max-width:520px){.kv{grid-template-columns:1fr;gap:2px 0}.kv dt{font-size:12.5px;margin-top:10px}.kv dt:first-child{margin-top:0}}
 
-.otp-ov{position:fixed;inset:0;z-index:2500;background:rgba(20,26,22,.42);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .2s}
+.otp-ov{position:fixed;inset:0;z-index:4200;background:rgba(20,26,22,.42);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .2s}
 .otp-ov.in{opacity:1}.otp-ov.out{opacity:0}
 .otp-card{width:min(400px,100%);background:var(--surface);border-radius:22px;padding:24px 20px 18px;box-shadow:0 18px 50px rgba(0,0,0,.22);transform:translateY(10px);transition:transform .2s}
 .otp-ov.in .otp-card{transform:none}
@@ -1725,7 +1725,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .g-note{margin:6px 0 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
 
 /* ===== ログイン・新規登録の全画面 ===== */
-.au-ov{position:fixed;inset:0;z-index:2400;background:var(--bg);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain}
+.au-ov{position:fixed;inset:0;z-index:4100;background:var(--bg);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain}
 .au-ov.in{transform:none}.au-ov.out{transform:translateX(100%)}
 .au-page{min-height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom))}
 .au-head{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;min-height:56px}
@@ -9259,10 +9259,10 @@ function openPremiumSheet(feature) {
     <p class="ps-kicker">${feature ? esc(feature) + 'は' : ''}${PREMIUM_NAME}プランの機能です</p>
     <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b>　いつでも解約できます</p>
     <ul class="ps-list"><li>顔の写真を撮るだけで、AIが今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養をAIが計算</li><li>記録から、あなた専用のケアと献立をAIが提案</li></ul>
-    <form id="ps-form" novalidate>
-      ${logged ? `<p class="small muted ps-me">${esc(acct.user.email || '')} で申し込みます</p>` : `<p class="small ps-note">メールアドレスとパスワードを決めると、そのまま申し込めます（登録済みの人は、同じメールアドレスとパスワードを入れてください）</p>
-      <input class="input" type="email" name="email" autocomplete="email" inputmode="email" placeholder="メールアドレス" aria-label="メールアドレス">
-      <input class="input" type="password" name="password" autocomplete="new-password" placeholder="パスワード（8文字以上・英字と数字）" aria-label="パスワード">`}
+    ${logged ? '' : `<div class="ps-auth"><p class="small ps-note">申し込むには、先にアカウントを作ってください（無料・登録済みの人はログイン）</p>
+      <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">今すぐ登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
+    <form id="ps-form" novalidate ${logged ? '' : 'hidden'}>
+      ${logged ? `<p class="small muted ps-me">${esc(acct.user.email || '')} で申し込みます</p>` : ''}
       <label class="ps-agree"><input type="checkbox" name="agree"> <span><a href="#/terms" target="_blank">利用規約</a>・<a href="#/privacy" target="_blank">プライバシーポリシー</a>・<a href="#/law" target="_blank">特定商取引法の表記</a>を確認し、毎月自動で更新されること（解約はアカウントからいつでも可能）に同意します</span></label>
       <button type="submit" class="btn btn-primary ps-go">申し込む（カードの入力へ）</button>
       <p class="small muted ps-foot">支払いは、決済サービスStripeの安全な画面で行います。カード番号はナカカラモには保存されません。</p>
@@ -9270,37 +9270,23 @@ function openPremiumSheet(feature) {
   document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
   const close = () => { el.classList.remove('on'); setTimeout(() => el.remove(), 220); };
   el.querySelectorAll('[data-ps="close"]').forEach(b => b.onclick = close);
+  el.querySelectorAll('[data-psauth]').forEach(b => b.onclick = async () => {
+    if (!(await openAuth(b.dataset.psauth))) return;
+    for (let i = 0; i < 10 && !acct.user; i++) await new Promise(r => setTimeout(r, 200));
+    await refreshSub(); render();
+    if (isPremium()) { close(); toast(`${PREMIUM_NAME}プランはご利用中です`); return; }
+    el.remove(); openPremiumSheet(feature); // ログインした状態で、申し込みの画面を出し直す
+  });
   const f = el.querySelector('#ps-form'), btn = el.querySelector('.ps-go');
   f.onsubmit = async e => {
     e.preventDefault(); if (btn.disabled) return;
     if (!f.elements.agree.checked) { toast('内容を確認して、同意のチェックを入れてください', 'error'); return; }
-    let email = '', pw = '';
-    if (!acct.user) {
-      email = String(f.elements.email.value).trim(); pw = f.elements.password.value;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('メールアドレスを正しく入力してください', 'error'); return; }
-      if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) { toast('パスワードは8文字以上で、英字と数字を組み合わせてください', 'error'); return; }
-    }
+    if (!acct.user) { toast('先にログインしてください', 'error'); return; }
     btn.disabled = true; btn.textContent = '準備しています…';
     try {
       if (acct.status !== 'ready') await initCloud();
       for (let i = 0; i < 20 && !acct.client; i++) await new Promise(r => setTimeout(r, 300));
       if (!acct.client) throw new Error('サーバーに接続できませんでした。インターネットの接続を確認してください。');
-      if (!acct.user) {
-        const si = await acct.client.auth.signInWithPassword({email, password:pw});
-        if (si.error) {
-          if (/Email not confirmed/i.test(si.error.message || '')) { if (!(await otpPrompt(email, {resendFirst:true}))) throw si.error; }
-          else if (!/Invalid login credentials/i.test(si.error.message || '')) throw si.error;
-          else {
-          const {data, error} = await acct.client.auth.signUp({email, password:pw, options:{emailRedirectTo:appUrl()}});
-          if (error) throw error;
-          if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('このメールアドレスは登録済みです。パスワードが違います。');
-          if (!data.session && !(await otpPrompt(email))) throw new Error(`${email} に確認のメールを送りました。メールのボタンを押すか6桁のコードを入力して登録を完了してから、もう一度申し込んでください。`);
-          }
-        }
-        for (let i = 0; i < 10 && !acct.user; i++) await new Promise(r => setTimeout(r, 200));
-        await refreshSub();
-        if (isPremium()) { close(); toast(`${PREMIUM_NAME}プランはご利用中です`); render(); return; }
-      }
       btn.textContent = 'お支払いの画面へ移動しています…';
       const d = await callBilling('checkout'); location.href = d.url;
     } catch (err) { toast(err && /^[　-鿿]/.test(err.message || '') ? err.message : authErrMsg(err), 'error'); btn.disabled = false; btn.textContent = '申し込む（カードの入力へ）'; }
