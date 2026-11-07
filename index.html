@@ -1866,6 +1866,18 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 #sw-body .sw-opts.multi .sw-opt.on::before{box-shadow:none;background:var(--green-d) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat}
 #sw-body .sw-opt:active{background:var(--surface2)}
 #sw-body .sw-opts > :last-child .sw-opt,#sw-body .sw-opts > .sw-opt:last-child{border-bottom:0}
+
+.start-simple .st-head{align-items:center;margin-bottom:12px}
+.start-simple .st-go{width:100%;min-height:52px;font-size:16px;font-weight:700}
+.start-simple .st-go svg{width:18px;height:18px}
+.start-simple .hap-keep{display:block;width:100%}
+/* 今日の記録がまだないとき：3Dの顔だけを真ん中に */
+.t3-grid:not(:has(.t3-side)){grid-template-columns:1fr;justify-items:center}
+.t3-grid:not(:has(.t3-side)) .t3-stage{width:min(240px,72%)}
+/* 拡大ボタン：右上の角ぎりぎりに小さく（頭にかからないように） */
+.t3-stage .f3-expand{top:0;right:0;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(255,255,255,.88);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+:root[data-theme="dark"] .t3-stage .f3-expand{background:rgba(40,46,42,.88)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .t3-stage .f3-expand{background:rgba(40,46,42,.88)}}
 </style>
 </head>
 <body>
@@ -2847,13 +2859,13 @@ function normalize(d) {
 function load() {
   let raw = null;
   try { raw = localStorage.getItem(STORE_KEY); }
-  catch (e) { storageOK = false; loadWarning = 'このブラウザではデータを保存できません（プライベートブラウズ等）。再読み込みすると内容が消えます。'; return freshState(); }
+  catch (e) { storageOK = false; loadWarning = 'このブラウザではデータを保存できません（プライベートブラウズ等）。再読み込みすると内容が消えます。'; return normalize(freshState()); }
   if (!raw) return normalize(freshState()); // はじめて開いたときも、すべての項目をそろえる
   try { return normalize(JSON.parse(raw)); }
   catch (e) {
     try { localStorage.setItem(STORE_KEY + '_broken_backup', raw); } catch (_) {}
     loadWarning = '保存データを読み込めなかったため、初期状態で起動しました。元のデータは別名で退避しています。';
-    return freshState();
+    return normalize(freshState());
   }
 }
 function save() {
@@ -3629,7 +3641,7 @@ function viewHome() {
   const L = todayLog;
   const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
-    : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
+    : '';
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
@@ -6827,12 +6839,10 @@ function startItems() {
 }
 function startHtml() {
   if (state.settings.startHidden) return '';
-  const it = startItems(), n = it.filter(x => x.done).length; if (n === it.length) return '';
-  const IC = {survey:'spark'};
-  return `<div class="card start-card"><div class="st-head"><div><h2>はじめにやること</h2></div><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
-    <div class="st-grid">${it.map((x, i) => `<button type="button" class="start-row st-tile ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="st-ic">${icon(x.done ? 'check' : IC[x.k] || 'spark')}</span><span class="st-txt"><b>${esc(x.l)}</b><small>${x.done ? 'できました' : esc(x.s)}</small></span><i class="st-chev" aria-hidden="true">›</i></button>`).join('')}</div>
-    ${state.skinLogs.some(l => l.demo) ? '<p class="small muted start-demo">見本のデータが入っています。<button type="button" class="link small" data-action="demo-remove">見本を消す</button></p>' : !state.skinLogs.some(l => !l.demo) ? '<p class="small muted start-demo">記録がたまるとどう見えるか先に知りたいときは <button type="button" class="link small" data-action="demo-add">見本のデータで試す</button>（あとで消せます）</p>' : ''}
-    </div>`;
+  const it = startItems(); if (it.every(x => x.done)) return '';
+  // はじめにやること：アンケートに答えるだけ（シンプルに）
+  return `<div class="card start-card start-simple"><div class="st-head"><h2>はじめにやること</h2><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
+    <button type="button" class="btn btn-primary st-go" data-action="setup">${icon('spark')}アンケートに答える</button></div>`;
 }
 function openA2hsGuide() {
   const ios = DEV.ios, steps = ios ? [['画面の下の「共有」ボタン（四角から上向きの矢印）を押す', 'Safariで開いているときです。ほかのアプリの中で開いているときは、先にSafariで開きます'], ['「ホーム画面に追加」を押す', '見つからないときは、下に少しスクロールします'], ['右上の「追加」を押す', 'ホーム画面にナカカラモのアイコンができます。次からはそこから開いてください']]
@@ -10579,7 +10589,7 @@ const actions = {
   },
   'delete-all': async () => {
     if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・Myアイテム・支出・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
-    state = freshState();
+    state = normalize(freshState()); // 初めて開いたときと同じく、すべての項目をそろえる（足りないと画面がエラーになる）
     if (save()) { toast('すべてのデータを削除しました'); location.hash = '#/home'; render(); }
   }
 };
