@@ -4803,6 +4803,8 @@ const SUN_INFO = [ // 中身はアプリが書いた文（利用者の入力で�
 const SET_RE = /セット|set\b|福袋|福箱|詰め?合わ?せ|ギフト|キット|コフレ|トライアル|お試し|サンプル|まとめ買い|ライン使い|本体\s*[+＋&＆]|[+＋]\s*(詰め?替|つめかえ|リフィル)|([2-9]|[1-9]\d)\s*(個|本|点|箱|袋|セット)(?!目)|[×xX✕]\s*[2-9]/i;
 const OFFTOPIC_RE = /サプリ|ドリンク|飲む|タブレット|カプセル|シャンプー|コンディショナー|トリートメント|ヘアケア|ヘアオイル|頭皮|洗剤|柔軟剤|入浴剤|ペット|日傘|帽子|サングラス|手袋|アームカバー|パーカー|フィルム|カーテン|ネイル|まつ毛|まつげ/;
 const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0)); };
+// 楽天で探すボタン：美容・コスメのジャンル（日焼け止めは「日焼け止め・UVケア」）の中だけを、レビューの多い順（s=5）で開く。服・傘・サプリなどは出さない
+const rakutenIngUrl = (w, sun) => 'https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(sun ? '日焼け止め' : w) + '/' + (sun ? '216492' : '100939') + '/?s=5&nitem=' + encodeURIComponent(sun ? 'サプリ 飲む ハイドロキノン' : 'サプリ 飲む');
 async function openIngSheet(word) {
   const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), e = ingEntryOf(word);
   const isSun = /日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen');
@@ -4848,7 +4850,7 @@ async function openIngSheet(word) {
   const amzQ = encodeURIComponent(w0);
   b.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
     + `<div class="irk-list"></div><button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1" hidden></button>`
-    + [['rakuten', '楽天市場', '#BF0000', 'https://search.rakuten.co.jp/search/mall/' + amzQ + '/?s=4'], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
+    + [['rakuten', '楽天市場', '#BF0000', rakutenIngUrl(w0, isSun)], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&i=beauty&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
   const listBox = b.querySelector('.irk-list'), moreBtn = b.querySelector('.ing-more');
   if (none) { listBox.innerHTML = '<p class="small muted">アプリの中では人気商品を見つけられませんでした。下のボタンから楽天市場で探せます。</p>'; const kk = b.querySelector('.ing-kinds'); if (kk) kk.remove(); }
   const rowHtml = x => `<button type="button" class="pop-item ir" data-ingpick="${list.indexOf(x)}"><span class="pop-r ir-n"></span>${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`;
