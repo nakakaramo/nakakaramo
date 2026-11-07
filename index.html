@@ -1825,6 +1825,20 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .bottom-nav{touch-action:none;overscroll-behavior:none}
 .food-pick.food-add-row{display:flex;justify-content:flex-end}
 .t3-side-empty{display:flex;align-items:center;justify-content:center}
+/* 今日の記録がまだないとき：顔を見出しのすぐ下に寄せ、記録するボタンを大きくはっきり */
+.t3-grid:has(.t3-side-empty) .t3-stage{margin-top:-18px;margin-bottom:-6px}
+.t3-side-empty>.hap-keep,.t3-side-empty>.hap-wrap{display:block;width:100%}
+.t3-side-empty .btn{width:100%;min-height:52px;font-size:16px;font-weight:700;border-radius:999px;box-shadow:0 6px 16px rgba(59,110,82,.28);padding:0 14px}
+.t3-side-empty .btn svg{width:20px;height:20px}
+
+/* カレンダーの月の切り替え：矢印を円のまん中に、月が変わっても位置がずれないように */
+.ldc-nav{display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
+.sc-h{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;justify-items:center;align-items:center;gap:8px;max-width:300px;margin-left:auto;margin-right:auto}
+.sc-h b{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ldc-h b{font-variant-numeric:tabular-nums}
+.ps-price{display:flex;flex-direction:column;gap:2px}
+.ps-cancel{font-size:13px;color:var(--muted)}
+#prem-sheet #ps-t{margin-right:44px}
 </style>
 </head>
 <body>
@@ -6845,7 +6859,7 @@ function skinCalHtml() {
   }
   const canNext = ym < monthKey(t);
   return `<div class="card skin-cal"><div class="card-h"><h2>肌の調子カレンダー</h2><span class="small muted">${n}日記録</span></div>
-    <div class="sc-h"><button type="button" class="ldc-nav" data-action="cal-m" data-id="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-action="cal-m" data-id="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
+    <div class="sc-h"><button type="button" class="ldc-nav" data-action="cal-m" data-id="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-action="cal-m" data-id="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="sc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="sc-g">${cells}</div>
     <p class="sc-lg">${[5,4,3,2,1].map(v => `<span><i style="background:${COND_COLORS[v]}"></i>${COND_LABELS[v]}</span>`).join('')}<span><i class="dot p"></i>生理</span><span><i class="dot w"></i>乾燥した日</span></p>
     <p class="small muted" style="margin:6px 0 0">数字の右下はニキビの数です。日にちを押すと、その日の記録を開きます。</p>
@@ -7021,7 +7035,7 @@ function ldCalHtml(o = {}) {
   let cells = ''; for (let i = 0; i < lead; i++) cells += '<span></span>';
   for (let d = 1; d <= days; d++) { const k = ymd(d), fut = k > t;
     cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-${A}="${k}" ${fut ? 'disabled' : ''} ${cond[k] ? `aria-label="${m}月${d}日 ${COND_LABELS[cond[k]]}"` : ''}><span class="ldc-n">${d}</span>${cond[k] ? `<span class="ldc-m" style="color:${COND_COLORS[cond[k]]}">${condMarkSvg(cond[k])}</span>` : ''}</button>`; }
-  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-${N}="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-${N}="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
+  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-${N}="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-${N}="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
     <div class="ldc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="ldc-g">${cells}</div><p class="ldc-note">${[5,4,3,2,1].map(v => `<span class="ldc-lg"><b style="display:flex;color:${COND_COLORS[v]}">${condMarkSvg(v)}</b>${COND_LABELS[v]}</span>`).join('')}</p>`;
 }
 function ldCalOpen(on) {
@@ -9379,8 +9393,7 @@ function openPremiumSheet(feature) {
   const el = document.createElement('div'); el.id = 'prem-sheet'; el.className = 'ps-wrap';
   el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
     <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
-    <p class="ps-kicker">${feature ? esc(feature) + 'は' : ''}${PREMIUM_NAME}プランの機能です</p>
-    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b>　いつでも解約できます</p>
+    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b><span class="ps-cancel">いつでも解約できます。</span></p>
     <ul class="ps-list"><li>顔の写真を撮るだけで、AIが今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養をAIが計算</li><li>記録から、あなた専用のケアと献立をAIが提案</li></ul>
     ${logged ? '' : `<div class="ps-auth"><p class="small ps-note">申し込むには、先にアカウントを作ってください（無料・登録済みの人はログイン）</p>
       <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
