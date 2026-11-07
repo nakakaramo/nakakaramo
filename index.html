@@ -6864,7 +6864,10 @@ function reviewLinksHtml() {
     <a href="#/visit">${icon('note')}<span><b>受診用まとめ</b><small>皮膚科で見せる1枚・PDF</small></span><i>›</i></a></div></div>`;
 }
 // ===== 毎晩のお知らせ（カレンダーに毎日の予定を入れて通知する。サーバーなしでiPhoneでも届く） =====
+// リマインダーとウィジェットは、アプリ版（App Store・Google Play）で使う。Web版の今は出さない
+const NATIVE_APP = false;
 function remindCardHtml() {
+  if (!NATIVE_APP) return '';
   if (state.settings.remindDone || state.settings.remindHide || !state.skinLogs.some(l => !l.demo)) return '';
   const hs = Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}時</option>`).join('');
   return `<div class="card remind-card"><div class="rc-h">${icon('bell')}<b>記録を忘れないように、毎晩お知らせ</b><button type="button" class="icon-btn rc-x" data-action="remind-hide" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
@@ -9892,7 +9895,7 @@ const ACC_SECTIONS = {
     body:() => `<div class="mb-card" id="acc-money">${moneyCardHtml()}</div>`},
   plan: {icon:'user', t:'プラン・アカウント', d:() => acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み',
     body:() => embedView(() => viewPlan({}))},
-  settings: {icon:'gear', t:'設定', d:() => '身長・体重、肌質、表示、リマインダー', body:() => settingsEmbedHtml('settings')},
+  settings: {icon:'gear', t:'設定', d:() => '身長・体重、肌質、画面の表示', body:() => settingsEmbedHtml('settings')},
   privacy: {icon:'shield', t:'プライバシー', d:() => 'クラウド保存、研究への協力、データの管理', body:() => settingsEmbedHtml('privacy')}
 };
 function accSectionHtml(k) {
@@ -9932,8 +9935,8 @@ function settingsEmbedHtml(kind) {
   if (cards['クラウドに保存']) P.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) P.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
-  if (cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
-  out.push(widgetPreviewCard());
+  if (NATIVE_APP && cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
+  if (NATIVE_APP) out.push(widgetPreviewCard());
   P.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
   if (cards['プライバシー']) P.push(`<div class="card"><details class="fold set-fold"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details></div>`);
   const install = top.find(c => /アプリとして使う/.test(c.textContent)); if (install) out.push(install.outerHTML);
@@ -10064,11 +10067,12 @@ function viewSettings() {
       <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div>
       <label class="check" style="margin-top:14px"><input type="checkbox" id="f_hideHelp" ${state.settings.hideHelp ? 'checked' : ''}> ボタンや入力欄の説明文を表示しない</label>
       <p class="small muted" style="margin:4px 0 0">慣れてきたら、記録画面などの小さな説明文を隠して、すっきり表示できます。</p></div>
-    <div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
+    ${NATIVE_APP ? '' : '<template data-native-only>'}<div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
       <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
       <label class="lbl" for="f_remind_h">通知する時刻</label>
       <div class="remind-row"><span class="time-pick"><select class="select" id="f_remind_h" aria-label="時">${Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}</option>`).join('')}</select><b>時</b><select class="select" id="f_remind_m" aria-label="分">${[0,5,10,15,20,25,30,35,40,45,50,55].map(m => `<option value="${String(m).padStart(2, '0')}" ${m === 30 ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}</select><b>分</b></span><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
       <p class="hint">${DEV.ios ? 'ボタンを押すとカレンダーのファイルが開くので、「すべてを追加」（または「カレンダーに追加」）を押してください。' : DEV.android ? 'ファイル（.ics）が保存されます。通知から開くと、カレンダーに追加できます。' : DEV.mac ? 'ファイル（.ics）が保存されます。ダウンロードしたファイルをダブルクリックすると、カレンダーに追加できます。' : 'ファイル（.ics）が保存されます。ダウンロードしたファイルを開くと、Outlookなどのカレンダーに追加できます。'}</p></div>
+${NATIVE_APP ? '' : '</template>'}
     <div class="card"><div class="card-h"><h2>月の予算</h2></div>
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px">保存する</button></form></div>
