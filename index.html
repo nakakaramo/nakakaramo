@@ -1777,6 +1777,31 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 :root[data-theme="dark"] .btn-danger{color:#2A120C}
 :root[data-theme="dark"] .prem-sub{color:#3A2A08}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-danger{color:#2A120C}:root:not([data-theme="light"]) .prem-sub{color:#3A2A08}}
+
+/* ===== お問い合わせ（AIサポート） ===== */
+.sp-page{height:100%;min-height:0}
+.sp-ov .au-page{height:100%}
+.sp-log{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 2px 10px;display:flex;flex-direction:column;gap:10px}
+.sp-msg{max-width:86%;display:flex;flex-direction:column;gap:8px}
+.sp-msg p{margin:0;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.7;word-break:break-word}
+.sp-msg.ai{align-self:flex-start}.sp-msg.ai p{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px;color:var(--ink)}
+.sp-msg.me{align-self:flex-end}.sp-msg.me p{background:var(--green-d);color:#fff;border-bottom-right-radius:6px}
+.sp-hand{align-self:flex-start}
+.sp-chips{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px}
+.sp-chips .chip{font-size:13px;padding:6px 12px;cursor:pointer;background:var(--surface)}
+.sp-bar{display:flex;align-items:flex-end;gap:8px;padding-top:8px}
+.sp-in{height:auto;min-height:48px;padding:12px 14px;resize:none;line-height:1.5;font:inherit;font-size:16px}
+.sp-send{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--green-d);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sp-note{margin:8px 0 0;font-size:11.5px;color:var(--muted);text-align:center}
+.sp-note a{color:var(--green-d)}
+.sp-typing{display:flex;gap:5px;align-items:center;min-height:24px}
+.sp-typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:spDot 1s infinite ease-in-out}
+.sp-typing i:nth-child(2){animation-delay:.15s}.sp-typing i:nth-child(3){animation-delay:.3s}
+@keyframes spDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.sp-lead{margin:0 0 4px;font-size:15px;color:var(--ink);line-height:1.7}
+a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px}
+.sp-prem{margin-top:28px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.sp-prem b{display:block;font-size:14.5px;margin-bottom:4px}.sp-prem .btn{margin-top:10px}
 </style>
 </head>
 <body>
@@ -2433,7 +2458,8 @@ const ICONS = {
   check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
   compare:'<path d="M8 3v18M16 3v18"/><path d="M3 8h5M16 16h5"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-  camera:'<path d="M3 8a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/>'
+  camera:'<path d="M3 8a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/>',
+  chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>'
 };
 const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
 
@@ -3999,6 +4025,74 @@ async function swAuth() {
   swState.busy = false;
   if (next) { swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
   swPaint();
+}
+// ===== お問い合わせ：プレミアムの人はAIサポートに質問できる。答えられない内容はメールへ案内する =====
+const SUPPORT_Q = ['解約したい', 'ログインできない', '確認メールが届かない', '機種変更したい', '写真の読み取り回数'];
+let supportLog = []; // 会話はこの画面を開いている間だけ（どこにも保存しない）
+function supportMail(withLog) {
+  const who = acct.user && acct.user.email ? `\n\n---\n登録メールアドレス：${acct.user.email}` : '';
+  const log = withLog && supportLog.length ? '\n\n---\nAIサポートとのやりとり：\n' + supportLog.slice(-8).map(m => `${m.role === 'ai' ? 'AI' : '自分'}：${m.text}`).join('\n') : '';
+  return `mailto:${LEGAL.email}?subject=${encodeURIComponent('【ナカカラモ】お問い合わせ')}&body=${encodeURIComponent('（お問い合わせ内容をお書きください）' + log + who)}`;
+}
+function openSupport() {
+  const ov = document.createElement('div'); ov.className = 'au-ov sp-ov';
+  const premium = isPremium();
+  const close = () => { ov.classList.add('out'); setTimeout(() => { ov.remove(); if (!$('#modal-root .modal-backdrop')) unlockScroll(); }, 260); };
+  const head = `<div class="au-head"><button type="button" class="au-back" data-sp="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button><h2>お問い合わせ</h2><span></span></div>`;
+  if (!premium) {
+    ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
+      <p class="sp-lead">ご質問・ご要望は、メールで受け付けています。</p>
+      <a class="au-go sp-mail" href="${esc(supportMail(false))}">${icon('chat')}メールで問い合わせる</a>
+      <p class="au-fine" style="text-align:left">送り先：${esc(LEGAL.email)}<br>返信まで数日かかることがあります。解約の方法・ログインの方法など、よくある内容はアプリ内の案内もご覧ください。</p>
+      <div class="sp-prem"><b>${PREMIUM_NAME}プランなら、AIサポートにすぐ質問できます</b><p class="small muted">使い方・解約・ログインなどの質問に、AIがその場で答えます。</p><button type="button" class="btn btn-ghost btn-sm" data-sp="prem">${PREMIUM_NAME}プランを見る</button></div>
+    </div></div>`;
+  } else {
+    ov.innerHTML = `<div class="au-page sp-page">${head}
+      <div class="sp-log" id="sp-log" aria-live="polite"></div>
+      <div class="sp-bar"><textarea class="au-in sp-in" id="sp-in" rows="1" maxlength="500" placeholder="質問を入力"></textarea><button type="button" class="sp-send" data-sp="send" aria-label="送る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button></div>
+      <p class="sp-note">AIの答えは間違うことがあります。解決しないときは <a href="${esc(supportMail(true))}" data-sp-mail>メールで問い合わせる</a></p>
+    </div>`;
+  }
+  document.body.appendChild(ov); lockScroll(); requestAnimationFrame(() => ov.classList.add('in'));
+  const logBox = ov.querySelector('#sp-log'), inp = ov.querySelector('#sp-in');
+  let busy = false;
+  const paint = () => {
+    if (!logBox) return;
+    const hi = `<div class="sp-msg ai"><p>こんにちは。ナカカラモのAIサポートです。使い方・解約・ログインなど、わからないことを聞いてください。</p></div>`;
+    logBox.innerHTML = hi + (supportLog.length ? '' : `<div class="sp-chips">${SUPPORT_Q.map(q => `<button type="button" class="chip" data-spq="${esc(q)}">${esc(q)}</button>`).join('')}</div>`)
+      + supportLog.map(m => `<div class="sp-msg ${m.role}"><p>${esc(m.text).replace(/\n/g, '<br>')}</p>${m.handoff ? `<a class="btn btn-primary btn-sm sp-hand" href="${esc(supportMail(true))}">メールで問い合わせる</a>` : ''}</div>`).join('')
+      + (busy ? '<div class="sp-msg ai"><p class="sp-typing"><i></i><i></i><i></i></p></div>' : '');
+    const m = ov.querySelector('[data-sp-mail]'); if (m) m.href = supportMail(true);
+    const toEnd = () => { logBox.scrollTop = logBox.scrollHeight; }; requestAnimationFrame(toEnd); setTimeout(toEnd, 120);
+  };
+  const send = async (text) => {
+    text = String(text || '').trim(); if (!text || busy) return;
+    supportLog.push({role:'me', text:text.slice(0, 500)}); if (inp) { inp.value = ''; inp.style.height = ''; }
+    busy = true; paint();
+    try {
+      if (!acct.client) await initCloud();
+      const call = acct.client.functions.invoke('vision', {body:{mode:'support', data:{messages:supportLog.map(m => ({role:m.role === 'ai' ? 'ai' : 'user', text:m.text}))}}});
+      const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))]);
+      if (error) { let msg = ''; try { const j = await error.context.json(); msg = j && j.error; } catch (e) { /* 何もしない */ } throw new Error(msg || 'サーバーに接続できませんでした'); }
+      if (!data || data.error || !data.result) throw new Error((data && data.error) || '答えを受け取れませんでした');
+      supportLog.push({role:'ai', text:data.result.answer, handoff:!!data.result.handoff});
+    } catch (e) {
+      supportLog.push({role:'ai', text:(e && e.message === 'timeout' ? '時間がかかりすぎました。' : (e && e.message ? e.message + '。' : '')) + '少し時間をおいて、もう一度お試しください。急ぎの場合はメールでお問い合わせください。', handoff:true});
+    }
+    busy = false; paint();
+  };
+  ov.addEventListener('click', e => {
+    const q = e.target.closest('[data-spq]'); if (q) return send(q.dataset.spq);
+    const b = e.target.closest('[data-sp]'); if (!b) return;
+    if (b.dataset.sp === 'close') close();
+    else if (b.dataset.sp === 'send') send(inp && inp.value);
+    else if (b.dataset.sp === 'prem') { close(); setTimeout(() => openPremiumSheet('AIサポート'), 280); }
+  });
+  if (inp) {
+    inp.addEventListener('input', () => { inp.style.height = ''; inp.style.height = Math.min(inp.scrollHeight, 120) + 'px'; });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !DEV.touch) { e.preventDefault(); send(inp.value); } });
+  }
+  paint();
 }
 // ===== ログイン・新規登録の画面（全画面）：メールアドレス → 続行 → パスワード の順に進む =====
 // openAuth('login' | 'signup') … ログインできたら true、閉じたら false を返す
@@ -9695,7 +9789,8 @@ function accSectionHtml(k) {
 function viewAccount() {
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return ['settings', 'plan', 'spend'].map(accSectionHtml).join('');
+  return ['settings', 'plan', 'spend'].map(accSectionHtml).join('') +
+    `<section class="card acc-sec"><button class="acc-row acc-toggle" data-action="support-open">${icon('chat')}<span><b>お問い合わせ</b><small>${isPremium() ? 'AIサポートに質問する' : 'メールで問い合わせる'}</small></span><i>›</i></button></section>`;
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
@@ -10188,6 +10283,7 @@ const actions = {
   'store-add': i => openStoreAddForm(Number(i)),
   'clear-geo': () => { ui.geo = null; if (ui.storeRes && ui.storeRes.center && ui.storeRes.center.label === '現在地') ui.storeRes = null; render(); },
   'acct-retry': () => { acct.status = 'idle'; initCloud(); },
+  'support-open': () => openSupport(),
   'auth-open': v => { acct.msg = ''; openAuth(v === 'signup' ? 'signup' : 'login').then(ok => { if (!ok) return; if (parseRoute().name !== 'home') location.hash = '#/home'; else render(); }); }, // ログインしたらホームへ
   'acct-mode': v => { acct.mode = v === 'signup' ? 'signup' : 'login'; acct.msg = ''; render(); },
   'acct-forgot': async () => {
