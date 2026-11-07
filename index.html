@@ -1817,25 +1817,12 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .mb-edit2{display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:6px 0;font:inherit;font-size:13px;font-weight:600;color:var(--green-d);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .mb-edit2 svg{width:14px;height:14px}
 .mb-empty{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.8}
-.t3-empty{margin:0 0 10px;line-height:1.8}
 /* 今日使った化粧品・塗り薬：押すと、写真とチェックマークが一緒にへこむ */
 .used-tile{transition:transform .15s ease}
 .used-tile:active{transform:scale(.95)}
 /* 下のバー：指でなぞっても、バーごと画面が動かないようにする */
 .bottom-nav{touch-action:none;overscroll-behavior:none}
 .food-pick.food-add-row{display:flex;justify-content:flex-end}
-.t3-side-empty{display:flex;align-items:center;justify-content:center}
-/* 今日の記録がまだないとき：顔を見出しのすぐ下に寄せ、記録するボタンを大きくはっきり */
-.t3-grid:has(.t3-side-empty){grid-template-columns:1fr;gap:4px;justify-items:center}
-.t3-grid:has(.t3-side-empty) .t3-stage{order:1;width:min(230px,70%);margin:-10px auto 0}
-.t3-grid:has(.t3-side-empty) .t3-side-empty{order:2;width:100%}
-.t3-side-empty>.hap-keep,.t3-side-empty>.hap-wrap{display:block;width:100%}
-.t3-side-empty .btn{width:100%;min-height:52px;font-size:16px;font-weight:700;border-radius:999px;box-shadow:0 6px 16px rgba(59,110,82,.28);padding:0 14px}
-.t3-side-empty .btn svg{width:20px;height:20px}
-/* 大きく見るボタン：顔にかからないよう、右下の角に小さく */
-.t3-stage .f3-expand{top:auto;bottom:6px;right:6px;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
-:root[data-theme="dark"] .t3-stage .f3-expand{background:rgba(40,46,42,.85)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .t3-stage .f3-expand{background:rgba(40,46,42,.85)}}
 
 /* カレンダーの月の切り替え：矢印を円のまん中に、月が変わっても位置がずれないように */
 .ldc-nav{display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
@@ -3607,7 +3594,7 @@ function viewHome() {
   const L = todayLog;
   const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
-    : `<div class="t3-side t3-side-empty"><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
+    : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
