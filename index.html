@@ -1868,7 +1868,7 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 #sw-body .sw-opts > :last-child .sw-opt,#sw-body .sw-opts > .sw-opt:last-child{border-bottom:0}
 
 .start-simple .st-head{align-items:center;margin-bottom:12px}
-.start-simple .st-go{width:100%;min-height:44px;height:44px;font-size:14px;font-weight:600;padding:0 6px;background:#B8622F;border-color:#B8622F;color:#fff;box-shadow:none}
+.start-simple .st-go{width:100%;min-height:44px;height:44px;font-size:14px;font-weight:600;padding:0 6px;background:#B8622F;border-color:#B8622F;color:#fff}
 .start-simple .st-go:active{background:#9F5428}
 .start-simple .st-go svg{width:16px;height:16px}
 .start-simple .hap-keep{display:block;width:100%}
@@ -1886,6 +1886,17 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 /* アンケート：質問の下の説明文は出さない */
 #sw-body .sw-card .sw-sub{display:none}
 #sw-body .sw-card .sw-q{margin-bottom:12px}
+/* 立体感：枠（カード）とボタンに影をつける。押したときは影を小さくして「沈む」ように見せる */
+:root{--shadow:0 1px 2px rgba(30,42,35,.07),0 4px 12px rgba(30,42,35,.07),0 14px 32px rgba(30,42,35,.08);--shadow-btn:0 1px 1px rgba(30,42,35,.10),0 3px 8px rgba(30,42,35,.12);--shadow-btn-in:0 1px 2px rgba(30,42,35,.12)}
+:root[data-theme="dark"]{--shadow:0 1px 2px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.3);--shadow-btn:0 1px 1px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.45);--shadow-btn-in:0 1px 2px rgba(0,0,0,.5)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--shadow:0 1px 2px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.3);--shadow-btn:0 1px 1px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.45);--shadow-btn-in:0 1px 2px rgba(0,0,0,.5)}}
+.btn:not(.link):not(:disabled),.care-btn,.sw-opt,.au-go,.st-go,.ing-kind:not(:disabled),.pop-item,.f3-expand{box-shadow:var(--shadow-btn)}
+.btn-primary:not(:disabled),.btn-danger:not(:disabled),.au-go,.st-go{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),var(--shadow-btn)}
+.btn:not(:disabled):active,.care-btn:active,.sw-opt:active,.au-go:active,.st-go:active,.ing-kind:active,.pop-item:active{box-shadow:var(--shadow-btn-in)}
+.btn:disabled{box-shadow:none}
+#sw-body .btn,#sw-body .sw-opt,#sw-body .care-btn,#sw-foot .btn,#sw-foot .btn:active,#sw-body .sw-opt:active{box-shadow:none} /* アンケートの中は影をつけない */
+.log-item,.mitem,.pcard{box-shadow:var(--shadow)}
+
 </style>
 </head>
 <body>
