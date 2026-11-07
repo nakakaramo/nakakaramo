@@ -3813,11 +3813,16 @@ function rxPick(name) {
     timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
   if (save()) { closeModal(); hapticSaved(); toast(`「${d[1]}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); }
 }
+// ランキングに入れないもの：セット・まとめ売り（単体の商品だけで比べる）、スキンケアと関係ない商品
+// 「2本〜購入で特典」「おひとり様3点まで」「1ml×28包」「ギフト付き」は単品なので外さない
+const SET_RE = /セット|set\b|福袋|福箱|詰め?合わ?せ|キット|コフレ|ホリデーコレクション|ベスト\s*コレクション|トライアル|お試し|サンプル|ライン使い|本体\s*[+＋&＆]|[+＋]\s*(詰め?替|つめかえ|リフィル|レフィル)|([2-9]|[1-9]\d)\s*(個|本|点|箱|袋)(?![～〜~目分]|まで|以上|から|購入|ご購入|で)|[×xX✕]\s*[2-9](?![\d包枚回日]|\s*(ml|g)\b)/i;
+const OFFTOPIC_RE = /サプリ|ドリンク|飲む|タブレット|カプセル|シャンプー|コンディショナー|ヘアトリートメント|ヘアケア|ヘアオイル|ヘアミルク|頭皮|洗剤|柔軟剤|入浴剤|ペット|日傘|帽子|サングラス|手袋|アームカバー|パーカー|フィルム|カーテン|ネイル/;
+const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0 || '')); };
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
 let POPULAR = null, popN = 20;
 async function popularLoad() {
   if (POPULAR) return POPULAR;
-  try { const r = await fetch('popular.json?d=' + todayStr(), {cache:'no-cache'}); if (!r.ok) throw new Error('x'); const j = await r.json(); POPULAR = {updatedAt:j.updatedAt || '', items:j.genre === '216131' ? [] : (j.items || []).filter(x => x && x.name && x.url).sort((a, b) => (a.rank || 9999) - (b.rank || 9999))}; } // 216131 は化粧品ではないジャンル（最初の版のまちがい）なので使わない
+  try { const r = await fetch('popular.json?d=' + todayStr(), {cache:'no-cache'}); if (!r.ok) throw new Error('x'); const j = await r.json(); POPULAR = {updatedAt:j.updatedAt || '', items:j.genre === '216131' ? [] : (j.items || []).filter(x => x && x.name && x.url && shopSingle(x)).sort((a, b) => (a.rank || 9999) - (b.rank || 9999))}; } // セット・福袋などは外して、単品だけで並べる // 216131 は化粧品ではないジャンル（最初の版のまちがい）なので使わない
   catch (e) { POPULAR = {updatedAt:'', items:[]}; }
   return POPULAR;
 }
@@ -4660,8 +4665,8 @@ function recoHtml() {
   return head + body + foot + '<p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>';
 }
 // ネットの商品を押したら、外のサイトに飛ばずに、アプリの中の商品詳細（特徴・使用方法・全成分・注意事項）を開く
-// Amazon（APIが使えるまでは、Amazonの検索結果を開く。人気順＝レビューの多い順）
-const amazonUrl = (q, popular) => 'https://www.amazon.co.jp/s?k=' + encodeURIComponent(String(q || '').slice(0, 80)) + (popular ? '&s=review-rank' : '');
+// Amazon（APIが使えるまでは、Amazonの検索結果を開く。人気順＝Amazonの人気度順）
+const amazonUrl = (q, popular) => 'https://www.amazon.co.jp/s?k=' + encodeURIComponent(String(q || '').slice(0, 80)) + (popular ? '&i=beauty&s=exact-aware-popularity-rank' : ''); // 人気順＝Amazonの「人気度順」（review-rank は星の平均の順で、人気順ではない）
 function prodOpenFrom(x, others) {
   const p = netToCat(x, others); if (!p) return;
   hapticTick(); ui.prodBack = {id:p.id, hash:location.hash || '#/home', label:parseRoute().name === 'home' ? 'ホーム' : '商品検索'};
@@ -4799,10 +4804,6 @@ const SUN_INFO = [ // 中身はアプリが書いた文（利用者の入力で�
   ['選び方', '<span class="nw">毎日の通勤・買い物なら</span><span class="nw">SPF20〜30・PA++〜+++、</span><span class="nw">外で長く過ごす日や海・山では</span><span class="nw">SPF50・PA++++が</span>目安です。'],
   ['種類の違い', '<span class="sun-k">' + [['ジェル', '軽くのびがよい'], ['クリーム', 'しっとりして保湿しやすい'], ['ミルク', '汗や水に強いものが多い'], ['スプレー', '髪や背中にも塗り直しやすい'], ['スティック', '手を汚さず塗り直せる'], ['パウダー', 'メイクの上から塗り直せる']].map(([a, b]) => `<i>${a}</i><span>${b}</span>`).join('') + '</span>'],
   ['気をつけること', '少なめに塗ると効果が下がるので、決められた量をムラなく塗り、汗をかいたら2〜3時間ごとに塗り直しましょう。肌に合わないときは「紫外線吸収剤フリー（ノンケミカル）」を選ぶ方法もあります。', 'warn']];
-// ランキングに入れないもの：セット・まとめ売り（単体の商品だけで比べる）、スキンケアと関係ない商品
-const SET_RE = /セット|set\b|福袋|福箱|詰め?合わ?せ|ギフト|キット|コフレ|トライアル|お試し|サンプル|まとめ買い|ライン使い|本体\s*[+＋&＆]|[+＋]\s*(詰め?替|つめかえ|リフィル)|([2-9]|[1-9]\d)\s*(個|本|点|箱|袋|セット)(?!目)|[×xX✕]\s*[2-9]/i;
-const OFFTOPIC_RE = /サプリ|ドリンク|飲む|タブレット|カプセル|シャンプー|コンディショナー|トリートメント|ヘアケア|ヘアオイル|頭皮|洗剤|柔軟剤|入浴剤|ペット|日傘|帽子|サングラス|手袋|アームカバー|パーカー|フィルム|カーテン|ネイル|まつ毛|まつげ/;
-const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0)); };
 // 楽天で探すボタン：美容・コスメのジャンル（日焼け止めは「日焼け止め・UVケア」）の中だけを、レビューの多い順（s=5）で開く。服・傘・サプリなどは出さない
 const rakutenIngUrl = (w, sun) => 'https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(sun ? '日焼け止め' : w) + '/' + (sun ? '216492' : '100939') + '/?s=5&nitem=' + encodeURIComponent(sun ? 'サプリ 飲む ハイドロキノン' : 'サプリ 飲む');
 async function openIngSheet(word) {
