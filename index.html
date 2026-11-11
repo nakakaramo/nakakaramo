@@ -2076,6 +2076,29 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .map-row b{font-size:13.5px;display:block}
 .map-row small{color:var(--muted);font-size:11.5px}
 .map-row .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.cl-b{display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.cl-ok{background:#E3F2E6;color:#2F6B45}.cl-care{background:#FFF3C4;color:#7A5A00}.cl-avoid{background:#FCE3DE;color:#B3361E}
+:root[data-theme="dark"] .cl-ok{background:#22382A;color:#9FD4B0}:root[data-theme="dark"] .cl-care{background:#3A3216;color:#F2D06B}:root[data-theme="dark"] .cl-avoid{background:#3A1F1A;color:#F29C8A}
+.cc-card{border:1px solid var(--line);border-left:5px solid #7FB08E;border-radius:14px;padding:12px 14px;margin-top:10px;background:var(--surface)}
+.cc-card.lv2{border-left-color:#E9B949}.cc-card.lv3{border-left-color:#D9533A}.cc-card.imp{background:var(--danger-s)}
+.cc-top{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.cc-ab{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:8px 0 2px;font-weight:700;font-size:14.5px;line-height:1.4}
+.cc-ab i{font-style:normal;color:var(--muted)}
+.cc-sub{margin:2px 0 4px}
+.cc-rule{font-size:12px;color:var(--muted);margin:0 0 4px}
+.cc-ev{margin-top:6px}
+.cc-ev summary{font-size:12px;color:var(--ink2);cursor:pointer;font-weight:600;padding:4px 0}
+.cc-li{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:9px 0;font:inherit;color:var(--ink);cursor:pointer}
+.cc-li:first-of-type{border-top:0}
+.cc-li b{font-size:13.5px}
+.cc-li small{flex-basis:100%;color:var(--muted);font-size:11.5px}
+.cc-lvf{margin:10px -16px 4px}
+#cc-q{margin-top:2px}
+.ca-sum{margin-bottom:6px}
+.ca-h{font-size:14px;margin:14px 0 2px}
+.ca-ok{background:var(--green-p);color:var(--green-d);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:10px}
+.cc-why{font-size:13px;line-height:1.7;margin:4px 0 0;color:var(--ink2)}
+.cc-more summary{font-size:12.5px;color:var(--green-d);font-weight:600;cursor:pointer;padding:6px 0 0}
 </style>
 </head>
 <body>
@@ -4006,7 +4029,7 @@ function rxPick(name) {
   if (state.myProducts.some(x => x.catalogId === id && x.status === '使用中')) { closeModal(); toast('この薬はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:id, name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', purposes:rxPurposes(d[1], d[2]), ingredients:d[2],
     timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
-  if (save()) { closeModal(); hapticSaved(); toast(`「${d[1]}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); }
+  if (save()) { closeModal(); hapticSaved(); toast(`「${d[1]}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); const nid = state.myProducts[state.myProducts.length - 1].id; setTimeout(() => comboAfterAdd(nid), 450); }
 }
 // ランキングに入れないもの：セット・まとめ売り（単体の商品だけで比べる）、スキンケアと関係ない商品
 // 「2本〜購入で特典」「おひとり様3点まで」「1ml×28包」「ギフト付き」は単品なので外さない
@@ -6572,7 +6595,7 @@ function quickAddMy(catId) {
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:c.id, name:c.name, brand:c.brand || g.brand || brandOrCompany(c.name, (String(c.source || '').match(/（(.+)）$/) || [])[1]) || '—',
     category:c.category && CATEGORIES.includes(c.category) ? c.category : (g.category || 'その他'), purposes:(c.purposes && c.purposes.length ? c.purposes : g.purposes || []).filter(v => PURPOSES.includes(v)), ingredients:'',
     timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
-  if (save()) { hapticSaved(); toast(`「${truncate(c.name, 20)}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); }
+  if (save()) { hapticSaved(); toast(`「${truncate(c.name, 20)}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); const nid = state.myProducts[state.myProducts.length - 1].id; setTimeout(() => comboAfterAdd(nid), 450); }
 }
 function openMyForm(id, fromCatId) {
   if (!id && fromCatId && getCat(fromCatId)) return quickAddMy(fromCatId);
@@ -6668,7 +6691,7 @@ function openMyForm(id, fromCatId) {
       if (price > 0) target.purchases.push({id:uid(), date:v('purchaseDate'), price, memo:''});
       state.myProducts.push(target);
     }
-    if (save()) { closeModal(); toast(ex ? '保存しました' : 'Myアイテムに登録しました'); location.hash = '#/my/' + encodeURIComponent(target.id); render(); }
+    if (save()) { closeModal(); toast(ex ? '保存しました' : 'Myアイテムに登録しました'); location.hash = '#/my/' + encodeURIComponent(target.id); render(); if (!ex) setTimeout(() => comboAfterAdd(target.id), 450); }
   };
 }
 function openPurchaseForm(pid) {
@@ -7337,29 +7360,7 @@ const ingM = k => ING_MASTER.find(x => x.k === k);
 // 成分の種類（併用チェックで使う）の名前
 const GRP_NAMES = {retinoid:'レチノール類', adapalene:'アダパレン（処方薬）', bpo:'過酸化ベンゾイル（処方薬）', aha:'AHA（グリコール酸など）', bha:'BHA（サリチル酸）', pha:'PHA', azelaic:'アゼライン酸', vitc:'ビタミンC（アスコルビン酸）', vitcd:'ビタミンC誘導体', hq:'ハイドロキノン', niacinamide:'ナイアシンアミド', enzyme:'酵素', clay:'クレイ', urea:'尿素', steroid:'ステロイドの塗り薬', rxother:'そのほかの塗り薬'};
 // 併用の注意（4つの分類）。一律に「禁止」にはしない
-const COMBO_LEVELS = {
-  ok:{l:'通常の使用方法で併用できる', c:'ok', o:0},
-  care:{l:'使用方法に注意', c:'care', o:1},
-  irritate:{l:'刺激が強くなる可能性', c:'irr', o:2},
-  doctor:{l:'医師・薬剤師への確認を推奨', c:'doc', o:3}
-};
 const EXFO = ['aha', 'bha', 'pha'];
-const COMBO2 = [
-  {a:['retinoid'], b:EXFO, lv:'irritate', t:'レチノール類 × 角質ケア成分（AHA・BHA・PHA）', note:'どちらも角質に働くため、同じタイミングで重ねると乾燥・赤み・皮むけが出やすくなります。', how:'使う日を分ける（例：レチノールの日と角質ケアの日を交互にする）か、どちらか一方を休みます。1つの製品に両方入っているものは、その製品の使い方どおりに。'},
-  {a:['retinoid'], b:['bpo'], lv:'irritate', t:'レチノール類 × 過酸化ベンゾイル', note:'どちらも乾燥・刺激が出やすい成分です。過酸化ベンゾイルは処方薬なので、医師の指示が優先です。', how:'同じタイミングでは重ねず、医師・薬剤師に使い方を確認してください。'},
-  {a:['bha'], b:['aha'], lv:'irritate', t:'サリチル酸 × グリコール酸など（AHA）', note:'角質ケアが重なり、刺激・乾燥が出やすくなります。', how:'別々の製品なら同じ日に重ねず、日を分けます。1つの製品に両方入っているものは、その製品の使い方どおりに。'},
-  {a:['adapalene'], b:EXFO.concat(['retinoid', 'enzyme', 'clay', 'urea']), lv:'doctor', t:'アダパレン（処方薬）× ほかの角質ケア', note:'アダパレン自体が角質に働く薬なので、角質ケア成分やレチノール類を重ねると、刺激が強く出ることがあります。', how:'処方した医師・薬剤師に、続けてよいか確認してください。確認するまでは、角質ケアの化粧品を休むと安心です。'},
-  {a:['adapalene'], b:['bpo'], lv:'doctor', t:'アダパレン × 過酸化ベンゾイル', note:'この2つを合わせた処方薬（エピデュオゲル）もあり、医師の指示があれば一緒に使われます。', how:'医師に指示された使い方（順番・量・回数）を守ってください。自分の判断で重ねないでください。'},
-  {a:['bpo'], b:EXFO, lv:'irritate', t:'過酸化ベンゾイル × 角質ケア成分', note:'乾燥・刺激が出やすくなります。', how:'同じタイミングでは重ねず、医師・薬剤師に確認してください。'},
-  {a:['hq'], b:['bpo'], lv:'care', t:'ハイドロキノン × 過酸化ベンゾイル', note:'同時に使うと、一時的に肌が着色する（色がつく）ことがあります。', how:'同じタイミングでは使わず、医師・薬剤師に確認してください。'},
-  {a:['hq'], b:['retinoid'].concat(EXFO), lv:'irritate', t:'ハイドロキノン × レチノール類・角質ケア成分', note:'刺激が強く出ることがあります（医療機関では、組み合わせて処方されることもあります）。', how:'化粧品どうしは同じタイミングで重ねないようにし、処方されたものは医師の指示どおりに。'},
-  {a:['vitc'], b:EXFO, lv:'care', t:'ビタミンC（アスコルビン酸）× 角質ケア成分', note:'酸性の処方どうしを重ねると、ピリピリ感が出ることがあります。', how:'朝はビタミンC、夜は角質ケア、のように時間帯を分けます。'},
-  {a:['vitc'], b:['retinoid'], lv:'care', t:'ビタミンC（アスコルビン酸）× レチノール類', note:'濃いもの同士を重ねると、刺激を感じることがあります。', how:'朝にビタミンC、夜にレチノール類と分ける方法がよく案内されています。'},
-  {a:['enzyme', 'clay'], b:EXFO.concat(['retinoid']), lv:'care', t:'酵素洗顔・クレイパック × 角質ケア・レチノール類', note:'同じ日に重ねると、乾燥・刺激が出やすくなります。', how:'酵素洗顔・パックは、角質ケアやレチノールを使わない日にします。'},
-  {a:['steroid', 'rxother'], b:['retinoid', 'hq', 'vitc', 'azelaic', 'urea', 'enzyme'].concat(EXFO), lv:'doctor', t:'皮膚科の塗り薬 × 刺激の強い化粧品', note:'塗り薬を使っている場所は、肌が敏感になっていることがあります。', how:'塗り薬を使っている間に、刺激の強い化粧品を使ってよいかは、医師・薬剤師に確認してください。'},
-  {a:['vitc', 'vitcd'], b:['niacinamide'], lv:'ok', t:'ビタミンC × ナイアシンアミド', note:'昔は「一緒に使うと良くない」と言われることがありましたが、ふつうの化粧品の使い方で問題になるという根拠は乏しいとされます。', how:'そのまま一緒に使えます。'},
-  {a:['niacinamide'], b:['retinoid', 'azelaic'].concat(EXFO), lv:'ok', t:'ナイアシンアミド × レチノール類・角質ケア成分', note:'ナイアシンアミドは刺激が少なく、多くの成分と一緒に使われています。', how:'そのまま一緒に使えます（相手の成分の注意は守ってください）。'}
-];
 // ステロイドの塗り薬などは、成分名からではなく「皮膚科の塗り薬」の種類から判断する
 const rxKindOf = name => { const d = (typeof RX_DRUGS !== 'undefined' ? RX_DRUGS : []).find(x => x[1] === name); return d ? d[0] : ''; };
 
@@ -7455,6 +7456,7 @@ function prodInfo(p) {
   let step = ({'クレンジング':'cleanse', '洗顔':'wash', '化粧水・トナー':'toner', '美容液・アンプル':'serum', '乳液':'emulsion', 'クリーム':'cream', '日焼け止め':'sunscreen', 'シートマスク・パック':'mask', 'スポットケア':'spot', '皮膚科の塗り薬':'rx'})[p.category] || 'other';
   if (step === 'other' && /オールインワン|all ?in ?one/i.test(name)) step = 'allinone';
   if (step === 'rx' && /保湿/.test(rk)) step = 'rxmoist';
+  if (step === 'rx' && isOralKind(rk)) step = 'oral'; // 飲み薬・サプリは、塗る工程には入れない
   const ctype = step !== 'cleanse' ? '' : /バーム|balm/i.test(name) ? 'balm' : /オイル|oil/i.test(name) ? 'oil' : /ミルク|milk/i.test(name) ? 'milk' : /クリーム|cream/i.test(name) ? 'cream' : /ウォーター|ミセラー|water|micellar|水/i.test(name) ? 'water' : /ジェル|gel/i.test(name) ? 'gel' : 'unknown';
   const strong = ings.filter(e => e.act >= 2), nightOnly = ings.some(e => e.time === '夜' && e.act >= 1);
   return {p, cat, name, ings, groups, src, step, ctype, strong, nightOnly, rk,
@@ -7545,7 +7547,7 @@ function ingSuggest(d, ownedInfos) {
   const avoidGrp = new Set(); if (tr.has('retinoid')) avoidGrp.add('retinoid'); if (tr.has('acid')) ['aha', 'bha', 'pha'].forEach(g => avoidGrp.add(g)); if (tr.has('vitc')) avoidGrp.add('vitc');
   const calm = d.sensitive || pri.slice(0, 2).some(k => k === 'redness' || k === 'sensitive');
   const owned = new Map(); (ownedInfos || []).forEach(x => x.ings.forEach(e => { if (!owned.has(e.k)) owned.set(e.k, []); owned.get(e.k).push(x.p); }));
-  const scored = ING_MASTER.filter(e => !e.rx).map(e => {
+  const scored = ING_MASTER.filter(e => !e.rx && !e.oral && !e.care).map(e => {
     let s = 0; const hit = [];
     pri.forEach((k, i) => { if (e.cs.includes(k)) { s += [3, 2.2, 1.6, 1.2, 1, 0.8][i] || 0.6; hit.push(k); } });
     s *= EVW[e.ev] || 0.3;
@@ -7592,7 +7594,7 @@ function prodAnalysis() {
   const pri = (diagNow() || {}).priority || concernKeysNow();
   const byStep = {}; infos.forEach(x => (byStep[x.step] = byStep[x.step] || []).push(x));
   const ingUse = {}; infos.forEach(x => x.ings.forEach(e => (ingUse[e.k] = ingUse[e.k] || {e, ps:[]}).ps.push(x.p)));
-  const dupIngs = Object.values(ingUse).filter(x => x.ps.length >= 2 && x.e.act >= 1); // 強めの成分が複数の商品に
+  const dupIngs = Object.values(ingUse).filter(x => x.ps.length >= 2 && (x.e.act >= 1 || x.e.rx || /有効成分/.test(x.e.reg))); // 有効成分・強めの成分が複数の商品に
   const dupSteps = Object.entries(byStep).filter(([k, v]) => v.length >= 2 && ['toner', 'serum', 'emulsion', 'cream', 'wash', 'cleanse', 'sunscreen'].includes(k));
   const fit = infos.map(x => ({x, hit:pri.filter(k => x.ings.some(e => e.cs.includes(k)))}));
   const strongBy = {am:[], pm:[]}; infos.forEach(x => { if (!x.strong.length) return; if (/朝/.test(x.p.timing)) strongBy.am.push(x); if (/夜/.test(x.p.timing)) strongBy.pm.push(x); });
@@ -7607,73 +7609,238 @@ function prodAnalysis() {
   const unknown = infos.filter(x => x.src === 'none' && !x.rx);
   return {infos, byStep, dupIngs, dupSteps, fit, strongBy, pairs, missing, unknown, ingUse};
 }
-// 併用の注意（商品どうし）。同じ時間帯に使うものを先に
-function comboPairs(infos) {
-  const out = [], item = x => ({v:x.p.id, label:truncate(x.p.name, 18), grps:x.groups, act:Math.max(0, ...x.ings.map(e => e.act), x.rx && x.step !== 'rxmoist' ? 2 : 0), rx:x.rx && x.step !== 'rxmoist'});
-  infos.forEach((x, i) => infos.slice(i + 1).forEach(y => {
-    const A = item(x), B = item(y); if (!A.act && !B.act && !A.rx && !B.rx) return;
-    const r = comboEval(A, B); if (!r || r.lv === 'ok') return;
-    out.push({r:Object.assign({}, r, {t:r.rule || (A.rx || B.rx ? '皮膚科の塗り薬 × 化粧品' : '刺激が出やすい成分どうし')}), x, y, shared:sharedTiming(x.p, y.p)});
-  }));
-  return out.sort((a, b) => (b.shared.length ? 1 : 0) - (a.shared.length ? 1 : 0) || COMBO_LEVELS[b.r.lv].o - COMBO_LEVELS[a.r.lv].o);
-}
-// 成分どうしの併用チェック（手で2つ選んだとき）
-// ---------- 併用チェック：すべての成分・処方薬の組み合わせを判定する ----------
-// 選んだもの（成分マスターのキー、または「rx:処方薬の名前」）を、判定に使う形にする
+// ===== 併用チェック（3段階）：成分・処方薬・飲み薬・ケアの組み合わせ =====
+const COMBO_CHECKED = '2026-11-12'; // 併用の注意を最後に確認した日
+// 3段階：1＝基本的に併用可能（緑）、2＝併用注意（黄色）、3＝併用を避ける・医師に確認（赤）
+// 「刺激が強くなる可能性」は2。3は、添付文書で併用を避けるよう書かれているもの・重い副作用のおそれがあるもの・処方薬の重複など
+const COMBO_LEVELS = {
+  ok:{l:'基本的に併用可能', c:'ok', o:0, n:1},
+  care:{l:'併用注意', c:'care', o:1, n:2},
+  avoid:{l:'併用を避ける・医師に確認', c:'avoid', o:2, n:3}
+};
+const LV = {1:'ok', 2:'care', 3:'avoid'};
+const COMBO_EV = {A:'添付文書・診療ガイドライン', B:'臨床研究・公的機関の情報', C:'作用の重なりからの専門家の推奨', '情報不足':'根拠となる情報が不足'};
+Object.assign(CARE_REFS, {
+  aad:{t:'米国皮膚科学会（AAD）一般向け情報（ニキビ・レチノイド・スキンケア）', u:'https://www.aad.org/public'},
+  fda:{t:'FDA承認の医薬品添付文書（DailyMed：イソトレチノイン・トレチノイン・ダプソンゲル など）', u:'https://dailymed.nlm.nih.gov/dailymed/'},
+  maker:{t:'メーカー公式の製品情報・使用上の注意', u:''}
+});
+// ---- 成分マスターの追加（指定された成分。商品の成分表示と照らし合わせるための別名つき）----
+(function addMaster() {
+  const r = ingM('retinol'); if (r) r.inci = ['レチノール', 'Retinol', '酢酸レチノール', 'Retinyl Acetate', 'ヒドロキシピナコロンレチノアート', 'レチノイン酸トコフェリル'];
+  const add = e => { if (!ingM(e.k)) ING_MASTER.push(Object.assign({cs:[], mech:'', eff:'', ev:'C', conc:'', irr:'低', side:'', combo:'', time:'朝・夜', timeT:'製品の説明どおりに使ってください。', reg:'化粧品', refs:['review'], act:0}, e)); };
+  const RET = {cs:['aging', 'acne', 'pore'], irr:'高', time:'夜', timeT:'光で分解されやすく、夜の使用が一般的です。使う期間は日中の紫外線対策を。', act:2};
+  add(Object.assign({k:'retinal', ja:'レチナール', en:'Retinal (Retinaldehyde)', inci:['レチナール', 'Retinal', 'レチンアルデヒド'], grp:'retinoid', mech:'肌の中でレチノイン酸に変わる手前の形のビタミンAです。レチノールより変換の段階が少ないとされます。', eff:'小じわ・ハリ不足・ざらつきの改善', ev:'C', side:'乾燥・赤み・皮むけが出ることがあります。妊娠中・授乳中は使う前に医師に相談してください。', combo:'AHA・BHA・処方のレチノイドと重ねない。', reg:'化粧品'}, RET));
+  add(Object.assign({k:'retinylpalm', ja:'レチニルパルミテート（パルミチン酸レチノール）', en:'Retinyl palmitate', inci:['パルミチン酸レチノール', 'Retinyl Palmitate', 'レチニルパルミテート'], grp:'retinoid', mech:'ビタミンAのエステル（誘導体）で、肌の中で少しずつレチノールに変わります。', eff:'肌のキメを整える', ev:'C', irr:'中', side:'レチノールより刺激は少ないとされますが、乾燥・赤みが出ることがあります。', combo:'AHA・BHA・処方のレチノイドと重ねない。', reg:'化粧品', act:1}, {cs:['aging', 'rough'], time:'夜', timeT:'夜の使用が一般的です。'}));
+  const RX = {reg:'医薬品（処方薬）', rx:true, act:2, irr:'高', refs:['fda', 'aad', 'review']};
+  add(Object.assign({k:'tretinoin', ja:'トレチノイン', en:'Tretinoin', inci:['トレチノイン', 'Tretinoin', 'レチノイン酸', 'all-trans-レチノイン酸'], grp:'rxretinoid', cs:['acne', 'aging', 'spot'], mech:'レチノイン酸そのもので、肌の生まれ変わりを強く進めます。', eff:'ニキビ・光老化（小じわ）・色素沈着の治療', ev:'A', conc:'日本では医薬品として承認されておらず、医療機関の院内製剤・自費で処方されます（海外では0.025〜0.1%などの製剤）。', side:'強い乾燥・赤み・皮むけ（レチノイド反応）。妊娠中・妊娠を考えている人は使えません。光で分解されやすく、過酸化ベンゾイルでも分解されることがあります。ワックス脱毛は避けるよう案内されています。', combo:'ほかのレチノイド・AHA・BHA・過酸化ベンゾイルとは重ねない（医師の指示どおりに）。', time:'夜', timeT:'夜に使います。医師の指示を優先してください。'}, RX));
+  add(Object.assign({k:'tazarotene', ja:'タザロテン', en:'Tazarotene', inci:['タザロテン', 'Tazarotene'], grp:'rxretinoid', cs:['acne'], mech:'レチノイドの一種の処方薬です。', eff:'ニキビ・乾癬の治療（海外）', ev:'A', conc:'日本では承認されていません（海外の処方薬：0.045〜0.1%など）。', side:'刺激が強めのレチノイドです。妊娠中は使えません（海外の添付文書で禁忌）。', combo:'AHA・BHA・ほかのレチノイドと重ねない。', time:'夜', timeT:'医師の指示どおりに。'}, RX));
+  add(Object.assign({k:'trifarotene', ja:'トリファロテン', en:'Trifarotene', inci:['トリファロテン', 'Trifarotene'], grp:'rxretinoid', cs:['acne'], mech:'新しい世代のレチノイドの処方薬です。', eff:'顔と体のニキビの治療（海外）', ev:'A', conc:'日本では承認されていません（海外の処方薬：0.005%）。', side:'乾燥・赤み・皮むけが出やすいとされます。', combo:'AHA・BHA・ほかのレチノイドと重ねない。', time:'夜', timeT:'医師の指示どおりに。'}, RX));
+  add({k:'isotretinoin', ja:'イソトレチノイン（内服）', en:'Isotretinoin (oral)', inci:['イソトレチノイン', 'Isotretinoin', 'アキュテイン', 'ロアキュテイン'], grp:'isotretinoin', cs:['acne'], mech:'皮脂腺を小さくして皮脂を大きく減らす、重いニキビの飲み薬です。', eff:'重いニキビの治療（海外）', ev:'A', conc:'日本では承認されておらず、自費・個人輸入で使われることがあります。', irr:'高', side:'唇・肌・目の強い乾燥、肌がうすく傷つきやすくなる、肝機能・脂質の変化など。妊娠中は絶対に使えません（胎児への重い影響）。', combo:'ビタミンAのサプリ・テトラサイクリン系の抗菌薬と併用しないよう、添付文書（海外）に書かれています。外用レチノイド・角質ケア・ワックス脱毛も控えます。', time:'朝・夜', timeT:'医師の指示どおりに飲みます。', reg:'医薬品（飲み薬・国内未承認）', refs:['fda', 'aad'], act:2, rx:true, oral:true});
+  add(Object.assign({k:'dapsone', ja:'ダプソン（外用）', en:'Dapsone gel', inci:['ダプソン', 'Dapsone'], grp:'dapsone', cs:['acne', 'redness'], mech:'炎症をおさえる働きのある塗り薬です。', eff:'ニキビの治療（海外）', ev:'A', conc:'日本では塗り薬は承認されていません（海外：5%・7.5%ゲル）。', side:'乾燥・赤みなど。過酸化ベンゾイルと一緒に使うと、肌や毛が一時的に黄色〜オレンジ色になることがあります（添付文書）。', combo:'過酸化ベンゾイルと同じ時間に重ねない。', time:'朝・夜', timeT:'医師の指示どおりに。'}, RX, {act:1, irr:'中'}));
+  add({k:'sulfur', ja:'硫黄（イオウ）', en:'Sulfur', inci:['イオウ', '硫黄', 'Sulfur', 'コロイドイオウ', '沈降イオウ'], grp:'sulfur', cs:['acne', 'oily'], mech:'角質をやわらげ、皮脂をおさえる働きがあります。', eff:'ニキビ・皮脂のケア', ev:'B', irr:'中', side:'乾燥・刺激が出ることがあります。独特のにおいがあります。', combo:'過酸化ベンゾイル・AHA・BHA・レチノイドと重ねると乾燥しやすくなります。', time:'夜', timeT:'製品の説明どおりに。', reg:'医薬品・医薬部外品', refs:['jda_acne', 'review'], act:1});
+  add(Object.assign({k:'clindamycin', ja:'クリンダマイシン', en:'Clindamycin', inci:['クリンダマイシン', 'クリンダマイシンリン酸エステル', 'Clindamycin', 'ダラシン'], grp:'antibiotic', cs:['acne'], mech:'ニキビの原因菌を減らす抗菌薬の塗り薬です。', eff:'赤いニキビ（炎症）の治療', ev:'A', conc:'日本の処方薬：1%（ダラシンT）、過酸化ベンゾイルとの配合剤（デュアック）。', side:'かゆみ・乾燥など。長く単独で使うと、薬が効かない菌（耐性菌）が出ることがあるため、過酸化ベンゾイルと組み合わせることが勧められています。', combo:'過酸化ベンゾイルとの組み合わせは、ガイドラインで勧められています。', time:'朝・夜', timeT:'医師の指示どおりに。'}, RX, {act:1, irr:'低', refs:['pmda', 'jda_acne']}));
+  add(Object.assign({k:'erythromycin', ja:'エリスロマイシン（外用）', en:'Erythromycin', inci:['エリスロマイシン', 'Erythromycin'], grp:'antibiotic', cs:['acne'], mech:'ニキビの原因菌を減らす抗菌薬の塗り薬です。', eff:'赤いニキビの治療', ev:'B', conc:'日本では塗り薬のニキビ治療薬としてはあまり使われていません（海外：2%など）。', side:'耐性菌が出やすいため、単独で長く使わないよう勧められています。', combo:'過酸化ベンゾイルとの組み合わせが勧められています。', time:'朝・夜', timeT:'医師の指示どおりに。'}, RX, {act:1, irr:'低', refs:['aad', 'review']}));
+  const AHAW = {grp:'ahaweak', cs:['rough'], irr:'低', side:'多くの製品では、ごく少量を製品の酸性度（pH）の調整に使っています。角質ケアを目的にたくさん入っている製品では、刺激が出ることがあります。', combo:'成分表示の後ろの方にある場合はpH調整の目的のことが多く、角質ケア成分としての注意は通常いりません。', ev:'C', act:0, time:'朝・夜'};
+  add(Object.assign({k:'malic', ja:'リンゴ酸', en:'Malic acid', inci:['リンゴ酸', 'Malic Acid'], mech:'AHAの一種です。'}, AHAW));
+  add(Object.assign({k:'tartaric', ja:'酒石酸', en:'Tartaric acid', inci:['酒石酸', 'Tartaric Acid'], mech:'AHAの一種です。'}, AHAW));
+  add(Object.assign({k:'citric', ja:'クエン酸', en:'Citric acid', inci:['クエン酸', 'Citric Acid'], mech:'AHAの一種です。'}, AHAW));
+  add({k:'lactobionic', ja:'ラクトビオン酸', en:'Lactobionic acid', inci:['ラクトビオン酸', 'Lactobionic Acid'], grp:'pha', cs:['rough', 'dry'], mech:'PHAの一種で、ゆっくり作用する角質ケア成分です。保湿の働きもあります。', eff:'ごわつき・ざらつきの改善', ev:'C', irr:'低', side:'穏やかとされますが、刺激を感じることがあります。', combo:'ほかの角質ケア成分・レチノイドと重ねるときは刺激に注意。', time:'夜', act:1});
+  add({k:'bromelain', ja:'ブロメライン', en:'Bromelain', inci:['ブロメライン', 'Bromelain'], grp:'enzyme', cs:['pore', 'rough'], mech:'パイナップル由来の、たんぱく質を分解する酵素です（酵素洗顔など）。', eff:'角栓・ざらつきのケア', ev:'C', irr:'中', side:'毎日使うと乾燥・刺激につながることがあります。', combo:'AHA・BHAと同じ日に使うと刺激が出やすくなります。', time:'夜', act:1});
+  const p = ingM('protease'); if (p) p.inci = p.inci.filter(x => !/ブロメライン|Bromelain/.test(x));
+  const VCD = {grp:'vitcd', cs:['acnemark', 'spot', 'dull'], irr:'低', ev:'B', act:0, side:'刺激は少ないとされます。', combo:'ほとんどの成分と一緒に使えます。', reg:'化粧品／医薬部外品（美白の有効成分）', refs:['mhlw_qd', 'review']};
+  add(Object.assign({k:'ethylasc', ja:'3-O-エチルアスコルビン酸', en:'3-O-Ethyl ascorbic acid', inci:['3-O-エチルアスコルビン酸', 'Ethyl Ascorbic Acid', 'ビタミンCエチル'], mech:'安定させたビタミンC誘導体です。', eff:'シミ・くすみの予防'}, VCD));
+  add(Object.assign({k:'ascglucoside', ja:'アスコルビルグルコシド', en:'Ascorbyl glucoside', inci:['アスコルビルグルコシド', 'Ascorbyl Glucoside', 'アスコルビン酸2-グルコシド'], mech:'ブドウ糖をつけて安定させたビタミンC誘導体です。', eff:'シミ・くすみの予防'}, VCD));
+  add(Object.assign({k:'mgap', ja:'リン酸アスコルビルMg', en:'Magnesium ascorbyl phosphate', inci:['リン酸アスコルビルMg', 'Magnesium Ascorbyl Phosphate', 'リン酸L-アスコルビルマグネシウム'], mech:'リン酸をつけて安定させたビタミンC誘導体です。', eff:'シミ・くすみの予防'}, VCD));
+  const vd = ingM('vitcd'); if (vd) vd.inci = vd.inci.filter(x => !/エチル|Ethyl|アスコルビルグルコシド|Ascorbyl Glucoside|リン酸アスコルビルMg|Magnesium/.test(x));
+  add({k:'alphaarbutin', ja:'α-アルブチン', en:'Alpha-arbutin', inci:['α-アルブチン', 'Alpha-Arbutin', 'アルファアルブチン'], grp:'arbutin', cs:['acnemark', 'spot', 'dull'], mech:'メラニンをつくる酵素の働きをおさえるとされる成分です。', eff:'シミ・くすみの予防', ev:'C', irr:'低', side:'刺激は少ないとされます。', combo:'ほとんどの成分と一緒に使えます。', reg:'化粧品'});
+  const ar = ingM('arbutin'); if (ar) ar.inci = ar.inci.filter(x => !/α|Alpha/.test(x));
+  add({k:'teatree', ja:'ティーツリー', en:'Tea tree oil', inci:['ティーツリー葉油', 'ティートリー葉油', 'ティーツリー油', 'Melaleuca Alternifolia Leaf Oil', 'ティーツリー'], grp:'essential', cs:['acne'], mech:'ティーツリーの精油で、菌をおさえる働きが報告されています。', eff:'ニキビのケア（小規模な研究）', ev:'C', irr:'中', side:'精油なので、かぶれ（アレルギー）が起きることがあります。原液を直接塗らないでください。', combo:'処方薬を使っている肌には刺激になることがあります。', act:1});
+  add({k:'glycyrrhetinate', ja:'グリチルレチン酸ステアリル', en:'Stearyl glycyrrhetinate', inci:['グリチルレチン酸ステアリル', 'Stearyl Glycyrrhetinate'], grp:'soothe', cs:['redness', 'acne', 'sensitive'], mech:'甘草由来の、炎症をおさえる成分です。', eff:'肌荒れの予防', ev:'C', side:'刺激は少ない成分です。', combo:'ほかの成分と一緒に使えます。', reg:'医薬部外品（肌荒れ防止の有効成分）／化粧品', refs:['mhlw_qd']});
+  add({k:'tocoacetate', ja:'酢酸トコフェロール', en:'Tocopheryl acetate', inci:['酢酸トコフェロール', 'Tocopheryl Acetate', '酢酸DL-α-トコフェロール'], grp:'antiox', cs:['uv'], mech:'ビタミンEの誘導体で、血行を促す・酸化から守る目的で配合されます。', eff:'肌荒れの予防・酸化から守る', ev:'C', side:'まれにかぶれることがあります。', combo:'ほかの成分と一緒に使えます。', reg:'化粧品／医薬部外品'});
+  const ve = ingM('vite'); if (ve) ve.inci = ve.inci.filter(x => !/酢酸|Acetate/.test(x));
+  add({k:'zinc', ja:'亜鉛系成分', en:'Zinc compounds', inci:['酸化亜鉛', 'Zinc Oxide', 'グルコン酸亜鉛', 'Zinc Gluconate', '硫酸亜鉛', 'ピリチオン亜鉛'], grp:'sebum', cs:['oily', 'acne', 'redness'], mech:'皮脂をおさえる・肌を引きしめる・紫外線を散乱させる（酸化亜鉛）などの目的で配合されます。', eff:'皮脂・肌荒れのケア', ev:'C', side:'刺激は少ないとされます。', combo:'ほかの成分と一緒に使えます。'});
+  const zp = ingM('zincpca'); if (zp) zp.ja = '亜鉛PCA（亜鉛系成分）';
+  add({k:'fragrance', ja:'香料', en:'Fragrance (Parfum)', inci:['香料', 'Fragrance', 'Parfum'], grp:'fragrance', cs:[], mech:'香りをつけるための成分です。表示は「香料」とまとめて書かれることが多く、中身はわかりません。', eff:'—（肌への効果を目的とした成分ではありません）', ev:'B', irr:'中', side:'化粧品によるかぶれ（アレルギー）の原因として、よく報告される成分の一つです。', combo:'処方薬を使っている肌・敏感な肌では、刺激やかぶれの原因になることがあります。', act:0, refs:['kokusen', 'review']});
+  add({k:'ethanol', ja:'エタノール', en:'Alcohol (Ethanol)', inci:['エタノール', 'Alcohol', 'Alcohol Denat.', '変性アルコール', '無水エタノール'], grp:'ethanol', cs:[], mech:'さっぱりした使い心地・成分を溶かす・防腐の補助などの目的で配合されます。', eff:'—', ev:'C', irr:'中', side:'多く入っていると、乾燥・しみる感じが出ることがあります（配合量は表示からはわかりません）。', combo:'処方薬で肌が乾燥しているときは、刺激になることがあります。', act:0});
+  add({k:'essentialoil', ja:'精油', en:'Essential oils', inci:['ラベンダー油', 'Lavandula Angustifolia Oil', 'ローズマリー葉油', 'オレンジ果皮油', 'レモン果皮油', 'ベルガモット果実油', 'ユーカリ葉油', 'ペパーミント油', 'ローズ花油', '精油'], grp:'essential', cs:[], mech:'植物から取り出した香りの油です。', eff:'—（香りづけ）', ev:'B', irr:'中', side:'かぶれ（アレルギー）の原因になることがあります。柑橘系の一部は、紫外線で肌に反応が出ることがあります。', combo:'処方薬を使っている肌・敏感な肌では、刺激やかぶれの原因になることがあります。', act:0, refs:['review']});
+  // 飲み薬・サプリ・ケアの方法（成分表示からは見つからないので、併用チェックで選んで使う）
+  add({k:'tetracycline', ja:'テトラサイクリン系抗菌薬（内服）', en:'Tetracyclines (oral)', inci:['ミノサイクリン', 'ドキシサイクリン', 'テトラサイクリン', 'ミノマイシン', 'ビブラマイシン'], grp:'tetracycline', cs:['acne'], mech:'ニキビの炎症の治療に使われる飲み薬です（ミノサイクリン・ドキシサイクリンなど）。', eff:'赤いニキビの治療', ev:'A', irr:'低', side:'めまい・胃の不調・光線過敏（ドキシサイクリン）など。', combo:'イソトレチノインとの併用は避けるよう、添付文書（海外）に書かれています。', reg:'医薬品（飲み薬）', refs:['pmda', 'fda', 'jda_acne'], act:0, rx:true, oral:true, time:'朝・夜', timeT:'医師の指示どおりに飲みます。'});
+  add({k:'vitasupp', ja:'ビタミンAのサプリメント', en:'Vitamin A supplements', inci:['ビタミンAサプリ', 'ビタミンA（サプリ）', 'レチノール（サプリ）', 'βカロテン（サプリ）'], grp:'vitasupp', cs:[], mech:'飲んでとるビタミンAです。', eff:'—', ev:'A', side:'とりすぎると、ビタミンA過剰症（頭痛・肝臓への影響など）のおそれがあります。妊娠中のとりすぎにも注意が必要です。', combo:'イソトレチノインと一緒にとらないよう、添付文書（海外）に書かれています。', reg:'食品（サプリメント）', refs:['fda'], act:0, oral:true, supp:true});
+  add({k:'scrub', ja:'スクラブ（つぶ入り洗顔など）', en:'Physical scrub', inci:['スクラブ'], grp:'scrub', cs:['rough'], mech:'つぶで肌をこすって角質を落とす、物理的な角質ケアです。', eff:'ざらつきの一時的な改善', ev:'C', irr:'中', side:'こすりすぎると、赤み・バリア機能の低下につながります。', combo:'AHA・BHA・レチノイドと同じ日に使わない。', act:1, care:true, time:'夜'});
+  add({k:'waxing', ja:'ワックス脱毛', en:'Wax epilation', inci:['ワックス脱毛'], grp:'waxing', cs:[], mech:'ワックスで毛を抜く脱毛の方法です。', eff:'—', ev:'A', irr:'高', side:'レチノイドを使っている肌は、ワックスで皮膚がはがれる・傷つくことがあります。', combo:'レチノイド（特に処方薬・イソトレチノイン）を使っている間は避けるよう案内されています。', act:1, care:true, refs:['fda', 'aad']});
+  add({k:'harshwash', ja:'洗浄力の強い洗顔料', en:'Harsh cleanser', inci:['ラウリル硫酸Na', 'Sodium Lauryl Sulfate', 'ラウレス硫酸Na', 'Sodium Laureth Sulfate'], grp:'harshwash', cs:[], mech:'洗浄力の強い洗浄成分（ラウリル硫酸Naなど）を使った洗顔料です。', eff:'—', ev:'B', irr:'中', side:'皮脂をとりすぎて、乾燥・刺激の原因になることがあります。', combo:'処方薬で肌が乾燥しているときは、やさしい洗顔料が勧められます。', act:0, care:true});
+  // 全員にタグ（併用チェックで使う種類）をつける
+  const FAM = {retinol:['otcretinoid', 'retinoidAll'], retinal:['otcretinoid', 'retinoidAll'], retinylpalm:['otcretinoid', 'retinoidAll'], adapalene:['rxretinoid', 'retinoidAll'], tretinoin:['retinoidAll'], tazarotene:['retinoidAll'], trifarotene:['retinoidAll'], bakuchiol:['bakuchiol'],
+    glycolic:['aha'], lactic:['aha'], mandelic:['aha'], salicylic:['bha'], pha:['pha'], lactobionic:['pha'], papain:['enzyme'], protease:['enzyme'], bromelain:['enzyme'], vitc:['vitc'], hydroquinone:['hq'], kojic:['kojic'], bpo:['bpo'], azelaic:['azelaic'], niacinamide:['niacinamide'], tranexamic:['tranexamic'], arbutin:['arbutin'], alphaarbutin:['arbutin'], cholesterol:['barrier']};
+  ING_MASTER.forEach(e => { e.tags = [...new Set([e.grp, 'k:' + e.k].concat(FAM[e.k] || []).concat(e.rx && !e.oral ? ['rxTopical'] : []).concat(e.oral ? ['oral'] : []).concat(e.act === 0 && ['moist', 'barrier', 'soothe', 'occlusive'].includes(e.grp) ? ['gentle'] : []))]; });
+  // ING_M_INDEX を作り直す
+  ING_M_INDEX.clear(); ING_MASTER.forEach(e => [e.ja].concat(e.inci).forEach(a => { const n = normIng(String(a).replace(/（.*?）/g, '')); if (n.length >= 2 && !ING_M_INDEX.has(n)) ING_M_INDEX.set(n, e); }));
+})();
+// 皮膚科の薬の一覧に、トレチノイン・ハイドロキノン（院内製剤）と飲み薬・サプリを足す
+[['ニキビ・シミ（院内製剤）', 'トレチノインクリーム（院内製剤）', 'トレチノイン'], ['シミ（院内製剤）', 'ハイドロキノンクリーム（院内製剤）', 'ハイドロキノン'],
+ ['飲み薬（ニキビ・国内未承認）', 'イソトレチノイン（内服）', 'イソトレチノイン'], ['飲み薬（ニキビ・抗菌薬）', 'ミノマイシン（ミノサイクリン）', 'ミノサイクリン'], ['飲み薬（ニキビ・抗菌薬）', 'ビブラマイシン（ドキシサイクリン）', 'ドキシサイクリン'],
+ ['サプリメント', 'ビタミンAのサプリメント', 'ビタミンAサプリ']].forEach(d => { if (!RX_DRUGS.some(x => x[1] === d[1])) RX_DRUGS.push(d); });
+const isOralKind = k => /^飲み薬|^サプリ/.test(k || '');
+
+// ---- 併用の注意（初期データ）。a・b はタグ。lv：1＝併用可能 2＝併用注意 3＝避ける・医師に確認 ----
+// why：注意する理由 how：おすすめの使い方 freq：使う頻度の目安 skin：肌質・肌状態別の注意 target：対象の濃度・製剤 ev：根拠の強さ src：出典
+const RET_OTC = ['otcretinoid'], RX_RET = ['rxretinoid', 'retinoidAll'], ACIDS = ['aha', 'bha'];
+const COMBO_DB = [
+  // レチノイド
+  {a:RET_OTC, b:['aha'], lv:2, t:'レチノール類 × AHA', why:'どちらも角質に働くため、同じタイミングで重ねると乾燥・赤み・皮むけ・バリア機能の低下が起きやすくなります。', how:'同じ夜に重ねず、日を分けます（例：レチノールの日とAHAの日を交互に）。1つの製品に両方入っているものは、その製品の使い方どおりに。', freq:'慣れるまでは、どちらも週2〜3回から。', skin:{sens:'敏感肌・乾燥肌の人は、どちらか1つにしぼるのが安心です。', state:'今、赤み・乾燥・皮むけがあるなら、両方休んで保湿を中心にします。'}, target:'化粧品に配合されるレチノール類・AHA（グリコール酸・乳酸・マンデル酸）', ev:'C', src:['aad', 'review']},
+  {a:RET_OTC, b:['bha'], lv:2, t:'レチノール類 × BHA（サリチル酸）', why:'角質ケアが重なり、乾燥・赤み・皮むけが起きやすくなります。', how:'朝と夜、または日を分けます。', freq:'慣れるまでは、どちらも週2〜3回から。', skin:{sens:'敏感肌・乾燥肌の人は、どちらか1つにしぼるのが安心です。', state:'今、赤み・皮むけがあるなら、両方休みます。'}, target:'化粧品のレチノール類・サリチル酸（日本の化粧品は0.2%まで）', ev:'C', src:['aad', 'review']},
+  {a:RET_OTC, b:['bpo'], lv:2, t:'レチノール類 × 過酸化ベンゾイル', why:'どちらも乾燥・刺激が出やすく、重ねると皮むけ・赤みが強くなることがあります。過酸化ベンゾイルは処方薬です。', how:'同じ時間に重ねず、処方した医師・薬剤師にレチノールを続けてよいか確認します。', freq:'処方薬の使い方（医師の指示）を優先。', skin:{sens:'敏感肌の人は、処方薬を使う間はレチノールを休むのが安心です。'}, target:'化粧品のレチノール類 × 過酸化ベンゾイル2.5〜5%', ev:'C', src:['pmda', 'aad']},
+  {a:RET_OTC, b:RX_RET.concat(['isotretinoin']).filter(x => x !== 'retinoidAll'), lv:3, t:'市販のレチノール類 × 処方のレチノイド', why:'同じ働き（レチノイド）が重なり、刺激が強く出るおそれがあります。処方のレチノイドを使っている間は、市販のレチノールは基本的に必要ありません。', how:'市販のレチノール類は使わず、処方した医師に確認してください。', freq:'処方薬だけを、医師の指示どおりに。', skin:{}, target:'アダパレン・トレチノイン・タザロテン・トリファロテン・イソトレチノイン内服', ev:'C', src:['aad', 'fda']},
+  {a:['k:adapalene'], b:['k:tretinoin', 'k:tazarotene', 'k:trifarotene'], lv:3, t:'処方のレチノイドどうし', why:'同じ働きの処方薬の重複です。', how:'医師の指示がない限り、一緒に使いません。', freq:'—', skin:{}, target:'処方のレチノイド', ev:'A', src:['pmda', 'fda']},
+  {a:['k:tretinoin'], b:['k:tazarotene', 'k:trifarotene'], lv:3, t:'処方のレチノイドどうし', why:'同じ働きの処方薬の重複です。', how:'医師の指示がない限り、一緒に使いません。', freq:'—', skin:{}, target:'処方のレチノイド', ev:'A', src:['fda']},
+  {a:['k:adapalene', 'k:tazarotene', 'k:trifarotene'], b:ACIDS.concat(['pha']), lv:2, t:'処方のレチノイド × AHA・BHA', why:'処方のレチノイド自体が角質に働くため、角質ケア成分を重ねると、乾燥・赤み・ヒリヒリ感が強く出ることがあります。', how:'処方した医師・薬剤師に、角質ケアの化粧品を続けてよいか確認します。確認するまでは休むと安心です。', freq:'—', skin:{sens:'敏感肌・乾燥肌の人は、角質ケアの化粧品を休みます。', state:'今、赤み・皮むけがあるなら、角質ケアは休みます。'}, target:'アダパレン0.1%・タザロテン・トリファロテン × 化粧品のAHA・BHA', ev:'C', src:['pmda', 'aad']},
+  {a:['k:tretinoin'], b:ACIDS.concat(['pha']), lv:2, t:'トレチノイン × AHA・BHA', why:'トレチノインは刺激が強く、角質ケア成分を重ねると強い乾燥・赤み・皮むけが起きやすくなります。', how:'医師の指示がない限り、角質ケアの化粧品は休みます。', freq:'—', skin:{sens:'敏感肌の人は、特に避けてください。'}, target:'トレチノイン製剤 × AHA・BHA', ev:'C', src:['fda', 'aad']},
+  {a:['k:tretinoin'], b:['bpo'], lv:2, t:'トレチノイン × 過酸化ベンゾイル', why:'過酸化ベンゾイルはトレチノインを分解し、効き目を落とすことがあります。刺激も重なります。', how:'同じ時間には塗らず、朝と夜に分けるなど、医師の指示どおりにします。', freq:'医師の指示どおりに。', skin:{}, target:'トレチノイン（一般的な製剤）× 過酸化ベンゾイル', ev:'B', src:['fda', 'review']},
+  {a:['k:adapalene'], b:['bpo'], lv:1, t:'アダパレン × 過酸化ベンゾイル', why:'この2つを合わせた処方薬（エピデュオゲル）があり、診療ガイドラインでも勧められている組み合わせです。', how:'医師に処方された使い方（順番・量・回数）を守ります。別々の薬を自分の判断で重ねないでください。', freq:'医師の指示どおり（多くは1日1回、夜）。', skin:{sens:'乾燥・ヒリヒリ感が出やすいので、保湿をしっかり。'}, target:'エピデュオゲル（アダパレン0.1%・過酸化ベンゾイル2.5%）など', ev:'A', src:['jda_acne', 'pmda']},
+  // イソトレチノイン（内服）
+  {a:['isotretinoin'], b:['retinoidAll', 'otcretinoid'], lv:3, t:'イソトレチノイン（内服）× 外用のレチノイド', why:'内服中は肌がとても乾燥し、うすく傷つきやすくなります。レチノイドを重ねると強い刺激・皮膚の傷のおそれがあります。', how:'医師の指示がない限り、外用のレチノイド（市販のレチノールも）は使いません。', freq:'内服中とその後しばらく', skin:{}, target:'イソトレチノイン内服 × レチノール・処方のレチノイド', ev:'B', src:['fda', 'aad']},
+  {a:['isotretinoin'], b:['aha', 'bha', 'pha', 'enzyme', 'scrub'], lv:3, t:'イソトレチノイン（内服）× 角質ケア', why:'内服中は肌がもろくなっていて、角質ケアで強い刺激・傷・色素沈着が起きるおそれがあります。', how:'内服中は角質ケア（ピーリング・スクラブ・酵素洗顔）を避け、医師に確認してください。', freq:'内服中とその後しばらく（医師の指示どおりに）', skin:{}, target:'イソトレチノイン内服 × AHA・BHA・PHA・酵素・スクラブ', ev:'B', src:['fda', 'aad']},
+  {a:['isotretinoin'], b:['bpo', 'sulfur'], lv:3, t:'イソトレチノイン（内服）× 過酸化ベンゾイル・硫黄', why:'内服中の強い乾燥に、乾燥させる外用薬を重ねると、刺激・皮むけが強く出るおそれがあります。', how:'一緒に使ってよいか、医師に確認してください。', freq:'—', skin:{}, target:'イソトレチノイン内服 × 過酸化ベンゾイル・硫黄', ev:'C', src:['fda', 'aad']},
+  {a:['isotretinoin'], b:['hq'], lv:2, t:'イソトレチノイン（内服）× ハイドロキノン', why:'内服中の乾燥した肌に、刺激の出やすいハイドロキノンを重ねると、赤み・かぶれが出やすくなります。', how:'使う前に医師に確認し、使うなら部分的・低頻度から。', freq:'医師の指示どおりに。', skin:{sens:'敏感肌の人は控えます。'}, target:'イソトレチノイン内服 × ハイドロキノン', ev:'C', src:['fda']},
+  {a:['isotretinoin'], b:['vitasupp'], lv:3, imp:true, t:'イソトレチノイン（内服）× ビタミンAのサプリメント', why:'【重要】イソトレチノインはビタミンAの仲間で、ビタミンAのサプリを一緒にとると、ビタミンA過剰症（頭痛・肝臓への影響など）のおそれがあります。添付文書（海外）で、一緒にとらないよう書かれています。', how:'ビタミンAのサプリ（マルチビタミンに含まれるものも）はとらず、必ず医師に確認してください。', freq:'—', skin:{}, target:'イソトレチノイン内服 × ビタミンAを含むサプリメント', ev:'A', src:['fda']},
+  {a:['isotretinoin'], b:['tetracycline'], lv:3, imp:true, t:'イソトレチノイン（内服）× テトラサイクリン系抗菌薬', why:'【重要】一緒に飲むと、頭の中の圧が上がる（偽脳腫瘍：強い頭痛・目のかすみなど）おそれがあります。添付文書（海外）で、併用を避けるよう書かれています。', how:'自分の判断で一緒に飲まず、必ず両方を処方した医師に伝えてください。頭痛・目のかすみ・吐き気が出たらすぐ受診を。', freq:'—', skin:{}, target:'イソトレチノイン内服 × ミノサイクリン・ドキシサイクリンなど', ev:'A', src:['fda']},
+  {a:['isotretinoin'], b:['waxing'], lv:3, t:'イソトレチノイン（内服）× ワックス脱毛', why:'内服中とその後しばらくは、ワックスで皮膚がはがれる・傷・あとが残るおそれがあるとして、避けるよう案内されています（添付文書・海外）。', how:'内服中と、やめてから少なくとも6か月は避けるよう案内されています。医師に確認してください。', freq:'—', skin:{}, target:'イソトレチノイン内服 × ワックス脱毛', ev:'A', src:['fda']},
+  // 酸・角質ケア
+  {a:['k:glycolic'], b:['bha'], lv:2, t:'グリコール酸 × サリチル酸', why:'角質ケアが重なり、刺激・乾燥・赤みが出やすくなります。', how:'別々の製品なら同じ日に重ねず、日を分けます。1つの製品に両方入っているものは、その製品の使い方どおりに。', freq:'合わせて週2〜3回から。', skin:{sens:'敏感肌の人はどちらか1つに。', state:'赤み・ヒリヒリ感があるときは両方休みます。'}, target:'化粧品のAHA・BHA', ev:'C', src:['aad', 'review']},
+  {a:['k:glycolic'], b:['k:lactic', 'k:mandelic'], lv:2, t:'AHAどうし（グリコール酸 × 乳酸・マンデル酸）', why:'同じ種類の角質ケアが重なり、刺激が強くなることがあります。', how:'どちらか1つにします。', freq:'週2〜3回から。', skin:{sens:'敏感肌の人は1つにしぼります。'}, target:'化粧品のAHA', ev:'C', src:['review']},
+  {a:['k:lactic', 'k:mandelic'], b:['bha'], lv:2, t:'乳酸・マンデル酸 × サリチル酸', why:'角質ケアが重なり、刺激・乾燥が出やすくなります。', how:'日を分けます。', freq:'合わせて週2〜3回から。', skin:{sens:'敏感肌の人はどちらか1つに。'}, target:'化粧品のAHA・BHA', ev:'C', src:['review']},
+  {a:['k:lactic'], b:['k:mandelic'], lv:2, t:'AHAどうし（乳酸 × マンデル酸）', why:'同じ種類の角質ケアが重なります。', how:'どちらか1つにします。', freq:'週2〜3回から。', skin:{}, target:'化粧品のAHA', ev:'C', src:['review']},
+  {a:['pha'], b:ACIDS, lv:2, t:'PHA × AHA・BHA', why:'PHAはおだやかですが、角質ケアが重なると刺激が出ることがあります。', how:'刺激を感じたら、日を分けるか1つにします。', freq:'合わせて週2〜3回から。', skin:{sens:'敏感肌の人はPHAだけにすると、刺激を減らせます。'}, target:'化粧品のPHA・AHA・BHA', ev:'C', src:['review']},
+  {a:['aha', 'bha'], b:['bpo'], lv:2, t:'AHA・BHA × 過酸化ベンゾイル', why:'乾燥・刺激が出やすくなります。過酸化ベンゾイルは処方薬です。', how:'同じ時間に重ねず、角質ケアを続けてよいか医師・薬剤師に確認します。', freq:'—', skin:{sens:'敏感肌の人は角質ケアを休みます。'}, target:'過酸化ベンゾイル2.5〜5% × 化粧品のAHA・BHA', ev:'C', src:['pmda', 'aad']},
+  {a:['enzyme'], b:ACIDS.concat(['pha']), lv:2, t:'酵素洗顔 × AHA・BHA', why:'同じ日に重ねると、角質をとりすぎて乾燥・刺激が出やすくなります。', how:'酵素洗顔は、AHA・BHAを使わない日にします。', freq:'酵素洗顔は週1〜2回が目安として案内されることが多いです（製品の説明を優先）。', skin:{sens:'敏感肌の人は、酵素洗顔とAHA・BHAのどちらか1つに。'}, target:'酵素洗顔料 × 化粧品のAHA・BHA', ev:'C', src:['review']},
+  {a:['scrub'], b:ACIDS.concat(['pha', 'otcretinoid', 'retinoidAll']), lv:2, t:'スクラブ × AHA・BHA・レチノイド', why:'こする刺激と角質ケアが重なり、赤み・バリア機能の低下につながります。', how:'同じ日に使わず、スクラブを使うならやさしく・回数を少なく。処方のレチノイドを使っている間はスクラブを避けます。', freq:'スクラブは多くても週1回程度に。', skin:{sens:'敏感肌の人はスクラブを使わない方が安心です。', state:'赤み・ニキビの炎症があるときはスクラブを使いません。'}, target:'スクラブ洗顔 × 角質ケア成分・レチノイド', ev:'C', src:['aad']},
+  // 美白・シミ
+  {a:['vitc'], b:['aha', 'bha'], lv:2, t:'高濃度ビタミンC（アスコルビン酸）× AHA・BHA', why:'酸性の処方どうしを重ねると、ピリピリ感・赤みが出ることがあります。', how:'朝はビタミンC、夜は角質ケアのように時間帯を分けます。', freq:'—', skin:{sens:'敏感肌の人は、ビタミンC誘導体（刺激が少ない）に変える方法もあります。'}, target:'アスコルビン酸（誘導体ではないもの）を多く含む美容液', ev:'C', src:['review']},
+  {a:['vitc'], b:['otcretinoid', 'retinoidAll'], lv:2, t:'高濃度ビタミンC × レチノール類', why:'濃いもの同士を重ねると、刺激を感じることがあります。', how:'朝にビタミンC、夜にレチノール類と分けます。', freq:'—', skin:{sens:'敏感肌の人は、片方に慣れてからもう片方を足します。'}, target:'アスコルビン酸を多く含む美容液 × レチノール類', ev:'C', src:['review']},
+  {a:['vitc'], b:['bpo'], lv:2, t:'ビタミンC × 過酸化ベンゾイル', why:'過酸化ベンゾイルはものを酸化させる性質があり、ビタミンCの働きが落ちる可能性があると言われます。刺激も重なります。', how:'朝はビタミンC、夜は処方薬のように時間を分けます（処方薬の時間は医師の指示どおりに）。', freq:'—', skin:{}, target:'アスコルビン酸 × 過酸化ベンゾイル', ev:'情報不足', src:['review']},
+  {a:['hq'], b:['aha', 'bha'], lv:2, t:'ハイドロキノン × AHA・BHA', why:'刺激が強く出ることがあります。', how:'同じ時間には重ねず、医療機関で処方されたものは医師の指示どおりに。', freq:'—', skin:{sens:'敏感肌の人は、片方を休みます。'}, target:'ハイドロキノン配合の化粧品・処方薬', ev:'C', src:['review']},
+  {a:['hq'], b:['otcretinoid', 'retinoidAll'], lv:2, t:'ハイドロキノン × レチノイド', why:'刺激が強く出ることがあります。ただし医療機関では、トレチノインと組み合わせて処方されることもあります。', how:'化粧品どうしは同じ時間に重ねず、処方されたものは医師の指示どおりに使います。', freq:'医師の指示どおりに。', skin:{sens:'敏感肌の人は、医師に相談してから。'}, target:'ハイドロキノン × レチノール・トレチノイン', ev:'B', src:['jda_melasma', 'review']},
+  {a:['hq'], b:['bpo'], lv:2, t:'ハイドロキノン × 過酸化ベンゾイル', why:'同時に使うと、一時的に肌が着色する（色がつく）ことがあります。', how:'同じ時間には使いません（朝夜で分けるなど、医師・薬剤師に確認）。', freq:'—', skin:{}, target:'ハイドロキノン × 過酸化ベンゾイル', ev:'B', src:['maker', 'review']},
+  {a:['kojic'], b:ACIDS, lv:2, t:'コウジ酸 × AHA・BHA', why:'刺激・かぶれが出やすくなることがあります。', how:'刺激を感じたら、時間帯を分けます。', freq:'—', skin:{sens:'敏感肌の人は1つずつ試します。'}, target:'化粧品のコウジ酸 × AHA・BHA', ev:'情報不足', src:['review']},
+  {a:['arbutin'], b:['aha'], lv:2, t:'アルブチン × AHA', why:'刺激が重なる可能性は高くありませんが、酸性の角質ケアで肌が敏感になっていると、しみることがあります。', how:'しみる感じがあれば、時間帯を分けます。', freq:'—', skin:{}, target:'化粧品のアルブチン × AHA', ev:'情報不足', src:['review']},
+  // ニキビ・抗菌
+  {a:['bpo'], b:['sulfur'], lv:2, t:'過酸化ベンゾイル × 硫黄', why:'どちらも乾燥させる働きがあり、重ねると乾燥・皮むけが強くなります。', how:'一緒に使ってよいか医師・薬剤師に確認します。', freq:'—', skin:{sens:'敏感肌・乾燥肌の人は片方だけに。'}, target:'過酸化ベンゾイル × イオウ配合の外用剤', ev:'C', src:['jda_acne']},
+  {a:['bpo'], b:['dapsone'], lv:2, t:'過酸化ベンゾイル × ダプソン', why:'一緒に使うと、肌や毛が一時的に黄色〜オレンジ色になることがあります（添付文書）。', how:'同じ時間に塗らず、朝と夜に分けるなど医師の指示どおりに。', freq:'—', skin:{}, target:'ダプソンゲル × 過酸化ベンゾイル', ev:'A', src:['fda']},
+  {a:['azelaic'], b:['otcretinoid', 'retinoidAll'], lv:2, t:'アゼライン酸 × レチノイド', why:'どちらも使い始めに刺激が出やすく、重ねると刺激が強くなることがあります。', how:'片方に慣れてから、もう片方を少しずつ足すか、朝夜で分けます。', freq:'慣れるまでは隔日から。', skin:{sens:'敏感肌の人は1つずつ始めます。'}, target:'アゼライン酸 × レチノール類・処方のレチノイド', ev:'C', src:['review']},
+  {a:['azelaic'], b:ACIDS, lv:2, t:'アゼライン酸 × AHA・BHA', why:'刺激・ピリピリ感が重なることがあります。', how:'朝夜で分けます。', freq:'—', skin:{sens:'敏感肌の人は片方だけに。'}, target:'アゼライン酸 × 化粧品のAHA・BHA', ev:'C', src:['review']},
+  {a:['azelaic'], b:['bpo'], lv:2, t:'アゼライン酸 × 過酸化ベンゾイル', why:'どちらも刺激・乾燥が出ることがあり、重ねると強くなることがあります。', how:'医師・薬剤師に確認し、時間を分けます。', freq:'—', skin:{}, target:'アゼライン酸 × 過酸化ベンゾイル', ev:'C', src:['review']},
+  {a:['sulfur'], b:ACIDS.concat(['otcretinoid', 'retinoidAll']), lv:2, t:'硫黄 × AHA・BHA・レチノイド', why:'乾燥・刺激が重なります。', how:'日を分けるか、どちらか1つにします。', freq:'—', skin:{sens:'敏感肌の人は1つにしぼります。'}, target:'イオウ配合の製品 × 角質ケア成分・レチノイド', ev:'C', src:['review']},
+  {a:['antibiotic'], b:['bpo'], lv:1, t:'抗菌薬の塗り薬（クリンダマイシンなど）× 過酸化ベンゾイル', why:'過酸化ベンゾイルを一緒に使うと、薬が効かない菌（耐性菌）ができにくくなるため、ガイドラインで勧められている組み合わせです（配合剤：デュアック）。', how:'医師に処方された使い方を守ります。', freq:'医師の指示どおりに。', skin:{}, target:'クリンダマイシン・エリスロマイシン × 過酸化ベンゾイル', ev:'A', src:['jda_acne', 'aad']},
+  // そのほか
+  {a:['otcretinoid'], b:['waxing'], lv:2, t:'レチノール類 × ワックス脱毛', why:'レチノイドを使っている肌は、ワックスで皮膚がはがれたり、赤くなったりすることがあります。', how:'ワックス脱毛をする場所には、数日前からレチノール類を使わないようにします。', freq:'—', skin:{}, target:'化粧品のレチノール類', ev:'C', src:['aad']},
+  {a:['rxretinoid', 'retinoidAll'], b:['waxing'], lv:3, t:'処方のレチノイド × ワックス脱毛', why:'皮膚がはがれる・傷つくおそれがあるため、避けるよう案内されています（添付文書・海外）。', how:'使っている場所のワックス脱毛は避け、医師に確認してください。', freq:'—', skin:{}, target:'トレチノイン・アダパレンなど', ev:'A', src:['fda']},
+  {a:['rxTopical'], b:['ethanol'], lv:2, t:'処方の塗り薬 × アルコールが多い化粧品', why:'処方薬で乾燥・刺激が出やすい肌に、アルコールの多い化粧品を重ねると、しみる・乾燥が強くなることがあります。', how:'アルコールの少ない化粧品（成分表示の最初の方にエタノールがないもの）を選びます。', freq:'—', skin:{sens:'敏感肌の人は、アルコールの入っていないものを。'}, target:'エタノールが成分表示の最初の方にある化粧品（配合量は表示からはわかりません）', ev:'C', src:['aad']},
+  {a:['rxTopical'], b:['harshwash'], lv:2, t:'処方の塗り薬 × 洗浄力の強い洗顔料', why:'処方薬で乾燥しやすい肌を、洗浄力の強い洗顔料で洗うと、乾燥・刺激が強くなります。', how:'やさしい洗顔料にかえ、1日2回までにします。', freq:'—', skin:{}, target:'ラウリル硫酸Naなどを含む洗顔料', ev:'C', src:['aad']},
+  {a:['rxTopical'], b:['fragrance', 'essential'], lv:2, t:'処方の塗り薬 × 香料・精油', why:'処方薬で敏感になった肌では、香料・精油が刺激やかぶれ（アレルギー）の原因になることがあります。', how:'香料・精油の入っていない化粧品を選ぶと安心です。', freq:'—', skin:{sens:'敏感肌の人は、無香料のものを。'}, target:'香料・精油を含む化粧品', ev:'C', src:['aad', 'review']},
+  // 基本的に併用可能（まちがった警告を出さないため）
+  {a:['vitc', 'vitcd'], b:['niacinamide'], lv:1, t:'ビタミンC × ナイアシンアミド', why:'昔は「一緒に使うと良くない」と言われることがありましたが、ふつうの化粧品の使い方で問題になるという根拠は乏しいとされます。', how:'そのまま一緒に使えます。', freq:'—', skin:{}, target:'化粧品の一般的な濃度', ev:'C', src:['review']},
+  {a:['niacinamide'], b:['otcretinoid', 'retinoidAll'], lv:1, t:'ナイアシンアミド × レチノイド', why:'ナイアシンアミドは刺激が少なく、レチノイドによる乾燥をやわらげる目的で一緒に使われることもあります。', how:'そのまま一緒に使えます（レチノイドの注意は守ります）。', freq:'—', skin:{}, target:'化粧品の一般的な濃度', ev:'C', src:['review']},
+  {a:['tranexamic'], b:['niacinamide'], lv:1, t:'トラネキサム酸 × ナイアシンアミド', why:'どちらも刺激が少なく、美白の医薬部外品で一緒に使われることもあります。', how:'そのまま一緒に使えます。', freq:'—', skin:{}, target:'化粧品・医薬部外品の一般的な濃度', ev:'C', src:['review']},
+  {a:['azelaic'], b:['niacinamide'], lv:1, t:'アゼライン酸 × ナイアシンアミド', why:'一緒に使っても、刺激が強くなるという報告はほとんどありません。', how:'そのまま一緒に使えます。', freq:'—', skin:{}, target:'化粧品の一般的な濃度', ev:'C', src:['review']},
+  {a:['gentle', 'barrier', 'moist', 'soothe', 'occlusive'], b:['otcretinoid', 'retinoidAll', 'aha', 'bha', 'pha', 'bpo'], lv:1, t:'保湿・肌荒れ防止の成分 × レチノイド・角質ケア成分', why:'セラミド・ヒアルロン酸・パンテノール・スクワラン・アラントイン・ツボクサ・β-グルカン・グリセリンなどは、刺激の出やすい成分による乾燥をやわらげる目的で一緒に使われます。', how:'そのまま一緒に使えます。処方薬の場合、塗る順番は医師の指示どおりに。', freq:'—', skin:{}, target:'—', ev:'C', src:['aad', 'review']},
+  {a:['k:ceramide', 'k:ceramidenp', 'k:ceramideap', 'k:ceramideeop'], b:['k:cholesterol'], lv:1, t:'セラミド × コレステロール', why:'どちらも角質の細胞のすきまにある脂質で、組み合わせた処方もあります。', how:'そのまま一緒に使えます。', freq:'—', skin:{}, target:'—', ev:'C', src:['review']}
+].map((r, i) => Object.assign({id:'c' + (i + 1), checked:COMBO_CHECKED, hist:[COMBO_CHECKED + '：初期登録']}, r));
+
+// ---- 判定 ----
+// 選んだもの（成分のキー・「rx:薬の名前」）を、判定に使う形にする
 function comboItem(v) {
   if (!v) return null;
   if (v.startsWith('rx:')) {
     const name = v.slice(3), d = RX_DRUGS.find(x => x[1] === name); if (!d) return null;
-    const ms = masterIngsOf(d[2]), g = new Set(ms.map(e => e.grp)), kind = d[0];
-    const moist = /保湿/.test(kind);
-    if (/ステロイド/.test(kind) && !/以外/.test(kind)) g.add('steroid');
-    if (!moist && !g.has('adapalene') && !g.has('bpo') && !g.has('steroid')) g.add('rxother');
-    return {v, label:name, sub:`処方薬（${kind}・${d[2]}）`, grps:g, act:moist ? 0 : ms.some(e => e.act >= 2) || g.has('steroid') ? 2 : 1, rx:!moist, moist, ings:ms};
+    return rxComboItem(name, d[0], d[2], v);
   }
   const e = ingM(v); if (!e) return null;
-  return {v, label:e.ja, sub:e.reg, grps:new Set([e.grp]), act:e.act, rx:!!e.rx, moist:false, ings:[e]};
+  return {v, label:e.ja, sub:e.reg, tags:new Set(e.tags), keys:[e.k], act:e.act, rx:!!e.rx, oral:!!e.oral, ings:[e]};
 }
-const C_GRP = ['retinoid', 'adapalene', 'bpo', 'aha', 'bha', 'pha', 'hq', 'vitc', 'azelaic', 'enzyme', 'clay', 'urea', 'steroid', 'rxother'];
-// 追加のルール（COMBO2 にない組み合わせ）
-const COMBO3 = [
-  {a:['adapalene', 'bpo'], b:['vitc', 'azelaic', 'hq', 'urea'], lv:'doctor', t:'ニキビの処方薬 × 刺激の出やすい化粧品', note:'処方薬（アダパレン・過酸化ベンゾイル）を使っている肌は乾燥・刺激が出やすく、ほかの刺激の出やすい成分を重ねると、さらに強く出ることがあります。', how:'一緒に使ってよいか、使う時間を分けるべきかを、医師・薬剤師に確認してください。'},
-  {a:['bpo'], b:['vitc'], lv:'care', t:'過酸化ベンゾイル × ビタミンC（アスコルビン酸）', note:'過酸化ベンゾイルはものを酸化させる性質があり、酸化しやすいビタミンCと同時に重ねると、ビタミンCの働きが落ちる可能性があると言われます。', how:'朝はビタミンC、夜は処方薬のように時間を分けます（処方薬の時間は医師の指示どおりに）。'},
-  {a:['azelaic'], b:['retinoid', 'aha', 'bha', 'pha'], lv:'care', t:'アゼライン酸 × レチノール類・角質ケア成分', note:'どちらも使い始めに刺激が出ることがある成分で、重ねると刺激が強くなることがあります。', how:'片方に慣れてから、もう片方を少しずつ足すか、朝夜で分けます。'},
-  {a:['urea'], b:['retinoid', 'aha', 'bha', 'pha'], lv:'care', t:'尿素 × レチノール類・角質ケア成分', note:'どちらも角質に働くため、重ねると刺激・ひりつきが出ることがあります。', how:'同じ部分に同じタイミングで重ねないようにします。'},
-  {a:['hq'], b:['vitc'], lv:'care', t:'ハイドロキノン × ビタミンC（アスコルビン酸）', note:'一緒に配合された製品もありますが、刺激が出やすい成分どうしです。', how:'刺激を感じたら、時間帯を分けます。'},
-  {a:['steroid'], b:['steroid', 'rxother', 'adapalene', 'bpo'], lv:'doctor', t:'塗り薬どうし', note:'塗り薬を2種類以上使うときは、塗る順番・間隔・場所を医師が決めています。', how:'医師・薬剤師に指示された順番と間隔を守ってください。'},
-  {a:['rxother'], b:['rxother', 'adapalene', 'bpo'], lv:'doctor', t:'塗り薬どうし', note:'塗り薬を2種類以上使うときは、塗る順番・間隔・場所を医師が決めています。', how:'医師・薬剤師に指示された順番と間隔を守ってください。'}
-];
+function rxComboItem(name, kind, ingText, v) {
+  const ms = masterIngsOf(String(ingText).replace(/・/g, '、')), tags = new Set(ms.flatMap(e => e.tags)), oral = isOralKind(kind);
+  const moist = /保湿/.test(kind);
+  if (/ステロイド/.test(kind) && !/以外/.test(kind)) tags.add('steroid');
+  if (!oral && !moist) tags.add('rxTopical');
+  if (oral) tags.add('oral');
+  if (moist) tags.add('gentle');
+  return {v:v || 'rx:' + name, label:name, sub:`${/サプリ/.test(kind) ? 'サプリメント' : oral ? '飲み薬' : '塗り薬'}（${kind}）・${ingText}`, tags, keys:ms.map(e => e.k), act:moist ? 0 : Math.max(1, ...ms.map(e => e.act)), rx:!moist && !/サプリ/.test(kind), oral, ings:ms, moist};
+}
+// 今の肌の状態（直近7日の記録）：赤み・乾燥・皮脂・ニキビ・ヒリヒリ・肌あれ
+function skinStateNow() {
+  const t = todayStr(), logs = state.skinLogs.filter(l => l.date <= t && l.date >= addDays(t, -6));
+  const st = {n:logs.length, red:false, dry:false, oil:false, acne:false, sting:false, barrier:false, pore:false, words:[]};
+  if (!logs.length) return st;
+  const nums = logs.map(l => logShownNums(l)), avg = k => nums.reduce((s, x) => s + (Number(x[k]) || 0), 0) / nums.length;
+  const oc = new Set(logs.flatMap(l => (l.otherConcerns || []).concat(Object.values((logFaceData(l) || {}).marks || {}).flatMap(m => Object.keys(m || {}).filter(k => m[k])))));
+  if (avg('red') >= 2.5 || oc.has('赤み')) { st.red = true; st.words.push('赤み'); }
+  if (avg('dry') >= 2.5 || oc.has('乾燥')) { st.dry = true; st.words.push('乾燥'); }
+  if (avg('oil') >= 3 || oc.has('テカリ')) { st.oil = true; st.words.push('テカリ'); }
+  if (avg('acne') >= 3) { st.acne = true; st.words.push('ニキビ'); }
+  if (oc.has('ヒリヒリ感') || oc.has('かゆみ')) { st.sting = true; st.words.push('ヒリヒリ・かゆみ'); }
+  if (oc.has('肌あれ') || (st.red && st.dry)) { st.barrier = true; st.words.push('肌あれ（バリア機能の低下）'); }
+  if (oc.has('毛穴の目立ち')) { st.pore = true; st.words.push('毛穴の目立ち'); }
+  return st;
+}
 function comboEval(A, B) {
   if (!A || !B) return null;
-  const t = `${A.label} × ${B.label}`, ga = [...A.grps], gb = [...B.grps];
-  const match = r => (r.a.some(g => ga.includes(g)) && r.b.some(g => gb.includes(g))) || (r.a.some(g => gb.includes(g)) && r.b.some(g => ga.includes(g)));
-  let res = null;
-  if (A.v === B.v) res = {lv:A.act >= 1 ? 'care' : 'ok', note:'同じものを2つの商品で重ねると、量が多くなりすぎることがあります。', how:A.act >= 1 ? 'どちらか1つにします。' : '問題になることは少ないですが、商品を増やす必要はありません。'};
-  else {
-    const hits = COMBO2.concat(COMBO3).filter(match).sort((x, y) => COMBO_LEVELS[y.lv].o - COMBO_LEVELS[x.lv].o);
-    if (hits.length) res = Object.assign({}, hits[0], {rule:hits[0].t});
-    else if ((A.rx || B.rx)) { const other = A.rx ? B : A; res = A.rx && B.rx ? {lv:'doctor', note:'処方薬どうしの組み合わせです。', how:'医師・薬剤師に指示された順番と間隔を守ってください。'} : other.act >= 1 ? {lv:'doctor', note:'処方薬を使っている間に、刺激が出ることのある化粧品を重ねる組み合わせです。', how:'一緒に使ってよいか、医師・薬剤師に確認してください。'} : {lv:'ok', note:'保湿・肌荒れ防止の成分は、塗り薬と一緒に使われることが多い成分です。', how:'塗る順番・量・間隔は、医師・薬剤師の指示を優先してください。'}; }
-    else if (ga.some(g => C_GRP.includes(g) && gb.includes(g))) res = {lv:'care', note:'同じ種類の成分なので、重ねると量が多くなりすぎることがあります。', how:'どちらか1つにするか、使う日を分けます。'};
-    else if (A.act >= 2 && B.act >= 2) res = {lv:'irritate', note:'どちらも刺激が出やすい成分です。', how:'同じタイミングで重ねず、朝夜や日を分けます。'};
-    else if (A.act + B.act >= 3) res = {lv:'care', note:'片方は刺激が出やすい成分です。重ねると刺激を感じることがあります。', how:'刺激を感じたら、時間帯を分けます。'};
-    else res = {lv:'ok', note:'この組み合わせで、特に注意が必要という情報は見つかっていません。', how:'それぞれの製品の使い方を守って使えます。'};
+  const t = `${A.label} × ${B.label}`, ta = [...A.tags], tb = [...B.tags];
+  const m = r => (r.a.some(g => ta.includes(g)) && r.b.some(g => tb.includes(g))) || (r.a.some(g => tb.includes(g)) && r.b.some(g => ta.includes(g)));
+  const hits = COMBO_DB.filter(m).sort((x, y) => y.lv - x.lv);
+  const dup = A.keys.filter(k => B.keys.includes(k)).map(k => ingM(k)).filter(Boolean);
+  let res;
+  if (dup.length && A.v !== B.v) {
+    const rxDup = dup.some(e => e.rx);
+    res = {lv:rxDup ? 3 : dup.some(e => e.act >= 1) ? 2 : 1, rule:'同じ有効成分の重複', why:`どちらにも「${dup.map(e => e.ja).join('・')}」が入っています。${rxDup ? '処方薬の有効成分が重なると、量が多くなりすぎるおそれがあります。' : dup.some(e => e.act >= 1) ? '重ねると量が多くなり、刺激が出やすくなります。' : '刺激の少ない成分なので問題は少ないですが、同じ役割の商品を減らせるかもしれません。'}`, how:rxDup ? '医師・薬剤師に、両方を使ってよいか確認してください。' : 'どちらか1つにできないか見直します。', freq:'—', skin:{}, target:'—', ev:'C', src:rxDup ? ['pmda'] : ['review'], checked:COMBO_CHECKED};
+    if (hits.length && hits[0].lv > res.lv) res = Object.assign({}, hits[0], {rule:hits[0].t});
+  } else if (hits.length) res = Object.assign({}, hits[0], {rule:hits[0].t});
+  else if (A.rx && B.rx && !(A.oral && B.oral)) res = {lv:2, rule:'処方薬どうし', why:'処方薬どうしの組み合わせです。併用を避けるという登録された情報はありませんが、塗る順番・間隔・場所は医師が決めています。', how:'医師・薬剤師に指示された使い方を守ってください。', freq:'—', skin:{}, target:'—', ev:'情報不足', src:['pmda'], checked:COMBO_CHECKED};
+  else if ((A.rx && !A.oral && B.act >= 1) || (B.rx && !B.oral && A.act >= 1)) res = {lv:2, rule:'処方の塗り薬 × 刺激が出やすい化粧品', why:'処方薬を使っている肌に、刺激が出ることのある化粧品を重ねる組み合わせです。登録された個別の注意情報はありません。', how:'一緒に使ってよいか、医師・薬剤師に確認してください。', freq:'—', skin:{sens:'敏感肌の人は、確認するまで化粧品の方を休みます。'}, target:'—', ev:'情報不足', src:['pmda'], checked:COMBO_CHECKED};
+  else if (A.act >= 2 && B.act >= 2) res = {lv:2, rule:'刺激が出やすい成分どうし', why:'どちらも刺激が出やすい成分です（個別の注意情報は登録されていません）。', how:'同じタイミングで重ねず、朝夜や日を分けます。', freq:'—', skin:{sens:'敏感肌・乾燥肌の人は、どちらか1つに。'}, target:'—', ev:'情報不足', src:['review'], checked:COMBO_CHECKED};
+  else res = {lv:1, rule:'', why:'この組み合わせで注意が必要という情報は、登録されていません。', how:'それぞれの製品の使い方を守って使えます。', freq:'—', skin:{}, target:'—', ev:'情報不足', src:[], checked:COMBO_CHECKED, none:true};
+  res = Object.assign({}, res, {t, A, B, lvK:LV[res.lv]});
+  // 肌質・今の肌の状態に合わせた注意（レベルは変えずに、注意の言葉を強くする。医学的な禁忌と混同しないため）
+  if (res.lv === 2) {
+    const d = diagNow(), S = skinStateNow(), out = [];
+    const sens = d && (d.sensitive || d.main === 'dry' || d.main === 'innerdry');
+    if (sens) out.push(`あなたは${typeLabel(d)}なので、${((res.skin && res.skin.sens) || 'いつもより慎重に。どちらか1つにしぼるか、使う頻度を減らします。').replace(/^(敏感肌・乾燥肌の人は|敏感肌の人は)、?/, '')}`);
+    if (S.red || S.sting || S.barrier || (S.dry && (A.act >= 1 || B.act >= 1))) out.push(`直近7日の記録で「${S.words.filter(w => !/テカリ|毛穴/.test(w)).join('・')}」があります。${(res.skin && res.skin.state) || '今は刺激の出やすい組み合わせを休み、保湿を中心にしましょう。'}`);
+    if (out.length) res.skinNote = out.join(' ');
   }
-  res = Object.assign({}, res, {t});
-  // 肌質に合わせる：敏感肌・乾燥しやすい肌・赤みがある人は、刺激が出やすい組み合わせの注意を1段強める
-  const d = diagNow(), tr = new Set(diagAnswers().trouble || []);
-  const sens = d && (d.sensitive || d.main === 'dry' || d.main === 'innerdry' || d.priority.slice(0, 2).includes('redness'));
-  if (sens && res.lv !== 'doctor' && A.act >= 1 && B.act >= 1) {
-    const up = res.lv === 'ok' ? 'care' : res.lv === 'care' ? 'irritate' : res.lv;
-    if (up !== res.lv) res = Object.assign({}, res, {lv:up, skin:`あなたは${typeLabel(d)}と診断されているため、刺激の出やすい成分どうしの注意を1段強めています。`});
-    else res = Object.assign({}, res, {skin:`あなたは${typeLabel(d)}と診断されているため、特に注意してください。`});
-  }
-  const trMap = {retinoid:['retinoid'], acid:['aha', 'bha', 'pha'], vitc:['vitc']};
-  const hitTr = Object.entries(trMap).filter(([k, gs]) => tr.has(k) && gs.some(g => ga.includes(g) || gb.includes(g)));
-  if (hitTr.length) res = Object.assign({}, res, {trouble:'肌質診断で「過去に肌トラブルが起きた」と答えた種類の成分が入っています。'});
+  const tr = new Set(diagAnswers().trouble || []), trMap = {retinoid:['otcretinoid', 'retinoidAll'], acid:['aha', 'bha', 'pha'], vitc:['vitc'], fragrance:['fragrance'], ethanol:['ethanol'], essentialoil:['essential']};
+  const hitTr = Object.entries(trMap).filter(([k, gs]) => tr.has(k) && gs.some(g => ta.includes(g) || tb.includes(g)));
+  if (hitTr.length) res.trouble = '肌質診断で「過去に肌トラブルが起きた」と答えた種類の成分が入っています。';
   return res;
 }
 function comboCheck(k1, k2) { return comboEval(comboItem(k1), comboItem(k2)); }
+// 商品を、判定に使う形にする（成分表示から見つけた成分・処方薬の有効成分）
+function prodComboItem(x) {
+  if (x.rx) { const d = RX_DRUGS.find(z => z[1] === x.p.name); if (d) return Object.assign(rxComboItem(d[1], d[0], d[2], 'p:' + x.p.id), {label:truncate(x.p.name, 18)}); }
+  const tags = new Set(x.ings.flatMap(e => e.tags));
+  const list = splitIngsX(ingsOfMy(x.p)), top3 = list.slice(0, 3).map(s => normIng(s));
+  // アルコールは、成分表示の最初の3つに入っているときだけ「多く入っている」とみなす（配合量は表示からはわからない）
+  if (tags.has('ethanol') && !top3.some(n => n === normIng('エタノール') || n === normIng('Alcohol') || n === normIng('変性アルコール'))) tags.delete('ethanol');
+  if (/スクラブ|scrub/i.test(x.name)) tags.add('scrub');
+  // pH調整の酸（リンゴ酸・クエン酸など）は、角質ケアとして扱わない
+  return {v:'p:' + x.p.id, label:truncate(x.p.name, 18), tags, keys:x.ings.filter(e => e.act >= 1 || e.rx).map(e => e.k), act:Math.max(0, ...x.ings.map(e => e.act)), rx:false, oral:false, ings:x.ings};
+}
+function comboPairs(infos) {
+  const out = [], items = infos.map(x => ({x, it:prodComboItem(x)}));
+  items.forEach((a, i) => items.slice(i + 1).forEach(b => {
+    if (!a.it.tags.size || !b.it.tags.size) return;
+    const r = comboEval(a.it, b.it); if (!r || r.lv === 1) return;
+    out.push({r:Object.assign({}, r, {t:r.rule || '注意が必要な組み合わせ'}), x:a.x, y:b.x, shared:a.x.p.timing && b.x.p.timing ? sharedTiming(a.x.p, b.x.p) : []});
+  }));
+  return out.sort((a, b) => (b.shared.length ? 1 : 0) - (a.shared.length ? 1 : 0) || b.r.lv - a.r.lv);
+}
+// 紫外線対策の不足：レチノイド・AHAなどを使っているのに、日焼け止めが登録されていない
+function uvLackNote(infos) {
+  const risky = infos.filter(x => x.ings.some(e => ['otcretinoid', 'retinoidAll', 'aha', 'bha', 'hq'].some(t => e.tags.includes(t))));
+  if (!risky.length || infos.some(x => x.step === 'sunscreen')) return null;
+  return {lv:2, t:'レチノイド・AHAなど × 紫外線対策の不足', why:'レチノイドやAHAを使っていると、紫外線の影響を受けやすくなります。日焼け止めが登録されていません。', how:'毎朝、日焼け止めを使います（持っていれば、Myアイテムに登録してください）。', freq:'毎朝', products:risky.map(x => x.p), ev:'B', src:['aad', 'fda'], checked:COMBO_CHECKED};
+}
+
 
 // ---------- 朝・夜のルーティンを組み立てる ----------
 const STEP_MIN = {water:0.5, wash:1, cleanse:1.5, emulsify:0.5, toner:0.5, serum:0.5, spot:0.3, rx:0.5, rxmoist:0.5, emulsion:0.5, cream:0.5, allinone:0.7, sunscreen:1, other:0.5}; // 1工程にかかる時間の目安（分。アプリの仮定）
@@ -7716,8 +7883,9 @@ function routineDesign(mode) {
   const fitScore = x => pri.reduce((s, k, i) => s + (x.ings.some(e => e.cs.includes(k)) ? ([3, 2, 1.5, 1][i] || 0.5) : 0), 0) + x.ings.reduce((s, e) => s + (EVW[e.ev] || 0) * 0.1, 0);
   const pick = (list, n, why) => { const s = list.slice().sort((a, b) => fitScore(b) - fitScore(a)); s.slice(n).forEach(x => dropped.push({x, why})); return s.slice(0, n); };
   // 処方薬（アダパレン・過酸化ベンゾイル・ステロイドなど）を使っている間は、刺激の強い「塗ったままにする化粧品」を休む提案にする（続けてよいかは医師・薬剤師に確認）
-  const rxs = infos.filter(x => x.rx && ['adapalene', 'bpo', 'steroid'].some(g => x.groups.has(g)));
-  const paused = rxs.length ? infos.filter(x => !x.rx && !['wash', 'cleanse', 'mask'].includes(x.step) && [...x.groups].some(g => ['retinoid', 'aha', 'bha', 'pha', 'hq', 'enzyme'].includes(g))) : [];
+  const rxs = infos.filter(x => x.rx && ['adapalene', 'bpo', 'steroid', 'rxretinoid', 'isotretinoin'].some(g => x.groups.has(g)));
+  const iso = rxs.some(x => x.groups.has('isotretinoin'));
+  const paused = rxs.length ? infos.filter(x => !x.rx && (iso || !['wash', 'cleanse', 'mask'].includes(x.step)) && ([...x.groups].some(g => ['retinoid', 'aha', 'bha', 'pha', 'hq', 'enzyme', 'sulfur'].includes(g)) || (iso && /スクラブ|scrub/i.test(x.name)))) : [];
   if (paused.length) { paused.forEach(x => dropped.push({x, why:`処方薬（${truncate(rxs[0].p.name, 14)}）を使っている間は、刺激が重なりやすいため休みます。続けてよいかは医師・薬剤師に確認してください`})); notes.push({lv:'rx', t:'処方薬に合わせて、刺激の強い化粧品を休みました', d:`「${paused.map(x => truncate(x.p.name, 14)).join('」「')}」は、${rxs.map(x => truncate(x.p.name, 14)).join('・')}と重ねると刺激が強く出ることがあります。処方した医師・薬剤師に、一緒に使ってよいか確認するまでは休むのが安心です。`}); }
   const of = k => infos.filter(x => x.step === k && !paused.includes(x));
   const am = [], pm = [];
@@ -7866,7 +8034,6 @@ function careTrends() {
 const CARE_TABS = [['routine', '朝・夜のケア'], ['ing', 'おすすめ成分'], ['diag', '肌質診断'], ['compare', '比較・分析'], ['guide', '洗い方ガイド']];
 const evBadge = ev => `<span class="ev-b ev-${ev}" title="${esc(EVIDENCE[ev].d)}">根拠${ev}<small>${esc(EVIDENCE[ev].t)}</small></span>`;
 const csChips = cs => cs.map(k => { const c = concernOf(k); return c ? `<a class="chip" href="#/ingredients?c=${k}">${esc(c.s)}</a>` : ''; }).join('');
-const lvChip = lv => `<span class="cl-b cl-${COMBO_LEVELS[lv].c}">${esc(COMBO_LEVELS[lv].l)}</span>`;
 function rtSettings() { const st = state.settings; st.routine = st.routine && typeof st.routine === 'object' ? st.routine : {}; st.routine.order = st.routine.order || {}; return st.routine; }
 function rtLog(date) { state.routineLogs = state.routineLogs || {}; return state.routineLogs[date || todayStr()] = state.routineLogs[date || todayStr()] || {am:{}, pm:{}}; }
 const careNeedsDiag = () => !diagNow();
@@ -8171,7 +8338,7 @@ function careHomeCard() {
 // 成分辞典：肌悩みで絞り込み・成分マスターの詳細
 function ingMasterDetail(e) {
   const inMy = state.myProducts.filter(p => p.status !== '使用終了' && masterIngsOf(ingsOfMy(p)).some(x => x.k === e.k));
-  const pairs = COMBO2.filter(r => r.a.includes(e.grp) || r.b.includes(e.grp));
+  const pairs = COMBO_DB.filter(r => r.a.some(g => e.tags.includes(g)) || r.b.some(g => e.tags.includes(g))).sort((x, y) => y.lv - x.lv);
   const row = (t, v) => `<div class="rt-dl"><b>${t}</b><div>${v}</div></div>`;
   return `<a class="back" href="#/ingredients">← 成分辞典</a>` + pageHead(e.ja, e.en) + `<div class="card">
     <div class="im-top">${evBadge(e.ev)}<span class="chip">${esc(e.reg)}</span><span class="chip ${e.irr === '高' ? 'red' : e.irr === '中' ? 'warn' : 'green'}">刺激：${esc(e.irr)}</span></div>
@@ -8184,7 +8351,7 @@ function ingMasterDetail(e) {
     ${row('INCI名・別名', esc(e.inci.join('、')))}
     ${row('参考文献・情報源', e.refs.map(r => CARE_REFS[r] ? `<a href="${CARE_REFS[r].u}" target="_blank" rel="noopener">${esc(CARE_REFS[r].t)}</a>` : '').join('<br>'))}
     <p class="small muted">メーカーの宣伝表現ではなく、公的な基準・ガイドライン・研究にもとづく一般的な情報です。効果を保証するものではありません。${fmtDate(CARE_DB_UPDATED)}更新</p></div>
-    ${pairs.length ? `<div class="card"><div class="card-h"><h2>併用の注意</h2><a class="link small" href="#/combo">併用チェック →</a></div>${pairs.map(r => `<div class="rt-note"><div>${lvChip(r.lv)}</div><b>${esc(r.t)}</b><p class="small">${esc(r.note)}</p><p class="small muted">${esc(r.how)}</p></div>`).join('')}</div>` : ''}
+    ${pairs.length ? `<div class="card"><div class="card-h"><h2>併用の注意（${pairs.length}件）</h2><a class="link small" href="#/combo">併用チェック →</a></div>${pairs.map(r => comboCardHtml(r)).join('')}</div>` : ''}
     <div class="card"><div class="card-h"><h2>この成分を含むMyアイテム</h2></div>${inMy.length ? inMy.map(p => `<p><a href="#/my/${encodeURIComponent(p.id)}">${esc(p.name)}</a></p>`).join('') : '<p class="small muted">ありません（全成分を登録した商品だけを調べています）</p>'}</div>`;
 }
 function ingConcernFilterHtml() {
@@ -8192,39 +8359,100 @@ function ingConcernFilterHtml() {
   return `<div class="ic-chips" role="group" aria-label="肌悩みで絞り込む"><button type="button" class="ic ${!c ? 'on' : ''}" data-action="ing-c" data-id="">すべて</button>${CONCERN_MASTER.map(x => `<button type="button" class="ic ${c === x.k ? 'on' : ''}" data-action="ing-c" data-id="${x.k}">${esc(x.s)}</button>`).join('')}</div>`;
 }
 // 併用チェック：成分を2つ選んで調べる
+const lvChip = lv => { const k = typeof lv === 'number' ? LV[lv] : lv; return `<span class="cl-b cl-${COMBO_LEVELS[k].c}">${'●'} ${esc(COMBO_LEVELS[k].l)}</span>`; };
+const TAG_NAMES = {otcretinoid:'レチノール類', retinoidAll:'処方のレチノイド', rxretinoid:'処方のレチノイド', aha:'AHA', bha:'BHA（サリチル酸）', pha:'PHA', enzyme:'酵素洗顔', scrub:'スクラブ', vitc:'ビタミンC（アスコルビン酸）', vitcd:'ビタミンC誘導体', hq:'ハイドロキノン', kojic:'コウジ酸', arbutin:'アルブチン', bpo:'過酸化ベンゾイル', sulfur:'硫黄', dapsone:'ダプソン', azelaic:'アゼライン酸', antibiotic:'抗菌薬の塗り薬', isotretinoin:'イソトレチノイン（内服）', tetracycline:'テトラサイクリン系抗菌薬（内服）', vitasupp:'ビタミンAのサプリ', waxing:'ワックス脱毛', rxTopical:'処方の塗り薬', ethanol:'アルコールが多い化粧品', harshwash:'洗浄力の強い洗顔料', fragrance:'香料', essential:'精油', niacinamide:'ナイアシンアミド', tranexamic:'トラネキサム酸', gentle:'保湿・肌荒れ防止の成分', barrier:'バリア成分', moist:'保湿成分', soothe:'肌荒れ防止成分', occlusive:'油分'};
+const tagName = g => g.startsWith('k:') ? ((ingM(g.slice(2)) || {}).ja || g) : TAG_NAMES[g] || g;
+const sideLabel = list => [...new Set(list.map(tagName))].join('・');
+// 1つの組み合わせのカード（成分A・成分B・判定・理由・肌質別の注意・使い方・頻度・根拠）
+function comboCardHtml(r, opts) {
+  opts = opts || {};
+  const k = LV[r.lv], A = opts.a || (r.A ? r.A.label : sideLabel(r.a || [])), B = opts.b || (r.B ? r.B.label : sideLabel(r.b || []));
+  const src = (r.src || []).map(s => CARE_REFS[s] ? (CARE_REFS[s].u ? `<a href="${CARE_REFS[s].u}" target="_blank" rel="noopener">${esc(CARE_REFS[s].t)}</a>` : esc(CARE_REFS[s].t)) : '').filter(Boolean).join('<br>');
+  const row = (t, v) => v ? `<div class="rt-dl"><b>${t}</b><div>${v}</div></div>` : '';
+  const skin = r.skinNote || [r.skin && r.skin.sens ? `敏感肌・乾燥肌：${r.skin.sens}` : '', r.skin && r.skin.state ? `赤み・皮むけがあるとき：${r.skin.state}` : ''].filter(Boolean).join('<br>');
+  return `<div class="cc-card lv${r.lv} ${r.imp ? 'imp' : ''}">
+    <div class="cc-top">${lvChip(r.lv)}${r.imp ? '<span class="chip red">重要</span>' : ''}</div>
+    <div class="cc-ab"><span>${esc(A)}</span><i>×</i><span>${esc(B)}</span></div>
+    ${opts.sub ? `<p class="small muted cc-sub">${opts.sub}</p>` : ''}
+    ${r.rule && r.rule !== `${A} × ${B}` ? `<p class="cc-rule">${esc(r.rule)}</p>` : ''}
+    ${opts.compact ? `<p class="cc-why">${esc(r.why)}</p><details class="cc-more"><summary>くわしく（使い方・頻度・根拠）</summary>` : row('注意する理由', esc(r.why))}
+    ${skin ? row('肌質別の注意', `<span class="${r.skinNote ? 'cc-skin' : ''}">${r.skinNote ? esc(r.skinNote) : skin}</span>`) : ''}
+    ${r.trouble ? row('過去のトラブル', `<span class="cc-skin">${esc(r.trouble)}</span>`) : ''}
+    ${row('おすすめの使い方', esc(r.how))}
+    ${r.freq && r.freq !== '—' ? row('頻度の目安', esc(r.freq)) : ''}
+    <details class="cc-ev"><summary>根拠：${esc(r.ev === '情報不足' ? '情報不足' : `${r.ev}（${COMBO_EV[r.ev]}）`)}</summary>
+      ${row('対象', esc(r.target || '—'))}${row('出典', src || '<span class="muted">情報不足</span>')}${row('最終確認日', esc(r.checked || COMBO_CHECKED))}${r.hist ? row('更新履歴', esc(r.hist.join('／'))) : ''}</details>
+    ${opts.compact ? '</details>' : ''}
+  </div>`;
+}
+// 成分・塗り薬で調べる：検索・絞り込み・2つ選ぶ
 function comboOptsHtml(cur, ph) {
   const rx = RX_DRUGS.filter(d => !/水虫|ヘルペス|汗|傷|乾癬/.test(d[0]));
-  return `<option value="">${ph}</option><optgroup label="成分">${ING_MASTER.filter(e => !e.rx).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`
-    + `<optgroup label="皮膚科の塗り薬">${rx.map(d => `<option value="rx:${esc(d[1])}" ${'rx:' + d[1] === cur ? 'selected' : ''}>${esc(d[1])}</option>`).join('')}</optgroup>`;
+  const ms = ING_MASTER.filter(e => !e.oral && !e.care && !(e.rx && e.inci.some(n => rx.some(d => d[2].includes(n)))));
+  return `<option value="">${ph}</option><optgroup label="成分">${ms.filter(e => !e.rx).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`
+    + `<optgroup label="処方薬・海外の処方成分">${ING_MASTER.filter(e => e.rx && !e.oral).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`
+    + `<optgroup label="皮膚科の薬（商品名）">${rx.map(d => `<option value="rx:${esc(d[1])}" ${'rx:' + d[1] === cur ? 'selected' : ''}>${esc(d[1])}</option>`).join('')}</optgroup>`
+    + `<optgroup label="飲み薬・サプリ・ケアの方法">${ING_MASTER.filter(e => e.oral || e.care).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`;
 }
-const comboResHtml = r => `<div class="rt-note cc-res">${lvChip(r.lv)}<b>${esc(r.t)}</b><p class="small">${esc(r.note)}</p><p class="small muted">${esc(r.how)}</p>${r.skin ? `<p class="small cc-skin">${esc(r.skin)}</p>` : ''}${r.trouble ? `<p class="small cc-skin">${esc(r.trouble)}</p>` : ''}</div>`;
 function comboPickerHtml() {
-  const a = ui.ccA || '', b = ui.ccB || '', A = comboItem(a), B = comboItem(b);
-  let h = `<div class="card"><div class="card-h"><h2>成分・塗り薬の併用チェック</h2></div>
+  const a = ui.ccA || '', b = ui.ccB || '', A = comboItem(a), B = comboItem(b), d = diagNow(), S = skinStateNow();
+  let h = `<div class="card"><div class="card-h"><h2>2つを選んで調べる</h2></div>
     <div class="cc-pick"><select class="select" id="cc-a" aria-label="1つ目">${comboOptsHtml(a, '1つ目を選ぶ')}</select><span>×</span><select class="select" id="cc-b" aria-label="2つ目">${comboOptsHtml(b, '2つ目（空欄＝すべて）')}</select></div>`;
-  if (A && B) h += comboResHtml(comboEval(A, B));
+  if (A && B) h += comboCardHtml(comboEval(A, B), {sub:esc([A.sub, B.sub].filter(Boolean).join(' ／ '))});
   else if (A) {
-    // 1つだけ選んだとき：すべての成分・塗り薬との組み合わせを、注意の強い順に出す
-    // 塗り薬は、ニキビの薬は有効成分ごとに1つ、ほかは種類ごとに1つにまとめて出す（同じ答えが何十行も並ばないように）
-    const rxRep = []; const seenRx = new Set();
-    RX_DRUGS.filter(d => !/水虫|ヘルペス|汗|傷|乾癬/.test(d[0])).forEach(d => { const k = /ニキビ|酒さ/.test(d[0]) ? d[2] : d[0]; if (seenRx.has(k)) return; seenRx.add(k); rxRep.push({v:'rx:' + d[1], label:/ニキビ|酒さ/.test(d[0]) ? d[1] : `${d[0].replace(/（.*?）/, '')}の塗り薬（${d[0].match(/（(.*?)）/) ? d[0].match(/（(.*?)）/)[1] : '例：' + d[1]}）`}); });
-    const all = ING_MASTER.filter(e => !e.rx).map(e => ({v:e.k, label:e.ja})).concat(rxRep);
-    const rs = all.filter(x => x.v !== a).map(x => Object.assign(x, {r:comboEval(A, comboItem(x.v))})).filter(x => x.r);
-    h += `<p class="small muted">「${esc(A.label)}」と、ほかのすべての成分・塗り薬との組み合わせです（注意の強い順）。</p>`;
-    ['doctor', 'irritate', 'care', 'ok'].forEach(lv => {
+    const rxRep = [], seen = new Set();
+    RX_DRUGS.filter(x => !/水虫|ヘルペス|汗|傷|乾癬/.test(x[0])).forEach(x => { const k = /ニキビ|酒さ|飲み薬|サプリ|院内/.test(x[0]) ? x[2] : x[0]; if (seen.has(k)) return; seen.add(k); rxRep.push({v:'rx:' + x[1], label:/ニキビ|酒さ|飲み薬|サプリ|院内/.test(x[0]) ? x[1] : `${x[0].replace(/（.*?）/, '')}の塗り薬（${(x[0].match(/（(.*?)）/) || [])[1] || '例：' + x[1]}）`}); });
+    const all = ING_MASTER.filter(e => !(e.rx && !e.oral && rxRep.some(x => (comboItem(x.v) || {keys:[]}).keys.includes(e.k)))).map(e => ({v:e.k, label:e.ja})).concat(rxRep);
+    const rs = all.filter(x => x.v !== a).map(x => Object.assign({}, x, {r:comboEval(A, comboItem(x.v))})).filter(x => x.r);
+    h += `<p class="small muted">「${esc(A.label)}」と、ほかのすべての成分・薬・ケアとの組み合わせです（注意の強い順）。押すとくわしく見られます。</p>`;
+    [3, 2, 1].forEach(lv => {
       const L = rs.filter(x => x.r.lv === lv); if (!L.length) return;
-      const groups = new Map(); L.forEach(x => { const k = x.r.note + '|' + x.r.how; if (!groups.has(k)) groups.set(k, {r:x.r, names:[]}); groups.get(k).names.push(x.label); });
-      h += `<details class="fold cc-grp" ${lv === 'doctor' || lv === 'irritate' ? 'open' : ''}><summary>${lvChip(lv)}<span class="cc-n">${L.length}件</span></summary>${[...groups.values()].map(g => `<div class="cc-it"><b>${esc(g.names.join('、'))}</b><p class="small muted">${esc(g.r.note)}${lv === 'ok' ? '' : ' ' + esc(g.r.how)}</p></div>`).join('')}</details>`;
+      h += `<details class="fold cc-grp g${lv}" ${lv >= 2 ? 'open' : ''}><summary>${lvChip(lv)}<span class="cc-n">${L.length}件</span></summary>${L.map(x => `<button type="button" class="cc-li" data-action="cc-pick" data-id="${esc(x.v)}"><b>${esc(x.label)}</b><small>${esc(x.r.rule || (x.r.none ? '登録された注意はありません（情報不足）' : ''))}</small>${x.r.imp ? '<span class="chip red">重要</span>' : ''}</button>`).join('')}</details>`;
     });
-  } else h += '<p class="small muted">1つだけ選ぶと、すべての成分・塗り薬との組み合わせを一覧で出します。2つ選ぶと、その組み合わせをくわしく出します。</p>';
-  const d = diagNow();
-  h += `<p class="small muted" style="margin-top:10px">分類：${Object.values(COMBO_LEVELS).map(l => esc(l.l)).join('／')}。「刺激が強くなる可能性」は禁止ではありません。処方薬は医師・薬剤師の指示が優先です。${d ? `あなたの肌質（${esc(typeLabel(d))}）に合わせて判定しています。` : '肌質診断をすると、肌質に合わせて判定します。'}</p></div>`;
+  } else h += '<p class="small muted">1つだけ選ぶと、すべての組み合わせを一覧で出します。2つ選ぶと、その組み合わせのくわしい注意を出します。</p>';
+  h += `<p class="small muted" style="margin-top:10px">${d ? `あなたの肌質（${esc(typeLabel(d))}）` : '肌質（診断すると反映）'}${S.n ? `と直近7日の肌の状態${S.words.length ? `（${esc(S.words.join('・'))}）` : ''}` : ''}に合わせて、注意の言葉を変えています。判定のレベル自体は、医学的な根拠にもとづいて決めています。</p></div>`;
+  // 登録されている組み合わせの一覧（検索・絞り込み）
+  const q = normIng(ui.ccQ || ''), lvF = ui.ccLv || 0;
+  h += `<div class="card"><div class="card-h"><h2>登録されている組み合わせ</h2><span class="chip">${COMBO_DB.length}件</span></div>
+    <input type="search" class="input" id="cc-q" placeholder="成分名で探す（例：レチノール、エピデュオ）" value="${esc(ui.ccQ || '')}" aria-label="成分名で探す">
+    <div class="ic-chips cc-lvf">${[[0, 'すべて'], [3, '避ける・医師に確認'], [2, '併用注意'], [1, '併用可能']].map(([v, l]) => `<button type="button" class="ic ${lvF === v ? 'on' : ''}" data-action="cc-lv" data-id="${v}">${l}</button>`).join('')}</div>
+    <div id="cc-list">${comboDbListHtml(q, lvF)}</div></div>`;
   return h;
 }
-function comboLevelsHtml() {
-  const A = prodAnalysis(); if (!A.pairs.length) return '';
-  return `<div class="card"><div class="card-h"><h2>使っている商品の併用の注意</h2></div>${A.pairs.map(p => `<div class="rt-note">${lvChip(p.r.lv)}<b>${esc(p.r.t)}</b><p class="small">${esc(truncate(p.x.p.name, 20))} × ${esc(truncate(p.y.p.name, 20))}${p.shared.length ? `（どちらも${esc(p.shared.join('・'))}に使用）` : '（使う時間は別）'}</p><p class="small muted">${esc(p.r.note)} ${esc(p.r.how)}</p>${p.r.skin ? `<p class="small cc-skin">${esc(p.r.skin)}</p>` : ''}</div>`).join('')}</div>`;
+function comboDbListHtml(q, lvF) {
+  const nm = r => normIng([sideLabel(r.a), sideLabel(r.b), r.t].join(' '));
+  // 商品名（エピデュオなど）で探したときは、その薬の有効成分で探す
+  let rxTags = [];
+  if (q) RX_DRUGS.filter(d => normIng(d[1]).includes(q)).forEach(d => { const it = rxComboItem(d[1], d[0], d[2]); rxTags = rxTags.concat([...it.tags]); });
+  const L = COMBO_DB.filter(r => (!lvF || r.lv === lvF) && (!q || nm(r).includes(q) || r.a.concat(r.b).some(g => rxTags.includes(g)))).sort((x, y) => y.lv - x.lv);
+  return L.length ? L.map(r => comboCardHtml(r, {compact:true})).join('') : '<p class="small muted">見つかりませんでした。上の「2つを選んで調べる」でも確かめられます。</p>';
 }
+function comboLevelsHtml() {
+  const A = prodAnalysis(), uv = uvLackNote(A.infos);
+  if (!A.pairs.length && !uv) return '';
+  return `<div class="card"><div class="card-h"><h2>使っている商品の併用の注意</h2><span class="chip">${A.pairs.length + (uv ? 1 : 0)}件</span></div>
+    ${uv ? comboCardHtml(uv, {a:'レチノイド・AHAなど', b:'紫外線対策の不足', sub:esc(uv.products.map(p => truncate(p.name, 18)).join('、'))}) : ''}
+    ${A.pairs.map(p => comboCardHtml(p.r, {a:truncate(p.x.p.name, 22), b:truncate(p.y.p.name, 22), sub:`${p.shared.length ? `どちらも${esc(p.shared.join('・'))}に使っています` : '使う時間は別です'}`})).join('')}</div>`;
+}
+// 商品名に書かれた濃度（例：「ナイアシンアミド10%」）。書かれていなければ空
+function concOf(name) { return [...String(name || '').normalize('NFKC').matchAll(/([぀-ヿ一-鿿A-Za-z\-]{2,}?)\s*([0-9]+(?:\.[0-9]+)?)\s*%/g)].map(m => `${m[1].replace(/^.*[ 　]/, '')} ${m[2]}%`).slice(0, 3); }
+// 商品を登録したら、すぐに成分を調べて、使っている商品・薬との組み合わせを知らせる
+function comboAfterAdd(pid) {
+  const p = getMy(pid); if (!p || p.status !== '使用中') return;
+  const all = state.myProducts.filter(x => x.status === '使用中').map(prodInfo), me = all.find(x => x.p.id === pid); if (!me) return;
+  const it = prodComboItem(me), pairs = [];
+  all.filter(x => x !== me).forEach(x => { const o = prodComboItem(x); if (!it.tags.size || !o.tags.size) return; const r = comboEval(it, o); if (r && r.lv >= 2) pairs.push({r, x}); });
+  pairs.sort((a, b) => b.r.lv - a.r.lv);
+  const cs = concOf(p.name);
+  const body = `<div class="ca-sum">
+    <div class="rt-dl"><b>商品名</b><div>${esc(p.name)}</div></div>
+    <div class="rt-dl"><b>見つけた成分</b><div>${me.src === 'none' ? '<span class="chip warn">成分情報未確認</span><p class="small muted">全成分が登録されていないため、推測はしていません。商品ページで全成分を入れると、くわしく調べられます。</p>' : me.ings.length ? me.ings.map(e => `<a class="chip ${e.act >= 2 ? 'warn' : 'green'}" href="#/ingredients/${e.k}">${esc(e.ja)}</a>`).join('') + `<small class="muted rt-src">${me.src === 'verified' ? '成分表示（確認済み）から' : me.src === 'rx' ? '処方薬の有効成分から' : '登録された成分表示から（未確認）'}</small>` : '<span class="muted">データベースにある注意が必要な成分は見つかりませんでした</span>'}</div></div>
+    <div class="rt-dl"><b>濃度</b><div>${cs.length ? `商品名に書かれた濃度：${esc(cs.join('、'))}` : '<span class="muted">不明（成分表示には濃度が書かれていないため、一般的な濃度を想定して判定します）</span>'}</div></div>
+  </div>
+  ${pairs.length ? `<h3 class="ca-h">使っている商品・薬との組み合わせ（${pairs.length}件）</h3>${pairs.map(({r, x}) => comboCardHtml(r, {a:truncate(p.name, 20), b:truncate(x.p.name, 20)})).join('')}` : `<p class="ca-ok">${me.src === 'none' ? '成分がわからないため、組み合わせはまだ判断できません。' : '使っている商品・薬との組み合わせで、注意が必要なものは見つかりませんでした。'}</p>`}`;
+  openModal({title:'成分の自動チェック', size:'small', dismissable:true, body, footer:`<button type="button" class="btn btn-ghost" data-action="care-go">朝・夜のケアを見る</button><button type="button" class="btn btn-primary" data-action="close-modal">OK</button>`});
+}
+
 
 
 // 肌悩み（14）を保存し、前からある8つの肌悩みにも読みかえて入れる（ホームのおすすめケアなどで使う）
@@ -8259,6 +8487,7 @@ async function careAiRun() {
 }
 
 // 併用チェックの選択欄
+document.addEventListener('input', e => { if (e.target && e.target.id === 'cc-q') { ui.ccQ = e.target.value; const L = document.getElementById('cc-list'); if (L) L.innerHTML = comboDbListHtml(normIng(ui.ccQ), ui.ccLv || 0); } });
 document.addEventListener('change', e => { const id = e.target && e.target.id; if (id === 'cmp-a' || id === 'cmp-b') { ui[id === 'cmp-a' ? 'cmpA' : 'cmpB'] = e.target.value; render(); return; } if (id === 'cc-a' || id === 'cc-b') { ui[id === 'cc-a' ? 'ccA' : 'ccB'] = e.target.value; render(); } });
 
 // ===== 朝・夜の「いつものケア」をワンタップで記録 =====
@@ -11729,6 +11958,9 @@ const actions = {
   'rt-step': n => { ui.rtStep = Math.max(0, (ui.rtStep || 0) + Number(n)); render(); window.scrollTo({top:0, behavior:'smooth'}); },
   'ing-c': k => { ui.ingC = k; render(); },
   'combo-tab': k => { ui.comboTab = k; hapticTick(); render(); },
+  'cc-pick': v => { ui.ccB = v; render(); setTimeout(() => { const c = document.querySelector('.cc-pick'); if (c) c.scrollIntoView({block:'start', behavior:'smooth'}); }, 30); },
+  'cc-lv': v => { ui.ccLv = Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
+  'care-go': () => { closeModal(); location.hash = '#/care/routine'; },
   'care-ai': () => careAiRun(),
   'close-modal': () => dismissModal(),
   'close-modal-bg': (id, el, e) => { if (e.target === el) dismissModal(); },
