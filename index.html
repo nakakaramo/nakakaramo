@@ -2530,6 +2530,14 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .my-pop-i .mt-n{font-style:normal;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#F6E3DA;color:#B4562F;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center}
 .my-pop-i+.my-pop-i{border-top:1px solid var(--line);border-radius:0}
 .my-pop-i:first-child{border-radius:12px 12px 0 0}.my-pop-i:last-child{border-radius:0 0 12px 12px}
+
+/* 今日の記録：左の「ニキビ」の上＝3Dの頭のてっぺん、「皮脂」のゲージの下＝「良い」などのラベルの下。その間に均等に並べる */
+.t3-card .t3-grid:has(.t3-s2){align-items:stretch}
+.t3-card .t3-s2{justify-content:flex-start;gap:0;padding-top:var(--t3-top,4px);padding-bottom:0}
+.t3-card .t3-s2 .t3-ac{margin-top:-4px}
+.t3-card .t3-s2 .t3-ms{flex:1;justify-content:space-between;gap:6px;padding-top:10px}
+.t3-card .t3-fc{justify-content:flex-start}
+.t3-card .t3-under{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -11436,6 +11444,22 @@ function face3dSaveView(nextKey) {
   // 最初の1周の途中で別のタブに移ったときも、戻ってきたら途中から動きを続ける
   FACE3D.view[st.viewKey] = st.auto ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z};
 }
+// ホームの今日の記録：3Dの頭のてっぺんが、画面のどの高さに描かれるかを計算して、左の「ニキビ」の上をそこにそろえる
+function t3AlignTop(st, cv) {
+  try {
+    const card = cv.closest('.t3-card'), grid = card && card.querySelector('.t3-grid'); if (!grid) return;
+    if (!st.geo.boundingBox) st.geo.computeBoundingBox();
+    const bb = st.geo.boundingBox, T = window.THREE;
+    st.group.rotation.y = 0; st.group.rotation.x = st.pitch || 0; st.group.updateMatrixWorld(true); st.cam.updateMatrixWorld(true); st.cam.updateProjectionMatrix();
+    let top = Infinity; // 頭の上のほうの点をいくつか画面に写して、一番上を使う
+    for (let zx = 0; zx <= 4; zx++) { const v = new T.Vector3(0, bb.max.y, bb.min.z + (bb.max.z - bb.min.z) * zx / 4).applyMatrix4(st.group.matrixWorld).project(st.cam); top = Math.min(top, (1 - v.y) / 2 * cv.clientHeight); }
+    st.group.rotation.y = st.yaw; st.dirty = true;
+    if (!isFinite(top)) return;
+    const off = cv.getBoundingClientRect().top - grid.getBoundingClientRect().top + top;
+    grid.style.setProperty('--t3-top', Math.max(0, Math.round(off)) + 'px');
+  } catch (e) { /* 何もしない */ }
+}
+window.addEventListener('resize', () => { const st = FACE3D.st; if (st && st.alignTop) setTimeout(st.alignTop, 50); });
 async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
   const cv = document.getElementById(opts.canvas);
@@ -11481,6 +11505,7 @@ async function drawFace3d(opts) {
     yaw:pv ? pv.yaw : 0, pitch:pv ? pv.pitch : 0.05, phase:pv && pv.auto ? pv.phase : 0, auto:opts.auto !== false && (firstTime || !!(pv && pv.auto)), dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null, viewKey:vk, born:performance.now()};
   if (pv && pv.z && !opts.full) { cam.position.z = pv.z; }
   opts.ready(st);
+  if (opts.canvas === 'face3d-home') { st.alignTop = () => t3AlignTop(st, cv); st.alignTop(); } // ホーム：左の数字を、頭のてっぺんの高さにそろえる
   if (pv && !opts.full) { st.yaw = pv.yaw; st.pitch = pv.pitch; st.dirty = true; } // ready() が向きを変えても、前の向きに戻す
   if (pv && pv.auto) delete pv.auto;
   const l = document.getElementById(opts.load); if (l) l.hidden = true;
