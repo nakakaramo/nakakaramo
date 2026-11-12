@@ -13988,7 +13988,7 @@ function placeHomeTabInd() {
 // ホームを横にスワイプ：今日の記録 ⇄ ケアポイント ⇄ ショートカット
 // 指に合わせて中身が動き、十分に動かすか、すばやく払うと隣のタブへ。縦のスクロールが先に始まったら、横には動かさない
 (() => {
-  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0, swAt = 0, sx = 0, tot = 0, busy = 0; // busy：切り替えの動きの途中（次のスワイプを受けつけない）
+  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0, swAt = 0, sx = 0, tot = 0, pend = null; // pend：切り替えの動きの途中で、まだ本物の画面に切り替えていないもの
   // iPhoneで鳴らし損ねないように、指を離したときのもう一つの合図（pointerup）でも鳴らす（ほぼ同時なので1回に感じる）
   window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
   // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
@@ -14040,7 +14040,7 @@ function placeHomeTabInd() {
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    if (Date.now() < busy) return; // 前の切り替えが終わるまで待つ（途中で触ると、中身が消えたり二重に動いたりするので）
+    if (pend) pend(); // 前の切り替えの動きの途中で触ったら、すぐに切り替えを終わらせて、続けて次のスワイプを受けつける（2回なぞらなくても動くように）
     const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full,.au-ov,.pm-ov')) return;
@@ -14076,10 +14076,10 @@ function placeHomeTabInd() {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
     // 短いスワイプでも移動：40px（画面幅の1割ほど）動かすか、軽く払えば次のタブへ
-    const i = idx(), w = window.innerWidth, fast = Math.abs(tot) > 24 && Math.abs(tot) / (performance.now() - t0) > 0.25;
+    const i = idx(), w = window.innerWidth, fast = Math.abs(tot) > 16 && Math.abs(tot) / (performance.now() - t0) > 0.2; // 軽く払っただけでも動く
     const j = (tot < 0 ? i + 1 : i - 1);
     const g = page();
-    if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < g.tabs.length) {
+    if ((Math.abs(tot) > Math.min(32, w * 0.08) || fast) && j >= 0 && j < g.tabs.length) {
       hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
       // 今の中身は横へ出ていき、隣の中身が真ん中に入ってくる（そのあと本物の画面に切り替える）
       const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .54s cubic-bezier(.22,.7,.2,1)';
@@ -14089,9 +14089,10 @@ function placeHomeTabInd() {
         if (bc) { bc.style.transition = ce; bc.style.color = 'var(--muted)'; } if (bj) { bj.style.transition = ce; bj.style.color = 'var(--ink)'; }
         htBadgeMove(bj, bc, '.54s cubic-bezier(.22,.7,.2,1)'); ui.htBadgeDone = true; } // 数字の丸も、文字と同じ速さで // 文字の色も棒と一緒に
       indX = null; const hadGhost = !!(ghosts.l || ghosts.r);
-      busy = Date.now() + (hadGhost ? 620 : 600);
-      const keepY = window.scrollY; // なぞって切り替えたときは、見えていた位置のまま（隣の中身と同じ位置）にして、上に飛ばない
-      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; ui.swKeepY = keepY; g.go(g.tabs[j].k); ui.swKeepY = null; ghostClear(); busy = Date.now() + 60; }, hadGhost ? 560 : 0);
+      const keepY = window.scrollY, dirS = tot < 0 ? 1 : -1; // なぞって切り替えたときは、見えていた位置のまま（隣の中身と同じ位置）にして、上に飛ばない
+      let tm = 0;
+      const fin = () => { if (pend !== fin) return; pend = null; clearTimeout(tm); ui.htSlide = hadGhost ? 0 : dirS; ui.hpNoSlide = hadGhost; ui.indFromX = tx; ui.swKeepY = keepY; g.go(g.tabs[j].k); ui.swKeepY = null; ghostClear(); };
+      pend = fin; tm = setTimeout(fin, hadGhost ? 560 : 0);
     } else back();
   };
   window.addEventListener('touchend', e => { end(e); window.__hSwipe = false; }, {passive:true});
