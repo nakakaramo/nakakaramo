@@ -2176,6 +2176,32 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .ca-ok{background:var(--green-p);color:var(--green-d);border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:10px}
 .cc-why{font-size:13px;line-height:1.7;margin:4px 0 0;color:var(--ink2)}
 .cc-more summary{font-size:12.5px;color:var(--green-d);font-weight:600;cursor:pointer;padding:6px 0 0}
+
+/* ===== 全体の動きをなめらかに（瞬間的に変わらないように） ===== */
+:root{--ease-out:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.4,.64,1);interpolate-size:allow-keywords}
+/* ボタン・カード・リンク：押すと少し沈み、離すと弾むように戻る。色や枠の変化もふわっと */
+button,.btn,a.btn,.tab,.ct,.rt-mode,.chip,.fchip,.pcard,.mrow,.add-opt,.sc-opt,.ls-main,.acc-row,.used-tile,.pop-item,.fp-chip,.fp-kind,.sw-opt,.seg-opt span,.ht,.ldc-d,.icon-btn,.f3-expand{
+  transition:transform .32s var(--ease-spring),background-color .25s var(--ease-out),color .25s var(--ease-out),border-color .25s var(--ease-out),box-shadow .25s var(--ease-out),opacity .25s var(--ease-out)}
+button:not(:disabled):active,.btn:active,.pcard:active,.mrow:active,.add-opt:active,.used-tile:active,.pop-item:active,.fp-kind:active,.fp-chip:active,.icon-btn:active{transition-duration:.08s}
+#sw-body .sw-opts .sw-opt,#sw-body .sw-opts .sw-opt:active{transition:background-color .2s var(--ease-out),color .2s var(--ease-out)}
+/* チェック・スイッチ・入力欄 */
+input,textarea,select,.input,.textarea{transition:border-color .2s var(--ease-out),box-shadow .2s var(--ease-out),background-color .2s var(--ease-out)}
+input[type=checkbox],input[type=radio]{transition:transform .25s var(--ease-spring)}
+input[type=checkbox]:checked,input[type=radio]:checked{animation:chkPop .3s var(--ease-spring)}
+@keyframes chkPop{0%{transform:scale(.8)}100%{transform:none}}
+/* 開いたり閉じたりするもの（くわしく見る など）：高さがなめらかに変わる */
+details::details-content{transition:height .32s var(--ease-out),content-visibility .32s allow-discrete;height:0;overflow:clip}
+details[open]::details-content{height:auto}
+details > summary{transition:color .2s var(--ease-out)}
+/* あとから中身が入れかわるところ（検索結果・一覧など）は、ふわっと出す */
+#find-list > *,#pop-list > *,#ld-detail > *,#ld-info > *{animation:softIn .32s var(--ease-out) backwards}
+@keyframes softIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* 出てくる・消えるお知らせや小さな箱 */
+.field-error:not(:empty){animation:softIn .3s var(--ease-out) backwards}
+/* 画面の切り替え：横にすべる動きを、少しやわらかく */
+#main.pg-push{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
+#main.pg-pop{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after,details::details-content{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -10748,6 +10774,8 @@ window.addEventListener('scroll', () => { lastScrollAt = performance.now(); }, {
 function face3dSaveView(nextKey) {
   const st = FACE3D.st; if (!st || !st.viewKey) return; FACE3D.view = FACE3D.view || {}; FACE3D.seen = FACE3D.seen || {};
   const same = nextKey === st.viewKey;
+  // 次に表示するまでのつなぎに、今の顔の絵を写しておく（切り替えたとき一瞬消えないように）
+  try { if (!st.lost) { st.renderer.render(st.scene, st.cam); FACE3D.snap = FACE3D.snap || {}; FACE3D.snap[st.viewKey] = st.renderer.domElement.toDataURL('image/png'); } } catch (e) { /* 何もしない */ }
   if (!same || !st.auto) FACE3D.seen[st.viewKey] = true;
   FACE3D.view[st.viewKey] = st.auto && same ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase}
     : st.auto ? {yaw:0, pitch:0.05, z:st.cam.position.z} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z};
@@ -10756,6 +10784,7 @@ async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
   const cv = document.getElementById(opts.canvas);
   face3dSaveView(opts && opts.canvas); // 今の向きを覚える
+  { const snap = FACE3D.snap && FACE3D.snap[opts.canvas]; if (cv && snap) { cv.style.background = `center / 100% 100% no-repeat url(${snap})`; cv.dataset.snapBg = '1'; const l = document.getElementById(opts.load); if (l) l.hidden = true; } } // 前に写しておいた絵を、読み込むまで出しておく
   if (FACE3D.st) { FACE3D.st.stop = true; if (!FACE3D.st.lost) { FACE3D.st.lost = true; try { FACE3D.st.renderer.dispose(); FACE3D.st.renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } FACE3D.st = null; }
   if (!cv) return;
   try { await face3dLoad(); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = '3Dの顔を表示できませんでした。電波のよい場所で、ページを読み込み直してください。'; return; }
@@ -10874,7 +10903,7 @@ async function drawFace3d(opts) {
     }
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
     if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; if (st.panY && cam.position.z >= st.panAt && Math.abs(cam.position.y - 0.6) > 0.01) cam.position.y += (0.6 - cam.position.y) * 0.25; if (st.touchFix) st.touchFix(); st.dirty = true; }
-    if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
+    if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; if (cv.dataset.snapBg) { delete cv.dataset.snapBg; cv.style.background = ''; } }
     requestAnimationFrame(loop);
   };
   loop();
@@ -13039,6 +13068,8 @@ function placeHomeTabInd() {
   const makeGhost = (k, side) => {
     const html = tabHtml(k); if (!html || !pane) return null;
     const tmp = document.createElement('div'); tmp.innerHTML = html; const src = tmp.querySelector('.home-pane'); if (!src) return null;
+    src.querySelectorAll('canvas').forEach(c => { const sn = FACE3D.snap && FACE3D.snap[c.id]; if (sn) { const im = document.createElement('img'); im.src = sn; im.alt = ''; im.style.cssText = 'display:block;width:100%;height:100%;object-fit:fill'; c.replaceWith(im); } }); // 3Dの顔は、写しておいた絵で見せる
+    src.querySelectorAll('.f3-load').forEach(x => x.remove());
     src.querySelectorAll('[id]').forEach(x => x.removeAttribute('id')); src.querySelectorAll('canvas,script,iframe,ins').forEach(x => x.remove());
     const g = document.createElement('div'); g.className = 'home-pane hp-ghost'; g.setAttribute('aria-hidden', 'true'); g.innerHTML = src.innerHTML;
     const par = pane.parentElement; if (getComputedStyle(par).position === 'static') par.style.position = 'relative';
