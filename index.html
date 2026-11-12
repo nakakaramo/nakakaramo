@@ -24,6 +24,8 @@
 <meta property="og:image" content="https://nakakaramo.com/icon-512.png">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary">
+<!-- Google AdSense（サイトの確認と広告の読み込み） -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557443241119064" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -2398,7 +2400,7 @@ const CLOUD = {
 /* ---------- 広告（無料プランだけに表示。プレミアムでは表示しない） ----------
    ・肌の記録・グラフ・レポート・食事などの「健康に関わる画面」には表示しません
    ・広告サービスと契約するまでは enabled:false のままにします（preview:true の間は「広告枠」の位置だけ表示） */
-const ADS = {enabled:false, preview:false, client:'', slot:''};
+const ADS = {enabled:false, preview:false, client:'ca-pub-6557443241119064', slot:''}; // 審査に通ったら、広告ユニットの番号を slot に入れて enabled:true にする
 const AD_PLACES = ['home', 'search', 'ingredients', 'stores'];
 function adSlot(place) {
   if (isPremium() || !AD_PLACES.includes(place)) return '';
@@ -2409,7 +2411,7 @@ function adSlot(place) {
   if (!ADS.preview) return '';
   return `<div class="ad-box"><div class="ad-label"><span>広告</span><a href="#/plan">${PREMIUM_NAME}で広告なし</a></div><div class="ad-ph">広告枠（準備中・テスト表示）<br>広告はナカカラモのおすすめとは関係ありません</div></div>`;
 }
-let adsScriptLoaded = false;
+let adsScriptLoaded = !!document.querySelector('script[src*="adsbygoogle.js"]'); // <head> で読み込み済みなら、もう一度読み込まない
 function fillAds() {
   if (!ADS.enabled || !ADS.client || isPremium()) return;
   const slots = $$('ins.adsbygoogle:not([data-adsbygoogle-status])');
