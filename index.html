@@ -1976,6 +1976,11 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .used-tile .used-nm,.used-tile .used-sub{display:none} /* 今日使った物：写真の下に名前は出さない */
 .f3-expand,.fp-mode button.on,.fp-zoom .icon-btn,.fp-open i,.fav-heart,.rt-mode.on{box-shadow:none!important}
 .log-item,.mitem,.pcard{box-shadow:var(--shadow)}
+/* 影はすべてなくす（枠・カード・シート・お知らせなど）。スイッチのつまみ・地図の印・選んだ枠の色の輪だけは残す */
+:root,:root[data-theme="dark"]{--shadow:none!important;--shadow-btn:none!important;--shadow-btn-in:none!important;--shadow-lg:none!important}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--shadow:none!important;--shadow-btn:none!important;--shadow-btn-in:none!important}}
+.card,.hero,.pcard,.mitem,.log-item,.modal,.drawer,.wg,.toast,.toast.error,.otp-card,.rt-mode.on,.rt-card,.rt-card.lift,.mrow-w.lift,.mrow-w.lift.drop,.mrow,.add-opt,.ac-list,.ls-main,.acc-sec,.pop-item,.f3-expand,.t3-stage .f3-expand,.fp-big,.fp-panel,.sc-opt,.hero-home,.mb-card,.cc,.combo-card,.lp,.cmp-card,.tl-row,.sheet,.popover,.menu,.tip,.f3-tip,.ld-arrow,.ldc-nav,.icon-btn,.fav-heart,.ct.on,.tab.active,.sw-ind{box-shadow:none!important}
+.mb-col.on .mb-bar{box-shadow:none!important}
 
 /* ===== スキンケア設計 ===== */
 :root{--rt-skin:#F6E3D3;--rt-line:#B9A898;--rt-text:#46524B}
