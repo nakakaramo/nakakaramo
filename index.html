@@ -1411,8 +1411,8 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pl{font-size:11px;font-weight:700;color:var(--muted);min-width:52px}
 .mn-item{display:flex;align-items:center;gap:10px;min-width:0}
 .mn-item a{color:var(--ink);font-size:14px;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
-.mn-img{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--surface2);border:1px solid var(--line);object-position:200px 200px}
-.mn-img.shown{object-position:center;animation:mnIn .25s ease}.mn-img.bad{display:none}
+.mn-img{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--surface2);border:1px solid var(--line);object-position:center;opacity:0;transition:opacity .25s ease}
+.mn-img.shown{opacity:1}.mn-img.bad{opacity:1;content:url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')}
 @keyframes mnIn{from{opacity:.3}to{opacity:1}}
 .mn-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .mn-noimg svg{width:20px;height:20px}
@@ -2395,6 +2395,52 @@ img{image-rendering:auto}
 .pm-skip{background:none;border:0;color:var(--muted);font:inherit;font-size:14.5px;padding:12px;cursor:pointer}
 
 .acc-me .am-edit{flex:none;font-size:13px;font-weight:500;color:var(--green-d);padding:6px 12px;border:1px solid var(--line);border-radius:999px}
+
+/* アカウント：枠ごと押せる行（押すと枠全体がへこむ） */
+.acc-link{display:block;width:100%;padding:0;border:1px solid var(--line);font:inherit;text-align:left;color:inherit;text-decoration:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .14s ease,background-color .14s ease,box-shadow .14s ease}
+.acc-link .acc-row{padding:17px 18px}
+.acc-link:active{transform:scale(.975);background:var(--surface2)!important;box-shadow:inset 0 2px 6px rgba(0,0,0,.08)!important}
+.acc-link:active .acc-row{transform:none!important;opacity:1!important}
+a.acc-me{transition:transform .14s ease,background-color .14s ease,box-shadow .14s ease;-webkit-tap-highlight-color:transparent}
+a.acc-me:active{transform:scale(.975);background:var(--surface2)!important;box-shadow:inset 0 2px 6px rgba(0,0,0,.08)!important}
+.acc-page>.card{margin-bottom:12px}
+/* プレミアム：金色の文字 */
+.prem-tx{display:inline-flex;align-items:center;gap:3px;font-weight:700;letter-spacing:.02em;background:linear-gradient(100deg,#9C6B1E 0%,#D9A93E 38%,#F1D488 52%,#C8902C 70%,#8E5E17 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
+.prem-tx svg{width:13px;height:13px;color:#C8902C;stroke:#C8902C;flex:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .prem-tx{background-image:linear-gradient(100deg,#D9A93E,#F7E2A2 50%,#D9A93E)}}
+:root[data-theme="dark"] .prem-tx{background-image:linear-gradient(100deg,#D9A93E,#F7E2A2 50%,#D9A93E)}
+/* 成分の組み合わせ：下の「›」の行 */
+.cb-sec{font-size:13px;font-weight:600;color:var(--muted);margin:18px 4px 8px}
+.cb-rows{padding:0;overflow:hidden}
+.cb-rows .acc-row{grid-template-columns:22px 1fr auto 12px;padding:15px 18px;transition:background-color .14s ease}
+.cb-rows .acc-row:active{background:var(--surface2);transform:none!important}
+.cb-rows .acc-row em{font-style:normal;font-size:12.5px;color:var(--muted)}
+.cb-rows .acc-row b{font-weight:500}
+/* 肌に合わなかった化粧品 */
+.mtools a.mt-wide{grid-column:1/-1}
+.mtools a .mt-n{font-style:normal;flex:none;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#F6E3DA;color:#B4562F;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center;margin-left:auto}
+.mtools a .mt-n+i{margin-left:6px}
+.ng-item,.ng-day{padding:12px 0;border-top:1px solid var(--line)}
+.card-h+.ng-item,.card-h+p+.ng-day{border-top:0;padding-top:4px}
+.ng-name{display:block;color:var(--ink);text-decoration:none}.ng-name b{display:block;font-size:15px;font-weight:600}.ng-name small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.ng-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:8px;font-size:12.5px;color:var(--ink2)}.ng-meta>span:first-child{margin-right:4px}
+.ng-note{font-size:13px;line-height:1.65;margin:8px 0 0;color:var(--ink2);white-space:pre-wrap}
+.ng-ings{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:8px}.ng-ings small{width:100%;font-size:11.5px;color:var(--muted)}
+.ng-act{display:flex;gap:16px;margin-top:8px}.ng-act .link{font-size:13px}
+.ng-common{margin-top:12px;padding:12px;border-radius:12px;background:var(--surface2)}.ng-common>b{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.ng-dh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}.ng-dh b{font-size:14px;font-weight:600}.ng-dh span{font-size:12px;color:#B4562F}
+.ng-sus{display:flex;align-items:center;gap:10px;margin-top:8px}
+.ng-sn{flex:1;min-width:0}.ng-sn b{display:block;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ng-sn small{display:block;font-size:11.5px;color:var(--muted)}
+.ng-sus .btn{flex:none}
+.ng-syms{display:flex;flex-wrap:wrap;gap:6px}
+.ng-sym{position:relative;cursor:pointer}.ng-sym input{position:absolute;opacity:0;pointer-events:none}
+.ng-sym span{display:inline-block;padding:7px 13px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);font-size:13.5px;color:var(--ink2);transition:background-color .15s,border-color .15s,color .15s}
+.ng-sym input:checked+span{background:#F6E3DA;border-color:#E2B39C;color:#9A4524;font-weight:600}
+.ng-sym input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
+.ng-banner{display:flex;align-items:center;gap:12px;padding:12px 16px;margin-bottom:12px;background:#FBF0EA;border:1px solid #EFCDBD;color:#9A4524;text-decoration:none!important}
+.ng-banner svg{width:20px;height:20px;flex:none}.ng-banner span{flex:1;min-width:0}.ng-banner b{display:block;font-size:14px;font-weight:600}.ng-banner small{display:block;font-size:12px;opacity:.85}.ng-banner i{font-style:normal}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ng-banner{background:#3A2620;border-color:#5A3A2E;color:#F0B9A0}:root:not([data-theme="light"]) .ng-sym input:checked+span,:root:not([data-theme="light"]) .mtools a .mt-n{background:#4A2E24;border-color:#6A4334;color:#F0B9A0}}
+:root[data-theme="dark"] .ng-banner{background:#3A2620;border-color:#5A3A2E;color:#F0B9A0}:root[data-theme="dark"] .ng-sym input:checked+span,:root[data-theme="dark"] .mtools a .mt-n{background:#4A2E24;border-color:#6A4334;color:#F0B9A0}
 </style>
 </head>
 <body>
@@ -2646,6 +2692,7 @@ function fillAds() {
 }
 /* プラン：無料＝手動入力、プレミアム（有料）＝写真から読み取り（AI） */
 const PREMIUM_NAME = 'プレミアム';
+const NG_SYMS = ['赤み', 'かゆみ', 'ヒリヒリ', 'ニキビ', '乾燥', 'ブツブツ', '腫れ', 'その他']; // 肌に合わなかったときの症状
 const PREMIUM_READY = true; // 写真読み取り（AI）は関数「vision」で提供
 const PLAN_ROWS = [
   ['肌の記録・基本のグラフ（30日まで）', '○', '○'],
@@ -3092,7 +3139,8 @@ const ICONS = {
   edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   camera:'<path d="M3 8a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/>',
   chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
-  shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>'
+  shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  alert:'<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/>'
 };
 const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
 
@@ -3357,7 +3405,8 @@ function normalize(d) {
     status:STATUSES.includes(p.status) ? p.status : '使用中', endDate:isValidYmd(p.endDate) ? p.endDate : '', memo:String(p.memo||''), demo:!!p.demo, pao:[0, 3, 6, 12, 24].includes(Number(p.pao)) ? Number(p.pao) : 0, // 開封後の使用期限の目安（か月。0＝カテゴリの目安）
     purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : [],
     order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null, // 長押しで並べ替えた順番
-    offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '' // 全成分をメーカー公式で調べた日・ページ
+    offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
+    ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300)} : null // 肌に合わなかった記録
   })) : [];
   out.skinLogs = Array.isArray(d.skinLogs) ? d.skinLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
     id:String(l.id), date:l.date, condition:clamp(Math.round(num(l.condition,3)),1,5), acneCount:clamp(Math.round(num(l.acneCount)),0,99),
@@ -6765,7 +6814,7 @@ function viewMy() {
   const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
     .sort((a,b) => myStRank(a) - myStRank(b) || (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
-  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a></div>`;
+  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a><a class="mt-wide" href="#/trouble">${icon('alert')}<span>肌に合わなかった化粧品</span>${(() => { const n = state.myProducts.filter(p => p.ng).length; return n ? `<em class="mt-n">${n}</em>` : ''; })()}<i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
   html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => { const n = state.myProducts.filter(x => (x.category === '皮膚科の塗り薬') === (k === 'rx')).length; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span><b class="ht-n">${n}</b></button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
   if (state.myProducts.length && !list.length) {
@@ -6785,6 +6834,60 @@ function viewMy() {
     }).join('')}</div>`;
   }
   return html + tools + '</div>';
+}
+// ===== 肌に合わなかった化粧品：あとで「何が合わなかったか」を確かめるための記録 =====
+function ngBadDays() { // 肌が荒れた日（調子が2以下・赤みが3以上・ニキビが前の7日より3つ以上多い）
+  const logs = state.skinLogs.filter(l => !l.demo).slice().sort((a, b) => a.date.localeCompare(b.date)), out = [];
+  logs.forEach((l, i) => {
+    const prev = logs.slice(Math.max(0, i - 7), i), avgAc = prev.length ? prev.reduce((a, x) => a + x.acneCount, 0) / prev.length : null;
+    const why = [];
+    if (l.condition <= 2) why.push(`肌の調子 ${l.condition}`);
+    if (l.redness >= 3) why.push(`赤み ${l.redness}`);
+    if (avgAc != null && l.acneCount >= avgAc + 3) why.push(`ニキビ ${l.acneCount}個`);
+    if (why.length) out.push({l, why});
+  });
+  return out.reverse();
+}
+function ngSuspects(day, l) { // その日に使ったもの＋その日までの14日以内に使い始めたもの
+  const used = new Set(l && l.usageRecorded ? l.usedProducts : []);
+  return state.myProducts.filter(p => p.category !== '皮膚科の塗り薬' && p.status !== STOCK && (used.has(p.id) || (p.startDate <= day && diffDays(p.startDate, day) <= 14)))
+    .map(p => ({p, used:used.has(p.id), fresh:p.startDate <= day && diffDays(p.startDate, day) <= 14}));
+}
+function viewTrouble() {
+  const ng = state.myProducts.filter(p => p.ng).sort((a, b) => b.ng.date.localeCompare(a.ng.date));
+  let html = `<a class="back" href="#/my">← Myアイテム</a>` + pageHead('肌に合わなかった化粧品', '合わなかった化粧品と、肌が荒れた日に使っていたものを、あとで確かめられます。');
+  html += `<div class="card"><div class="card-h"><h2>合わなかった化粧品</h2>${ng.length ? `<span class="chip">${ng.length}件</span>` : ''}</div>`;
+  html += ng.length ? ng.map(p => `<div class="ng-item"><a class="ng-name" href="#/my/${encodeURIComponent(p.id)}"><b>${esc(p.name)}</b><small>${esc([p.brand, p.category].filter(Boolean).join('・'))}</small></a>
+      <div class="ng-meta"><span>${fmtDate(p.ng.date)}</span>${p.ng.sym.map(x => `<span class="chip warn">${esc(x)}</span>`).join('')}</div>
+      ${p.ng.note ? `<p class="ng-note">${esc(p.ng.note)}</p>` : ''}
+      ${(() => { const k = knownIngs(ingsOfMy(p)); return k.length ? `<div class="ng-ings"><small>入っていた成分</small>${k.slice(0, 8).map(x => `<a class="chip" href="#/ingredients/${x.entry.key}">${esc(x.entry.name)}</a>`).join('')}</div>` : ''; })()}
+      <div class="ng-act"><button type="button" class="link" data-action="ng-open" data-id="${esc(p.id)}">編集</button><button type="button" class="link muted" data-action="ng-clear" data-id="${esc(p.id)}">記録を消す</button></div></div>`).join('')
+    : `<p class="small muted" style="margin:0">まだありません。肌に合わなかったときは、下の「肌が荒れた日」か、Myアイテムの商品の画面から記録できます。</p>`;
+  const common = (() => { // 合わなかった化粧品に共通して入っている成分
+    if (ng.length < 2) return '';
+    const cnt = {}; ng.forEach(p => new Set(knownIngs(ingsOfMy(p)).map(x => x.entry.key)).forEach(k => { cnt[k] = (cnt[k] || 0) + 1; }));
+    const ks = Object.keys(cnt).filter(k => cnt[k] >= 2).sort((a, b) => cnt[b] - cnt[a]).slice(0, 6); if (!ks.length) return '';
+    return `<div class="ng-common"><b>共通して入っている成分</b><div class="chips">${ks.map(k => { const e = ING_MASTER.find(x => x.k === k); return `<a class="chip warn" href="#/ingredients/${k}">${esc(e ? e.ja : k)}（${cnt[k]}つ）</a>`; }).join('')}</div><p class="small muted" style="margin:6px 0 0">成分名が含まれているかだけで数えています。原因と決まったわけではありません。</p></div>`;
+  })();
+  html += common + '</div>';
+  const bad = ngBadDays().slice(0, 12);
+  html += `<div class="card"><div class="card-h"><h2>肌が荒れた日</h2></div><p class="small muted" style="margin:0 0 6px">肌の記録から、調子が悪かった日を出しています。その日に使ったものと、使い始めて2週間以内のものです。</p>`;
+  html += bad.length ? bad.map(({l, why}) => { const sus = ngSuspects(l.date, l);
+      return `<div class="ng-day"><div class="ng-dh"><b>${fmtDate(l.date)}</b><span>${esc(why.join('・'))}</span></div>
+        ${sus.length ? sus.map(x => `<div class="ng-sus"><span class="ng-sn"><b>${esc(truncate(x.p.name, 28))}</b><small>${[x.used ? 'この日に使った' : '', x.fresh ? `${diffDays(x.p.startDate, l.date) + 1}日目` : ''].filter(Boolean).join('・')}</small></span>${x.p.ng ? '<span class="chip warn">記録ずみ</span>' : `<button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(x.p.id)}" data-date="${l.date}">合わなかった</button>`}</div>`).join('') : '<p class="small muted" style="margin:4px 0 0">この日に使った化粧品は記録されていません。</p>'}</div>`; }).join('')
+    : `<p class="small muted" style="margin:0">肌が荒れた日はまだありません。毎日の肌の記録から、自動で出します。</p>`;
+  html += '</div><div class="notice cb-note">ここに出ている化粧品が原因とは限りません。かゆみや腫れが強いとき、続くときは、使うのをやめて皮膚科に相談してください。</div>';
+  return html;
+}
+function openNgForm(id, date) {
+  const p = getMy(id); if (!p) return;
+  const cur = p.ng || {date:date || todayStr(), sym:[], note:''};
+  openModal({title:'肌に合わなかった', body:`<p class="small" style="margin:0 0 12px"><b>${esc(p.name)}</b></p>
+    <div class="field"><label class="lbl" for="ng-date">気づいた日</label><input type="date" class="input" id="ng-date" value="${esc(cur.date)}" max="${todayStr()}"></div>
+    <div class="field"><span class="lbl">出た症状</span><div class="ng-syms">${NG_SYMS.map(x => `<label class="ng-sym"><input type="checkbox" value="${x}" ${cur.sym.includes(x) ? 'checked' : ''}><span>${x}</span></label>`).join('')}</div></div>
+    <div class="field"><label class="lbl" for="ng-note">メモ<span class="opt">任意</span></label><textarea class="input" id="ng-note" rows="3" maxlength="300" placeholder="例：つけた次の日、あごに赤いブツブツ">${esc(cur.note)}</textarea></div>
+    ${p.status === '使用中' ? '<label class="check"><input type="checkbox" id="ng-stop" checked>使うのをやめる（停止中にする）</label>' : ''}`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="ng-save" data-id="${esc(p.id)}">保存する</button>`});
 }
 // 化粧品／塗り薬を切り替えたとき、下の線を前の位置からすべらせる
 function myKindsAnimate() { const n = document.querySelector('.my-kinds[data-to]'); if (!n) return; requestAnimationFrame(() => requestAnimationFrame(() => { n.style.setProperty('--mk', n.dataset.to); })); }
@@ -6946,6 +7049,7 @@ function viewMyDetail(id) {
     const use = isRx ? rxUseOf(p.name) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
     const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
     return `<a class="back" href="#/my">← Myアイテム</a>
+    ${p.ng ? `<a class="card ng-banner" href="#/trouble">${icon('alert')}<span><b>肌に合わなかった（${fmtShort(p.ng.date)}）</b><small>${esc(p.ng.sym.join('・') || '症状は未記録')}</small></span><i>›</i></a>` : ''}
     <div class="card detail-top">
       <div>
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
@@ -6961,6 +7065,7 @@ function viewMyDetail(id) {
         <div class="page-actions" style="margin-top:14px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
           <button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかと比較</button>
+          ${isRx ? '' : `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>`}
         </div>
         <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
       </div>
@@ -6986,6 +7091,7 @@ function viewMyDetail(id) {
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
           ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかの商品と比較</button>` : ''}
+          ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>` : ''}
         </div>
       </div>
     </div>
@@ -7240,43 +7346,45 @@ function viewCompare() {
    画面：成分組み合わせ
    ========================================================= */
 function viewCombo() {
+  const sub = parseRoute().id;
+  if (sub === 'ng' || sub === 'ok') return comboLevelPage(sub);
   const active = state.myProducts.filter(p => p.status === '使用中');
-  let html = pageHead('成分の組み合わせ', '登録したアイテムのうち、一緒に使うときに注意が必要なものだけを出します。');
-  const ct = ui.comboTab === 'ing' ? 'ing' : 'mine';
-  html += `<div class="rt-modes cb-tabs" role="tablist">${[['mine', '使っている商品'], ['ing', '成分・塗り薬で調べる']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === ct}" class="rt-mode ${k === ct ? 'on' : ''}" data-action="combo-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
-  if (ct === 'ing') { // 検索のタブ：2つ選んで調べる＋（登録した商品があれば）成分相性マップと情報源
-    html += comboPickerHtml();
-    if (active.length) html += locked() ? lockCard('成分相性マップ', '使用中の化粧品ごとに、注意が必要な成分の重なりと使う時間帯を一覧の表で確認できます。') : comboMap(comboReport(active));
-    return html + `<details class="card fold"><summary><b>信頼できる情報源</b></summary>${sourcesHtml()}</details>`;
+  if (sub === 'search') { // 成分・塗り薬で調べる
+    if (typeof ui.ccLv !== 'number') ui.ccLv = 0;
+    let h = `<a class="back" href="#/combo">← 成分の組み合わせ</a>` + pageHead('成分・塗り薬で調べる', '2つを選ぶと、一緒に使うときの注意がわかります。') + comboPickerHtml();
+    if (active.length) h += locked() ? lockCard('成分相性マップ', '使用中の化粧品ごとに、注意が必要な成分の重なりと使う時間帯を一覧の表で確認できます。') : comboMap(comboReport(active));
+    return h + `<details class="card fold"><summary><b>信頼できる情報源</b></summary>${sourcesHtml()}</details>`;
   }
-  if (!active.length) return html + `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'Myアイテムで「使用中」の商品を登録し、全成分を入力すると、ここにまとめが表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
-  const r = comboReport(active);
-  // まず結果のまとめ：注意の数・全成分が足りない商品（押すとすぐ入力できる）
-  r.alerts = r.alerts.filter(al => !al.pairs.length); // 商品どうしの組み合わせは、上の「使っている商品の併用の注意」（4つの分類）で表示する
-  const nAl = r.alerts.length + (r.uvNote ? 1 : 0) + prodAnalysis().pairs.length;
-  html += `<div class="card combo-sum ${nAl ? 'warn' : 'ok'}"><div class="cs-big"><b>${nAl ? `注意 ${nAl}件` : '注意はありません'}</b><span>使用中の化粧品 ${active.length}件を確認しました</span></div>
-    ${r.missing.length ? `<div class="cs-miss"><p class="small"><b>全成分がまだの商品（${r.missing.length}件）</b>：入れると、もっと正しく確かめられます</p>${r.missing.map(x => x.p).map(p => `<button type="button" class="btn btn-soft btn-sm" data-action="edit-my" data-id="${esc(p.id)}">${esc(truncate(shortName(p.name), 16))}の全成分を入れる</button>`).join('')}</div>` : ''}</div>`;
-  html += comboLevelsHtml();
-  const productsCard = `<details class="card fold"><summary><b>対象の化粧品（使用中 ${active.length}件）</b></summary><div style="margin-top:8px">
-    ${r.items.map(x => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><a href="#/my/${encodeURIComponent(x.p.id)}" style="font-weight:600;color:inherit">${esc(x.p.name)}</a> <span class="chip">${esc(x.p.timing)}</span>
-      <div class="chips" style="margin-top:6px">${!x.ings ? '<span class="chip warn">全成分が未登録（判断できません）</span>' : x.known.length ? x.known.map(k => `<a class="chip green" href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('') : '<span class="chip gray">辞典に収録した成分なし</span>'}</div></div>`).join('')}
-    ${r.missing.length ? `<p class="small" style="color:var(--warn);margin-top:10px">全成分が未登録の商品が${r.missing.length}件あります。情報が不足しているため、これらを含む組み合わせは判断していません。</p>` : ''}</div></details>`;
-  if (r.alerts.length || r.uvNote) { // 商品どうし以外の注意（同じ種類の成分が複数・香料・紫外線対策）があるときだけ出す
-  html += `<div class="card"><div class="card-h"><h2>そのほかの注意点</h2><span class="chip">ルールに基づく表示</span></div>`;
-    if (!r.alerts.length && !r.uvNote) html += '<p class="small muted">登録された成分の範囲では、この辞典で注意を表示している組み合わせは見つかりませんでした。これは安全であることを意味するものではありません。</p>';
-    r.alerts.forEach(al => {
-      let detail = '';
-      if (al.pairs.length) detail = al.pairs.map(pp => `・${esc(truncate(pp.a.name, 20))} × ${esc(truncate(pp.b.name, 20))}：${pp.shared.length ? `<b style="display:inline">同じタイミング（${esc(pp.shared.join('・'))}）で使用</b>` : '使うタイミングは分かれています'}`).join('<br>');
-      else detail = '・' + al.products.map(p => esc(truncate(p.name, 24))).join('<br>・');
-      html += `<div class="alert-card"><b>${esc(al.rule.title)}</b>${esc(al.rule.note)}<div class="small" style="margin-top:6px">${detail}</div></div>`;
-    });
-    if (r.uvNote) html += `<div class="alert-card"><b>日中の紫外線対策</b>レチノール類や角質ケア成分を含む商品を使う場合、日中の紫外線対策が一般的に勧められています。使用中の日焼け止めが登録されていません（登録していないだけの場合は問題ありません）。</div>`;
-    html += '</div>';
+  let html = pageHead('成分の組み合わせ', '登録したアイテムのうち、一緒に使うときに注意が必要なものを出します。');
+  if (!active.length) html += `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'Myアイテムで「使用中」の商品を登録すると、一緒に使うときに注意が必要なものがここに出ます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
+  else {
+    const r = comboReport(active);
+    r.alerts = r.alerts.filter(al => !al.pairs.length); // 商品どうしの組み合わせは「使っている商品の併用の注意」で出す
+    const nAl = r.alerts.length + (r.uvNote ? 1 : 0) + prodAnalysis().pairs.length;
+    html += `<div class="card combo-sum ${nAl ? 'warn' : 'ok'}"><div class="cs-big"><b>${nAl ? `注意 ${nAl}件` : '注意はありません'}</b><span>使用中の化粧品 ${active.length}件を確認しました</span></div>
+      ${r.missing.length ? `<div class="cs-miss"><p class="small"><b>全成分がまだの商品（${r.missing.length}件）</b>：入れると、もっと正しく確かめられます</p>${r.missing.map(x => x.p).map(p => `<button type="button" class="btn btn-soft btn-sm" data-action="edit-my" data-id="${esc(p.id)}">${esc(truncate(shortName(p.name), 16))}の全成分を入れる</button>`).join('')}</div>` : ''}</div>`;
+    html += comboLevelsHtml();
+    if (r.alerts.length || r.uvNote) {
+      html += `<div class="card"><div class="card-h"><h2>そのほかの注意点</h2></div>`;
+      r.alerts.forEach(al => { html += `<div class="alert-card"><b>${esc(al.rule.title)}</b>${esc(al.rule.note)}<div class="small" style="margin-top:6px">・${al.products.map(p => esc(truncate(p.name, 24))).join('<br>・')}</div></div>`; });
+      if (r.uvNote) html += `<div class="alert-card"><b>日中の紫外線対策</b>レチノール類や角質ケア成分を含む商品を使う場合、日中の紫外線対策が一般的に勧められています。使用中の日焼け止めが登録されていません（登録していないだけの場合は問題ありません）。</div>`;
+      html += '</div>';
+    }
   }
-  // 使っている商品のタブは「併用に注意が必要なもの」だけ。ほかの組み合わせは「成分・塗り薬で調べる」で探す
-  html += '<p class="small muted cb-more">ほかの組み合わせは、上の「成分・塗り薬で調べる」から探せます。</p>';
+  const nNg = COMBO_DB.filter(x => x.lv >= 2).length, nOk = COMBO_DB.filter(x => x.lv === 1).length;
+  html += `<h3 class="cb-sec">組み合わせを調べる</h3><div class="card cb-rows">
+    <a class="acc-row" href="#/combo/ng">${icon('alert')}<span><b>併用注意</b></span><em>${nNg}件</em><i>›</i></a>
+    <a class="acc-row" href="#/combo/ok">${icon('check')}<span><b>併用OK</b></span><em>${nOk}件</em><i>›</i></a>
+    <a class="acc-row" href="#/combo/search">${icon('search')}<span><b>成分・塗り薬で調べる</b></span><em></em><i>›</i></a></div>`;
   html += `<div class="notice cb-note">成分名が含まれているかどうかだけで判定しています。濃度・処方・使用量・個人差は考慮できないため、<b>安全性や効果を判断するものではありません</b>。各製品の使用方法・注意事項を優先し、気になる症状がある場合は皮膚科医や薬剤師に相談してください。</div>`;
   return html;
+}
+// 併用注意／併用OKの一覧（成分名でしぼりこめる）
+function comboLevelPage(k) {
+  const q = normIng(ui.ccQ2 || '');
+  return `<a class="back" href="#/combo">← 成分の組み合わせ</a>` + pageHead(k === 'ng' ? '併用注意' : '併用OK', k === 'ng' ? '一緒に使うときに注意が必要な組み合わせです（注意の強い順）。' : '一緒に使っても、ふつうは問題ないとされている組み合わせです。') +
+    `<div class="card"><input type="search" class="input" id="cc-q2" data-lv="${k}" placeholder="成分名で探す（例：レチノール、エピデュオ）" value="${esc(ui.ccQ2 || '')}" aria-label="成分名で探す">
+    <div id="cc-list2" style="margin-top:6px">${comboDbListHtml(q, k)}</div></div>`;
 }
 function comboMap(r) {
   const cols = [['retinoid','レチノール類'],['acid','角質ケア'],['vitc','ビタミンC'],['niacinamide','ナイアシンアミド'],['fragrance','香料'],['alcohol','エタノール'],['uvfilter','紫外線吸収剤']];
@@ -7293,7 +7401,7 @@ function comboMap(r) {
   return `<div class="card"><div class="card-h"><h2>成分相性マップ</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
     <p class="small muted" style="margin-bottom:8px">商品ごとに、注意が必要になりやすい成分の種類が入っているかを並べています（濃度や配合の目的はわかりません）。</p>
     ${items.map(x => { const has = cols.filter(c => x.groups.has(c[0])); return `<div class="map-row"><b>${esc(truncate(x.p.name, 26))}</b><small>${esc(x.p.timing)}</small><div class="chips">${has.length ? has.map(c => `<span class="chip ${['retinoid', 'acid'].includes(c[0]) ? 'warn' : ''}">${esc(c[1])}</span>`).join('') : '<span class="chip gray">該当なし</span>'}</div></div>`; }).join('')}
-    <p class="small muted" style="margin-top:8px">商品どうしの注意は、上の「使っている商品の併用の注意」を見てください。成分名だけで判定しています。</p></div>`;
+    <p class="small muted" style="margin-top:8px">商品どうしの注意は、「成分の組み合わせ」の最初の画面で見られます。成分名だけで判定しています。</p></div>`;
 }
 
 /* =========================================================
@@ -8932,7 +9040,7 @@ function comboDbListHtml(q, lvF) {
   // 商品名（エピデュオなど）で探したときは、その薬の有効成分で探す
   let rxTags = [];
   if (q) RX_DRUGS.filter(d => normIng(d[1]).includes(q)).forEach(d => { const it = rxComboItem(d[1], d[0], d[2]); rxTags = rxTags.concat([...it.tags]); });
-  const L = COMBO_DB.filter(r => (!lvF || r.lv === lvF) && (!q || nm(r).includes(q) || r.a.concat(r.b).some(g => rxTags.includes(g)))).sort((x, y) => y.lv - x.lv);
+  const L = COMBO_DB.filter(r => (!lvF || (lvF === 'ng' ? r.lv >= 2 : lvF === 'ok' ? r.lv === 1 : r.lv === lvF)) && (!q || nm(r).includes(q) || r.a.concat(r.b).some(g => rxTags.includes(g)))).sort((x, y) => y.lv - x.lv);
   return L.length ? L.map(r => comboCardHtml(r, {compact:true})).join('') : '<p class="small muted">見つかりませんでした。上の「2つを選んで調べる」でも確かめられます。</p>';
 }
 function comboLevelsHtml() {
@@ -8995,6 +9103,7 @@ async function careAiRun() {
 }
 
 // 併用チェックの選択欄
+document.addEventListener('input', e => { if (e.target && e.target.id === 'cc-q2') { ui.ccQ2 = e.target.value; const L = document.getElementById('cc-list2'); if (L) L.innerHTML = comboDbListHtml(normIng(ui.ccQ2), e.target.dataset.lv); } });
 document.addEventListener('input', e => { if (e.target && e.target.id === 'cc-q') { ui.ccQ = e.target.value; const L = document.getElementById('cc-list'); if (L) L.innerHTML = comboDbListHtml(normIng(ui.ccQ), ui.ccLv || 0); } });
 document.addEventListener('change', e => { const id = e.target && e.target.id; if (id === 'cmp-a' || id === 'cmp-b') { ui[id === 'cmp-a' ? 'cmpA' : 'cmpB'] = e.target.value; render(); return; } if (id === 'cc-a' || id === 'cc-b') { ui[id === 'cc-a' ? 'ccA' : 'ccB'] = e.target.value; render(); } });
 
@@ -10895,13 +11004,15 @@ const CVS_KEY = 'skinwise_store_items';
 const STORE = {items:[], at:0, checked:'', state:'', err:''};
 try { const c = JSON.parse(localStorage.getItem(CVS_KEY) || 'null'); if (c && Array.isArray(c.items)) Object.assign(STORE, {items:c.items, at:c.at || 0, checked:c.checked || ''}); } catch (e) { /* 何もしない */ }
 // コンビニの商品の写真は、全部そろってから一緒に出す（バラバラに出ないように。最大2.5秒待つ）
+const MN_SEEN = new Set();
 (() => {
   let q = false;
   const run = () => {
     q = false;
+    document.querySelectorAll('.mn-img:not(.shown)').forEach(i => { if (MN_SEEN.has(i.src)) i.classList.add('shown'); }); // 前に出した写真は、描き直してもすぐ出す
     const pend = [...document.querySelectorAll('.mn-img:not(.shown)')]; if (!pend.length) return;
     let done = false;
-    const show = () => { if (done) return; done = true; pend.forEach(i => i.classList.add('shown')); };
+    const show = () => { if (done) return; done = true; pend.forEach(i => { i.classList.add('shown'); MN_SEEN.add(i.src); }); };
     const left = () => pend.filter(i => !(i.complete && (i.naturalWidth || i.classList.contains('bad')))).length;
     if (!left()) { show(); return; }
     pend.forEach(i => { const f = () => { if (!left()) show(); }; i.addEventListener('load', f, {once:true}); i.addEventListener('error', f, {once:true}); });
@@ -11713,7 +11824,7 @@ function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = true; el.onload = res; el.onerror = () => rej(new Error('load')); document.head.appendChild(el); });
 }
 function hasSavedLogin() { try { return !!localStorage.getItem(CLOUD.storageKey); } catch (e) { return false; } }
-function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'account') { refreshAccPanel('plan'); refreshAccPanel('settings'); } else if (n === 'home') refreshAdvice(); }
+function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'account') { const id = parseRoute().id; if (id === 'me' || id === 'settings' || id === 'privacy') render(); } else if (n === 'home') refreshAdvice(); }
 // ===== クラウド保存（ログインして「クラウドに保存する」をオンにした人だけ） =====
 // 記録・化粧品・設定をSupabaseに保存し、機種変更やブラウザのデータ削除のあとでも続きから使えるようにする
 // 写真（肌写真・化粧品の写真）はクラウドに送らない（この端末の中だけ）
@@ -12081,7 +12192,7 @@ function openPremiumSheet(feature) {
   const el = document.createElement('div'); el.id = 'prem-sheet'; el.className = 'ps-wrap';
   el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
     <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
-    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b><span class="ps-cancel">いつでも解約できます。</span></p>
+    <h2 id="ps-t"><span class="prem-tx">${PREMIUM_NAME}プラン</span></h2><p class="ps-price"><b>${esc(LEGAL.price)}</b><span class="ps-cancel">いつでも解約できます。</span></p>
     <ul class="ps-list"><li>顔の写真を撮るだけで、今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養を自動で計算</li><li>記録から、あなた専用のケアと献立を提案</li></ul>
     ${logged ? '' : `<div class="ps-auth"><p class="small ps-note">申し込むには、先にアカウントを作ってください（無料・登録済みの人はログイン）</p>
       <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
@@ -12226,7 +12337,7 @@ function viewPlan(query) {
   if (isPremium() && EMBED) return done(html);
   if (isPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
-    html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
+    html += `<div class="card"><div class="card-h"><h2><span class="prem-tx">${PREMIUM_NAME}プラン</span>をご利用中</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
       <dl class="kv"><dt>状態</dt><dd>${s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み：${esc(end)}で終了します（それまでは使えます）</span>` : `有効（次回の更新日：${esc(end)}）`}</dd></dl>
       <button class="btn btn-ghost" style="margin-top:14px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button>
       <p class="hint">Stripe（決済サービス）の画面が開きます。解約すると、次回の更新日以降は請求されません。</p></div>`;
@@ -12237,7 +12348,7 @@ function viewPlan(query) {
     return done(html);
   }
   if (acct.polling) return done(html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>');
-  html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
+  html += `<div class="card"><div class="card-h"><h2><span class="prem-tx">${PREMIUM_NAME}プラン</span>に申し込む</h2></div>
     <p class="small">食事の写真から商品名と栄養成分表示を、化粧品の写真から商品名・全成分の文字を、写真から読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
@@ -12544,10 +12655,9 @@ const ACC_SECTIONS = {
   settings: {icon:'gear', t:'設定', d:() => 'お知らせ、画面の表示、アプリとして使う', body:() => settingsEmbedHtml('settings')},
   privacy: {icon:'shield', t:'プライバシー', d:() => 'クラウド保存、研究への協力、データの管理', body:() => settingsEmbedHtml('privacy')}
 };
-function accSectionHtml(k) {
-  const x = ACC_SECTIONS[k], open = !!(ui.accOpen || {})[k];
-  return `<section class="card acc-sec" id="acc-sec-${k}"><button class="acc-row acc-toggle" data-action="acc-toggle" data-id="${k}" aria-expanded="${open}" aria-controls="acc-panel-${k}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d()}</small></span><i>›</i></button>
-    <div class="acc-panel" id="acc-panel-${k}" ${open ? '' : 'hidden'}>${open ? x.body() : ''}</div></section>`;
+function accSectionHtml(k) { // 押すと、横から次のページが出る
+  const x = ACC_SECTIONS[k];
+  return `<a class="card acc-sec acc-link" id="acc-sec-${k}" href="#/account/${k}"><span class="acc-row">${icon(x.icon)}<span><b>${esc(x.t)}</b></span><i>›</i></span></a>`;
 }
 function avatarHtml(size) {
   const a = state.settings.avatar, nm = state.settings.nickname || (acct.user && acct.user.email) || '';
@@ -12558,7 +12668,7 @@ function avatarHtml(size) {
 function accMeHtml() {
   const nm = state.settings.nickname;
   return `<a class="card acc-me" href="#/account/me">${avatarHtml(52)}
-    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
+    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? `<span class="prem-tx">${icon('spark')}${esc(PREMIUM_NAME)}プラン</span>` : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
 }
 // アカウント情報（一番上のプロフィールを押すと開く）：アイコン・名前・プランとログイン
 function viewAccountMe() {
@@ -12607,11 +12717,13 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint(); });
 function viewAccount() {
-  if (parseRoute().id === 'me') return viewAccountMe();
+  const sub = parseRoute().id;
+  if (sub === 'me') return viewAccountMe();
+  if (['body', 'settings', 'privacy'].includes(sub)) return `<a class="back" href="#/account">← アカウント</a><div class="acc-page">${ACC_SECTIONS[sub].body()}</div>`;
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
   return accMeHtml() + ['body', 'settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
-    `<section class="card acc-sec"><button class="acc-row acc-toggle" data-action="support-open">${icon('chat')}<span><b>お問い合わせ</b><small>${isPremium() ? 'サポートに質問する' : 'メールで問い合わせる'}</small></span><i>›</i></button></section>`;
+    `<button type="button" class="card acc-sec acc-link" data-action="support-open"><span class="acc-row">${icon('chat')}<span><b>お問い合わせ</b></span><i>›</i></span></button>`;
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
@@ -12649,7 +12761,8 @@ function settingsEmbedHtml(kind) {
   return (kind === 'privacy' ? P : kind === 'body' ? B : out).join('');
 }
 // 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
-function refreshAccPanel(k) { const pn = document.getElementById('acc-panel-' + k); if (pn && !pn.hidden) pn.innerHTML = ACC_SECTIONS[k].body(); const sec = document.getElementById('acc-sec-' + k); if (sec) { const sm = sec.querySelector('.acc-toggle small'); if (sm) sm.innerHTML = ACC_SECTIONS[k].d(); } }
+function refreshAccPanel(k) { const r = parseRoute(); if (r.name === 'account' && r.id === k && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render(); }
+function refreshAccPanelOld(k) { const pn = document.getElementById('acc-panel-' + k); if (pn && !pn.hidden) pn.innerHTML = ACC_SECTIONS[k].body(); const sec = document.getElementById('acc-sec-' + k); if (sec) { const sm = sec.querySelector('.acc-toggle small'); if (sm) sm.innerHTML = ACC_SECTIONS[k].d(); } }
 // ---------- 研究への協力（任意）：肌質ごとに「どの成分を使って、肌がどう変わったか」を統計にする ----------
 // 送るのは、肌質・年代と「成分ごとの肌の変化の平均」だけ。日付・メモ・写真・商品名・メールアドレス・位置は送らない
 const RESEARCH_MIN_LOGS = 14;
@@ -12935,6 +13048,15 @@ const actions = {
     p.status = '使用終了'; p.endDate = todayStr() < p.startDate ? p.startDate : todayStr();
     if (save()) { toast('使用終了にしました'); render(); }
   },
+  'ng-open': (id, el) => { if (parseRoute().name === 'my' && getMy(id) && getMy(id).ng) { location.hash = '#/trouble'; return; } openNgForm(id, el && el.dataset.date); },
+  'ng-save': id => {
+    const p = getMy(id); if (!p) return;
+    const d = (document.getElementById('ng-date') || {}).value;
+    p.ng = {date:isValidYmd(d) && d <= todayStr() ? d : todayStr(), sym:[...document.querySelectorAll('.ng-sym input:checked')].map(i => i.value), note:String((document.getElementById('ng-note') || {}).value || '').trim().slice(0, 300)};
+    const st = document.getElementById('ng-stop'); if (st && st.checked && p.status === '使用中') p.status = '一時停止';
+    save(); closeModal(); toast('記録しました'); render();
+  },
+  'ng-clear': id => { const p = getMy(id); if (!p || !p.ng) return; p.ng = null; save(); render(); toast('記録を消しました'); },
   'delete-my': async id => {
     const p = getMy(id); if (!p) return;
     if (!await confirmDialog(`「${p.name}」をMyアイテムから削除しますか？`, {ok:'削除する'})) return;
@@ -13763,9 +13885,9 @@ function render() {
   if (r.name === 'suggest') { location.replace('#/settings'); return; }
   if (r.name === 'check' || r.name === 'spending') { location.replace('#/account'); return; } // 支出・予算の機能はなくした // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, shop:viewShop, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
-    ingredients:() => viewIngredients(r.id), care:() => viewCare(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
+    ingredients:() => viewIngredients(r.id), care:() => viewCare(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo, trouble:viewTrouble,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {care:'home', account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'account', terms:'account', privacy:'account', law:'account'};
+  const alias = {trouble:'my', care:'home', account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'account', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
@@ -13782,7 +13904,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'合わなかった化粧品', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
