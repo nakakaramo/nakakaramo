@@ -278,6 +278,19 @@ label.btn{position:relative}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none}
 .tab{border:1px solid var(--line2);background:var(--surface);color:var(--ink2);padding:7px 16px;border-radius:999px;font-size:13px;cursor:pointer;white-space:nowrap;text-decoration:none}
 .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+/* 切り替えの動き：選んでいる印（色の板）がすべって動く */
+.sw-grp{position:relative;isolation:isolate}
+.sw-ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;transition:transform .34s cubic-bezier(.3,1.2,.45,1),width .34s cubic-bezier(.3,1.2,.45,1),height .3s ease;will-change:transform}
+.sw-grp .rt-mode,.sw-grp .ct,.sw-grp .tab,.sw-grp > .hap-keep{position:relative;z-index:1}
+.sw-grp .sw-on{background:transparent!important;transition:color .25s ease,border-color .25s ease}
+.rt-mode,.ct,.tab{transition:color .25s ease,border-color .25s ease}
+.sw-in{animation:swIn .32s ease both}.sw-in-r{animation:swInR .32s ease both}
+@keyframes swIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes swInR{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}} /* 横に動かすと画面が横にゆれるので、縦にふわっと */
+/* 選ぶボタン（0〜5・肌の調子など）：選んだときに、ぽんと動く */
+.seg-opt input:checked + span{animation:segPop .26s ease}
+@keyframes segPop{0%{transform:scale(.9)}60%{transform:scale(1.05)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.sw-ind{transition:none}.sw-in,.sw-in-r,.seg-opt input:checked + span{animation:none}}
 
 /* ---------- Home ---------- */
 .hero{position:relative;overflow:hidden;border-radius:22px;padding:14px 16px 16px;background:linear-gradient(135deg,#F3F7F2 0%,#F7F1E7 50%,#F3F7F2 100%);background-size:220% 220%;animation:heroFlow 14s ease-in-out infinite alternate;border:1px solid var(--line);margin-bottom:18px}
@@ -3454,6 +3467,37 @@ function hapticize(btn) {
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
 const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+// ===== 切り替え（タブ・モード・期間など）に動きをつける =====
+// 選んでいる印（色の板）が、前に選んでいた場所から新しい場所へすべって動く。下の中身も、動いた向きからふわっと入れかわる
+const SW_GROUPS = '.rt-modes,.ct-tabs,.tabs,.map-tabs,.chips:has(> .tab.active),.chips:has(> .hap-keep > .tab.active)';
+const swLast = new Map();
+function swKey(g, i) { let n = ''; try { n = parseRoute().name; } catch (e) { n = location.hash; } return n + '|' + String(g.className || '').replace(/\s*sw-grp/, '') + '|' + i; } // 画面の種類ごと（#/care/… のタブを移っても、前の場所から動く）
+function swActive(g) { return g.querySelector('.rt-mode.on,.ct.on,.tab.active'); }
+function swPlace(g, i) {
+  const a = swActive(g); let ind = g.querySelector(':scope > .sw-ind');
+  if (!a) { if (ind) ind.remove(); return; }
+  const gr = g.getBoundingClientRect(), ar = a.getBoundingClientRect();
+  const r = {l:ar.left - gr.left + g.scrollLeft - g.clientLeft, t:ar.top - gr.top + g.scrollTop - g.clientTop, w:ar.width, h:ar.height};
+  if (!r.w) return;
+  if (!ind) { ind = document.createElement('i'); ind.className = 'sw-ind'; ind.setAttribute('aria-hidden', 'true'); g.prepend(ind); g.classList.add('sw-grp'); }
+  g.querySelectorAll('.sw-on').forEach(x => { if (x !== a) x.classList.remove('sw-on'); });
+  if (!a.dataset.swBg) { a.classList.remove('sw-on'); const cs0 = getComputedStyle(a); a.dataset.swBg = cs0.backgroundColor; a.dataset.swBr = cs0.borderRadius; } // 色は、透明にする前に読む
+  a.classList.add('sw-on');
+  ind.style.background = a.dataset.swBg; ind.style.borderRadius = a.dataset.swBr;
+  const k = swKey(g, i), prev = swLast.get(k), idx = [...g.querySelectorAll('.rt-mode,.ct,.tab')].indexOf(a);
+  const put = x => { ind.style.width = x.w + 'px'; ind.style.height = x.h + 'px'; ind.style.transform = `translate(${x.l}px,${x.t}px)`; };
+  if (prev && prev.idx !== idx && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    ind.style.transition = 'none'; put(prev.r); void ind.offsetWidth; ind.style.transition = ''; put(r);
+    // 下の中身：動いた向きから入れかえる
+    let n = g.closest('.hap-keep') ? g.closest('.hap-keep').nextElementSibling : g.nextElementSibling, c = 0;
+    while (n && c < 3) { n.classList.remove('sw-in', 'sw-in-r'); void n.offsetWidth; n.classList.add(idx > prev.idx ? 'sw-in-r' : 'sw-in'); n = n.nextElementSibling; c++; }
+  } else { ind.style.transition = 'none'; put(r); void ind.offsetWidth; ind.style.transition = ''; }
+  swLast.set(k, {r, idx});
+}
+function swAnimAll() { $$(SW_GROUPS).forEach((g, i) => swPlace(g, i)); }
+// 画面を描き直さない切り替え（押したらクラスだけ変わるもの）にも対応する
+document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('.rt-mode,.ct,.tab'); if (!t) return; const g = t.closest(SW_GROUPS); if (!g) return; setTimeout(() => { if (document.body.contains(g)) { const i = $$(SW_GROUPS).indexOf(g); swPlace(g, i); } }, 0); }, true);
+window.addEventListener('resize', () => { clearTimeout(swAnimAll.t); swAnimAll.t = setTimeout(() => { swLast.clear(); swAnimAll(); }, 150); });
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
@@ -13021,6 +13065,7 @@ function render() {
   if (r.name === 'my' && r.id) { const pm = getMy(r.id); if (pm) setTimeout(() => myOffFetch(pm), 0); }
   if (r.name === 'my' && !r.id) setTimeout(myOffFillAll, 800);
   hapticizeTargets();
+  requestAnimationFrame(swAnimAll); // 切り替えの印をすべらせる
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
   // Myアイテムの一覧 ⇄ 詳しい画面：iPhoneのように横にすべって切り替わる
