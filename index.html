@@ -2512,6 +2512,24 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .t3-ac span{font-size:13px}
 .t3-ml{font-size:12.5px}
 .t3-ml b{font-size:14px}
+
+/* Myアイテムの右上のメニュー */
+.my-hb-btn{position:absolute;right:14px;bottom:calc((65px - 40px) / 2);width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}
+.my-hb-btn[hidden]{display:none!important}
+.my-hb-btn:active{background:var(--surface2)}
+.my-hb-btn.x .hb i:nth-child(1){top:6px;transform:rotate(45deg)}.my-hb-btn.x .hb i:nth-child(2){opacity:0;transform:scaleX(.3)}.my-hb-btn.x .hb i:nth-child(3){top:6px;transform:rotate(-45deg)}
+.my-pop{position:fixed;inset:0;z-index:3000}
+.my-pop-bg{position:absolute;inset:0}
+.my-pop-m{position:fixed;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:6px;transform-origin:top right;transform:scale(.92);opacity:0;transition:transform .18s ease,opacity .18s ease}
+.my-pop.in .my-pop-m{transform:none;opacity:1}
+.my-pop-i{display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;color:var(--ink);text-decoration:none!important;font-size:15px}
+.my-pop-i:active{background:var(--surface2)}
+.my-pop-i svg{width:20px;height:20px;color:var(--green-d);flex:none}
+.my-pop-i span{flex:1}
+.my-pop-i i{font-style:normal;color:var(--muted)}
+.my-pop-i .mt-n{font-style:normal;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#F6E3DA;color:#B4562F;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center}
+.my-pop-i+.my-pop-i{border-top:1px solid var(--line);border-radius:0}
+.my-pop-i:first-child{border-radius:12px 12px 0 0}.my-pop-i:last-child{border-radius:0 0 12px 12px}
 </style>
 </head>
 <body>
@@ -2527,7 +2545,7 @@ a,img,button,label{-webkit-touch-callout:none!important}
   <div id="page">
     <header class="topbar">
       <div class="wordmark wm-home wm-brand" data-t="ナカカラモ">ナカカラモ</div>
-      <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
+      <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><button type="button" class="my-hb-btn" id="my-menu" data-action="my-menu" aria-label="メニュー" aria-expanded="false" hidden><span class="hb"><i></i><i></i><i></i></span></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
   </div>
@@ -6929,7 +6947,7 @@ function viewMy() {
         <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div></div>`;
     }).join('')}</div>`;
   }
-  return html + tools + '</div>';
+  return html + '</div>'; // 成分組み合わせ・肌との比較・注意アイテムは、右上のメニューへ移した
 }
 // ===== 肌に合わなかった化粧品：あとで「何が合わなかったか」を確かめるための記録 =====
 function ngBadDays() { // 肌が荒れた日（調子が2以下・赤みが3以上・ニキビが前の7日より3つ以上多い）
@@ -6951,7 +6969,7 @@ function ngSuspects(day, l) { // その日に使ったもの＋その日まで�
 }
 function viewTrouble() {
   const ng = state.myProducts.filter(p => p.ng).sort((a, b) => b.ng.date.localeCompare(a.ng.date));
-  let html = `<a class="back" href="#/my">← Myアイテム</a>` + pageHead('肌に合わなかった化粧品', '合わなかった化粧品と、肌が荒れた日に使っていたものを、あとで確かめられます。');
+  let html = `<a class="back" href="#/my">← Myアイテム</a>` + pageHead('注意アイテム', '肌に合わなかった化粧品と、肌が荒れた日に使っていたものを、あとで確かめられます。');
   html += `<div class="card"><div class="card-h"><h2>合わなかった化粧品</h2>${ng.length ? `<span class="chip">${ng.length}件</span>` : ''}</div>`;
   html += ng.length ? ng.map(p => `<div class="ng-item"><a class="ng-name" href="#/my/${encodeURIComponent(p.id)}"><b>${esc(p.name)}</b><small>${esc([p.brand, p.category].filter(Boolean).join('・'))}</small></a>
       <div class="ng-meta"><span>${fmtDate(p.ng.date)}</span>${p.ng.sym.map(x => `<span class="chip warn">${esc(x)}</span>`).join('')}</div>
@@ -6975,6 +6993,24 @@ function viewTrouble() {
   html += '</div><div class="notice cb-note">ここに出ている化粧品が原因とは限りません。かゆみや腫れが強いとき、続くときは、使うのをやめて皮膚科に相談してください。</div>';
   return html;
 }
+// Myアイテムの右上のメニュー（成分組み合わせ・肌との比較・注意アイテム）
+function myMenuClose() {
+  const m = document.querySelector('.my-pop'), b = document.getElementById('my-menu'); if (b) { b.classList.remove('x'); b.setAttribute('aria-expanded', 'false'); }
+  if (!m || m._closing) return; m._closing = true; m.classList.remove('in'); setTimeout(() => m.remove(), 200);
+}
+function myMenuOpen() {
+  if (document.querySelector('.my-pop')) { myMenuClose(); return; }
+  const b = document.getElementById('my-menu'), r = b.getBoundingClientRect(), n = state.myProducts.filter(p => p.ng).length;
+  const m = document.createElement('div'); m.className = 'my-pop';
+  const it = (href, ic, t, extra) => `<a class="my-pop-i" href="${href}">${icon(ic)}<span>${t}</span>${extra || ''}<i>›</i></a>`;
+  m.innerHTML = `<div class="my-pop-bg"></div><nav class="my-pop-m" role="menu" style="top:${Math.round(r.bottom + 6)}px;right:${Math.round(window.innerWidth - r.right)}px">
+    ${it('#/combo', 'flask', '成分の組み合わせ')}${it('#/compare', 'compare', '肌との比較')}${it('#/trouble', 'alert', '注意アイテム', n ? `<em class="mt-n">${n}</em>` : '')}</nav>`;
+  document.body.appendChild(m); b.classList.add('x'); b.setAttribute('aria-expanded', 'true');
+  m.querySelector('.my-pop-bg').addEventListener('click', myMenuClose);
+  m.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setTimeout(myMenuClose, 0)));
+  requestAnimationFrame(() => m.classList.add('in'));
+}
+window.addEventListener('hashchange', () => { const m = document.querySelector('.my-pop'); if (m) m.remove(); const b = document.getElementById('my-menu'); if (b) b.classList.remove('x'); });
 function openNgForm(id, date) {
   const p = getMy(id); if (!p) return;
   const cur = p.ng || {date:date || todayStr(), sym:[], note:''};
@@ -13246,6 +13282,7 @@ const actions = {
     if (save()) { toast('使用終了にしました'); render(); }
   },
   'ng-open': (id, el) => { if (parseRoute().name === 'my' && getMy(id) && getMy(id).ng) { location.hash = '#/trouble'; return; } openNgForm(id, el && el.dataset.date); },
+  'my-menu': () => myMenuOpen(),
   'ng-save': id => {
     const p = getMy(id); if (!p) return;
     const d = (document.getElementById('ng-date') || {}).value;
@@ -14118,7 +14155,8 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'合わなかった化粧品', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
+  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
