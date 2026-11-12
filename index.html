@@ -886,6 +886,19 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .fp-hl{display:inline-flex;align-items:center;gap:8px}
 .fp-undo{height:32px;padding:0 14px!important;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--green-d);font-size:13px;font-weight:600;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:inherit}
 .fp-undo:disabled{opacity:.35;cursor:default}
+/* ニキビ選択：種類はイラストで選ぶ。「戻る」は右下、「すべて消す」は小さく */
+.fp-kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fp-kind{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px 6px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);font:inherit;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:border-color .15s,background-color .15s,transform .12s}
+.fp-kind:active{transform:scale(.96)}
+.fp-kind.on{border-color:var(--green-d);background:var(--green-s,#EEF5F0);color:var(--green-d)}
+.fp-kind .ill,.fp-chip .ill{flex:none;display:block}
+.fp-kind-d{margin:6px 0 0;min-height:1.4em}
+.fp-foot{display:flex;justify-content:flex-end;margin-top:10px}
+.fp-clear-s{border:0;background:none;padding:2px 0;font:inherit;font-size:11.5px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.fp-chips.fp-ill{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fp-chips.fp-ill .fp-chip{flex-direction:column;justify-content:center;gap:3px;border-radius:14px;padding:7px 4px 6px;font-size:12px;font-weight:600;border-width:1.5px}
+.fp-chips.fp-ill .fp-chip.on{border-color:var(--cc);background:color-mix(in srgb,var(--cc) 12%,var(--surface));color:var(--ink)}
+.fp-chips.fp-ill .fp-chip.dis{opacity:.55}
 .fp-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .fp-steps .btn{min-height:40px;justify-content:center}
 .fp-steps .btn:disabled{opacity:.4}
@@ -1524,6 +1537,7 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-arrow[hidden]{display:block;visibility:hidden}
 .ld-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0}
 .ld-arrow svg{display:block;flex:none}
+.ld-arrow,.ldc-nav{padding:0!important;display:inline-flex;align-items:center;justify-content:center} /* 丸のど真ん中に「＞」 */
 .ld-info{text-align:center;min-width:0}
 .ld-date{display:flex;flex-direction:column;align-items:center;line-height:1.4}
 .ld-sleep{text-align:center;margin-top:2px}
@@ -1532,7 +1546,12 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-date b{font-size:17px;white-space:nowrap}
 .ld-nums{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12.5px;color:var(--muted)}
 .ld-nums b{color:var(--ink);font-size:14px}
-.ld-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.ld-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:4px}
+.ld-sec{padding:12px 0;border-bottom:1px solid var(--line)}
+.ld-sec:last-of-type{border-bottom:0}
+.ld-sec-h{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--green-d);letter-spacing:.02em}
+.ld-sec-h::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--green)}
+.ld-sec .log-memo,.ld-sec .ld-life,.ld-sec .log-photo{margin-top:0}
 .ld-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .ld-flash{animation:ldf .25s ease}
 @keyframes ldf{from{opacity:.3;transform:translateY(3px)}to{opacity:1;transform:none}}
@@ -1884,8 +1903,12 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 #sw-body .sw-opt.on::before{border-color:var(--green-d);box-shadow:inset 0 0 0 5px var(--surface);background:var(--green-d)}
 #sw-body .sw-opts.multi .sw-opt.on::before{box-shadow:none;background:var(--green-d) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat}
 #sw-body,#sw-body *{-webkit-tap-highlight-color:transparent} /* 画面ごと光らないように */
-#sw-body .sw-opt{transition:background-color .18s ease}
-#sw-body .sw-opt:active{background:var(--green-s,#E3EFE6);transition:none} /* 押したボタンだけ光る */
+/* アンケート：行は光らせず、◉（丸・四角）だけが凹んで印がつく */
+#sw-body .sw-opts .sw-opt.on,#sw-body .sw-opts .sw-opt:active{background:transparent}
+#sw-body .sw-opt::before{transition:transform .12s ease,box-shadow .15s ease,background-color .15s ease,border-color .15s ease}
+#sw-body .sw-opt:active::before{transform:scale(.88);box-shadow:inset 0 2px 4px rgba(0,0,0,.28)}
+#sw-body .sw-opts:not(.multi) .sw-opt.on::before{border-color:var(--green-d);background:radial-gradient(circle,var(--green-d) 0 4.5px,#E9F1EC 5.5px);box-shadow:inset 0 2px 4px rgba(0,0,0,.22),inset 0 -1px 0 rgba(255,255,255,.6)}
+#sw-body .sw-opts.multi .sw-opt.on::before{box-shadow:inset 0 2px 4px rgba(0,0,0,.3)!important}
 #sw-body .sw-opts > :last-child .sw-opt,#sw-body .sw-opts > .sw-opt:last-child{border-bottom:0}
 
 .start-simple .st-head{align-items:center;margin-bottom:12px}
@@ -2204,6 +2227,44 @@ const OTHER_CONCERNS = ['くすみ','ざらつき','毛穴の目立ち','かゆ�
 const PREFS_NAMES = ['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈川','新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'];
 const FACTORS = ['生理中','生理前','ストレス','お酒','紫外線を多く浴びた'];
 const factorList = () => state.settings.gender === '男性' ? FACTORS.filter(f => !/生理/.test(f)) : FACTORS;
+// ニキビの種類（顔のマスに付ける。数字は記録に入れる番号。1＝赤ニキビは前の記録と同じ）
+const ACNE_KINDS = [
+  {n:'赤ニキビ', t:'赤ニキビ', c:0xC0392B, s:1, d:'赤くはれて、少し痛い'},
+  {n:'白ニキビ', t:'白ニキビ', c:0xF4E7D6, s:0.8, d:'毛穴に皮脂がつまって、白くぽつっと出る'},
+  {n:'黒ニキビ', t:'黒ニキビ', c:0x3B2B23, s:0.65, d:'つまった皮脂が、空気にふれて黒く見える'},
+  {n:'黄ニキビ', t:'黄ニキビ（膿あり）', c:0xE2B43C, s:1.05, d:'真ん中に黄色い膿がある'},
+  {n:'しこり', t:'しこり・硬い', c:0x8E3B5A, s:1.4, d:'奥が硬くはれて、紫っぽい'},
+  {n:'ニキビ跡', t:'ニキビ跡', c:0xA35E4C, s:1.15, flat:1, d:'治ったあとの赤み・茶色いしみ'}
+];
+const acneKindOf = v => ACNE_KINDS[clamp(Math.round(Number(v)) || 1, 1, ACNE_KINDS.length) - 1];
+// 本物っぽいイラスト（肌の上のニキビ・肌の状態）。id はページ内で重ならないように付ける
+let illN = 0;
+function skinIllus(kind, size = 44) {
+  const id = 'il' + (++illN), sk = `<radialGradient id="${id}s" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#F8DCC6"/><stop offset=".7" stop-color="#EEC4A6"/><stop offset="1" stop-color="#DDAA8A"/></radialGradient>`;
+  const base = `<circle cx="24" cy="24" r="23" fill="url(#${id}s)"/>`;
+  const pores = (o = .35) => [[12,15],[30,11],[37,27],[15,33],[27,37],[9,25],[33,19]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".7" fill="#B98A70" opacity="${o}"/>`).join('');
+  const bump = (cx, cy, r, c1, c2, extra = '') => `<radialGradient id="${id}b${cx}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}b${cx})"/>${extra}`;
+  const halo = (r, c, o) => `<radialGradient id="${id}h" r="50%"><stop offset="0" stop-color="${c}" stop-opacity="${o}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient><circle cx="24" cy="24" r="${r}" fill="url(#${id}h)"/>`;
+  const shine = (x, y, r = 1.6) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * .7}" fill="#fff" opacity=".75"/>`;
+  const D = {
+    '赤ニキビ': halo(15, '#D9442F', .55) + bump(24, 24, 6.5, '#EE7A63', '#B92F22') + shine(22, 21.5),
+    '白ニキビ': halo(11, '#E7A08A', .35) + bump(24, 24, 5.5, '#FFFBF4', '#E9D3BC') + shine(22.4, 22),
+    '黒ニキビ': bump(24, 24, 4.2, '#E7BFA4', '#D2A385') + `<circle cx="24" cy="24" r="2.2" fill="#2E211B"/>` + shine(25.2, 22.8, .8),
+    '黄ニキビ': halo(15, '#D4513A', .5) + bump(24, 24, 7, '#F08B6F', '#C2402F') + `<radialGradient id="${id}y" cx="45%" cy="40%"><stop offset="0" stop-color="#FFF4C8"/><stop offset="1" stop-color="#E2B43C"/></radialGradient><circle cx="24" cy="23.6" r="3.4" fill="url(#${id}y)"/>` + shine(23, 22.2, 1.1),
+    'しこり': halo(19, '#9A4468', .55) + bump(24, 25, 10, '#B9667F', '#7D2F4C') + shine(20.5, 20.5, 2.4),
+    'ニキビ跡': `<ellipse cx="24" cy="24" rx="10" ry="9" fill="#C27C68" opacity=".55"/><ellipse cx="22" cy="25" rx="6" ry="5" fill="#A9604E" opacity=".45"/>`,
+    '赤み': halo(22, '#E0473A', .6) + halo(12, '#D63A2E', .35),
+    '乾燥': `<g stroke="#C9A07E" stroke-width=".9" fill="none" stroke-linecap="round" opacity=".9"><path d="M8 18l9 3 6-4 8 5 9-2"/><path d="M10 30l7-2 7 4 7-3 8 3"/><path d="M17 21l-2 7M31 22l1 7M24 17l1-6"/></g><g fill="#FFF7EC" opacity=".9"><path d="M13 23l4 1-3 2z"/><path d="M28 31l4 0-2 3z"/><path d="M34 16l3 1-2 2z"/></g>`,
+    'テカリ': `<ellipse cx="20" cy="18" rx="9" ry="5" fill="#fff" opacity=".55" transform="rotate(-20 20 18)"/><ellipse cx="29" cy="30" rx="5" ry="2.6" fill="#fff" opacity=".45" transform="rotate(-20 29 30)"/><ellipse cx="18" cy="17" rx="3.5" ry="1.6" fill="#fff" opacity=".9" transform="rotate(-20 18 17)"/>`,
+    'くすみ': `<circle cx="24" cy="24" r="23" fill="#8C8076" opacity=".38"/>${pores(.25)}`,
+    'ざらつき': [[14,14],[22,12],[31,15],[11,22],[19,20],[27,21],[35,23],[14,30],[22,28],[30,30],[18,37],[27,36],[36,32]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.5" fill="#F7E2D0"/><circle cx="${x + .5}" cy="${y + .6}" r="1.5" fill="#C99A7E" opacity=".45"/>`).join(''),
+    '毛穴の目立ち': [[13,14],[21,12],[30,14],[37,20],[10,23],[18,21],[26,22],[34,28],[14,31],[22,30],[30,34],[19,38]].map(([x, y], i) => `<ellipse cx="${x}" cy="${y}" rx="${1.3 + (i % 3) * .3}" ry="${1 + (i % 2) * .3}" fill="#5A3B2E" opacity=".7"/>`).join(''),
+    'かゆみ': halo(18, '#E46FA0', .3) + `<g stroke="#D9573F" stroke-width="1.2" stroke-linecap="round" opacity=".75"><path d="M13 15l14 17M17 13l14 17M21 12l13 15"/></g>`,
+    'ヒリヒリ感': halo(20, '#E0533A', .5) + `<g stroke="#FFF2E6" stroke-width="1.3" stroke-linecap="round"><path d="M24 11v5M24 32v5M11 24h5M32 24h5M15 15l3 3M30 30l3 3M33 15l-3 3M15 33l3-3"/></g>`,
+    '肌あれ': halo(20, '#D9583F', .35) + `<g fill="#C8563F" opacity=".55"><circle cx="16" cy="18" r="3"/><circle cx="29" cy="15" r="2.4"/><circle cx="32" cy="28" r="3.2"/><circle cx="19" cy="31" r="2.6"/></g>` + `<g fill="#FFF3E6" opacity=".85"><path d="M22 22l4 1-3 2z"/><path d="M12 27l3 0-1 2z"/></g>`
+  };
+  return `<svg class="ill" viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true"><defs>${sk}</defs>${base}${pores()}${D[kind] || ''}<circle cx="24" cy="24" r="23" fill="none" stroke="rgba(0,0,0,.08)"/></svg>`;
+}
 const AREA_CONCERNS = ['赤み','乾燥','テカリ','くすみ','ざらつき','毛穴の目立ち','かゆみ','ヒリヒリ感','肌あれ']; // 顔を押して選べる、部位ごとの状態
 // 状態ごとの色（3Dの顔のマス目と、ボタンの色）
 const CONCERN_COLORS = {'赤み':'#E2523C', '乾燥':'#E9B949', 'テカリ':'#F08A24', 'くすみ':'#8C8C8C', 'ざらつき':'#A0724F', '毛穴の目立ち':'#7E57C2', 'かゆみ':'#E46FA0', 'ヒリヒリ感':'#D84315', '肌あれ':'#3E92CC'};
@@ -3035,7 +3096,8 @@ function normalize(d) {
     timing:TIMINGS.includes(p.timing) ? p.timing : '朝・夜', frequency:FREQS.includes(p.frequency) ? p.frequency : '毎日', startDate:p.startDate,
     status:STATUSES.includes(p.status) ? p.status : '使用中', endDate:isValidYmd(p.endDate) ? p.endDate : '', memo:String(p.memo||''), demo:!!p.demo, pao:[0, 3, 6, 12, 24].includes(Number(p.pao)) ? Number(p.pao) : 0, // 開封後の使用期限の目安（か月。0＝カテゴリの目安）
     purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : [],
-    order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null // 長押しで並べ替えた順番
+    order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null, // 長押しで並べ替えた順番
+    offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '' // 全成分をメーカー公式で調べた日・ページ
   })) : [];
   out.skinLogs = Array.isArray(d.skinLogs) ? d.skinLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
     id:String(l.id), date:l.date, condition:clamp(Math.round(num(l.condition,3)),1,5), acneCount:clamp(Math.round(num(l.acneCount)),0,99),
@@ -3045,7 +3107,7 @@ function normalize(d) {
     redness:clamp(Math.round(num(l.redness)),0,5), dryness:clamp(Math.round(num(l.dryness)),0,5), oil:clamp(Math.round(num(l.oil)),0,5),
     otherConcerns:strArr(l.otherConcerns, OTHER_CONCERNS), factors:strArr(l.factors, FACTORS),
     faceV:l.faceV === 2 ? 2 : 0, // 2＝顔のマス目で入力した記録（空でもマス目の表示にする）
-    cellMarks:(() => { const o = {}; if (l.cellMarks && typeof l.cellMarks === 'object') Object.entries(l.cellMarks).forEach(([k, m]) => { if (!/^\d{1,3},\d{1,3}$/.test(k) || !m || typeof m !== 'object') return; const v = {}; AREA_CONCERNS.forEach(c => { const n = Math.round(Number(m[c])); if (n >= 1 && n <= 5) v[c] = n; }); if (m['ニキビ']) v['ニキビ'] = 1; if (Object.keys(v).length) o[k] = v; }); return o; })(),
+    cellMarks:(() => { const o = {}; if (l.cellMarks && typeof l.cellMarks === 'object') Object.entries(l.cellMarks).forEach(([k, m]) => { if (!/^\d{1,3},\d{1,3}$/.test(k) || !m || typeof m !== 'object') return; const v = {}; AREA_CONCERNS.forEach(c => { const n = Math.round(Number(m[c])); if (n >= 1 && n <= 5) v[c] = n; }); if (m['ニキビ']) v['ニキビ'] = clamp(Math.round(Number(m['ニキビ'])) || 1, 1, ACNE_KINDS.length); if (Object.keys(v).length) o[k] = v; }); return o; })(),
     areaNotes:(() => { const o = {}; if (l.areaNotes && typeof l.areaNotes === 'object') AREAS.forEach(a => { const v = strArr(l.areaNotes[a.id], AREA_CONCERNS); if (v.length) o[a.id] = v; }); return o; })(),
     areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts).filter(id => out.myProducts.some(p => p.id === id)), usageRecorded:!!l.usageRecorded,
     memo:String(l.memo||''), photo:safeImg(l.photo), demo:!!l.demo
@@ -4082,7 +4144,7 @@ async function popularMount() {
   const up = POPULAR.updatedAt ? new Date(POPULAR.updatedAt) : null;
   const h = sec.querySelector('.pop-h small'); if (h && up && !isNaN(up)) h.textContent = `${up.getMonth() + 1}/${up.getDate()} 更新・${POPULAR.items.length}件`;
   popPaint();
-  const q = document.getElementById('pop-q'); if (q) q.addEventListener('input', () => { popN = 20; popPaint(); });
+  const q = document.getElementById('pop-q'); if (q) q.addEventListener('input', () => { const m = sec.closest('.modal'); if (m && !m.style.minHeight) m.style.minHeight = m.offsetHeight + 'px'; popN = 20; popPaint(); }); // 探しているあいだは、シートの高さを変えない（画面がずれないように）
   sec.addEventListener('click', e => { const b = e.target.closest('[data-pop]'); if (!b) return; const x = POPULAR.items[Number(b.dataset.pop)]; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); });
 }
 function openAddSheet(kind) {
@@ -4479,7 +4541,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <button type="button" class="au-go" data-au="signup" ${st.busy ? 'disabled' : ''}>${st.busy ? '登録しています…' : '登録する'}</button>`;
       const keep = {}; if (!dir) ov.querySelectorAll('input').forEach(i => { if (i.id) keep[i.id] = i.type === 'checkbox' ? i.checked : i.value; });
       ov.innerHTML = `<div class="au-page" role="dialog" aria-modal="true" aria-labelledby="au-t">
-        <div class="au-head"><button type="button" class="au-back" data-au="${s1 ? 'close' : 'back'}" aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="au-t">${title}</h2><span></span></div>
+        <div class="au-head"><button type="button" class="au-back" data-au="${s1 ? 'close' : 'back'}" aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button><h2 id="au-t">${title}</h2><span></span></div>
         <div class="au-body">${st.info ? `<p class="au-info">${esc(st.info)}</p>` : ''}${body}<p class="au-err" ${st.err ? '' : 'hidden'}>${esc(st.err)}</p></div>
         <div class="au-foot">${s1 ? (up ? '<p>既にアカウントをお持ちですか？</p><button type="button" data-au="tologin">ログイン</button>' : '<p>アカウントをまだ持っていませんか？</p><button type="button" data-au="tosignup">登録</button>') : ''}</div>
       </div>`;
@@ -5073,6 +5135,21 @@ const SUN_INFO = [ // 中身はアプリが書いた文（利用者の入力で�
   ['気をつけること', '少なめに塗ると効果が下がるので、決められた量をムラなく塗り、汗をかいたら2〜3時間ごとに塗り直しましょう。肌に合わないときは「紫外線吸収剤フリー（ノンケミカル）」を選ぶ方法もあります。', 'warn']];
 // 楽天で探すボタン：美容・コスメのジャンル（日焼け止めは「日焼け止め・UVケア」）の中だけを、レビューの多い順（s=5）で開く。服・傘・サプリなどは出さない
 const rakutenIngUrl = (w, sun) => 'https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(sun ? '日焼け止め' : w) + '/' + (sun ? '216492' : '100939') + '/?s=5&nitem=' + encodeURIComponent(sun ? 'サプリ 飲む ハイドロキノン' : 'サプリ 飲む');
+let ING_AVOID_CTX = [];
+// 控えたい成分（＋アンケートで答えた合わなかった成分）を、商品名・全成分の中で探す言葉にする
+function ingAvoidKeys() {
+  const tr = new Set(((state.settings.diag || {}).a || {}).trouble || []);
+  const extra = [tr.has('fragrance') ? '香料' : '', tr.has('ethanol') ? 'エタノール' : ''].filter(Boolean);
+  const words = ING_AVOID_CTX.concat(extra).map(v => String(v).replace(/（.*?）|\(.*?\)/g, '').replace(/(が)?(多く)?入った(商品|もの)$|の多い(商品|もの)$|入り$/, '').trim()).filter(v => v.length >= 2);
+  const ks = []; words.forEach(w => { const e = ingEntryOf(w); ingWords(w, e).forEach(k => { if (k.length >= 2 && !ks.includes(k)) ks.push(k); }); });
+  if (ks.some(k => /エタノール|アルコール/.test(k))) ['エタノール', 'アルコール'].map(fnorm).forEach(k => { if (!ks.includes(k)) ks.push(k); });
+  return ks;
+}
+// その言葉が入っているか（「アルコールフリー」「香料不使用」などの“入っていない”書き方は除く）
+function hasAvoid(text, ks) {
+  const t = fnorm(text); if (!t || !ks.length) return false;
+  return ks.some(k => { let i = t.indexOf(k); while (i >= 0) { const after = t.slice(i + k.length, i + k.length + 4); if (!/^(ふり|free|無添加|不使用|ぜろ|0|無配合|なし|おふ|off)/i.test(after) && !/(無|のん|non)$/i.test(t.slice(Math.max(0, i - 3), i))) return true; /* fnorm でカタカナはひらがなになっている */ i = t.indexOf(k, i + 1); } return false; });
+}
 async function openIngSheet(word) {
   const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), e = ingEntryOf(word);
   const isSun = /日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen');
@@ -5081,12 +5158,12 @@ async function openIngSheet(word) {
       <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <div id="ing-partner"></div>
     <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
+    <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.concat([]).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
   const keys = ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)) && shopSingle(x, w0); };
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
   partnersLoad().then(P => {
     const box = document.getElementById('ing-partner'); if (!box) return;
-    const got = P.filter(x => { const t = fnorm((x.ingredients || '') + ' ' + x.name); return keys.some(k => t.includes(k)); }).slice(0, 4);
+    const av = ingAvoidKeys(), got = P.filter(x => { const t = fnorm((x.ingredients || '') + ' ' + x.name); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); }).slice(0, 4);
     if (!got.length) return;
     box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
       <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。全成分に「${esc(w0)}」が入っている商品を出しています。</p>`;
@@ -5103,6 +5180,7 @@ async function openIngSheet(word) {
   await popularLoad();
   const pop = (POPULAR.items || []).filter(hit);
   pop.forEach(x => { const m = list.find(y => (x.url && y.url && y.url.split('?')[0] === x.url.split('?')[0]) || sameProduct({name:y.name}, {name:x.name})); if (m) m.sales = Number(x.rank) || 0; else list.push(Object.assign({}, x, {sales:Number(x.rank) || 0})); });
+  { const av = ingAvoidKeys(); if (av.length) for (let k = list.length - 1; k >= 0; k--) if (hasAvoid((list[k].ingredients || '') + ' ' + list[k].name + ' ' + (list[k].caption || ''), av)) list.splice(k, 1); } // 控えたい成分が入った商品は省く
   for (let k = list.length - 1; k >= 0; k--) { const st = /yahoo/i.test(list[k].site || list[k].url || '') ? 'yahoo' : /amazon/i.test(list[k].url || '') ? 'amazon' : 'rakuten'; if (!affSite(st)) list.splice(k, 1); } // 今はアフィリエイトが使えるサイト（楽天）の商品だけ
   list.sort((a, b) => (a.sales ? 0 : 1) - (b.sales ? 0 : 1) || (a.sales || 0) - (b.sales || 0) || (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
   const b = document.getElementById('ing-pop'); if (!b) return;
@@ -5225,6 +5303,25 @@ async function offFetch(p) {
   } catch (e) { const c = getCat(p.id); if (c) c.offErr = String(e.message || e).slice(0, 80); }
   delete offBusy[p.id];
   if (parseRoute().name === 'product') render();
+}
+// Myアイテム：全成分が空なら、メーカー公式サイトの全成分を自動で調べて入れる（自分で入れた内容は上書きしない）
+async function myOffFetch(p) {
+  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(ingsOfMy(p)).trim() || p.offChecked || offBusy[p.id] || p.offTried || !acct.user) return;
+  const cat = getCat(p.catalogId); if (cat) { await offFetch(cat); if (String(ingsOfMy(p)).trim()) { comboRefreshAfterIngs(); return; } }
+  offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id))) render();
+  try {
+    const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:(cat || {}).jan || '', volume:(cat || {}).volume || ''})).info || {};
+    const m = getMy(p.id); if (m) { if (!String(m.ingredients || '').trim() && r.ingredients) m.ingredients = String(r.ingredients).slice(0, 4000); m.offChecked = todayStr(); if (r.url) m.offUrl = r.url; save(); comboRefreshAfterIngs(); }
+  } catch (e) { const m = getMy(p.id); if (m) m.offErr = String(e.message || e).slice(0, 80); }
+  delete offBusy[p.id];
+  if (parseRoute().name === 'my') render();
+}
+function comboRefreshAfterIngs() { /* 成分が入ったら、組み合わせの判定などは次の描き直しで自動で反映される */ }
+// 使用中のMyアイテムで全成分が空のものを、少しずつ（1つずつ順番に）公式で調べる
+async function myOffFillAll() {
+  if (!acct.user || myOffFillAll.busy) return; myOffFillAll.busy = true;
+  try { for (const p of state.myProducts.filter(x => x.status !== '使用終了' && !String(ingsOfMy(x)).trim() && !x.offChecked && x.category !== '皮膚科の塗り薬').slice(0, 5)) await myOffFetch(p); }
+  finally { myOffFillAll.busy = false; }
 }
 // 併用に注意する成分：この商品に入っている成分と、組み合わせの注意（ルール）を照らし合わせる。使用中の化粧品と重なれば、その商品名も出す
 function comboNgHtml(p) {
@@ -6349,7 +6446,7 @@ function viewMy() {
   if (!['cos', 'rx'].includes(ui.myKind)) ui.myKind = !nCos && nRx ? 'rx' : 'cos';
   const kind = ui.myKind;
   const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
-    .sort((a,b) => (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
+    .sort((a,b) => myStRank(a) - myStRank(b) || (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
@@ -6505,6 +6602,8 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
   document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.mrow-w')) e.preventDefault(); });
 })();
 function periodStats(s, e) { const logs = s <= e ? logsInRange(s, e) : []; return Object.assign(stats(logs), {logs}); }
+// 一時停止・使用終了のアイテムは、自動で下に並べる
+const myStRank = p => p.status === '使用終了' ? 2 : p.status === '一時停止' ? 1 : 0;
 function viewMyDetail(id) {
   const p = getMy(id);
   if (!p) return notFound('化粧品が見つかりません', '#/my', 'Myアイテムに戻る');
@@ -6583,7 +6682,7 @@ function viewMyDetail(id) {
     <div class="card mt"><div class="card-h"><h2>成分</h2>${known.length ? '<a class="link" href="#/combo">組み合わせを確認 →</a>' : ''}</div>
       ${ingsOfMy(p) ? `${known.length ? `<p class="small muted" style="margin-bottom:8px">解説のある成分：</p><div class="ing-list">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : '<p class="small muted">成分辞典に収録している成分は見つかりませんでした。</p>'}
         <details class="fold" style="margin-top:12px"><summary>全成分を表示</summary><p class="prose small">${esc(ingsOfMy(p))}</p></details>`
-      : '<p class="na">全成分が未登録です。「編集」から入力すると、成分の解説や組み合わせの確認ができます。</p>'}</div>
+      : offBusy[p.id] ? '<p class="na">メーカーの公式サイトで全成分を調べています（10〜30秒）…</p>' : p.offChecked ? '<p class="na">メーカーの公式サイトに全成分の記載が見つかりませんでした。「編集」から入力すると、成分の解説や組み合わせの確認ができます。</p>' : '<p class="na">全成分が未登録です。「編集」から入力すると、成分の解説や組み合わせの確認ができます。</p>'}${p.offUrl && ingsOfMy(p) ? `<p class="small muted" style="margin:8px 0 0">全成分はメーカー公式の情報です（<a href="${esc(p.offUrl)}" target="_blank" rel="noopener noreferrer">公式ページ</a>）</p>` : ''}</div>
     <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
 }
 
@@ -7061,13 +7160,13 @@ function prodLife(p) {
 function prodLifeChips(p) {
   const L = prodLife(p); if (!L) return '';
   const out = [];
-  if (L.left != null) out.push(L.left <= 0 ? '<i class="chip warn">そろそろ使い切り</i>' : L.left <= 14 ? `<i class="chip warn">残り約${L.left}日</i>` : `<i class="chip gray">残り約${L.left}日</i>`);
+  // 「残り約○日」は出さない（使い切りの目安は表示しない）
   if (L.toExp < 0) out.push('<i class="chip red">使用期限の目安を過ぎています</i>'); else if (L.toExp <= 30) out.push(`<i class="chip warn">期限まで${L.toExp}日</i>`);
   return out.join('');
 }
 // ホーム：そろそろ使い切り・期限が近い化粧品のお知らせ
 function prodAlertHtml() {
-  const list = state.myProducts.map(p => ({p, L:prodLife(p)})).filter(x => x.L && ((x.L.left != null && x.L.left <= 7) || x.L.toExp <= 14));
+  const list = state.myProducts.map(p => ({p, L:prodLife(p)})).filter(x => x.L && x.L.toExp <= 14); // 残りの日数（使い切り）のお知らせは出さない
   if (!list.length) return '';
   return `<div class="notice warn prod-alert">${icon('bottle')}<span><b>化粧品のお知らせ</b>${list.slice(0, 3).map(({p, L}) => `<a href="#/my/${encodeURIComponent(p.id)}">${esc(truncate(p.name, 18))}：${L.toExp < 0 ? '使用期限の目安を過ぎています' : L.toExp <= 14 ? `期限の目安まであと${L.toExp}日` : L.left <= 0 ? 'そろそろ使い切りそうです' : `あと約${L.left}日で使い切りそうです`}</a>`).join('')}</span></div>`;
 }
@@ -7570,12 +7669,50 @@ function concernKeysNow() { const st = state.settings; if (Array.isArray(st.conc
 
 // ---------- 成分の提案 ----------
 const EVW = {A:1, B:0.8, C:0.5, D:0.1};
+// ---------- 3Dの顔に入れた記録（マスごとのニキビの種類・赤み・乾燥…の強さ）から、今の肌の状態を読み取る ----------
+const FACE_C2K = {'赤み':['redness'], '肌あれ':['redness', 'sensitive'], 'ヒリヒリ感':['sensitive'], 'かゆみ':['sensitive'], '乾燥':['dry'], 'テカリ':['oily'], 'くすみ':['dull'], 'ざらつき':['rough'], '毛穴の目立ち':['pore']};
+const ACNE_INFLAMED = ['赤ニキビ', '黄ニキビ', 'しこり'], ACNE_COMEDO = ['白ニキビ', '黒ニキビ'];
+function faceFindings(days = 7) {
+  const t = todayStr(), logs = logsInRange(addDays(t, -(days - 1)), t).filter(l => l.cellMarks && Object.keys(l.cellMarks).length);
+  const out = {days:logs.length, acne:{total:0, kinds:{}, areas:{}}, conc:{}, score:{}, keys:[], inflamed:0, comedo:0, marks:0};
+  if (!logs.length) return out;
+  logs.forEach(l => {
+    const seen = {};
+    Object.values(l.cellMarks).forEach(m => {
+      if (m['ニキビ']) { const k = acneKindOf(m['ニキビ']).n; out.acne.kinds[k] = (out.acne.kinds[k] || 0) + 1; out.acne.total++; }
+      AREA_CONCERNS.forEach(c => { const v = Number(m[c]) || 0; if (v) seen[c] = Math.max(seen[c] || 0, v); });
+    });
+    Object.entries(seen).forEach(([c, v]) => { const o = out.conc[c] = out.conc[c] || {max:0, sum:0, days:0, areas:new Set()}; o.max = Math.max(o.max, v); o.sum += v; o.days++; });
+    Object.entries(l.areaNotes || {}).forEach(([a, cs]) => cs.forEach(c => { if (out.conc[c]) out.conc[c].areas.add(areaName(a)); }));
+    (l.acneSpots || []).forEach(sp => { const n = areaName(sp.area); out.acne.areas[n] = (out.acne.areas[n] || 0) + sp.count; });
+  });
+  const K = out.acne.kinds; out.inflamed = ACNE_INFLAMED.reduce((x, k) => x + (K[k] || 0), 0); out.comedo = ACNE_COMEDO.reduce((x, k) => x + (K[k] || 0), 0); out.marks = K['ニキビ跡'] || 0;
+  const add = (k, v) => { out.score[k] = (out.score[k] || 0) + v; };
+  // 強さ（1〜5）の平均 × 記録した日のうち出ていた日の割合 で、悩みの重さを決める
+  Object.entries(out.conc).forEach(([c, o]) => (FACE_C2K[c] || []).forEach(k => add(k, (o.sum / o.days) * (0.5 + 0.5 * o.days / out.days))));
+  const per = n => n / out.days; // 1日あたりの個数
+  if (out.inflamed) { add('acne', 2 + per(out.inflamed) * 1.5); add('redness', per(out.inflamed) * 0.8); }
+  if (out.comedo) { add('acne', 1 + per(out.comedo)); add('pore', 1 + per(out.comedo) * 0.8); }
+  if (out.marks) add('acnemark', 1.5 + per(out.marks));
+  out.keys = Object.entries(out.score).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  return out;
+}
+// 3Dの記録の要約（AIへ渡す・画面に出す）
+function faceFindingsText(f) {
+  if (!f.days) return '';
+  const a = [];
+  if (f.acne.total) a.push(`ニキビ${f.acne.total}個（${Object.entries(f.acne.kinds).sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k}${n}`).join('・')}）${Object.keys(f.acne.areas).length ? '：' + Object.entries(f.acne.areas).sort((x, y) => y[1] - x[1]).slice(0, 2).map(x => x[0]).join('・') : ''}`);
+  Object.entries(f.conc).sort((x, y) => y[1].max - x[1].max).slice(0, 3).forEach(([c, o]) => a.push(`${c}（強さ${o.max}${o.areas.size ? '：' + [...o.areas].slice(0, 2).join('・') : ''}）`));
+  return a.join('、');
+}
 function ingSuggest(d, ownedInfos) {
   d = d || diagCompute({}, concernKeysNow());
-  const pri = d.priority.length ? d.priority : concernKeysNow();
+  const ff = faceFindings(7);
+  // 3Dの顔の記録（直近1週間）で見つかった悩みを先に。足りない分は診断・設定の悩みで補う
+  const pri = [...new Set(ff.keys.concat(d.priority.length ? d.priority : concernKeysNow()))];
   const tr = new Set((diagAnswers().trouble || []));
   const avoidGrp = new Set(); if (tr.has('retinoid')) avoidGrp.add('retinoid'); if (tr.has('acid')) ['aha', 'bha', 'pha'].forEach(g => avoidGrp.add(g)); if (tr.has('vitc')) avoidGrp.add('vitc');
-  const calm = d.sensitive || pri.slice(0, 2).some(k => k === 'redness' || k === 'sensitive');
+  const calm = d.sensitive || pri.slice(0, 2).some(k => k === 'redness' || k === 'sensitive') || ff.inflamed >= 3 || (ff.conc['ヒリヒリ感'] || {}).max >= 3;
   const owned = new Map(); (ownedInfos || []).forEach(x => x.ings.forEach(e => { if (!owned.has(e.k)) owned.set(e.k, []); owned.get(e.k).push(x.p); }));
   const scored = ING_MASTER.filter(e => !e.rx && !e.oral && !e.care).map(e => {
     let s = 0; const hit = [];
@@ -8619,7 +8756,7 @@ function skinCalHtml() {
   }
   const canNext = ym < monthKey(t);
   return `<div class="card skin-cal"><div class="card-h"><h2>肌の調子カレンダー</h2><span class="small muted">${n}日記録</span></div>
-    <div class="sc-h"><button type="button" class="ldc-nav" data-action="cal-m" data-id="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-action="cal-m" data-id="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
+    <div class="sc-h"><button type="button" class="ldc-nav" data-action="cal-m" data-id="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-action="cal-m" data-id="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 5l7 7-7 7"/></svg></button></div>
     <div class="sc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="sc-g">${cells}</div>
     <p class="sc-lg">${[5,4,3,2,1].map(v => `<span><i style="background:${COND_COLORS[v]}"></i>${COND_LABELS[v]}</span>`).join('')}<span><i class="dot p"></i>生理</span><span><i class="dot w"></i>乾燥した日</span></p>
     <p class="small muted" style="margin:6px 0 0">数字の右下はニキビの数です。日にちを押すと、その日の記録を開きます。</p>
@@ -8758,10 +8895,12 @@ function logDayDetailHtml(list, i) {
   const photo = safeImg(l.photo);
   const used = l.usedProducts.map(id => getMy(id)).filter(Boolean);
   const n = logShownNums(l);
-  return `    ${used.length ? `<div class="used-grid home-used ld-used">${used.map(myTileHtml).join('')}</div>` : ''}
-    ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}
-    ${photo ? `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">` : ''}
-    <div class="ld-life">${lifeSumHtml(lifeMap()[l.date], l.date)}</div>
+  // 見やすいように、内容ごとに見出しをつけて区切る
+  const sec = (t, h) => `<section class="ld-sec"><h3 class="ld-sec-h">${t}</h3>${h}</section>`;
+  return `    ${used.length ? sec('使った物', `<div class="used-grid home-used ld-used">${used.map(myTileHtml).join('')}</div>`) : ''}
+    ${photo ? sec('肌の写真', `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">`) : ''}
+    ${l.memo ? sec('メモ', `<div class="log-memo">${esc(l.memo)}</div>`) : ''}
+    ${sec('生活', `<div class="ld-life">${lifeSumHtml(lifeMap()[l.date], l.date)}</div>`)}
     <div class="ld-actions"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-log" data-id="${esc(l.id)}">削除</button></div>`;
 }
 function logDayCardHtml(logs) {
@@ -8769,9 +8908,9 @@ function logDayCardHtml(logs) {
   return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="log" aria-label="大きく見る">⤢</button><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
-      <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
-      <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5l7 7-7 7"/></svg></button>
     </div>
     <p class="small muted ld-miss" id="ld-miss" hidden></p>
     <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
@@ -8789,7 +8928,7 @@ function ldCalHtml(o = {}) {
   let cells = ''; for (let i = 0; i < lead; i++) cells += '<span></span>';
   for (let d = 1; d <= days; d++) { const k = ymd(d), fut = k > t;
     cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-${A}="${k}" ${fut ? 'disabled' : ''} ${cond[k] ? `aria-label="${m}月${d}日 ${COND_LABELS[cond[k]]}"` : ''}><span class="ldc-n">${d}</span>${cond[k] ? `<span class="ldc-m" style="color:${COND_COLORS[cond[k]]}">${condMarkSvg(cond[k])}</span>` : ''}</button>`; }
-  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-${N}="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-${N}="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
+  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-${N}="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-${N}="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 5l7 7-7 7"/></svg></button></div>
     <div class="ldc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="ldc-g">${cells}</div><p class="ldc-note">${[5,4,3,2,1].map(v => `<span class="ldc-lg"><b style="display:flex;color:${COND_COLORS[v]}">${condMarkSvg(v)}</b>${COND_LABELS[v]}</span>`).join('')}</p>`;
 }
 function ldCalOpen(on) {
@@ -8848,9 +8987,9 @@ function photoDayCardHtml(list) { // list：写真のある記録（古い順）
   return `<div class="card ld-card" id="photo-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="pd-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="pd-cal" hidden></div></div>
     ${miss ? `<div class="pd-miss"><b>${esc(fmtMD(miss))}</b><br>写真はありません。</div>` : `<img class="pd-img" src="${safeImg(l.photo)}" alt="${esc(l.date)}の肌写真">`}
     <div class="ld-swipe" ${miss ? 'style="visibility:hidden"' : ''}>
-      <button class="ld-arrow" data-action="photo-step" data-id="-1" aria-label="前の写真" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="ld-arrow" data-action="photo-step" data-id="-1" aria-label="前の写真" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
       <div class="ld-info"><div class="ld-date"><b>${fmtMD(l.date)}</b></div><div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span></div></div>
-      <button class="ld-arrow" data-action="photo-step" data-id="1" aria-label="次の写真" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="ld-arrow" data-action="photo-step" data-id="1" aria-label="次の写真" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5l7 7-7 7"/></svg></button>
     </div>
     <div class="ld-actions" style="justify-content:center">${list.length >= 2 ? `<button class="btn btn-soft btn-sm" data-action="photo-compare">${icon('compare')}2枚を比べる</button>` : ''}<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button></div></div>`;
 }
@@ -9055,7 +9194,7 @@ function openLogForm(id) {
   // ---- 3Dの顔を押して、マス目ごとに記録する（複数のマス目を選んで、状態と強さ1〜5を入れる）----
   const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set(); let fpRange = false; let aiPending = null;
   // 1マス選択：押した順を覚えて「戻る」で1つずつ取り消せる。押したマスは「次へ」を押すまで四角い枠で点滅させる
-  const fpHist = []; let fpLast = null, fpBlinkOn = true, fpBlinkT = null, fpTouched = false, fpPh = null;
+  const fpHist = []; let fpKind = 1; let fpLast = null, fpBlinkOn = true, fpBlinkT = null, fpTouched = false, fpPh = null;
   const fpEl = () => document.getElementById('fp-field') || form;
   const fpBlinkPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form' && !fpRange) face3dGridPaint(st, fpMarks, fpLast && fpBlinkOn ? new Set([fpLast]) : null, 'acne'); };
   const fpBlink = on => {
@@ -9063,7 +9202,7 @@ function openLogForm(id) {
     if (on && fpLast) fpBlinkT = setInterval(() => { if (!document.body.contains(form)) { clearInterval(fpBlinkT); return; } fpBlinkOn = !fpBlinkOn; fpBlinkPaint(); }, 450);
     fpBlinkPaint();
   };
-  const fpToggleAcne = key => { const m = fpMarks[key] = fpMarks[key] || {}; if (m['ニキビ']) delete m['ニキビ']; else m['ニキビ'] = 1; if (!Object.keys(m).length) delete fpMarks[key]; };
+  const fpToggleAcne = (key, kind) => { const m = fpMarks[key] = fpMarks[key] || {}; if (m['ニキビ']) delete m['ニキビ']; else m['ニキビ'] = kind || 1; if (!Object.keys(m).length) delete fpMarks[key]; };
   const grid = () => (FACE3D.st && FACE3D.st.canvasId === 'face3d-form' && FACE3D.st.gridInfo) || null;
   const cellArea = k => { const g = grid(); if (!g) return null; const [c, r] = k.split(',').map(Number); return g.cellArea[r * g.cols + c] || null; };
   const cellZoneName = k => { const g = grid(); if (!g) return ''; const [c, r] = k.split(',').map(Number); return FACE3D_ZONES[g.cellZone[r * g.cols + c]] || ''; };
@@ -9091,7 +9230,8 @@ function openLogForm(id) {
   const acneByArea = () => { const o = {}; acneCells().forEach(k => { const a = cellArea(k); if (a) o[a] = (o[a] || 0) + 1; }); AREAS.forEach(a => { if (!o[a.id] && oldSpots[a.id]) o[a.id] = oldSpots[a.id]; }); return o; };
   const syncAcne = () => {
     const by = acneByArea(), box = $('#spots', form); box.innerHTML = '';
-    Object.entries(by).forEach(([a, n]) => box.insertAdjacentHTML('beforeend', spotRow({id:uid(), area:a, count:n, type:'赤ニキビ', size:ACNE_SIZES[0], status:'新しくできた', onset:''})));
+    const kindIn = a => { const c = {}; acneCells().filter(k => cellArea(k) === a).forEach(k => { const t = acneKindOf(fpMarks[k]['ニキビ']).t; c[t] = (c[t] || 0) + 1; }); return (Object.entries(c).sort((x, y) => y[1] - x[1])[0] || ['赤ニキビ'])[0]; };
+    Object.entries(by).forEach(([a, n]) => box.insertAdjacentHTML('beforeend', spotRow({id:uid(), area:a, count:n, type:kindIn(a), size:ACNE_SIZES[0], status:'新しくできた', onset:''})));
     form.elements.acneCount.value = clamp(Object.values(by).reduce((x, n) => x + n, 0), 0, 99);
     Object.keys(by).forEach(a => { const cb = $(`input[name="areas"][value="${a}"]`, form); if (cb && !cb.checked) { cb.checked = true; syncFace(); } });
   };
@@ -9132,20 +9272,24 @@ function openLogForm(id) {
     if (!fpRange) {
       // 1マス選択：ニキビだけ
       const by = acneByArea(), total = Object.values(by).reduce((x, n) => x + n, 0);
-      pn.innerHTML = `<div class="fp-h"><span class="fp-hl"><b>ニキビ <span class="fp-acne-n">${total}</span>個</b><button type="button" class="fp-undo" data-fp-undo ${fpHist.length ? '' : 'disabled'} aria-label="1つ前に戻す" title="1つ前に戻す">戻る</button></span>${acneCells().length ? '<button type="button" class="link small" data-fp-acne-clear>すべて消す</button>' : ''}</div>
-        <p class="small muted" style="margin:0">${total ? AREAS.filter(a => by[a.id]).map(a => `${esc(a.name)} ${by[a.id]}個`).join('・') : 'ニキビがある場所のマスを押してください。1マス＝1個として数えます。'}</p>`;
+      const curK = fpLast && fpMarks[fpLast] && fpMarks[fpLast]['ニキビ'] ? Number(fpMarks[fpLast]['ニキビ']) : fpKind;
+      pn.innerHTML = `<div class="fp-h"><b>ニキビ <span class="fp-acne-n">${total}</span>個</b>${acneCells().length ? '<button type="button" class="fp-clear-s" data-fp-acne-clear>すべて消す</button>' : ''}</div>
+        <p class="small muted" style="margin:0 0 8px">${fpLast ? '押したニキビの種類を選んでください' : total ? AREAS.filter(a => by[a.id]).map(a => `${esc(a.name)} ${by[a.id]}個`).join('・') : '種類を選んでから、ニキビがある場所のマスを押してください。1マス＝1個です。'}</p>
+        <div class="fp-kinds" role="group" aria-label="ニキビの種類">${ACNE_KINDS.map((k, i) => `<button type="button" class="fp-kind ${curK === i + 1 ? 'on' : ''}" data-fp-kind="${i + 1}" aria-pressed="${curK === i + 1}">${skinIllus(k.n, 40)}<span>${esc(k.n)}</span></button>`).join('')}</div>
+        <p class="small muted fp-kind-d">${esc(acneKindOf(curK).d)}</p>
+        <div class="fp-foot"><button type="button" class="fp-undo" data-fp-undo ${fpHist.length ? '' : 'disabled'} aria-label="1つ前に戻す" title="1つ前に戻す">戻る</button></div>`;
       return;
     }
     if (!fpSel.size) {
       const used = RANGE_CONCERNS.filter(c => maxLevel(c));
       pn.innerHTML = `<p class="small muted" style="margin:0 0 8px">額・鼻・頬などの部分を押して選ぶと、下の状態を入れられます。</p>
-        <div class="fp-chips">${RANGE_CONCERNS.map(c => `<button type="button" class="fp-chip dis" style="--cc:${CONCERN_COLORS[c]}" disabled><i></i>${esc(c)}</button>`).join('')}</div>
-        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}<button type="button" class="link small" data-fp-clear>すべて消す</button></div>` : ''}`;
+        <div class="fp-chips fp-ill">${RANGE_CONCERNS.map(c => `<button type="button" class="fp-chip dis" style="--cc:${CONCERN_COLORS[c]}" disabled>${skinIllus(c, 38)}<span>${esc(c)}</span></button>`).join('')}</div>
+        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}<button type="button" class="fp-clear-s" data-fp-clear>すべて消す</button></div>` : ''}`;
       return;
     }
     pn.innerHTML = `<div class="fp-h"><b>${esc(selZones().join('・')) || '選択中'}</b><button type="button" class="link small" data-fp-close>選択をやめる</button></div>
       <p class="small muted" style="margin:6px 0 6px">ある状態を押して、強さを選んでください</p>
-      <div class="fp-chips">${RANGE_CONCERNS.map(c => { const lv = selLevel(c); return `<button type="button" class="fp-chip ${lv ? 'on' : ''}" style="--cc:${CONCERN_COLORS[c]}" data-fp-note="${esc(c)}" aria-pressed="${!!lv}"><i></i>${esc(c)}${lv ? ` ${lv}` : ''}</button>`; }).join('')}</div>
+      <div class="fp-chips fp-ill">${RANGE_CONCERNS.map(c => { const lv = selLevel(c); return `<button type="button" class="fp-chip ${lv ? 'on' : ''}" style="--cc:${CONCERN_COLORS[c]}" data-fp-note="${esc(c)}" aria-pressed="${!!lv}">${skinIllus(c, 38)}<span>${esc(c)}${lv ? ` ${lv}` : ''}</span></button>`; }).join('')}</div>
       <div class="fp-sliders">${RANGE_CONCERNS.filter(c => selLevel(c)).map(c => `<label class="fp-slider" style="--cc:${CONCERN_COLORS[c]}"><span>${esc(c)}<b>${selLevel(c)}</b></span>
         <input type="range" min="1" max="5" step="1" value="${selLevel(c)}" data-fp-level="${esc(c)}" aria-label="${esc(c)}の強さ（1〜5）">
         <span class="fp-ticks"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i></span></label>`).join('')}</div>`;
@@ -9155,11 +9299,16 @@ function openLogForm(id) {
   const fpLines = on => { const st = FACE3D.st; if (!st || !st.gridInfo) return; st.gridInfo.uni.uGridLines.value = on ? 1 : 0; st.gridInfo.uni.uZoneMode.value = on && fpRange ? 1 : 0; st.zoneMode = on && fpRange; st.dirty = true; };
   const fpClick = e => {
     if (e._fp) return; e._fp = true;
-    const b = e.target.closest('[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next],[data-fp-open],[data-fp-done]'); if (!b) return;
+    const b = e.target.closest('[data-fp-kind],[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next],[data-fp-open],[data-fp-done]'); if (!b) return;
     // 最初は小さい顔。押すと画面いっぱいに大きくなって記録できる。「完了」で小さく戻る
     // 大きくするときは、下から出る画面（ボトムシート）の外に出して、普通の全画面にする（シートの中だと動きがおかしくなるため）
     if ('fpOpen' in b.dataset) { { const st = FACE3D.st; if (st) { st.auto = false; st.target = {yaw:0, pitch:0.05}; st.zoomT = null; st.cam.position.z = 44; st.dirty = true; } } const f = fpEl(); fpPh = document.createComment('fp'); f.parentNode.insertBefore(fpPh, f); document.body.appendChild(f); f.classList.add('fp-big'); fpLines(true); fpSync(); return; }
     if ('fpDone' in b.dataset) { const f = fpEl(); f.classList.remove('fp-big'); if (fpPh && fpPh.parentNode) { fpPh.parentNode.replaceChild(f, fpPh); } fpPh = null; fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 63; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } /* 小さい顔は頭から首まで全部見える距離 */ fpLines(false); fpSync(); return; }
+    if (b.dataset.fpKind) { // ニキビの種類：押したニキビ（点滅中）に付けて、次に押すニキビもこの種類にする
+      fpKind = Number(b.dataset.fpKind) || 1;
+      if (fpLast && fpMarks[fpLast] && fpMarks[fpLast]['ニキビ']) { fpMarks[fpLast]['ニキビ'] = fpKind; fpTouched = true; syncAcne(); $('#modal-root').dataset.dirty = '1'; }
+      fpSync(); return;
+    }
     if ('fpUndo' in b.dataset) { const k = fpHist.pop(); if (k) { fpTouched = true; fpToggleAcne(k); fpLast = fpHist[fpHist.length - 1] || null; syncAcne(); condAuto(); hapticSaved(); fpSync(); fpBlink(true); } return; }
     if ('fpNext' in b.dataset) { fpLast = null; fpBlink(false); fpPanel(); return; }
     if (b.dataset.fpMode) {
@@ -9190,7 +9339,7 @@ function openLogForm(id) {
     const c = r.dataset.fpLevel, v = Number(r.value);
     fpSel.forEach(k => { (fpMarks[k] = fpMarks[k] || {})[c] = v; }); fpTouched = true;
     const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; }
-    const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, fpEl()); if (chip) chip.lastChild.textContent = `${c} ${v}`;
+    const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, fpEl()); if (chip) chip.lastChild.textContent = `${c} ${v}`; // 最後の子は名前の span
     fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpPaint();
   };
   // 編集用の顔はシートの外へ出ることがあるので、フォームと顔の両方で押した操作を受け取る（同じ操作は1回だけ）
@@ -9217,7 +9366,7 @@ function openLogForm(id) {
     const smallTap = () => { if (fpEl().classList.contains('fp-big')) return false; const o = $('[data-fp-open]', fpEl()); if (o) o.click(); return true; };
     st.onTapCell = key => {
       if (smallTap()) return;
-      fpToggleAcne(key); fpHist.push(key); fpLast = key;
+      fpToggleAcne(key, fpKind); fpHist.push(key); fpLast = fpMarks[key] && fpMarks[key]['ニキビ'] ? key : null;
       hapticSaved(); syncAcne(); condAuto(); $('#modal-root').dataset.dirty = '1'; fpTouched = true; fpSync(); fpBlink(true);
     };
     // 範囲選択：押した区切り（額・鼻・頬など）のマス目を、まとめて選ぶ／外す
@@ -9346,7 +9495,7 @@ function openLogForm(id) {
     const used = $$('input[name="usedProducts"]:checked', form).map(i => i.value);
     const noneUsed = !!(fe.noneUsed && fe.noneUsed.checked);
     const data = {date, condition:Number(($('input[name="condition"]:checked', form) || {}).value) || 3, acneCount:Number(ac),
-      acneTypes:$$('input[name="acneTypes"]:checked', form).map(i => i.value), acneSpots:spots,
+      acneTypes:(() => { const fm = form._fpData ? form._fpData().cellMarks || {} : {}; const t = [...new Set(Object.values(fm).filter(m => m['ニキビ']).map(m => acneKindOf(m['ニキビ']).t))]; return t.length ? t : $$('input[name="acneTypes"]:checked', form).map(i => i.value); })(), acneSpots:spots,
       redness:Number(fe.redness.value), dryness:Number(fe.dryness.value), oil:Number(fe.oil.value),
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
       factors:$$('input[name="factors"]:checked', form).map(i => i.value),
@@ -10044,9 +10193,15 @@ function face3dAcneDots(st, marks) {
   Object.entries(marks || {}).forEach(([k, m]) => {
     if (!m['ニキビ']) return;
     const [c, r] = k.split(',').map(Number), vi = g.cellPt[r * g.cols + c]; if (vi == null || vi < 0) return;
-    const dot = new T.Mesh(st.dotGeo, st.dotMat);
-    dot.position.set(pos[vi * 3] + nr[vi * 3] * 0.14, pos[vi * 3 + 1] + nr[vi * 3 + 1] * 0.14, pos[vi * 3 + 2] + nr[vi * 3 + 2] * 0.14);
+    // 種類ごとに色・大きさ・形を変える（黄ニキビは真ん中に膿、ニキビ跡は平たいしみ）
+    const kd = acneKindOf(m['ニキビ']); st.kindMat = st.kindMat || {};
+    const mat = st.kindMat[kd.n] = st.kindMat[kd.n] || new T.MeshStandardMaterial({color:kd.c, roughness:kd.flat ? 0.9 : 0.45, transparent:!!kd.flat, opacity:kd.flat ? 0.85 : 1});
+    const nv = new T.Vector3(nr[vi * 3], nr[vi * 3 + 1], nr[vi * 3 + 2]).normalize(), off = kd.flat ? 0.04 : 0.14;
+    const dot = new T.Mesh(st.dotGeo, mat);
+    dot.position.set(pos[vi * 3] + nv.x * off, pos[vi * 3 + 1] + nv.y * off, pos[vi * 3 + 2] + nv.z * off);
+    dot.quaternion.setFromUnitVectors(new T.Vector3(0, 0, 1), nv); dot.scale.set(kd.s, kd.s, kd.flat ? 0.12 : kd.s * 0.85);
     st.group.add(dot); st.dots.push(dot);
+    if (kd.n === '黄ニキビ') { st.kindMat.pus = st.kindMat.pus || new T.MeshStandardMaterial({color:0xFFF0B8, roughness:0.35}); const pu = new T.Mesh(st.dotGeo, st.kindMat.pus); pu.position.copy(dot.position).addScaledVector(nv, 0.2); pu.scale.set(0.42, 0.42, 0.42); st.group.add(pu); st.dots.push(pu); }
   });
   face3dPoreDots(st, marks);
   st.dirty = true;
@@ -10163,6 +10318,7 @@ function adviceInput() {
     profile:{skinType:state.settings.skinType || null, sensitive:!!state.settings.sensitive, concerns:state.settings.concerns, sleepNeedHours:sleepNeedH},
     skin:{days:logs.length, cond:r1(S.cond), condPrevWeek:r1(P.cond), acneTotal:S.acneTotal, acnePrevWeek:prev.length ? P.acneTotal : null, redness:r1(S.red), dryness:r1(S.dry), oil:r1(S.oil),
       acneByArea:Object.fromEntries(Object.entries(spots).map(([k, v]) => [areaName(k), v])), concernAreasDays:Object.fromEntries(Object.entries(flags).map(([k, v]) => [areaName(k), v])), otherConcerns:conc,
+      face:(() => { const f = faceFindings(7); return f.days ? {days:f.days, acneKinds:f.acne.kinds, concerns:Object.fromEntries(Object.entries(f.conc).map(([c, o]) => [c, {maxLevel:o.max, days:o.days, areas:[...o.areas]}])), summary:faceFindingsText(f)} : null; })(), // 3Dの顔に入れた記録
       today:L ? {cond:COND_LABELS[L.condition], acne:L.acneCount, redness:L.redness, dryness:L.dryness, oil:L.oil, areas:L.areas.map(areaName)} : null},
     sleep:{days:sl.length, avgHours:sl.length ? r1(avg(sl) / 60) : null, minHours:sl.length ? r1(Math.min(...sl) / 60) : null, avgBedtime:beds.length ? (() => { const m = Math.round(avg(beds)) % 1440; return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; })() : null},
     exercise:{recordedDays:lifes.filter(l => l.exRecorded).length, activeDays:lifes.filter(l => l.exRecorded && exTotal(l) > 0).length, totalMin:lifes.reduce((a, l) => a + (l.exRecorded ? exTotal(l) : 0), 0)},
@@ -10192,7 +10348,20 @@ function adviceLocal(d) {
   // ① スキンケア（成分のおすすめ・控えたい成分つき）
   let skin;
   const topArea = Object.entries(sk.acneByArea).sort((a, b) => b[1] - a[1])[0];
-  if (!sk.days) skin = {title:'肌の記録から', text:'数日分の記録で、肌に合う成分を出せます。', good:['セラミド', '日焼け止め（毎朝）'], avoid:[]};
+  const ff = faceFindings(7);
+  if (ff.days) { // 3Dの顔に入れた記録があるときは、その内容（ニキビの種類・部位ごとの状態と強さ）から決める
+    const S = ingSuggest(), names = S.top.map(x => x.e.ja.replace(/（.*?）/g, ''));
+    const calm = ff.inflamed >= 3 || ['赤み', '肌あれ', 'ヒリヒリ感', 'かゆみ'].some(c => (ff.conc[c] || {}).max >= 3);
+    const av = [];
+    if (calm) av.push('香料', 'エタノール', 'AHA・BHA（ピーリング）', 'スクラブ');
+    if ((ff.conc['乾燥'] || {}).max >= 3 && !av.includes('エタノール')) av.push('エタノール（多く入った物）');
+    if (ff.comedo || (ff.conc['テカリ'] || {}).max >= 3) av.push('油分の多いオイル・クリーム');
+    if (ff.inflamed) av.push('ニキビを触る・つぶす');
+    if (!av.length) av.push('ゴシゴシこする洗顔');
+    const k0 = ff.keys[0], t0 = {acne:ff.inflamed ? '炎症ニキビをしずめる' : 'つまりニキビを防ぐ', redness:'赤みを落ち着かせる', sensitive:'刺激を減らしてバリアを守る', dry:'うるおいを守る', oily:'皮脂バランスを整える', pore:'毛穴のつまりをケア', rough:'ざらつきをなめらかに', dull:'くすみをケア', acnemark:'ニキビ跡をケア'}[k0] || '今の肌に合わせたケア';
+    skin = {title:t0, text:`この1週間の3Dの記録：${faceFindingsText(ff)}。${calm && S.top.some(x => x.e.act >= 2) ? '' : ''}${names.length ? `合う成分は${names.slice(0, 3).join('・')}です。` : ''}`, good:names.length ? names.concat(['日焼け止め（毎朝）']).slice(0, 5) : ['セラミド', '日焼け止め（毎朝）'], avoid:av};
+  }
+  else if (!sk.days) skin = {title:'肌の記録から', text:'数日分の記録で、肌に合う成分を出せます。', good:['セラミド', '日焼け止め（毎朝）'], avoid:[]};
   else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らして鎮静', text:`赤みが平均${sk.redness}。こすらず、鎮静成分で落ち着かせましょう。${warn('fragrance', '香料')}${warn('ethanol', 'エタノール')}${warn('retinoid', 'レチノール')}`, good:['ツボクサ（CICA）', 'パンテノール', 'アラントイン', 'セラミド'], avoid:['香料', 'エタノール', 'AHA・BHA（ピーリング）', 'レチノール']};
   else if (sk.dryness != null && sk.dryness >= 3) skin = {title:'セラミドでバリアを守る', text:`乾燥が平均${sk.dryness}。洗顔後すぐ、セラミドで保湿を。${use.ceramide ? '' : '今の化粧品にはセラミド入りがありません。'}${warn('ethanol', 'エタノール')}`, good:['セラミド', 'ヒアルロン酸', 'グリセリン', 'パンテノール'], avoid:['エタノール（多く入った物）', 'スクラブ・ピーリングのしすぎ', '熱いお湯での洗顔']};
   else if (topArea && topArea[1] >= 2) skin = {title:`${topArea[0]}のニキビ対策`, text:`1週間で${topArea[0]}に${topArea[1]}個。毛穴と皮脂を整える成分が向いています。${use.aha && use.retinoid ? '角質ケアとレチノールは日を分けて。' : ''}`, good:['ナイアシンアミド', 'サリチル酸（BHA）', 'ビタミンC誘導体'], avoid:['油分の多いオイル・クリーム', 'ニキビを触る・つぶす']};
@@ -10236,6 +10405,7 @@ function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
+  if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
   return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
     + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
@@ -12829,6 +12999,8 @@ function render() {
   if (r.name === 'my' && !r.id) slideHomePane();
   if (r.name === 'my' && !r.id) placeHomeTabInd();
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
+  if (r.name === 'my' && r.id) { const pm = getMy(r.id); if (pm) setTimeout(() => myOffFetch(pm), 0); }
+  if (r.name === 'my' && !r.id) setTimeout(myOffFillAll, 800);
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
