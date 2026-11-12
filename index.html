@@ -2304,6 +2304,37 @@ img{image-rendering:auto}
 /* プランの表：○の列はせまく、機能の名前を広く */
 .plan-table th:not(:first-child),.plan-table td:not(:first-child){width:4.6em;white-space:nowrap;text-align:center;padding-left:4px;padding-right:4px}
 .plan-table td:first-child{line-height:1.55}
+
+/* 成分の組み合わせ：文字を太くしすぎない（見出しだけ少し太く、ほかは普通の太さ） */
+.cc-card .cc-ab{font-weight:500!important;font-size:14.5px}
+.cc-card .cl-b{font-weight:500!important}
+.cc-card .cc-more summary,.cc-card .cc-ev summary,.cc-card summary{font-weight:400!important}
+.cc-card .rt-dl>b{font-weight:500!important}
+.cc-card b:not(.cl-b){font-weight:500}
+.combo-sum .cs-big b{font-weight:600;font-size:19px}
+.combo-sum b{font-weight:500}
+.cb-more{margin:4px 2px 12px}.cb-note b{font-weight:500}
+.cb-tabs .rt-mode{font-weight:500}
+
+/* アカウント：名前・アイコン */
+.acc-me .am-av{position:relative;flex:none;border:0;background:none;padding:0;cursor:pointer}
+.acc-me .am-av>i{position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2)}
+.acc-me .am-av>i svg{width:12px;height:12px}
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;line-height:1;flex:none}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av-def{background:var(--green-p,#EEF5EF);color:var(--green-d);font-weight:600}.av-def svg{width:55%;height:55%}
+.acc-me .am-t b{font-size:16px}
+.acc-me .am-em{color:var(--ink2)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-me .am-edit{flex:none;align-self:flex-start;margin-top:4px;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer}
+.pf-top{display:flex;justify-content:center;margin:2px 0 14px}
+.pf-row{display:flex;gap:8px;flex-wrap:wrap}
+.pf-photo{display:inline-flex;align-items:center;gap:6px;cursor:pointer}.pf-photo svg{width:16px;height:16px}
+.pf-emo{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px}
+.pf-e{aspect-ratio:1;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.pf-e.on{border-color:var(--green-d);background:var(--green-p,#EEF5EF)}
+.pf-col{display:flex;gap:10px}
+.pf-c{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line2,#ccc);cursor:pointer;padding:0}
+.pf-c.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--green-d)!important}
 </style>
 </head>
 <body>
@@ -2998,6 +3029,7 @@ const ICONS = {
   check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
   compare:'<path d="M8 3v18M16 3v18"/><path d="M3 8h5M16 16h5"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   camera:'<path d="M3 8a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/>',
   chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
   shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>'
@@ -3054,6 +3086,11 @@ const numOrNull = v => (v === null || v === undefined || v === '' || !isFinite(N
 const avg = arr => { const a = arr.filter(v => v != null && isFinite(v)); return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; };
 const datesRange = (s, e) => { const out=[]; let d=s, g=0; while (d <= e && g++ < 1000) { out.push(d); d = addDays(d, 1); } return out; };
 const truncate = (s, n) => { s = String(s||''); return s.length > n ? s.slice(0, n-1) + '…' : s; };
+// 肌悩みのキー（CONCERN_MASTER と同じ。保存データの読み込みは起動の最初に行うので、ここに置く）
+const CONCERN_KEYS = ['acne', 'acnemark', 'redness', 'dry', 'pore', 'spot', 'aging', 'oily', 'sensitive', 'dull', 'rough', 'darkcircle', 'puffy', 'uv'];
+// アカウントのアイコン（絵文字と背景の色）
+const AVATAR_EMOJI = ['🌿', '🌸', '🍀', '🌙', '☀️', '🍑', '🐱', '🐶', '🐰', '🐻', '🦊', '🐼', '🍵', '💧', '⭐', '🌈'];
+const AVATAR_COLORS = ['#E3EFE6', '#FBE6E1', '#FFF1CC', '#E2ECF8', '#EFE5F6', '#F1ECE4'];
 const safeImg = src => (typeof src === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(src)) ? src : null;
 const safeUrl = u => (typeof u === 'string' && /^https?:\/\/[^\s<>"']+$/i.test(u.trim())) ? u.trim() : '';
 const toHalf = s => String(s||'').replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/　/g, ' ');
@@ -3298,6 +3335,8 @@ function normalize(d) {
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
+  out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
+  out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
@@ -3310,7 +3349,7 @@ function normalize(d) {
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   out.settings.surveyDone = !!ds.surveyDone;
-  out.settings.concernKeys = strArr(ds.concernKeys).filter(k => CONCERN_MASTER.some(c => c.k === k)); // 肌悩み（14の中から）
+  out.settings.concernKeys = strArr(ds.concernKeys).filter(k => CONCERN_KEYS.includes(k)); /* CONCERN_MASTER はあとで作られるので、起動時に読めるキーの一覧を使う */ // 肌悩み（14の中から）
   out.settings.diag = ds.diag && typeof ds.diag === 'object' && ds.diag.a ? {a:ds.diag.a, r:ds.diag.r || null} : null; // 肌質診断の答えと結果
   { const r0 = ds.routine && typeof ds.routine === 'object' ? ds.routine : {}; out.settings.routine = {mode:['normal', 'quick', 'beginner'].includes(r0.mode) ? r0.mode : 'normal', order:{am:strArr(r0.order && r0.order.am), pm:strArr(r0.order && r0.order.pm)}}; } // 朝・夜のケアの設定
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
@@ -7140,10 +7179,14 @@ function viewCompare() {
    ========================================================= */
 function viewCombo() {
   const active = state.myProducts.filter(p => p.status === '使用中');
-  let html = pageHead('成分の組み合わせ', '一緒に使うときの注意を、4つの分類で確かめます。');
+  let html = pageHead('成分の組み合わせ', '登録したアイテムのうち、一緒に使うときに注意が必要なものだけを出します。');
   const ct = ui.comboTab === 'ing' ? 'ing' : 'mine';
   html += `<div class="rt-modes cb-tabs" role="tablist">${[['mine', '使っている商品'], ['ing', '成分・塗り薬で調べる']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === ct}" class="rt-mode ${k === ct ? 'on' : ''}" data-action="combo-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
-  if (ct === 'ing') return html + comboPickerHtml();
+  if (ct === 'ing') { // 検索のタブ：2つ選んで調べる＋（登録した商品があれば）成分相性マップと情報源
+    html += comboPickerHtml();
+    if (active.length) html += locked() ? lockCard('成分相性マップ', '使用中の化粧品ごとに、注意が必要な成分の重なりと使う時間帯を一覧の表で確認できます。') : comboMap(comboReport(active));
+    return html + `<details class="card fold"><summary><b>信頼できる情報源</b></summary>${sourcesHtml()}</details>`;
+  }
   if (!active.length) return html + `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'Myアイテムで「使用中」の商品を登録し、全成分を入力すると、ここにまとめが表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
   const r = comboReport(active);
   // まず結果のまとめ：注意の数・全成分が足りない商品（押すとすぐ入力できる）
@@ -7168,20 +7211,8 @@ function viewCombo() {
     if (r.uvNote) html += `<div class="alert-card"><b>日中の紫外線対策</b>レチノール類や角質ケア成分を含む商品を使う場合、日中の紫外線対策が一般的に勧められています。使用中の日焼け止めが登録されていません（登録していないだけの場合は問題ありません）。</div>`;
     html += '</div>';
   }
-  html += productsCard; // 対象の化粧品（たたんでおく）
-  // 使用頻度
-  const t = todayStr();
-  const fcs = active.map(p => ({p, fc:freqCheck(p, addDays(t, -13), t)}));
-  html += `<details class="card fold cb-fold"><summary><b>使用頻度の確認（直近2週間）</b></summary>
-    ${fcs.map(({p, fc}) => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="font-weight:600;font-size:14px">${esc(p.name)}</div><div class="small ${fc.status === 'over' ? '' : 'muted'}" style="${fc.status === 'over' ? 'color:var(--warn)' : ''}">${esc(fc.text)}</div>
-      ${fc.status === 'over' ? `<div class="small muted" style="white-space:pre-line;margin-top:4px">${esc(overuseNote(p))}</div>` : ''}</div>`).join('')}
-    <p class="small muted" style="margin-top:10px">「記録なし」の商品は、肌の記録の「使ったアイテム」にチェックすると比較できます。</p></details>`;
-  // 成分ごとのまとめ
-  html += `<details class="card fold cb-fold"><summary><b>成分ごとのまとめ</b></summary>
-    ${r.byIng.length ? r.byIng.map(x => `<details class="fold" style="margin-bottom:8px"><summary>${esc(x.entry.name)}（${x.products.length}商品）${x.products.length >= 2 ? ' <span class="chip beige">複数の商品に含まれる</span>' : ''}</summary>
-      <p class="small" style="margin-bottom:6px">含まれる商品：${x.products.map(p => esc(truncate(p.name, 20))).join('、')}</p>${ingCard(x.entry)}</details>`).join('') : '<p class="small muted">解説のある成分は見つかりませんでした。</p>'}</details>`;
-  html += locked() ? lockCard('成分相性マップ', '使用中の化粧品ごとに、注意が必要な成分の重なりと使う時間帯を一覧の表で確認できます。') : comboMap(r);
-  html += `<details class="card fold"><summary><b>信頼できる情報源</b></summary>${sourcesHtml()}</details>`;
+  // 使っている商品のタブは「併用に注意が必要なもの」だけ。ほかの組み合わせは「成分・塗り薬で調べる」で探す
+  html += '<p class="small muted cb-more">ほかの組み合わせは、上の「成分・塗り薬で調べる」から探せます。</p>';
   html += `<div class="notice cb-note">成分名が含まれているかどうかだけで判定しています。濃度・処方・使用量・個人差は考慮できないため、<b>安全性や効果を判断するものではありません</b>。各製品の使用方法・注意事項を優先し、気になる症状がある場合は皮膚科医や薬剤師に相談してください。</div>`;
   return html;
 }
@@ -7332,6 +7363,19 @@ setTimeout(() => {
   } catch (e) { /* 何もしない */ }
 }, 1500);
 setInterval(() => { if (document.visibilityState === 'visible' && state.settings.wxPref) wxFetch(false); }, 10 * 60 * 1000);
+// 以前の版で、肌悩みを選んでいると起動時に保存データを読めず、別名（_broken_backup）に退避してしまうことがあった。
+// 退避したデータのほうが多ければ、戻すかどうかを聞く（1回だけ。戻さないを選んだら、もう聞かない）
+setTimeout(() => {
+  try {
+    const K = STORE_KEY + '_broken_backup', raw = localStorage.getItem(K); if (!raw || localStorage.getItem('nk_restore_no') === '1') return;
+    const old = normalize(JSON.parse(raw)), cnt = d => d.myProducts.length + d.skinLogs.length + d.lifeLogs.length, nOld = cnt(old), nNow = cnt(state);
+    if (nOld <= nNow) return;
+    openModal({title:'以前のデータが見つかりました', body:`<p style="margin:0 0 8px">この端末に、読み込めなかった以前のデータが残っていました。</p>
+      <ul class="points small"><li>肌の記録 ${old.skinLogs.length}件・生活の記録 ${old.lifeLogs.length}件・アイテム ${old.myProducts.length}件</li><li>いまの端末：肌の記録 ${state.skinLogs.length}件・生活の記録 ${state.lifeLogs.length}件・アイテム ${state.myProducts.length}件</li></ul>
+      <p class="small muted" style="margin:8px 0 0">戻すと、以前のデータでこの端末の内容を置きかえます（いまの内容も別名で残します）。</p>`,
+      footer:`<button type="button" class="btn btn-ghost" data-action="restore-no">戻さない</button><button type="button" class="btn btn-primary" data-action="restore-yes">以前のデータに戻す</button>`});
+  } catch (e) { /* 読めない退避データは何もしない */ }
+}, 1500);
 function wxTodayHtml() {
   const pin = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
   if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !state.weather[todayStr()]))
@@ -8816,11 +8860,12 @@ function comboPickerHtml() {
   const q = normIng(ui.ccQ || ''), lvF = ui.ccLv || 0;
   h += `<div class="card"><div class="card-h"><h2>登録されている組み合わせ</h2><span class="chip">${COMBO_DB.length}件</span></div>
     <input type="search" class="input" id="cc-q" placeholder="成分名で探す（例：レチノール、エピデュオ）" value="${esc(ui.ccQ || '')}" aria-label="成分名で探す">
-    <div class="ic-chips cc-lvf">${[[0, 'すべて'], [3, '避ける・医師に確認'], [2, '併用注意'], [1, '併用可能']].map(([v, l]) => `<button type="button" class="ic ${lvF === v ? 'on' : ''}" data-action="cc-lv" data-id="${v}">${l}</button>`).join('')}</div>
+    <div class="ic-chips cc-lvf">${[[3, '避ける・医師に確認'], [2, '併用注意'], [1, '併用可能']].map(([v, l]) => `<button type="button" class="ic ${lvF === v ? 'on' : ''}" data-action="cc-lv" data-id="${v}">${l}</button>`).join('')}</div>
     <div id="cc-list">${comboDbListHtml(q, lvF)}</div></div>`;
   return h;
 }
 function comboDbListHtml(q, lvF) {
+  if (!q && !lvF) return '<p class="small muted" style="margin:10px 0 0">成分名を入れるか、上の分類を押すと、組み合わせが出ます。</p>'; // 何も入れていないときは一覧を出さない（長くなりすぎるため）
   const nm = r => normIng([sideLabel(r.a), sideLabel(r.b), r.t].join(' '));
   // 商品名（エピデュオなど）で探したときは、その薬の有効成分で探す
   let rxTags = [];
@@ -12217,7 +12262,7 @@ const ACC_SECTIONS = {
     body:() => `<div class="mb-card" id="acc-money">${moneyCardHtml()}</div>`},
   plan: {icon:'user', t:'プラン・アカウント', d:() => acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み',
     body:() => embedView(() => viewPlan({}))},
-  settings: {icon:'gear', t:'設定', d:() => '身長・体重、肌質、画面の表示', body:() => settingsEmbedHtml('settings')},
+  settings: {icon:'gear', t:'設定', d:() => '名前・アイコン、身長・体重、肌質・性別、画面の表示', body:() => settingsEmbedHtml('settings')},
   privacy: {icon:'shield', t:'プライバシー', d:() => 'クラウド保存、研究への協力、データの管理', body:() => settingsEmbedHtml('privacy')}
 };
 function accSectionHtml(k) {
@@ -12225,11 +12270,51 @@ function accSectionHtml(k) {
   return `<section class="card acc-sec" id="acc-sec-${k}"><button class="acc-row acc-toggle" data-action="acc-toggle" data-id="${k}" aria-expanded="${open}" aria-controls="acc-panel-${k}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d()}</small></span><i>›</i></button>
     <div class="acc-panel" id="acc-panel-${k}" ${open ? '' : 'hidden'}>${open ? x.body() : ''}</div></section>`;
 }
-function accMeHtml() {
-  if (!acct.user) return `<a class="card acc-me" href="#/plan"><span class="am-ic">${icon('user')}</span><span class="am-t"><b>ログインしていません</b><small>ログイン（無料）すると、記録が自動でバックアップされます</small></span><span class="link small">ログイン ›</span></a>`;
-  const em = acct.user.email || 'Googleのアカウント', bk = SYNC.err ? 'バックアップできませんでした' : SYNC.busy ? 'バックアップしています…' : SYNC.at ? `バックアップ済み：${new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})}` : 'まだバックアップしていません';
-  return `<div class="card acc-me"><span class="am-ic">${esc(em.slice(0, 1).toUpperCase())}</span><span class="am-t"><b>${esc(em)}</b><small>${isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン'}</small><small class="${SYNC.err ? '' : 'ok'}">${esc(bk)}</small></span></div>`;
+function avatarHtml(size) {
+  const a = state.settings.avatar, nm = state.settings.nickname || (acct.user && acct.user.email) || '';
+  if (a && a.t === 'img') return `<span class="av" style="width:${size}px;height:${size}px"><img src="${a.v}" alt=""></span>`;
+  if (a && a.t === 'emoji') return `<span class="av" style="width:${size}px;height:${size}px;background:${a.c};font-size:${Math.round(size * 0.52)}px">${a.v}</span>`;
+  return `<span class="av av-def" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px">${nm ? esc([...nm][0].toUpperCase()) : icon('user')}</span>`;
 }
+function accMeHtml() {
+  const nm = state.settings.nickname, em = acct.user ? (acct.user.email || 'Googleのアカウント') : '';
+  const bk = !acct.user ? '' : SYNC.err ? 'バックアップできませんでした' : SYNC.busy ? 'バックアップしています…' : SYNC.at ? `バックアップ済み：${new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})}` : '';
+  return `<div class="card acc-me"><button type="button" class="am-av" data-action="acc-profile" aria-label="名前とアイコンを変える">${avatarHtml(56)}<i aria-hidden="true">${icon('edit')}</i></button>
+    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b>${em ? `<small class="am-em">${esc(em)}</small>` : '<small>ログインしていません</small>'}${acct.user ? `<small>${isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン'}${bk ? '・' + esc(bk) : ''}</small>` : ''}</span>
+    ${acct.user ? `<button type="button" class="link small am-edit" data-action="acc-profile">編集</button>` : `<a class="link small am-edit" href="#/plan">ログイン ›</a>`}</div>`;
+}
+let avDraft = null;
+function openProfile() {
+  avDraft = state.settings.avatar ? Object.assign({}, state.settings.avatar) : null;
+  const cur = () => avDraft || {};
+  openModal({title:'名前とアイコン', body:`<div class="pf-top"><div id="pf-prev">${avatarHtml(84)}</div></div>
+    <div class="field"><label class="lbl" for="pf-name">名前<span class="opt">20文字まで</span></label><input class="input" id="pf-name" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：けいいちろう" autocomplete="nickname"></div>
+    <p class="lbl" style="margin:14px 0 8px">アイコン</p>
+    <div class="pf-row"><label class="btn btn-soft btn-sm pf-photo">${icon('camera')}写真から選ぶ<input type="file" accept="image/*" id="pf-file" hidden></label><button type="button" class="btn btn-ghost btn-sm" data-action="pf-reset">最初の文字に戻す</button></div>
+    <div class="pf-emo" role="group" aria-label="絵文字のアイコン">${AVATAR_EMOJI.map(e => `<button type="button" class="pf-e ${cur().t === 'emoji' && cur().v === e ? 'on' : ''}" data-action="pf-emoji" data-id="${e}">${e}</button>`).join('')}</div>
+    <p class="lbl" style="margin:12px 0 8px">背景の色</p>
+    <div class="pf-col">${AVATAR_COLORS.map(c => `<button type="button" class="pf-c ${(cur().c || AVATAR_COLORS[0]) === c ? 'on' : ''}" style="background:${c}" data-action="pf-color" data-id="${c}" aria-label="背景の色"></button>`).join('')}</div>
+    <p class="small muted" style="margin:12px 0 0">名前とアイコンはこの端末に保存され、ログインしていればバックアップにも入ります。ほかの人には見えません。</p>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="pf-save">保存する</button>`});
+}
+function pfPaint() {
+  const keep = state.settings.avatar; state.settings.avatar = avDraft; const n = document.getElementById('pf-name'), nk = state.settings.nickname; if (n) state.settings.nickname = n.value.trim();
+  const pv = document.getElementById('pf-prev'); if (pv) pv.innerHTML = avatarHtml(84);
+  state.settings.avatar = keep; state.settings.nickname = nk;
+  document.querySelectorAll('.pf-e').forEach(b => b.classList.toggle('on', !!avDraft && avDraft.t === 'emoji' && avDraft.v === b.dataset.id));
+  document.querySelectorAll('.pf-c').forEach(b => b.classList.toggle('on', (avDraft && avDraft.c || AVATAR_COLORS[0]) === b.dataset.id));
+}
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'pf-file') return;
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  try { // 真ん中を正方形に切り取って、小さく（160px）して保存する
+    const src = await readImage(f, 480, 0.85), img = new Image(); img.src = src; await img.decode();
+    const c = document.createElement('canvas'), S = 160, m = Math.min(img.width, img.height); c.width = c.height = S;
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+    avDraft = {t:'img', v:c.toDataURL('image/jpeg', 0.85)}; pfPaint();
+  } catch (er) { toast(er.message || '画像を読み込めませんでした', 'error'); }
+});
+document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint(); });
 function viewAccount() {
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
@@ -12258,7 +12343,7 @@ function settingsEmbedHtml(kind) {
   const sub = (title, c) => c ? `<div class="set-sub"><h3>${esc(title)}</h3>${inner(c)}</div>` : '';
   const out = [], P = [];
   if (cards['身長・体重']) out.push(cards['身長・体重'].outerHTML);
-  const skinC = cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) out.push(skinC.outerHTML);
+  const skinC = cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) out.push(skinC.outerHTML);
   if (cards['クラウドに保存']) P.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) P.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
@@ -12335,9 +12420,10 @@ function researchPreviewHtml() {
 }
 function skinProfileCardHtml() {
   const st = state.settings, d = diagNow(), ck = concernKeysNow();
-  return `<div class="card"><div class="card-h"><h2>肌質・年代・肌悩み</h2></div>
+  return `<div class="card"><div class="card-h"><h2>肌質・性別・年代・肌悩み</h2></div>
     <p>${d ? `肌質：<b>${esc(typeLabel(d))}</b>（${fmtDate(d.at)}の肌質診断）` : '肌質：<span class="muted">未診断</span>'}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">${d ? '<a class="btn btn-ghost btn-sm" href="#/care/diag">診断結果を見る</a>' : ''}<button type="button" class="btn btn-soft btn-sm" data-action="setup">${d ? '肌質診断をやり直す' : '肌質診断をする'}</button></div>
+    <div class="field"><label class="lbl" for="f_gender">性別<span class="opt">任意</span></label><select class="select" id="f_gender">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<option value="${v}" ${(st.gender || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     <p class="lbl" style="margin:14px 0 6px">肌悩み<span class="opt">いくつでも</span></p>
     <div class="checks">${CONCERN_MASTER.map(c => `<label class="check"><input type="checkbox" name="st-concern2" value="${c.k}" ${ck.includes(c.k) ? 'checked' : ''}>${esc(c.l)}</label>`).join('')}</div>
@@ -12512,7 +12598,7 @@ const actions = {
   'ing-c': k => { ui.ingC = k; render(); },
   'combo-tab': k => { ui.comboTab = k; hapticTick(); render(); },
   'cc-pick': v => { ui.ccB = v; render(); setTimeout(() => { const c = document.querySelector('.cc-pick'); if (c) c.scrollIntoView({block:'start', behavior:'smooth'}); }, 30); },
-  'cc-lv': v => { ui.ccLv = Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
+  'cc-lv': v => { ui.ccLv = ui.ccLv === Number(v) ? 0 : Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
   'care-go': () => { closeModal(); location.hash = '#/care/routine'; },
   'care-ai': () => careAiRun(),
   'close-modal': () => dismissModal(),
@@ -12748,6 +12834,13 @@ const actions = {
     try { const {error} = await acct.client.auth.resetPasswordForEmail(email, {redirectTo:appUrl()}); if (error) throw error; acct.msg = 'パスワード再設定のメールを送りました。メール内のリンクを押すと、新しいパスワードを設定できます。'; render(); }
     catch (e) { toast(authErrMsg(e), 'error'); }
   },
+  'acc-profile': () => openProfile(),
+  'restore-no': () => { try { localStorage.setItem('nk_restore_no', '1'); } catch (e) { /* 何もしない */ } closeModal(); },
+  'restore-yes': () => { try { const K = STORE_KEY + '_broken_backup', raw = localStorage.getItem(K); localStorage.setItem(STORE_KEY + '_before_restore', localStorage.getItem(STORE_KEY) || ''); state = normalize(JSON.parse(raw)); if (save()) { localStorage.removeItem(K); closeModal(); toast('以前のデータに戻しました'); render(); } } catch (e) { toast('戻せませんでした', 'error'); } },
+  'pf-emoji': id => { avDraft = {t:'emoji', v:id, c:(avDraft && avDraft.c) || AVATAR_COLORS[0]}; pfPaint(); },
+  'pf-color': id => { avDraft = {t:'emoji', v:avDraft && avDraft.t === 'emoji' ? avDraft.v : AVATAR_EMOJI[0], c:id}; pfPaint(); },
+  'pf-reset': () => { avDraft = null; pfPaint(); },
+  'pf-save': () => { const n = document.getElementById('pf-name'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; state.settings.avatar = avDraft; if (save()) { closeModal(); toast('保存しました'); render(); } },
   'acct-logout': async () => { try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; acct.confirm = false; toast('ログアウトしました'); render(); },
   'acct-confirm': async () => {
     acct.confirm = true; render();
