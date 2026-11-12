@@ -2451,6 +2451,10 @@ a.acc-me:active{transform:scale(.96)}
 .cc-opt b{font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cc-opt small{flex:none;font-size:11px;color:var(--muted)}
 .cc-opt.on,.cc-opt:active{background:var(--surface2)}
 .cc-none{margin:0;padding:10px;font-size:13px;color:var(--muted)}
+
+/* ホームの今日の記録：見出しをなくして、中身を上に詰める */
+.t3-card{padding-top:14px}
+.t3-card>.t3-grid{margin-top:0}
 </style>
 </head>
 <body>
@@ -4315,7 +4319,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero hero-home"><div class="hero-wx" id="top-wx">${wxTopInner()}</div>
-    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
@@ -4323,7 +4327,7 @@ function viewHome() {
   const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
-  const todayCard = `<div class="card"><div class="card-h"><h2>今日の記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
+  const todayCard = `<div class="card t3-card">
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
   const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
@@ -13069,7 +13073,7 @@ const actions = {
   'cal-m': v => { const n = Number(v) || 0; ui.calYM = shiftMonth(ui.calYM || monthKey(todayStr()), n); if (ui.calYM > monthKey(todayStr())) ui.calYM = monthKey(todayStr()); render(); },
   'cal-day': v => { const l = state.skinLogs.find(x => x.date === v); if (l) openLogForm(l.id); },
   'month-share': () => monthShare(),
-  'new-log': v => { const t = v === 'free' ? null : state.skinLogs.find(l => l.date === todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLogForm(t.id); } else openLogForm(); },
+  'new-log': v => { const t = v === 'free' ? null : state.skinLogs.find(l => l.date === todayStr()); if (t) openLogForm(t.id); else openLogForm(); },
   'edit-log': id => openLogForm(id),
   'delete-log': async id => {
     const l = getLog(id); if (!l) return;
@@ -13089,7 +13093,7 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
-  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ['list', 'recent', 'photos']; ui.htSlide = o.indexOf(v) > o.indexOf(ui.logTab) ? 1 : -1; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
+  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
@@ -13845,7 +13849,7 @@ function placeHomeTabInd() {
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
     const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
