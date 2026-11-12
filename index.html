@@ -2479,6 +2479,13 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* アカウント：自分の名前以外は、普通の太さ */
 .acc-thin,.acc-thin *{font-weight:400!important}
 .acc-thin .acc-me .am-t b,.acc-thin .ai-row b{font-weight:600!important}
+
+/* ホームの拡大ボタン：少し小さく、枠の右の端に */
+.t3-fc{position:relative}
+.t3-fc>.t3-zoom{position:absolute;top:auto;left:auto;right:-8px;bottom:0;z-index:2;width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);color:var(--ink)}
+/* 下のバー：押せる範囲を広く */
+.bn-item{padding-top:10px;padding-bottom:8px;touch-action:manipulation}
+.bn-item *{pointer-events:none}
 </style>
 </head>
 <body>
@@ -4354,7 +4361,7 @@ function viewHome() {
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
   const todayCard = `<div class="card t3-card">
-      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
+      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}<button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button></div></div>
       ${lifeLine}</div>`;
   const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
@@ -9721,10 +9728,13 @@ function userPop(ip) {
 document.addEventListener('change', e => { const ip = e.target; if (e.isTrusted && ip && (ip.type === 'radio' || ip.type === 'checkbox')) userPop(ip); });
 // 長押しでリンクのプレビューが出ないように：指が触れている間だけ、リンクの行き先を外しておく（離したら戻すので、押せば今までどおり開く）
 (() => {
-  let held = null;
-  const restore = () => { if (held) { held.setAttribute('href', held.dataset.hrefHold); delete held.dataset.hrefHold; held = null; } };
-  document.addEventListener('touchstart', e => { restore(); const a = e.target.closest && e.target.closest('a[href]'); if (!a || e.touches.length !== 1) return; held = a; a.dataset.hrefHold = a.getAttribute('href'); a.removeAttribute('href'); }, {passive:true, capture:true});
-  document.addEventListener('touchend', restore, {passive:true, capture:true}); document.addEventListener('touchcancel', restore, {passive:true, capture:true});
+  // 指を離したら、すぐにこちらでリンクを押す（iPhoneが押したことに気づかず反応しない、を防ぐ。下のバーの感度もよくなる）
+  let held = null, sx = 0, sy = 0, moved = false;
+  const restore = () => { const a = held; if (a) { a.setAttribute('href', a.dataset.hrefHold); delete a.dataset.hrefHold; held = null; } return a; };
+  document.addEventListener('touchstart', e => { restore(); const a = e.target.closest && e.target.closest('a[href]'); if (!a || e.touches.length !== 1) return; held = a; sx = e.touches[0].clientX; sy = e.touches[0].clientY; moved = false; a.dataset.hrefHold = a.getAttribute('href'); a.removeAttribute('href'); }, {passive:true, capture:true});
+  document.addEventListener('touchmove', e => { if (held && (Math.abs(e.touches[0].clientX - sx) > 12 || Math.abs(e.touches[0].clientY - sy) > 12)) moved = true; }, {passive:true, capture:true});
+  document.addEventListener('touchend', e => { const a = restore(); if (!a || moved || window.__hSwipe) return; if (e.cancelable) e.preventDefault(); a.click(); }, {passive:false, capture:true});
+  document.addEventListener('touchcancel', restore, {passive:true, capture:true});
 })();
 function openLogForm(id) {
   const ex = id ? getLog(id) : null;
