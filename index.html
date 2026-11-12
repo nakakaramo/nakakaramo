@@ -2369,6 +2369,15 @@ img{image-rendering:auto}
 .nt-opts{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .nt-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
 .nt-line .select{width:auto;min-width:110px}
+
+/* はじめの設定 */
+.pm-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.pm-row:first-child{padding-top:2px}
+.pm-ic{flex:none;width:40px;height:40px;border-radius:12px;background:var(--green-p,#EEF5EF);color:var(--green-d);display:flex;align-items:center;justify-content:center}
+.pm-ic svg{width:20px;height:20px}
+.pm-t{flex:1;min-width:0}.pm-t b{display:block;font-size:15px;font-weight:600}.pm-t small{display:block;font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:2px}
+.pm-row .btn{flex:none}
+.pm-ok{flex:none;font-size:13px;font-weight:600;color:var(--green-d)}
 </style>
 </head>
 <body>
@@ -3371,6 +3380,7 @@ function normalize(d) {
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
   out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
+  out.settings.permAsked = !!ds.permAsked; // 最初の「はじめの設定」（位置情報・お知らせ）を出したか
   out.settings.notify = ds.notify && typeof ds.notify === 'object' ? {on:!!ds.notify.on, time:/^\d{2}:\d{2}$/.test(ds.notify.time || '') ? ds.notify.time : '21:00', expiry:ds.notify.expiry !== false} : null; // お知らせ（通知）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
@@ -11866,6 +11876,25 @@ function notifyCardHtml() {
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="notify-test">テストのお知らせを送る</button></div>`;
   return `<div class="card" id="notify-card"><div class="card-h"><h2>お知らせ</h2></div>${body}</div>`;
 }
+// ===== はじめの設定：最初に開いたときに1回だけ、位置情報とお知らせの許可をまとめて聞く =====
+// iPhoneは、ボタンを押したときにしか通知の許可を聞けないので、ボタンを並べた画面を出す
+function permBodyHtml() {
+  const geo = state.settings.wxPref === '現在地' && !!state.settings.wxLoc, nt = notifyCfg().on;
+  const iosWeb = DEV.ios && !isStandalone();
+  const row = (ic, t, d, right) => `<div class="pm-row"><span class="pm-ic">${icon(ic)}</span><span class="pm-t"><b>${t}</b><small>${d}</small></span>${right}</div>`;
+  const done = '<span class="pm-ok">許可しました</span>';
+  return `<div id="perm-body">
+    ${row('pin', '位置情報', '今いる場所の湿度・気温・紫外線を出して、今日のおすすめケアに使います。', geo ? done : `<button type="button" class="btn btn-soft btn-sm" data-action="perm-geo" ${ui.permGeoBusy ? 'disabled' : ''}>${ui.permGeoBusy ? '確認中…' : '許可する'}</button>`)}
+    ${row('bell', 'お知らせ', !acct.user ? '記録のお知らせと、使用期限のお知らせ。ログイン（無料）すると使えます。' : iosWeb ? '記録のお知らせと、使用期限のお知らせ。iPhoneでは、ホーム画面に追加したアプリで使えます。' : '記録のお知らせ（その日まだ記録していないときだけ）と、使用期限のお知らせ。', nt ? done : !acct.user ? '<button type="button" class="btn btn-ghost btn-sm" data-action="perm-login">ログイン</button>' : `<button type="button" class="btn btn-soft btn-sm" data-action="perm-notify" ${ui.notifyBusy ? 'disabled' : ''}>受け取る</button>`)}
+    <p class="small muted" style="margin:12px 0 0">あとで「アカウント」→「設定」から、いつでも変えられます。</p></div>`;
+}
+function permRefresh() { const b = document.getElementById('perm-body'); if (b) b.outerHTML = permBodyHtml(); }
+function permSheet(force) {
+  if (!force && (state.settings.permAsked || !state.settings.onboarded)) return;
+  if (document.querySelector('#modal-root .modal, .au-ov')) return; // ほかの画面が開いているときは出さない
+  state.settings.permAsked = true; save();
+  openModal({title:'はじめの設定', body:permBodyHtml(), footer:'<button type="button" class="btn btn-primary" data-action="close-modal">はじめる</button>'});
+}
 function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); }
 document.addEventListener('change', e => {
   if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp') return;
@@ -13046,6 +13075,12 @@ const actions = {
     catch (e) { toast(authErrMsg(e), 'error'); }
   },
   'acc-profile': () => openProfile(),
+  'perm-geo': () => {
+    ui.permGeoBusy = true; permRefresh(); actions['wx-geo']();
+    let n = 0; const t = setInterval(() => { n++; if (state.settings.wxLoc || n > 30 || !document.getElementById('perm-body')) { clearInterval(t); ui.permGeoBusy = false; permRefresh(); } }, 700);
+  },
+  'perm-login': () => { closeModal(); setTimeout(() => { location.hash = '#/account/me'; }, 250); },
+  'perm-notify': () => { notifyEnable().then(permRefresh); setTimeout(permRefresh, 50); },
   'ba-make': () => baMake(),
   'ba-share': async () => { try { if (ui.baFile) await navigator.share({files:[ui.baFile], title:'ナカカラモ'}); } catch (e) { /* やめたとき */ } },
   'notify-toggle': (id, el) => { if (el.checked) notifyEnable(); else notifyDisable(); },
@@ -13702,6 +13737,7 @@ function render() {
     else stopMomentumTop();
   }
   navRestoreY = null;
+  if (!state.settings.permAsked && state.settings.onboarded) setTimeout(() => permSheet(), 900); // 最初に開いたとき：位置情報・お知らせの許可
   if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'care') rtDragInit();
