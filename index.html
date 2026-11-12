@@ -917,7 +917,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .fp-clear-s{border:0;background:none;padding:2px 0;font:inherit;font-size:11.5px;color:var(--muted);text-decoration:underline;cursor:pointer}
 .fp-chips.fp-ill{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .fp-chips.fp-ill .fp-chip{flex-direction:column;justify-content:center;gap:3px;border-radius:14px;padding:7px 4px 6px;font-size:12px;font-weight:600;border-width:1.5px}
-.fp-chips.fp-ill .fp-chip.on{border-color:var(--cc);background:color-mix(in srgb,var(--cc) 12%,var(--surface));color:var(--ink)}
+.fp-chips.fp-ill .fp-chip.on{border-color:var(--cc)!important;background:color-mix(in srgb,var(--cc) 14%,var(--surface))!important;color:var(--ink)!important}
 .fp-chips.fp-ill .fp-chip.dis{opacity:.55}
 .fp-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .fp-steps .btn{min-height:40px;justify-content:center}
@@ -3558,7 +3558,7 @@ async function dismissModal(fromDrag) {
   const bg = r.querySelector('.modal-backdrop');
   m.style.transition = 'transform .17s cubic-bezier(.4,0,1,1)'; m.style.transform = 'translateY(105%)';
   if (bg) bg.classList.add('closing');
-  setTimeout(() => { if (r.querySelector('.modal') === m) closeModal(); }, 170);
+  setTimeout(() => { if (r.querySelector('.modal') === m) { const back = m._back; closeModal(); if (typeof back === 'function') setTimeout(back, 60); } }, 170); // ×で閉じたときは、1つ前の画面（化粧品を追加など）に戻る
 }
 // 入力したら「途中」の印を付ける
 document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#modal-root form')) $('#modal-root').dataset.dirty = '1'; });
@@ -4180,7 +4180,7 @@ async function popularLoad() {
   return POPULAR;
 }
 function popPaint() {
-  const box = document.getElementById('pop-list'); if (!box || !POPULAR) return;
+  const box = document.getElementById('pop-list'); if (!box || !POPULAR || (findState && findState.inPop)) return;
   const q = (document.getElementById('pop-q') || {}).value || '';
   const k = fnorm(q), hit = POPULAR.items.filter(x => !k || fnorm(cleanShopName(x.name)).includes(k));
   if (!POPULAR.items.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">人気ランキングを準備中です。上の「自分で入力」から探せます。</p>'; return; }
@@ -4195,14 +4195,26 @@ async function popularMount() {
   const up = POPULAR.updatedAt ? new Date(POPULAR.updatedAt) : null;
   const h = sec.querySelector('.pop-h small'); if (h && up && !isNaN(up)) h.textContent = `${up.getMonth() + 1}/${up.getDate()} 更新・${POPULAR.items.length}件`;
   popPaint();
-  const q = document.getElementById('pop-q'); if (q) q.addEventListener('input', () => { const m = sec.closest('.modal'); if (m && !m.style.minHeight) m.style.minHeight = m.offsetHeight + 'px'; popN = 20; popPaint(); }); // 探しているあいだは、シートの高さを変えない（画面がずれないように）
+  const q = document.getElementById('pop-q');
+  // 入れた言葉で、楽天市場・Yahoo!ショッピングの実際の商品を探す（ランキングの中だけではない）。空にすると人気ランキングに戻る
+  const popSearch = v => {
+    const t = document.getElementById('pop-title'); if (t) t.textContent = v.length >= 2 ? '検索結果' : '人気の化粧品';
+    const sm = sec.querySelector('.pop-h small'); if (sm) sm.hidden = v.length >= 2; // 探しているときは「楽天ランキング」の文字を出さない
+    if (v.length < 2) { if (findState && findState.inPop) { clearTimeout(findState.timer); findState = null; } popN = 20; popPaint(); return; }
+    if (!findState || !findState.inPop) findState = {kind:'my', q:'', items:null, loading:false, err:'', timer:null, inPop:true};
+    clearTimeout(findState.timer); const fs = findState; fs.loading = true; findPaint(); fs.timer = setTimeout(() => findRun(v), 500);
+  };
+  if (q) {
+    q.addEventListener('input', () => { const m = sec.closest('.modal'); if (m && !m.style.minHeight) m.style.minHeight = m.offsetHeight + 'px'; popSearch(q.value.trim()); }); // 探しているあいだは、シートの高さを変えない（画面がずれないように）
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); q.blur(); } });
+  }
   sec.addEventListener('click', e => { const b = e.target.closest('[data-pop]'); if (!b) return; const x = POPULAR.items[Number(b.dataset.pop)]; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); });
 }
 function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
     <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
-    <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b>人気の化粧品</b><small>楽天ランキング</small></div><input type="search" class="input" id="pop-q" placeholder="ランキングの中から探す（例：化粧水、キュレル）" aria-label="人気の化粧品から探す" autocomplete="off"><div id="pop-list"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">ランキングは毎日自動で入れ替わります。Supported by Rakuten Developers</p></div>` : ''}`});
+    <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="商品名で探す（例：アヌア レチノール）" aria-label="商品名で探す" autocomplete="off" enterkeyhint="search"></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">何も入れていないときは、人気ランキング（毎日自動で入れ替わります）を出します。Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>` : ''}`});
   if (my) popularMount();
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
@@ -4303,7 +4315,7 @@ async function findRun(q) {
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
 }
 function findPaint() {
-  const box = document.getElementById('find-list'), fs = findState; if (!box || !fs) return;
+  const box = document.getElementById('find-list') || (findState && findState.inPop ? document.getElementById('pop-list') : null), fs = findState; if (!box || !fs) return; // 化粧品を追加の画面の検索も、同じ表示
   if (fs.loading) { box.innerHTML = skelHtml(4, {dots:true, label:fs.reading || '商品を検索中'}); return; }
   if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
   if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
@@ -4587,7 +4599,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <p class="au-hint">8文字以上で、英字と数字を組み合わせてください</p>
         <label class="au-lbl" for="au-pw2">パスワード（確認）</label>
         <div class="au-pw"><input class="au-in" id="au-pw2" type="password" autocomplete="new-password" maxlength="72">${eye('au-pw2')}</div>
-        <label class="check agree-line au-chk"><input type="checkbox" id="au-sync" ${sync ? 'checked' : ''}><span>記録をクラウドに保存する（写真は送りません）</span></label>
+        <p class="small muted au-chk" style="margin:4px 0 0">記録は、登録したメールアドレスのアカウントに自動でバックアップされます（写真は送りません）。</p>
         <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
         <button type="button" class="au-go" data-au="signup" ${st.busy ? 'disabled' : ''}>${st.busy ? '登録しています…' : '登録する'}</button>`;
       const keep = {}; if (!dir) ov.querySelectorAll('input').forEach(i => { if (i.id) keep[i.id] = i.type === 'checkbox' ? i.checked : i.value; });
@@ -9331,7 +9343,7 @@ function openLogForm(id) {
     const pn = $('#fp-panel', fpEl()); if (!pn) return;
     const sl = $('#fp-sumline', fpEl());
     if (sl) { const n = acneCells().length || Object.values(oldSpots).reduce((x, v) => x + v, 0), cs = RANGE_CONCERNS.filter(c => maxLevel(c));
-      sl.textContent = n || cs.length ? [n ? `ニキビ ${n}個` : '', ...cs.map(c => `${c} ${maxLevel(c)}`)].filter(Boolean).join('・') : 'まだ何も入れていません'; }
+      sl.textContent = n || cs.length ? [n ? `ニキビ ${n}個` : '', ...cs].filter(Boolean).join('・') : 'まだ何も入れていません'; }
     if (!fpRange) {
       // 1マス選択：ニキビだけ
       const by = acneByArea(), total = Object.values(by).reduce((x, n) => x + n, 0);
@@ -9347,15 +9359,12 @@ function openLogForm(id) {
       const used = RANGE_CONCERNS.filter(c => maxLevel(c));
       pn.innerHTML = `<p class="small muted" style="margin:0 0 8px">額・鼻・頬などの部分を押して選ぶと、下の状態を入れられます。</p>
         <div class="fp-chips fp-ill">${RANGE_CONCERNS.map(c => `<button type="button" class="fp-chip dis" style="--cc:${CONCERN_COLORS[c]}" disabled>${skinIllus(c, 38)}<span>${esc(c)}</span></button>`).join('')}</div>
-        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}<button type="button" class="fp-clear-s" data-fp-clear>すべて消す</button></div>` : ''}`;
+        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)}</span>`).join('')}<button type="button" class="fp-clear-s" data-fp-clear>すべて消す</button></div>` : ''}`;
       return;
     }
     pn.innerHTML = `<div class="fp-h"><b>${esc(selZones().join('・')) || '選択中'}</b><button type="button" class="link small" data-fp-close>選択をやめる</button></div>
-      <p class="small muted" style="margin:6px 0 6px">ある状態を押して、強さを選んでください</p>
-      <div class="fp-chips fp-ill">${RANGE_CONCERNS.map(c => { const lv = selLevel(c); return `<button type="button" class="fp-chip ${lv ? 'on' : ''}" style="--cc:${CONCERN_COLORS[c]}" data-fp-note="${esc(c)}" aria-pressed="${!!lv}">${skinIllus(c, 38)}<span>${esc(c)}${lv ? ` ${lv}` : ''}</span></button>`; }).join('')}</div>
-      <div class="fp-sliders">${RANGE_CONCERNS.filter(c => selLevel(c)).map(c => `<label class="fp-slider" style="--cc:${CONCERN_COLORS[c]}"><span>${esc(c)}<b>${selLevel(c)}</b></span>
-        <input type="range" min="1" max="5" step="1" value="${selLevel(c)}" data-fp-level="${esc(c)}" aria-label="${esc(c)}の強さ（1〜5）">
-        <span class="fp-ticks"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i></span></label>`).join('')}</div>`;
+      <p class="small muted" style="margin:6px 0 6px">ある状態を押してください（もう一度押すと外れます）</p>
+      <div class="fp-chips fp-ill">${RANGE_CONCERNS.map(c => { const lv = selLevel(c); return `<button type="button" class="fp-chip ${lv ? 'on' : ''}" style="--cc:${CONCERN_COLORS[c]}" data-fp-note="${esc(c)}" aria-pressed="${!!lv}">${skinIllus(c, 38)}<span>${esc(c)}</span></button>`; }).join('')}</div>`;
   };
   const fpSync = () => { fpPaint(); fpPanel(); };
   // 小さい顔のときは、マス目や区切りの線を出さない（記録したものだけを見せる）
@@ -10287,7 +10296,7 @@ function face3dPoreDots(st, marks) {
   Object.entries(marks || {}).forEach(([k, mk]) => {
     const lv = Number(mk && mk['毛穴の目立ち']) || 0; if (!lv) return;
     const [c, r] = k.split(',').map(Number), vs = g.cellVerts.get(r * g.cols + c); if (!vs || !vs.length) return;
-    const n = 3 + lv * 2, zone = g.cellZone[r * g.cols + c] || 0;
+    const n = 9, zone = g.cellZone[r * g.cols + c] || 0; // 強さは使わず、いつも「3」の数
     const rnd = x => { x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); return ((x ^ (x >>> 16)) >>> 0) / 4294967296; }; // 毎回同じ値になる乱数（ちらつかないように）
     for (let i = 0, put = 0; put < n && i < n * 6; i++) {
       const u = m + rnd(c * 7919 + r * 104729 + i * 31 + 1) * (1 - m * 2), w = m + rnd(c * 6271 + r * 3571 + i * 131 + 7) * (1 - m * 2);
@@ -10942,7 +10951,7 @@ function face3dZonePaint(st, marks, sel) {
     const ks = []; for (let k = 0; k < g.cellZone.length; k++) if (g.cellZone[k] === z && g.cellArea[k]) ks.push(`${k % g.cols},${Math.floor(k / g.cols)}`);
     zs[z] = ks.length && ks.every(k => sel && sel.has(k)) ? 1 : 0;
     let best = null, lv = 0; ks.forEach(k => { const m = (marks || {})[k]; if (m) AREA_CONCERNS.forEach(c => { if (c !== '毛穴の目立ち' && (m[c] || 0) > lv) { lv = m[c]; best = c; } }); });
-    if (best) { const h = CONCERN_COLORS[best]; zc[z].set(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255, 0.25 + lv * 0.11); } else zc[z].set(0, 0, 0, 0);
+    if (best) { const h = CONCERN_COLORS[best]; zc[z].set(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255, 0.58); } else zc[z].set(0, 0, 0, 0); // 強さは使わず、いつも「3」の色
   }
   st.dirty = true;
 }
@@ -11327,7 +11336,7 @@ function syncKeepPhotos(remote) {
     (remote[k] || []).forEach(x => { const l = loc.get(x.id); if (l) Object.keys(l).forEach(f => { if (isDataImg(l[f]) && !x[f]) x[f] = l[f]; }); }); });
   return remote;
 }
-const syncOn = () => !!(state.settings.cloudSync && acct.client && acct.user);
+const syncOn = () => !!(acct.client && acct.user); // ログインしていれば、登録したメールアドレスのアカウントに自動でバックアップする（オン・オフはなし）
 const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lifeLogs || []).some(l => !l.demo) || (s.myProducts || []).some(p => !p.isSample)));
 function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncPush, 2500); }
 async function syncPush() {
@@ -11373,12 +11382,12 @@ function syncAsk(row) {
 }
 function syncPaint() { const b = document.getElementById('sync-card'); if (b) b.outerHTML = syncCardHtml(); }
 function syncCardHtml() {
-  const st = state.settings, on = !!st.cloudSync;
+  const on = true; // ログインしていれば、いつも自動でバックアップ
   const status = !acct.user ? '<p class="small muted" style="margin:8px 0 0">使うには、先に<a href="#/plan">ログイン</a>してください（無料）。</p>'
-    : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : 'オン'}</p>` : '';
-  return `<div class="card" id="sync-card"><div class="card-h"><h2>クラウドに保存</h2></div>
-    <p class="small muted" style="margin:0 0 10px">オンにすると、記録・化粧品・設定をあなたのアカウントに保存します。機種変更したときや、ブラウザのデータが消えたときも、ログインすれば続きから使えます。<b>写真はクラウドに送らず、この端末の中だけ</b>に保存します。</p>
-    <label class="check"><input type="checkbox" id="f_cloudSync" ${on ? 'checked' : ''} ${acct.user ? '' : 'disabled'}> クラウドに保存する</label>${status}</div>`;
+    : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : '自動でバックアップします'}</p>` : '';
+  return `<div class="card" id="sync-card"><div class="card-h"><h2>自動バックアップ</h2></div>
+    <p class="small muted" style="margin:0 0 10px">ログインしていれば、記録・化粧品・設定を、登録したメールアドレスのアカウントに自動でバックアップします。機種変更したときや、ブラウザのデータが消えたときも、ログインすれば続きから使えます。<b>写真はクラウドに送らず、この端末の中だけ</b>に保存します。</p>
+    ${acct.user ? `<p class="small" style="margin:0">バックアップ先：<b>${esc((acct.user.email || 'Googleのアカウント'))}</b></p>` : ''}${status}</div>`;
 }
 async function initCloud() {
   if (acct.status === 'loading' || acct.status === 'ready') return;
@@ -12396,12 +12405,12 @@ const actions = {
   'find-pick': i => findPick(i),
   'find-more': () => { if (findState) { findState.more = true; findPaint(); } },
   'add-camera': kind => {
-    if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); return; }
-    closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200);
+    if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); return; }
+    closeModal(); setTimeout(() => { openCamSheet(kind || 'my'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); }, 200);
   },
   'rx-sheet': () => { if (document.querySelector('#modal-root').innerHTML) { closeModal(); setTimeout(openRxSheet, 200); } else openRxSheet(); },
   'rx-manual': () => { closeModal(); setTimeout(() => { openMyForm(); setTimeout(() => { const c = document.querySelector('#my-form [name=category]'); if (c) { c.value = '皮膚科の塗り薬'; c.dispatchEvent(new Event('change', {bubbles:true})); } const b = document.querySelector('#my-form [name=brand]'); if (b && !b.value) b.value = '処方薬'; }, 60); }, 200); },
-  'add-manual': kind => { closeModal(); setTimeout(() => openFindSheet(kind || 'my'), 200); },
+  'add-manual': kind => { closeModal(); setTimeout(() => { openFindSheet(kind || 'my'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); }, 200); },
   'acc-toggle': (k, el) => {
     ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
     const pn = document.getElementById('acc-panel-' + k); if (!pn) return;
