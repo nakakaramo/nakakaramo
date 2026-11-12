@@ -3787,8 +3787,6 @@ const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'favorites', 'accoun
 const motionSeen = new Set();
 function motionIn(route) {
   const main = document.getElementById('main'); if (!main) return;
-  // 別の画面を開いたときは、画面全体をふわっと出す（カードや数字を1つずつ動かすのは止めたまま）
-  if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in'); }
   if (!MOTION_OK()) return;
   // どの画面も、一番上の見出しは開くたびにふわっとフェードイン（ホームの日付は動かさない）
   { const h = main.querySelector('.page-head h1'); if (h) { h.classList.remove('fade-once'); void h.offsetWidth; h.classList.add('fade-once'); } }
@@ -10716,6 +10714,11 @@ async function runAdvice(force) {
 function face3dApply(st, counts, max, mode, types) { st.counts = counts; st.types = types || {}; face3dColors(st.geo, counts, max, st.types, st.selArea); face3dDots(st, counts, mode, st.types); st.dirty = true; }
 // iPhoneでは、これがないと押した瞬間の見た目（:active）が出ない
 document.addEventListener('touchstart', () => {}, {passive:true});
+// どうやって画面を移ったか（下のバー／戻る）を覚えておく（画面の動きを変えるため）
+const NAV_SRC = {bar:0, back:0};
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#bottom-nav a.bn-item, .sidebar a.sn-item')) NAV_SRC.bar = Date.now(); }, true);
+const NAV_STACK = []; // 開いた画面の順番（ひとつ前の画面に戻ったかを見分ける）
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.back, [data-action="back"], a[aria-label="戻る"]')) NAV_SRC.back = Date.now(); }, true);
 // 下のバーで、今いる画面をもう一度押したら一番上に戻る（「押しても反応しない」と感じないように）
 document.addEventListener('click', e => {
   const a = e.target.closest('#bottom-nav a.bn-item, .sidebar a.sn-item'); if (!a) return;
@@ -13095,10 +13098,19 @@ function render() {
   requestAnimationFrame(swAnimAll); // 切り替えの印をすべらせる
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
-  // Myアイテムの一覧 ⇄ 詳しい画面：iPhoneのように横にすべって切り替わる
-  if (routeChanged && r.name === 'my' && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-    const m = document.getElementById('main'), dir = r.id && prevRoute === 'my/' ? 'pg-push' : !r.id && prevRoute.startsWith('my/') && prevRoute !== 'my/' ? 'pg-pop' : '';
-    if (m && dir) { m.classList.remove('pg-push', 'pg-pop'); void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); }
+  // 画面が変わったときの動き：
+  //  ・下のバーで移ったとき … 動かさない
+  //  ・ボタンなどで別の画面を開いたとき … 右から横にすべって出る（戻るときは左から）
+  //  ・同じ画面の中のタブ（スキンケア設計のタブなど）… 画面は動かさない（タブの印だけ動く）
+  if (routeChanged && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    const fromBar = Date.now() - NAV_SRC.bar < 1500;
+    const back = Date.now() - NAV_SRC.back < 1500 || NAV_STACK[NAV_STACK.length - 1] === key;
+    if (fromBar) NAV_STACK.length = 0; if (back) NAV_STACK.pop(); else NAV_STACK.push(prevRoute); if (NAV_STACK.length > 30) NAV_STACK.shift();
+    const m = document.getElementById('main');
+    const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
+    const dir = fromBar || sameScreen ? '' : back ? 'pg-pop' : 'pg-push';
+    NAV_SRC.bar = 0; NAV_SRC.back = 0;
+    if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); } }
   }
   fillAds();
   if (r.name === 'charts') drawFace3d();
