@@ -492,6 +492,10 @@ label.btn{position:relative}
 .hero-home .twx{padding:0;line-height:1.2;font-size:14px;gap:1.1em;justify-content:center}
 .hero-home .hero-wx{display:flex;justify-content:center;margin:-4px 0 8px;padding:0 0 6px;border-bottom:1px solid rgba(0,0,0,.06);position:relative;z-index:1}
 .hero-home .life-btns{max-width:none;margin-top:0;gap:10px;position:relative;z-index:1}
+/* 肌の記録：ホームの「湿度・気温」と「今日の肌を記録」の境目と同じ線で区切る */
+#log-form .lf-sep{border-top:1px solid rgba(0,0,0,.06);padding-top:14px}
+#log-form .lf-sep-only{padding:0;margin:0 0 -4px;grid-column:1/-1}
+:root[data-theme="dark"] #log-form .lf-sep{border-top-color:rgba(255,255,255,.08)}
 .hero-home .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)}
 .hero-home .life-btns .hap-keep{width:100%;display:block}
 .hero-home .life-btns .hap-keep>.btn{width:100%}
@@ -6674,7 +6678,7 @@ function viewMyDetail(id) {
     </div>
     ${fc ? `<div class="card mt"><div class="card-h"><h2>使用頻度の確認（直近4週間）</h2></div>
       <p style="font-size:14px">${esc(fc.text)}</p>
-      ${fc.status === 'none' ? '<p class="small muted" style="margin-top:6px">肌の記録で「今日使った物」にチェックすると、実際の使用回数と比べられます。</p>' : ''}
+      ${fc.status === 'none' ? '<p class="small muted" style="margin-top:6px">肌の記録で「使ったアイテム」にチェックすると、実際の使用回数と比べられます。</p>' : ''}
       ${fc.status === 'over' ? `<div class="alert-card" style="margin-top:10px"><b>使用回数を確認してください</b><span style="white-space:pre-line">${esc(overuseNote(p))}</span></div>` : ''}</div>` : ''}
     <div class="mt">
       <div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div>
@@ -6963,7 +6967,7 @@ function viewCombo() {
   html += `<details class="card fold cb-fold"><summary><b>使用頻度の確認（直近2週間）</b></summary>
     ${fcs.map(({p, fc}) => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="font-weight:600;font-size:14px">${esc(p.name)}</div><div class="small ${fc.status === 'over' ? '' : 'muted'}" style="${fc.status === 'over' ? 'color:var(--warn)' : ''}">${esc(fc.text)}</div>
       ${fc.status === 'over' ? `<div class="small muted" style="white-space:pre-line;margin-top:4px">${esc(overuseNote(p))}</div>` : ''}</div>`).join('')}
-    <p class="small muted" style="margin-top:10px">「記録なし」の商品は、肌の記録の「今日使った物」にチェックすると比較できます。</p></details>`;
+    <p class="small muted" style="margin-top:10px">「記録なし」の商品は、肌の記録の「使ったアイテム」にチェックすると比較できます。</p></details>`;
   // 成分ごとのまとめ
   html += `<details class="card fold cb-fold"><summary><b>成分ごとのまとめ</b></summary>
     ${r.byIng.length ? r.byIng.map(x => `<details class="fold" style="margin-bottom:8px"><summary>${esc(x.entry.name)}（${x.products.length}商品）${x.products.length >= 2 ? ' <span class="chip beige">複数の商品に含まれる</span>' : ''}</summary>
@@ -9138,16 +9142,16 @@ function openLogForm(id) {
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     ${state.settings.gender === '女性' ? `<div class="field period-field"><span class="lbl">生理<span class="opt">任意</span></span><div class="period-btns btn-pair">${['生理中', '生理前'].map(v => `<label class="period-btn"><input type="checkbox" name="factors" value="${v}" ${(d.factors || []).includes(v) ? 'checked' : ''}><span>${v === '生理中' ? '🩸 ' : ''}${v}</span></label>`).join('')}</div><p class="hint">押すと、次の生理の予想や、生理と肌の関係がわかるようになります。</p></div>` : ''}
-    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">撮ると、AIが今日の肌を自動で入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
-    <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
+    <div class="field fp-field lf-sep" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><button type="button" class="fp-open" data-fp-open aria-label="顔を大きくして記録する"><i>⤢</i></button><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
       <div class="fp-panel" id="fp-panel"></div></div>
       <p class="fp-sumline" id="fp-sumline"></p>
       <p class="fp-gest">1本の指で回す／2本の指で広げると拡大。</p>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
+    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">撮ると、AIが今日の肌を自動で入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     <div class="fp-hidden" aria-hidden="true">
     <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt opt-d">数と状態</span></span>
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
@@ -9169,11 +9173,12 @@ function openLogForm(id) {
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
       <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
-    <div class="field"><div class="used-head"><span class="lbl">今日使った物<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="use-all-mini" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
+    <div class="field lf-sep"><div class="used-head"><span class="lbl">使ったアイテム<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="use-all-mini" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
       ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
         <p class="hint">使ったものの写真を押してください。予定の使用頻度と実際の使用を比べられます。</p>`
       : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
     </div>
+    <div class="lf-sep lf-sep-only"></div>
     ${field('自由メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="500" placeholder="例：生理前、新しい美容液を使い始めた、マスクで擦れた など">${esc(d.memo)}</textarea>`, {name:'memo', hint:'食事・睡眠は「食事・睡眠」から別に記録できます'})}
     <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
       <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `<span class="prem-sub" style="margin-left:4px">${PREMIUM_NAME}</span>`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
@@ -11113,7 +11118,7 @@ function viewReport() {
   if (started.length) pts.push(`「${started.map(x => x.name).join('」「')}」の使用を開始しました。新しい商品を同時にいくつも増やさず、1つずつ試すと記録を見比べやすくなります。`);
   if (started.length >= 2) pts.push('この週に2つ以上の商品を使い始めています。肌に変化があっても、どの商品によるものかを区別しにくくなります。');
   used.forEach(x => { if (freqCheck(x, ws, effEnd).status === 'over') pts.push(`「${x.name}」の使用回数が、登録した頻度より多くなっています。製品の使用方法を確認してください。`); });
-  if (used.length && !logs.some(l => l.usageRecorded)) pts.push('「今日使った物」を記録すると、予定と実際の使用頻度を比べられます。');
+  if (used.length && !logs.some(l => l.usageRecorded)) pts.push('「使ったアイテム」を記録すると、予定と実際の使用頻度を比べられます。');
   if (s.acneAvg != null && p.acneAvg != null && s.acneAvg - p.acneAvg >= 0.5) pts.push('ニキビの記録数が前週より増えています。「ニキビの詳細」で部位・大きさ・経過を記録しておくと、振り返りやすくなります。');
   if (s.dry != null && s.dry >= 3) pts.push('乾燥の自己評価が高めでした。室内の湿度や洗顔の回数など、商品以外の状況もメモしておきましょう。');
   if (s.red != null && s.red >= 3) pts.push('赤みの自己評価が高めでした。赤みが続く・悪化する場合は、自己判断せず皮膚科医に相談してください。');
@@ -11937,7 +11942,7 @@ function researchSummary() {
   const st = state.settings, prods = state.myProducts.filter(p => !p.demo);
   const recorded = logs.some(l => l.usageRecorded);
   const prodIngs = new Map(prods.map(p => [p.id, knownIngs(ingsOfMy(p)).map(k => k.entry)]));
-  // その日に使った化粧品：「今日使った物」を記録していればそれを使い、なければ使用期間から考える
+  // その日に使った化粧品：「使ったアイテム」を記録していればそれを使い、なければ使用期間から考える
   const usedOn = l => recorded ? (l.usageRecorded ? l.usedProducts : null)
     : prods.filter(p => p.status !== STOCK && p.startDate <= l.date && (!p.endDate || p.endDate >= l.date)).map(p => p.id);
   const vec = arr => Object.fromEntries(R_METRICS.map(([m, k]) => [k, arr.length ? r2(arr.reduce((a, l) => a + (Number(l[m]) || 0), 0) / arr.length) : null]));
@@ -11983,7 +11988,7 @@ async function researchWithdraw() {
 }
 function researchPreviewHtml() {
   const sm = researchSummary(), arrow = (v, good) => v == null ? '—' : `<span style="color:${(good === 'up' ? v > 0 : v < 0) ? 'var(--green-d)' : v === 0 ? 'var(--muted)' : '#C0503C'}">${v > 0 ? '+' : ''}${v.toFixed(2)}</span>`;
-  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。Myアイテムに全成分を入れ、肌の記録で「今日使った物」を選ぶと、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
+  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。Myアイテムに全成分を入れ、肌の記録で「使ったアイテム」を選ぶと、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
   return `<p class="small muted" style="margin:0 0 6px">その成分を使った日と使わなかった日の差（あなたの記録）。肌の調子は＋が良い、ほかは−が良い変化です。</p>
     <div class="rs-list">${sm.ings.slice(0, 12).map(x => `<div class="rs-row"><b>${esc(truncate(x.name.replace(/（.*?）/g, ''), 16))}<small>使った日 ${x.du}日</small></b><span>調子 ${arrow(x.d.cond, 'up')}</span><span>ニキビ ${arrow(x.d.acne, 'down')}</span><span>赤み ${arrow(x.d.red, 'down')}</span><span>乾燥 ${arrow(x.d.dry, 'down')}</span></div>`).join('')}</div>`;
 }
