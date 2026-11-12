@@ -742,7 +742,7 @@ details.acc-cmp{margin-top:14px}
 .my-tabs .ht-n{font-size:12px;font-weight:600;line-height:1.5;background:var(--surface2,#F4F1EC);color:var(--muted);border-radius:999px;padding:1px 8px;transition:background .2s,color .2s}
 .my-tabs .ht.active .ht-n{background:var(--green-l,#E5F2EA);color:var(--green-d)}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
-.ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .54s cubic-bezier(.3,.8,.25,1);pointer-events:none}
+.ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .54s cubic-bezier(.22,.7,.2,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:19px;height:19px;flex:none}
 .ht.active{color:var(--ink)}
@@ -13225,7 +13225,7 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
-  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
+  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); swScrollTop(); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
@@ -13300,7 +13300,7 @@ const actions = {
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
   'go-back': () => goBack('#/home'),
-  'home-tab': k => { if (ui.homeTab === k) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const a = HOME_TABS.findIndex(x => x.k === ui.homeTab), b = HOME_TABS.findIndex(x => x.k === k); ui.htSlide = b > a ? 1 : -1; } ui.htFrom = ui.homeTab; ui.homeTab = k; try { sessionStorage.setItem('hadatomo_homeTab', k); } catch (e) { /* 何もしない */ } render(); window.scrollTo(0, 0); },
+  'home-tab': k => { if (ui.homeTab === k) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const a = HOME_TABS.findIndex(x => x.k === ui.homeTab), b = HOME_TABS.findIndex(x => x.k === k); ui.htSlide = b > a ? 1 : -1; } ui.htFrom = ui.homeTab; ui.homeTab = k; try { sessionStorage.setItem('hadatomo_homeTab', k); } catch (e) { /* 何もしない */ } render(); swScrollTop(); },
   'f3-view': v => {
     const st = FACE3D.st; if (!st) return;
     const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
@@ -13540,7 +13540,7 @@ const actions = {
   'my-kind': v => {
     if (ui.myKind === v) return;
     const from = ui.myKind; ui.myKind = v; ui.myKindDir = 0; ui.myKindFrom = from; ui.mtFrom = from; ui.htSlide = v === 'rx' ? 1 : -1; // ホームの上のバーと同じ動き
-    render(); window.scrollTo(0, 0);
+    render(); swScrollTop();
   },
   'swipe-del': async id => {
     const p = getMy(id); if (!p) return;
@@ -13913,6 +13913,8 @@ function stopMomentumTop() {
   requestAnimationFrame(() => { de.style.overflow = ''; window.scrollTo(0, 0); });
 }
 // Myアイテムの「化粧品 1」などの数字の丸：文字の色と同じ速さで、選ばれた色にかわる（パッと点滅しないように）
+// タブを切り替えたあとのスクロール：押したときは一番上へ。なぞって切り替えたときは、見えていた位置のまま
+function swScrollTop() { window.scrollTo(0, ui.swKeepY != null ? ui.swKeepY : 0); }
 function htBadgeMove(on, off, t) {
   [[on, true], [off, false]].forEach(([b, act]) => {
     const n = b && b.querySelector('.ht-n'); if (!n) return;
@@ -13932,15 +13934,15 @@ function placeHomeTabInd() {
   // 文字の色も、下の緑の棒と同じ速さで入れかえる（棒と文字の動きをそろえる）
   if (prev && prev !== cur && from !== to) {
     const bn = nav.querySelector(`.ht[data-id="${cur}"]`), bp = nav.querySelector(`.ht[data-id="${prev}"]`), full = Math.abs(to - at(prev)) || 1, p0 = Math.max(0, Math.min(1, 1 - Math.abs(to - from) / full));
-    const mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`, ease = 'color .54s cubic-bezier(.3,.8,.25,1)';
-    if (!badgeDone) htBadgeMove(bn, bp, '.54s cubic-bezier(.3,.8,.25,1)');
-    [[bn, p0, 1], [bp, 1 - p0, 0]].forEach(([b, a, z]) => { if (!b) return; b.style.transition = 'none'; b.style.color = mix(a); void b.offsetWidth; b.style.transition = ease; b.style.color = mix(z); setTimeout(() => { b.style.color = ''; b.style.transition = ''; }, 480); });
+    const mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`, ease = 'color .54s cubic-bezier(.22,.7,.2,1)';
+    if (!badgeDone) htBadgeMove(bn, bp, '.54s cubic-bezier(.22,.7,.2,1)');
+    [[bn, p0, 1], [bp, 1 - p0, 0]].forEach(([b, a, z]) => { if (!b) return; b.style.transition = 'none'; b.style.color = mix(a); void b.offsetWidth; b.style.transition = ease; b.style.color = mix(z); setTimeout(() => { b.style.color = ''; b.style.transition = ''; }, 600); });
   }
 }
 // ホームを横にスワイプ：今日の記録 ⇄ ケアポイント ⇄ ショートカット
 // 指に合わせて中身が動き、十分に動かすか、すばやく払うと隣のタブへ。縦のスクロールが先に始まったら、横には動かさない
 (() => {
-  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0, swAt = 0, sx = 0, tot = 0;
+  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0, swAt = 0, sx = 0, tot = 0, busy = 0; // busy：切り替えの動きの途中（次のスワイプを受けつけない）
   // iPhoneで鳴らし損ねないように、指を離したときのもう一つの合図（pointerup）でも鳴らす（ほぼ同時なので1回に感じる）
   window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
   // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
@@ -13988,10 +13990,11 @@ function placeHomeTabInd() {
   const ghostMove = (v, anim) => { const W = pane ? pane.offsetWidth + 16 : window.innerWidth; Object.values(ghosts).forEach(g => { if (!g) return; g.style.transition = anim || 'none'; g.style.transform = `translateX(${(Number(g.dataset.side) * W + v).toFixed(1)}px)`; }); };
   const ghostClear = () => { Object.values(ghosts).forEach(g => g && g.remove()); ghosts = {}; };
   const indBack = () => { const ind = document.querySelector('.home-tabs .ht-ind'), a = indAt(page().cur); if (!ind || a == null) return; ind.style.transition = ''; ind.style.transform = `translateX(${a}px)`; indX = null;
-    ind.parentElement.querySelectorAll('.ht').forEach(x => { x.style.transition = 'color .44s cubic-bezier(.3,.8,.25,1)'; x.style.color = ''; }); };
+    ind.parentElement.querySelectorAll('.ht').forEach(x => { x.style.transition = 'color .54s cubic-bezier(.22,.7,.2,1)'; x.style.color = ''; }); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
+    if (Date.now() < busy) return; // 前の切り替えが終わるまで待つ（途中で触ると、中身が消えたり二重に動いたりするので）
     const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full,.au-ov,.pm-ov')) return;
@@ -14022,7 +14025,7 @@ function placeHomeTabInd() {
     pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = '';
     ghostMove(v); indFollow(dx);
   }, {passive:false});
-  const back = () => { setTimeout(() => { if (pane) pane.style.willChange = ''; }, 420); indBack(); ghostMove(0, 'transform .38s cubic-bezier(.2,.8,.2,1)'); setTimeout(ghostClear, 400); if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
+  const back = () => { setTimeout(() => { if (pane) pane.style.willChange = ''; }, 580); indBack(); ghostMove(0, 'transform .54s cubic-bezier(.22,.7,.2,1)'); setTimeout(ghostClear, 580); if (!pane) return; pane.style.transition = 'transform .54s cubic-bezier(.22,.7,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
   const end = () => {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
@@ -14035,12 +14038,14 @@ function placeHomeTabInd() {
       // 今の中身は横へ出ていき、隣の中身が真ん中に入ってくる（そのあと本物の画面に切り替える）
       const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .54s cubic-bezier(.22,.7,.2,1)';
       pane.style.transition = ease; pane.style.transform = `translateX(${sgn * W}px)`; ghostMove(sgn * W, ease);
-      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .54s cubic-bezier(.3,.8,.25,1)'; ind.style.transform = `translateX(${tx}px)`;
-        const nv = ind.parentElement, ce = 'color .54s cubic-bezier(.3,.8,.25,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
+      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .54s cubic-bezier(.22,.7,.2,1)'; ind.style.transform = `translateX(${tx}px)`;
+        const nv = ind.parentElement, ce = 'color .54s cubic-bezier(.22,.7,.2,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
         if (bc) { bc.style.transition = ce; bc.style.color = 'var(--muted)'; } if (bj) { bj.style.transition = ce; bj.style.color = 'var(--ink)'; }
-        htBadgeMove(bj, bc, '.54s cubic-bezier(.3,.8,.25,1)'); ui.htBadgeDone = true; } // 数字の丸も、文字と同じ速さで // 文字の色も棒と一緒に
+        htBadgeMove(bj, bc, '.54s cubic-bezier(.22,.7,.2,1)'); ui.htBadgeDone = true; } // 数字の丸も、文字と同じ速さで // 文字の色も棒と一緒に
       indX = null; const hadGhost = !!(ghosts.l || ghosts.r);
-      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 520 : 0);
+      busy = Date.now() + (hadGhost ? 620 : 600);
+      const keepY = window.scrollY; // なぞって切り替えたときは、見えていた位置のまま（隣の中身と同じ位置）にして、上に飛ばない
+      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; ui.swKeepY = keepY; g.go(g.tabs[j].k); ui.swKeepY = null; ghostClear(); busy = Date.now() + 60; }, hadGhost ? 560 : 0);
     } else back();
   };
   window.addEventListener('touchend', e => { end(e); window.__hSwipe = false; }, {passive:true});
