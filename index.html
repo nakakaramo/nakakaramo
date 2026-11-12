@@ -2473,6 +2473,12 @@ a.acc-me:active{transform:scale(.96)}
 .t3-under span{font-size:13px;padding:2px 12px}
 .t3-stage .f3-expand{top:auto;bottom:4px;right:0}
 .t3-grid{align-items:center}
+
+/* リンクや画像を長押ししても、iPhoneのプレビュー（リンクの中身が浮き出る表示）を出さない */
+a,img,button,label{-webkit-touch-callout:none!important}
+/* アカウント：自分の名前以外は、普通の太さ */
+.acc-thin,.acc-thin *{font-weight:400!important}
+.acc-thin .acc-me .am-t b,.acc-thin .ai-row b{font-weight:600!important}
 </style>
 </head>
 <body>
@@ -9708,6 +9714,13 @@ function userPop(ip) {
   const g = o.parentElement; if (g) g.querySelectorAll('.seg-opt.pop').forEach(x => x.classList.remove('pop')); void o.offsetWidth; o.classList.add('pop');
 }
 document.addEventListener('change', e => { const ip = e.target; if (e.isTrusted && ip && (ip.type === 'radio' || ip.type === 'checkbox')) userPop(ip); });
+// 長押しでリンクのプレビューが出ないように：指が触れている間だけ、リンクの行き先を外しておく（離したら戻すので、押せば今までどおり開く）
+(() => {
+  let held = null;
+  const restore = () => { if (held) { held.setAttribute('href', held.dataset.hrefHold); delete held.dataset.hrefHold; held = null; } };
+  document.addEventListener('touchstart', e => { restore(); const a = e.target.closest && e.target.closest('a[href]'); if (!a || e.touches.length !== 1) return; held = a; a.dataset.hrefHold = a.getAttribute('href'); a.removeAttribute('href'); }, {passive:true, capture:true});
+  document.addEventListener('touchend', restore, {passive:true, capture:true}); document.addEventListener('touchcancel', restore, {passive:true, capture:true});
+})();
 function openLogForm(id) {
   const ex = id ? getLog(id) : null;
   const t = todayStr(), map = logMap();
@@ -12429,17 +12442,17 @@ function viewPlan(query) {
     const end = s && s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '';
     const stateTxt = !acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? (s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み（${esc(end)}で終了）</span>` : `有効${end ? `（次回の更新日：${esc(end)}）` : ''}`)
       : s && ['past_due','unpaid','incomplete'].includes(s.status) ? '<span style="color:var(--danger)">お支払いを確認できていません</span>' : '未契約';
-    html += `<div class="card"><dl class="kv"><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>状態</dt><dd>${stateTxt}</dd></dl>
+    html += `<div class="card"><dl class="kv"><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>状態</dt><dd>${stateTxt}</dd></dl>
       ${s ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
       <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
-  } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd></dl>
+  } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd></dl>
     <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   if (isDev()) html += diagCardHtml(); // サーバーの設定の診断は、運営者だけ（?dev=1 で開いた端末）に出す
   if (!acct.subLoaded) return done(html);
   if (isPremium() && EMBED) return done(html);
   if (isPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
-    html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
+    html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2></div>
       <dl class="kv"><dt>状態</dt><dd>${s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み：${esc(end)}で終了します（それまでは使えます）</span>` : `有効（次回の更新日：${esc(end)}）`}</dd></dl>
       <button class="btn btn-ghost" style="margin-top:14px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button>
       <p class="hint">Stripe（決済サービス）の画面が開きます。解約すると、次回の更新日以降は請求されません。</p></div>`;
@@ -12770,7 +12783,7 @@ function avatarHtml(size) {
 function accMeHtml() {
   const nm = state.settings.nickname;
   return `<a class="card acc-me" href="#/account/me">${avatarHtml(52)}
-    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? `<span class="badge-premium am-prem">${esc(PREMIUM_NAME)}</span>` : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
+    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
 }
 // アカウント情報（一番上のプロフィールを押すと開く）：アイコン・名前・プランとログイン
 function viewAccountMe() {
@@ -12820,12 +12833,12 @@ document.addEventListener('change', async e => {
 document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint(); });
 function viewAccount() {
   const sub = parseRoute().id;
-  if (sub === 'me') return viewAccountMe();
+  if (sub === 'me') return viewAccountMe().replace('</a>', '</a><div class="acc-thin">') + '</div>'; // 「← アカウント」は外に出す（戻るが2つにならないように）
   if (['body', 'settings', 'privacy'].includes(sub)) return `<a class="back" href="#/account">← アカウント</a><div class="acc-page">${ACC_SECTIONS[sub].body()}</div>`;
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return accMeHtml() + ['body', 'settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
-    `<button type="button" class="card acc-sec acc-link" data-action="support-open"><span class="acc-row">${icon('chat')}<span><b>お問い合わせ</b></span><i>›</i></span></button>`;
+  return '<div class="acc-thin">' + accMeHtml() + ['body', 'settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
+    `<button type="button" class="card acc-sec acc-link" data-action="support-open"><span class="acc-row">${icon('chat')}<span><b>お問い合わせ</b></span><i>›</i></span></button></div>`;
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
