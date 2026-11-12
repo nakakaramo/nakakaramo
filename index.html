@@ -781,6 +781,9 @@ details.acc-cmp{margin-top:14px}
 .mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .mrow-go{color:var(--muted);font-size:18px}
 .my-adds{margin:0 0 12px;width:100%}
+/* 化粧品を追加・塗り薬を追加：緑の点線で囲む（塗りつぶさない） */
+.my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:transparent!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
+.my-adds .btn.btn-primary:active{background:color-mix(in srgb,var(--green) 10%,transparent)!important}
 .my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line);position:relative}
 .mk-ind{position:absolute;left:0;bottom:-1px;width:50%;height:2.5px;border-radius:2px;background:var(--green-d);transform:translateX(calc(var(--mk,0) * 100%));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .mk-pane.mk-in-r{animation:mkInR .32s cubic-bezier(.2,.8,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .32s cubic-bezier(.2,.8,.2,1) both}
