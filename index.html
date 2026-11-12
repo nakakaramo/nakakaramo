@@ -296,7 +296,7 @@ label.btn{position:relative}
 .sw-grp .rt-mode,.sw-grp .ct,.sw-grp .tab,.sw-grp > .hap-keep{position:relative;z-index:1}
 .sw-grp .sw-on{background:transparent!important;transition:color .25s ease,border-color .25s ease}
 .rt-mode,.ct,.tab{transition:color .25s ease,border-color .25s ease}
-.sw-in{animation:swIn .32s ease both}.sw-in-r{animation:swInR .32s ease both}
+.sw-in{animation:swIn .32s ease backwards}.sw-in-r{animation:swInR .32s ease backwards}
 @keyframes swIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes swInR{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}} /* 横に動かすと画面が横にゆれるので、縦にふわっと */
 /* 選ぶボタン（0〜5・肌の調子など）：選んだときに、ぽんと動く */
@@ -1302,7 +1302,7 @@ a.used-tile{color:inherit;text-decoration:none}
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
 /* 別の画面を開いたとき：中身は下からふわっと（前と同じ動き）。上にくっつくタブのバーだけは動かさない（ずれないように） */
 @keyframes pgInY{from{transform:translateY(12px)}to{transform:none}}
-#main.pg-in > :not(.home-tabs):not(.hap-keep){animation:pgInY .42s cubic-bezier(.2,.8,.2,1) both}
+#main.pg-in > :not(.home-tabs):not(.hap-keep){animation:pgInY .42s cubic-bezier(.2,.8,.2,1) backwards} /* backwards：動きが終わったあとは transform を持ち続けない（横スワイプで動かせるように） */
 @media (prefers-reduced-motion:reduce){#main.pg-in > *{animation:none}}
 @keyframes pgPush{from{opacity:.4;transform:translateX(42%)}to{opacity:1;transform:none}}
 @keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
