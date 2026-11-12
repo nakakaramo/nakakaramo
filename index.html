@@ -513,15 +513,16 @@ label.btn{position:relative}
 /* ホームの「今日の肌を記録・睡眠・運動・食事」：うしろの枠はなくして、ボタンは「化粧品を追加」と同じ大きさ */
 .hero.hero-plain{background:none;border:0;padding:0;border-radius:0;animation:none;overflow:visible;box-shadow:none}
 .hero.hero-plain::after{display:none}
-.hero.hero-home{padding:10px 14px 14px;overflow:visible}
+.hero.hero-home{padding:14px;overflow:visible} /* 上下左右・中の間をすべて同じ広さ（12〜14px）にそろえる */
 .hero-home .twx{padding:0;line-height:1.2;font-size:14px;gap:1.1em;justify-content:center}
-.hero-home .hero-wx{display:flex;justify-content:center;margin:-4px 0 8px;padding:0 0 6px;border-bottom:1px solid rgba(0,0,0,.06);position:relative;z-index:1}
-.hero-home .life-btns{max-width:none;margin-top:0;gap:10px;position:relative;z-index:1}
+.hero-home .hero-wx{display:flex;justify-content:center;align-items:center;min-height:20px;margin:0 0 12px;padding:0 0 12px;border-bottom:1px solid rgba(0,0,0,.06);position:relative;z-index:1}
+.hero-home .life-btns{max-width:none;margin-top:0;gap:12px;position:relative;z-index:1}
 /* 肌の記録：ホームの「湿度・気温」と「今日の肌を記録」の境目と同じ線で区切る */
 #log-form .lf-sep{border-top:1px solid rgba(0,0,0,.06);padding-top:14px}
 #log-form .lf-sep-only{padding:0;margin:0 0 -4px;grid-column:1/-1}
 :root[data-theme="dark"] #log-form .lf-sep{border-top-color:rgba(255,255,255,.08)}
-.hero-home .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)}
+.hero-home .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface);gap:6px}
+.hero-home .life-btns .life-main{min-height:46px;gap:8px}
 .hero-home .life-btns .hap-keep{width:100%;display:block}
 .hero-home .life-btns .hap-keep>.btn{width:100%}
 .hero-plain .life-btns{max-width:none;margin-top:0;gap:10px}
