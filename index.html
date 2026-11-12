@@ -1892,6 +1892,9 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 :root[data-theme="dark"]{--shadow:0 1px 2px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.3);--shadow-btn:0 1px 1px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.45);--shadow-btn-in:0 1px 2px rgba(0,0,0,.5)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--shadow:0 1px 2px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.3);--shadow-btn:0 1px 1px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.45);--shadow-btn-in:0 1px 2px rgba(0,0,0,.5)}}
 /* ボタンには影をつけない（枠・カードの影だけ残す） */
+.sw-q small{font-weight:500;color:var(--muted);font-size:12px;margin-left:2px}
+.used-tile .used-nm,.used-tile .used-sub{display:none} /* 今日使った物：写真の下に名前は出さない */
+.f3-expand,.fp-mode button.on,.fp-zoom .icon-btn,.fp-open i,.fav-heart,.rt-mode.on{box-shadow:none!important}
 .log-item,.mitem,.pcard{box-shadow:var(--shadow)}
 
 /* ===== スキンケア設計 ===== */
@@ -3280,6 +3283,7 @@ function comboReport(products) {
 // ブルッと鳴らす：Androidは振動、iPhone（iOS 18以降）はスイッチの手ごたえ（触覚）を使う
 let hapticAt = 0;
 function haptic(ms=30) {
+  if (document.getElementById('sw-body')) return; // アンケートの中ではバイブしない
   const now = Date.now(); if (now - hapticAt < 250) return; hapticAt = now; // 続けて2回鳴らない
   try {
     if (typeof navigator.vibrate === 'function' && navigator.vibrate(ms === 6 ? 8 : [ms, 50, ms])) return;
@@ -3296,6 +3300,7 @@ function haptic(ms=30) {
 // 保存したときの、強めのバイブ（Android：長めに2回／iPhone：「コツッ」を3回続けて鳴らす）
 function switchTick() { try { const lb = document.createElement('label'); lb.setAttribute('aria-hidden', 'true'); lb.style.display = 'none'; const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); lb.appendChild(ip); document.head.appendChild(lb); lb.click(); lb.remove(); } catch (e) { /* 何もしない */ } }
 function hapticStrong(skipFirst) {
+  if (document.getElementById('sw-body')) return; // アンケートの中ではバイブしない
   hapticAt = Date.now();
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([80, 60, 80])) return; } catch (e) { /* 次の方法へ */ }
   [0, 110, 220].forEach((t, i) => { if (!(skipFirst && i === 0)) setTimeout(switchTick, t); });
@@ -3303,6 +3308,7 @@ function hapticStrong(skipFirst) {
 // 軽い「カチッ」1回（下に引っぱって更新が始まったとき）。Androidは短い振動、iPhoneはスイッチの触覚
 // iPhoneは、指を離した操作の中ですぐ（待たずに）鳴らさないと鳴らない
 function hapticTick() {
+  if (document.getElementById('sw-body')) return; // アンケートの中ではバイブしない
   hapticAt = Date.now();
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate(12)) return; } catch (e) { /* 次の方法へ */ }
   switchTick();
@@ -3310,6 +3316,7 @@ function hapticTick() {
 // 記録・保存・登録が「うまくいったとき」だけ鳴らす、短く控えめなバイブ（続けて操作しても0.3秒に1回まで）
 // Android：短い振動／iPhone：スイッチの「コツッ」1回／どちらにも対応していない端末：何もしない
 function hapticSaved() {
+  if (document.getElementById('sw-body')) return; // アンケートの中ではバイブしない
   const now = Date.now(); if (now - hapticAt < 300) return; hapticAt = now;
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate(15)) return; } catch (e) { /* 次の方法へ */ }
   switchTick();
@@ -3357,7 +3364,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
@@ -4299,7 +4306,7 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_ALL = ['hello', 'gender', 'age', 'skin1', 'skin2', 'trouble', 'concerns', 'routine', 'body', 'life', 'research', 'account', 'done']; // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
+const SW_ALL = ['hello', 'gender', 'age', 'skin', 'concerns', 'account', 'done']; // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
 // はじめの質問の「アカウントを作成／ログイン」：成功したら次の質問へ進む
 async function swAuth() {
   if (!swState || swState.busy) return;
@@ -4581,15 +4588,14 @@ function swStepHtml(step) {
     h = `<p class="sw-q">アカウントを作成</p><p class="sw-sub">登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。あとからでも登録できます</p>
     <div class="auth-entry sw-entry"><button type="button" class="btn btn-primary" data-swauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-swauth="login">ログイン</button></div>
     ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}`; }
-  if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
-  if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない']]), v.ageBand);
+  if (step === 'gender') h = `<p class="sw-q">性別</p>` + swOpts('gender', [['男性', '男性'], ['女性', '女性'], ['', '回答しない', 1]], v.gender);
+  if (step === 'age') h = `<p class="sw-q">年代</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '回答しない']]), v.ageBand);
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
     <div class="sw-nums"><label>身長<span class="unit"><input class="input" id="sw-h" inputmode="decimal" placeholder="例：160" value="${esc(v.height)}">cm</span></label><label>体重<span class="unit"><input class="input" id="sw-w" inputmode="decimal" placeholder="例：52" value="${esc(v.weight)}">kg</span></label></div>`;
   const dq = (k, first) => { const q = DIAG_Q.find(x => x.k === k); return `<p class="sw-sec${first ? ' sw-sec1' : ''}">${esc(q.q)}${q.multi ? '<small>（いくつでも）</small>' : ''}</p>` + swOpts(k, q.o, q.multi ? (Array.isArray(v[k]) ? v[k] : []) : (v[k] || ''), q.multi); };
-  if (step === 'skin1') h = `<p class="sw-q">肌の状態</p>` + dq('tight', 1) + dq('oilDay') + dq('tz') + dq('dryAreas');
-  if (step === 'skin2') h = `<p class="sw-q">肌のトラブル</p>` + dq('red', 1) + dq('acne') + dq('pore') + dq('sens');
+  if (step === 'skin') h = `<p class="sw-q">肌について</p>` + dq('tight', 1) + dq('oilDay') + dq('acne') + dq('red') + dq('sens');
   if (step === 'trouble') h = `<p class="sw-q">過去に肌トラブルが起きた成分は？</p><p class="sw-sub">いくつでも選べます。選んだ成分は、提案から外します</p>` + swOpts('trouble', DIAG_Q.find(x => x.k === 'trouble').o, Array.isArray(v.trouble) ? v.trouble : [], true);
-  if (step === 'concerns') h = `<p class="sw-q">いま気になっている肌悩みは？</p><p class="sw-sub">いくつでも選べます</p>` + swOpts('concerns', CONCERN_MASTER.map(c => [c.k, c.l]), v.concerns, true);
+  if (step === 'concerns') h = `<p class="sw-q">気になる肌悩み<small>（いくつでも）</small></p>` + swOpts('concerns', CONCERN_MASTER.map(c => [c.k, c.l]), v.concerns, true);
   if (step === 'routine') h = `<p class="sw-q">ふだんのケア</p>` + dq('makeup', 1) + dq('timeAm') + dq('timePm') + `<p class="sw-sub" style="margin-top:12px">使っている化粧品は、診断のあとに「Myアイテム」で登録すると、ケアの順番に反映されます</p>`;
   if (step === 'life') h = `<p class="sw-q">生活と予算</p><p class="sw-sub">睡眠の記録と、化粧品の支出の管理に使います</p>
     <p class="sw-sec">ちょうどいい睡眠時間</p><select class="select" id="sw-sleep">${[300, 330, 360, 390, 420, 450, 480, 510, 540].map(m => `<option value="${m}" ${m === v.sleepNeed ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>
@@ -4611,13 +4617,13 @@ function swPaint() {
   const mb = $('#modal-root .modal-body'), top = mb ? mb.scrollTop : 0;
   if (b.firstChild) swGrab();
   const list = swSteps().filter(x => x !== 'hello' && x !== 'done');
-  b.innerHTML = `<p class="sw-intro">あてはまるものを選んでください（2分ほど）。答えると肌質を診断して、あなた専用の朝・夜のケアを組み立てます。あとからやり直せます。</p>`
+  b.innerHTML = `<p class="sw-intro">あてはまるものを選んでください（1分ほど）。肌質を診断して、朝・夜のケアを組み立てます。</p>`
     + list.map(step => `<section class="sw-card" id="sw-s-${step}">${swStepHtml(step)}</section>`).join('')
     + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-action="setup-finish">診断する</button>`;
   if (mb) mb.scrollTop = top;
 }
-const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin1' ? !!(v.tight || v.oilDay) : step === 'skin2' ? !!(v.red || v.acne) : step === 'concerns' ? v.concerns.length > 0 : true; };
+const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.tight || v.oilDay) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
   const v = swState.v, err = $('#sw-err');
@@ -4629,9 +4635,9 @@ function swRead() {
     if (w && !(Number(w) >= 20 && Number(w) <= 250)) return bad('体重は20〜250の数字で入れてください（空欄でも大丈夫です）', 'body');
     v.height = h ? Math.round(Number(h) * 10) / 10 : ''; v.weight = w ? Math.round(Number(w) * 10) / 10 : '';
   }
-  if ($('#sw-s-skin1')) { // 肌質診断：肌の質問に4つ以上答えていないと、診断できない
-    const n = ['tight', 'oilDay', 'tz', 'dryAreas', 'red', 'acne', 'pore', 'sens'].filter(k => Array.isArray(v[k]) ? v[k].length : !!v[k]).length;
-    if (n < 4) return bad('肌質を診断するには、肌の状態・トラブルの質問に4つ以上答えてください（「あとで」で閉じることもできます）', n ? 'skin2' : 'skin1');
+  if ($('#sw-s-skin')) { // 肌質診断：肌の質問に3つ以上答えていないと、診断できない
+    const n = ['tight', 'oilDay', 'acne', 'red', 'sens'].filter(k => !!v[k]).length;
+    if (n < 3) return bad('肌質を診断するには、肌の質問に3つ以上答えてください（「あとで」で閉じることもできます）', 'skin');
   }
   if ($('#sw-sleep')) {
     v.sleepNeed = Number($('#sw-sleep').value) || 420;
@@ -7504,9 +7510,9 @@ function diagCompute(a, concernKeys) {
   const sensitive = sens >= 3 || has('sens', 'yes');
   const types = [main].concat(sensitive ? ['sensitive'] : []);
   // 確信度：答えた数と、答えどうしの食い違い
-  const keys = ['tight', 'oilDay', 'tz', 'dryAreas', 'red', 'acne', 'pore', 'sens'];
-  const answered = keys.filter(k => Array.isArray(a[k]) ? a[k].length : !!a[k]).length;
-  let conf = answered >= 7 ? 2 : answered >= 5 ? 1 : 0; const confWhy = [];
+  const keys = ['tight', 'oilDay', 'acne', 'red', 'sens']; // アンケートで聞く肌の質問（5問）
+  const answered = keys.filter(k => !!a[k]).length;
+  let conf = answered >= 5 ? 2 : answered >= 4 ? 1 : 0; const confWhy = [];
   if (answered < keys.length) confWhy.push(`肌の質問${keys.length}問のうち${answered}問に回答`);
   if (has('oilDay', 'little') && (has('tz', 'bothOily'))) { conf = Math.max(0, conf - 1); confWhy.push('皮脂の答えに食い違いがある'); }
   if (main === 'normal' && (dry >= 1.5 || oil >= 1.5)) { conf = Math.max(0, conf - 1); confWhy.push('乾燥と皮脂のどちらの特徴も少しずつある'); }
@@ -8723,13 +8729,7 @@ function logDayDetailHtml(list, i) {
   const photo = safeImg(l.photo);
   const used = l.usedProducts.map(id => getMy(id)).filter(Boolean);
   const n = logShownNums(l);
-  return `<div class="log-grid">
-      <div class="stat"><div class="lbl">ニキビ</div><div class="val">${n.acne}<span class="small muted">個</span></div></div>
-      <div class="stat"><div class="lbl">赤み</div><div class="val">${n.red}</div></div>
-      <div class="stat"><div class="lbl">乾燥</div><div class="val">${n.dry}</div></div>
-      <div class="stat"><div class="lbl">皮脂</div><div class="val">${n.oil}</div></div>
-    </div>
-    ${used.length ? `<div class="used-grid home-used ld-used">${used.map(myTileHtml).join('')}</div>` : ''}
+  return `    ${used.length ? `<div class="used-grid home-used ld-used">${used.map(myTileHtml).join('')}</div>` : ''}
     ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}
     ${photo ? `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">` : ''}
     <div class="ld-life">${lifeSumHtml(lifeMap()[l.date], l.date)}</div>
