@@ -4853,7 +4853,12 @@ function openSupport() {
   const ov = document.createElement('div'); ov.className = 'au-ov sp-ov';
   const premium = isPremium();
   // 横から出るページ：うしろの画面はそのまま（固定しない）ので、戻ったときに画面がずれない
-  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); setTimeout(() => ov.remove(), 320); };
+  // 開いたときに履歴を1つ足す：iPhoneの「左の端から右へなぞって戻る」は、この1つだけを戻す（お問い合わせを閉じるだけで、その前の画面までは戻らない）
+  let histOn = false;
+  const onPop = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); if (!ov._closing) { ov._closing = true; ov.remove(); } }; // 戻る操作（iPhoneのスワイプ・Androidの戻る）で閉じたとき：iPhoneの動きにまかせて、すぐ消す
+  const dropHist = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); history.back(); }; // ボタン・アプリ内のスワイプで閉じたとき：足した履歴を戻しておく（同じアドレスなので画面は変わらない）
+  try { history.pushState({spOv:1}, '', location.href); histOn = true; window.addEventListener('popstate', onPop); } catch (e) { /* 何もしない */ }
+  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); dropHist(); setTimeout(() => ov.remove(), 320); };
   const head = `<div class="au-head"><button type="button" class="au-back sp-backbtn" data-sp="close" aria-label="戻る"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>お問い合わせ</h2><span></span></div>`;
   if (!premium) {
     ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
@@ -4872,7 +4877,7 @@ function openSupport() {
   document.body.appendChild(ov); requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('in')));
   { // 右へなぞると、指についてきて、離すと前の画面に戻る（ほかの画面の「戻る」と同じ）
     let sx = null, sy = 0, dx = 0, lock = '', t0 = 0;
-    ov.addEventListener('touchstart', e => { if (e.touches.length !== 1 || ov._closing) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; lock = ''; t0 = performance.now(); }, {passive:true});
+    ov.addEventListener('touchstart', e => { if (e.touches.length !== 1 || ov._closing || e.touches[0].clientX < 24) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; lock = ''; t0 = performance.now(); }, {passive:true});
     ov.addEventListener('touchmove', e => {
       if (sx == null) return;
       const mx = e.touches[0].clientX - sx, my = e.touches[0].clientY - sy;
@@ -4882,7 +4887,7 @@ function openSupport() {
     const end = () => {
       if (sx == null || lock !== 'x') { sx = null; return; } sx = null;
       const v = dx / Math.max(1, performance.now() - t0);
-      if (dx > ov.offsetWidth * 0.3 || (v > 0.35 && dx > 40)) { ov._closing = true; ov.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = 'translate3d(100%,0,0)'; hapticTick(); setTimeout(() => ov.remove(), 280); }
+      if (dx > ov.offsetWidth * 0.3 || (v > 0.35 && dx > 40)) { ov._closing = true; ov.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = 'translate3d(100%,0,0)'; hapticTick(); dropHist(); setTimeout(() => ov.remove(), 280); }
       else { ov.style.transition = 'transform .3s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = ''; }
     };
     ov.addEventListener('touchend', end); ov.addEventListener('touchcancel', end);
