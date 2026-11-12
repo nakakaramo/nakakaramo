@@ -2226,6 +2226,49 @@ body{-webkit-tap-highlight-color:transparent}
 svg{shape-rendering:geometricPrecision}
 img{image-rendering:auto}
 
+
+/* ===== 今日のおすすめケア（肌・天気・睡眠・食事・運動をまとめて） ===== */
+.ct2-lead{margin:2px 0 10px;font-size:14px;line-height:1.7;font-weight:500;color:var(--ink)}
+.ct2-in{background:var(--surface2);border-radius:12px;padding:9px 12px;margin:0 0 4px}
+.ct2-in summary{font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer}
+.ct2-r{display:flex;gap:10px;padding:7px 0 0;font-size:13px;line-height:1.6}
+.ct2-r>span:first-child{flex:none;width:3em;white-space:nowrap;color:var(--muted);font-weight:500}
+.ct2-r>span:last-child{flex:1;min-width:0;font-weight:500}
+.ct2-sec{margin-top:14px}
+.ct2-sec h4{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:13px;font-weight:600;color:var(--green-d);white-space:nowrap}
+.ct2-sec h4 svg{width:16px;height:16px}
+.ct2-i{padding:10px 0;border-top:1px solid var(--line)}
+.ct2-i b{display:block;font-size:14px;font-weight:600;line-height:1.55;color:var(--ink)}
+.ct2-i p{margin:3px 0 0;font-size:12.5px;line-height:1.65;color:var(--muted);font-weight:400}
+.ct2-src{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.ct2-src span{font-size:11px;font-weight:500;line-height:1;padding:4px 8px;border-radius:999px;background:var(--surface2);color:var(--ink2);white-space:nowrap}
+
+/* ===== 項目名と中身：項目名は上に1行で、中身は横幅いっぱい（縦読みにならないように） ===== */
+.rt-dl{display:block!important;padding:9px 0}
+.rt-dl>b{display:block;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;margin:0 0 2px;padding:0}
+.rt-dl>div{font-size:13.5px;line-height:1.7;font-weight:400}
+.cc-ab{font-weight:600!important}
+.cc-skin,.cc-rule,.cc-why,.cc-sub{font-weight:400!important}
+
+/* ===== 肌との比較 ===== */
+.cmp2-h{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px}
+.cmp2-h div{display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;font-weight:600}
+.cmp2-h div span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp2-m{padding:11px 0;border-top:1px solid var(--line)}
+.cmp2-t{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.cmp2-t>span{font-size:13.5px;font-weight:600;white-space:nowrap}
+.cmp2-t em{font-style:normal;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.cmp2-t em.a{background:#E3F0E6;color:var(--green-d)}.cmp2-t em.b{background:#F6E8DA;color:#9A5B22}
+.cmp2-b{display:grid;grid-template-columns:22px 1fr 3em;gap:8px;align-items:center;margin-top:5px}
+.cmp2-b .bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.cmp2-b .bar i{display:block;height:100%;border-radius:99px}
+.cmp2-b.a .bar i{background:var(--green-d)}.cmp2-b.b .bar i{background:#C27C3B}
+.cmp2-b b{font-size:14px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cmp2-b b small{font-size:11px;font-weight:400;color:var(--muted)}
+.cmp2-d{padding:10px 0;border-top:1px solid var(--line)}
+.cmp2-d>span{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.cmp2-d div{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:13px;line-height:1.6;margin-top:3px;font-weight:400}
+.cmp-row .select{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -4088,7 +4131,7 @@ function viewHome() {
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
-  const careCard = careHomeCard() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
+  const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -7021,26 +7064,24 @@ function viewCompare() {
     ['期間', x => `${fmtShort(x.p.startDate)}〜${x.p.status === '使用終了' ? fmtShort(x.p.endDate) : '今日'}（${x.days}日）`],
     ['カテゴリ・目的', x => esc([x.p.category].concat(x.p.purposes).join('・'))],
     ['肌記録の件数', x => `${x.s.n}件`],
-    ['肌の調子 平均', x => enough(x) ? f1(x.s.cond) : '記録不足'],
-    ['ニキビ 1日平均', x => enough(x) ? f1(x.s.acneAvg) : '記録不足'],
-    ['赤み／乾燥／皮脂', x => enough(x) ? `${f1(x.s.red)}／${f1(x.s.dry)}／${f1(x.s.oil)}` : '記録不足'],
     ['実際の使用記録', x => esc(x.fc.status === 'none' ? '記録なし' : `${x.fc.used}日使用（使用を記録した${x.fc.recorded}日中）`)],
     ['メモ', x => esc(truncate(x.p.memo, 60) || '—')]
   ];
   // ひと目でわかる比較：肌の調子・ニキビ・赤み・乾燥・皮脂を、A と B で並べ、良いほうに色を付ける
-  const metric = (label, ka, kb, betterLow, fmt) => {
-    const va = enough(a) ? ka(a.s) : null, vb = enough(b) ? kb(b.s) : null;
+  const metric = (label, k, betterLow, max) => {
+    const va = enough(a) ? k(a.s) : null, vb = enough(b) ? k(b.s) : null;
     const win = va == null || vb == null || Math.abs(va - vb) < 0.05 ? '' : (betterLow ? (va < vb ? 'a' : 'b') : (va > vb ? 'a' : 'b'));
-    return `<div class="cmp-m"><span class="cmp-ml">${label}</span><b class="${win === 'a' ? 'win' : ''}">${va == null ? '<small>記録不足</small>' : fmt(va)}</b><b class="${win === 'b' ? 'win' : ''}">${vb == null ? '<small>記録不足</small>' : fmt(vb)}</b></div>`;
+    const mx = Math.max(max, va || 0, vb || 0) || 1;
+    const bar = (key, v) => `<div class="cmp2-b ${key}"><i class="cmp-${key}">${key.toUpperCase()}</i><span class="bar"><i style="width:${v == null ? 0 : Math.max(3, v / mx * 100).toFixed(0)}%"></i></span><b>${v == null ? '<small>記録不足</small>' : f1(v)}</b></div>`;
+    return `<div class="cmp2-m"><div class="cmp2-t"><span>${label}</span><em class="${win}">${va == null || vb == null ? '比べられません' : win ? `${win.toUpperCase()}のほうが良い` : 'ほぼ同じ'}</em></div>${bar('a', va)}${bar('b', vb)}</div>`;
   };
   html += `<div class="card"><div class="card-h"><h2>肌の状態をくらべる</h2><span class="chip">記録の平均</span></div>
-    <div class="cmp-m cmp-mh"><span></span><b><i class="cmp-a">A</i><span>${A ? esc(truncate(shortName(A.name), 16)) : ''}</span></b><b><i class="cmp-b">B</i><span>${B ? esc(truncate(shortName(B.name), 16)) : ''}</span></b></div>
-    ${metric('肌の調子', s => s.cond, s => s.cond, false, f1)}${metric('ニキビ/日', s => s.acneAvg, s => s.acneAvg, true, f1)}${metric('赤み', s => s.red, s => s.red, true, f1)}${metric('乾燥', s => s.dry, s => s.dry, true, f1)}${metric('皮脂', s => s.oil, s => s.oil, true, f1)}
-    <p class="small muted" style="margin-top:8px">色が付いているほうが、その期間の肌の状態が良かった数字です（調子は高いほど、ほかは低いほど良い）。記録が3件未満の期間は出しません。</p></div>`;
-  html += `<details class="card fold cmp-detail"><summary><b>くわしい表（期間・使用回数・金額など）</b></summary><div class="table-wrap" style="margin-top:10px"><table class="table">
-    <thead><tr><th></th><th>${A ? esc(truncate(A.name, 20)) : 'A'}</th><th>${B ? esc(truncate(B.name, 20)) : 'B'}</th></tr></thead>
-    <tbody>${rows.map(([l, fn]) => `<tr><td class="small muted">${l}</td><td>${show(a, fn)}</td><td>${show(b, fn)}</td></tr>`).join('')}</tbody></table></div>
-    <p class="small muted" style="margin-top:10px">期間が重なっている場合、同じ肌記録が両方に含まれます。記録が3件未満の期間は数値を出しません。</p></details>`;
+    <div class="cmp2-h"><div><i class="cmp-a">A</i><span>${A ? esc(shortName(A.name)) : ''}</span></div><div><i class="cmp-b">B</i><span>${B ? esc(shortName(B.name)) : ''}</span></div></div>
+    ${metric('肌の調子（高いほど良い）', s => s.cond, false, 5)}${metric('ニキビ（1日あたり）', s => s.acneAvg, true, 3)}${metric('赤み', s => s.red, true, 5)}${metric('乾燥', s => s.dry, true, 5)}${metric('皮脂', s => s.oil, true, 5)}
+    <p class="small muted" style="margin-top:8px">数字は記録の平均です。記録が3件未満の期間は出しません。</p></div>`;
+  html += `<details class="card fold cmp-detail"><summary><b>くわしく（期間・使った回数など）</b></summary>
+    ${rows.map(([l, fn]) => `<div class="cmp2-d"><span>${l}</span><div><i class="cmp-a">A</i><span>${show(a, fn)}</span></div><div><i class="cmp-b">B</i><span>${show(b, fn)}</span></div></div>`).join('')}
+    <p class="small muted" style="margin-top:10px">期間が重なっている場合、同じ肌記録が両方に含まれます。</p></details>`;
   // 商品を変えた時期の振り返り
   const t = todayStr();
   const events = [];
@@ -10472,6 +10513,7 @@ function adviceInput() {
   const sleepNeedH = r1((state.settings.sleepNeed || 420) / 60);
   return {
     profile:{skinType:state.settings.skinType || null, sensitive:!!state.settings.sensitive, concerns:state.settings.concerns, sleepNeedHours:sleepNeedH},
+    weatherToday:(() => { const w = state.weather[t]; return w ? {humidity:w.hum, tempMin:w.tmin, tempMax:w.tmax, uvMax:w.uv} : null; })(), // 今日の天気（湿度・気温・UV）もケアの判断に使う
     skin:{days:logs.length, cond:r1(S.cond), condPrevWeek:r1(P.cond), acneTotal:S.acneTotal, acnePrevWeek:prev.length ? P.acneTotal : null, redness:r1(S.red), dryness:r1(S.dry), oil:r1(S.oil),
       acneByArea:Object.fromEntries(Object.entries(spots).map(([k, v]) => [areaName(k), v])), concernAreasDays:Object.fromEntries(Object.entries(flags).map(([k, v]) => [areaName(k), v])), otherConcerns:conc,
       face:(() => { const f = faceFindings(7); return f.days ? {days:f.days, acneKinds:f.acne.kinds, concerns:Object.fromEntries(Object.entries(f.conc).map(([c, o]) => [c, {maxLevel:o.max, days:o.days, areas:[...o.areas]}])), summary:faceFindingsText(f)} : null; })(), // 3Dの顔に入れた記録
@@ -10491,6 +10533,72 @@ function adviceInput() {
     // 使っている化粧品の種類と、入っている主な成分（商品名は送らない）
     products:state.myProducts.filter(p => p.status === '使用中').slice(0, 12).map(p => ({category:p.category, ings:knownIngs(ingsOfMy(p)).map(x => x.entry.name.replace(/（.*?）/g, ''))}))
   };
+}
+// ===== 今日のおすすめケア：3Dの顔の記録・睡眠・運動・食事・今日の天気（湿度・気温・UV）を全部合わせて決める =====
+function careTodayData() {
+  const t = todayStr(), d = adviceInput(), ff = faceFindings(7), sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal;
+  const w0 = state.weather[t], nw = wxNowOk() ? WX_NOW : null;
+  const w = w0 ? {hum:nw && nw.hum != null ? nw.hum : w0.hum, uv:w0.uv != null ? w0.uv : nw && nw.uv, tmin:w0.tmin, tmax:w0.tmax} : null;
+  const lv = c => (ff.conc[c] || {}).max || 0;
+  const dry = Math.max(lv('乾燥'), sk.dryness || 0), red = Math.max(lv('赤み'), lv('肌あれ'), lv('ヒリヒリ感'), lv('かゆみ'), sk.redness || 0), oil = Math.max(lv('テカリ'), sk.oil || 0);
+  const dull = Math.max(lv('くすみ'), ff.marks ? 3 : 0), rough = Math.max(lv('ざらつき'), lv('毛穴の目立ち'));
+  const acne = ff.days ? ff.acne.total : (sk.acneTotal || 0), inflamed = ff.inflamed, need = d.profile.sleepNeedHours;
+  const hasSkin = ff.days || sk.days, hasSleep = sl.days > 0, hasMeal = ml.foodDays > 0 || ml.days > 0, hasEx = ex.recordedDays > 0;
+  const short = hasSleep && sl.avgHours < need - 0.5, late = hasSleep && sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime);
+  const lowHum = w && w.hum < 50, uvHi = w && w.uv >= 6, uvMid = w && w.uv >= 3, cold = w && w.tmax < 10, hot = w && w.tmax >= 28;
+  const snack = hasMeal && ml.snackDays >= 3, protLow = ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8, vitCLow = ml.foodDays >= 3 && ml.vitCDays < 3, vegLow = ml.avgVeg != null && ml.avgVeg < 250;
+  // 使っている商品の中の、刺激が出やすい成分（今夜休むか決めるため）
+  const strong = []; state.myProducts.filter(p => p.status === '使用中').forEach(p => { const ks = knownIngs(ingsOfMy(p)).map(x => x.entry.key); if (ks.some(k => ['retinoid', 'aha', 'bha'].includes(k)) || /アダパレン|ディフェリン|ベピオ|過酸化ベンゾイル/.test(p.name + (p.ingredients || ''))) strong.push(shortName(p.name).slice(0, 16)); });
+  const calm = red >= 3 || inflamed >= 3 || (short && (dry >= 3 || red >= 2)) || (lowHum && dry >= 4);
+  const wxs = w ? `湿度${Math.round(w.hum)}%` : '', sleepS = hasSleep ? `睡眠${sl.avgHours}時間` : '';
+  const items = [];
+  const add = (when, title, why, src) => items.push({when, title, why:why.filter(Boolean).join('。') + '。', src});
+  // ---- 朝 ----
+  if (oil >= 3 || hot) add('朝', '朝も洗顔料で、やさしく皮脂を落とす', [oil >= 3 ? `テカリ・皮脂が強め（${oil}）` : '', hot ? `最高気温${Math.round(w.tmax)}℃で汗と皮脂が出やすい日` : ''], [oil >= 3 ? '肌' : '', hot ? '天気' : '']);
+  else if (dry >= 3 || red >= 3 || lowHum || cold) add('朝', '朝はぬるま湯だけで洗う', [dry >= 3 ? `乾燥が強め（${dry}）` : '', red >= 3 ? `赤み・肌あれがある（${red}）` : '', lowHum ? `${wxs}で空気が乾いている` : '', cold ? `最高気温${Math.round(w.tmax)}℃で寒い` : '', '洗顔料を使うと、うるおいまで落ちやすくなります'], [dry >= 3 || red >= 3 ? '肌' : '', lowHum || cold ? '天気' : '']);
+  if (dry >= 3 || lowHum || cold || short) add('朝', '化粧水のあと、乳液かクリームでふたをする', [dry >= 3 ? `3Dの記録で乾燥（強さ${dry}）` : '', lowHum ? `${wxs}` : '', cold ? '寒さで肌の水分が逃げやすい' : '', short ? `${sleepS}で、肌のバリアが弱りやすい` : ''], [dry >= 3 ? '肌' : '', lowHum || cold ? '天気' : '', short ? '睡眠' : '']);
+  else if (oil >= 3 || hot) add('朝', '保湿は軽いジェルか乳液を少なめに', [oil >= 3 ? 'テカリが出やすい' : '', hot ? '暑い日はべたつきやすい' : '', '保湿をやめると、かえって皮脂が増えることがあります'], [oil >= 3 ? '肌' : '', hot ? '天気' : '']);
+  const uvT = !w ? '日焼け止めを毎朝塗る' : uvHi ? `UV${Math.round(w.uv)}：SPF50・PA++++を2〜3時間ごとに塗り直す` : uvMid ? `UV${Math.round(w.uv)}：SPF30以上の日焼け止めを塗る` : `UV${Math.round(w.uv)}：くもりでも日焼け止めを塗る`;
+  add('朝', uvT, [dull ? 'くすみ・ニキビ跡が紫外線で濃くなりやすい' : '', inflamed ? '赤いニキビは、紫外線で跡（茶色いシミ）が残りやすい' : '', uvHi && ex.activeDays ? '外で運動する日は、汗のあとに塗り直す' : '', !dull && !inflamed ? '紫外線は乾燥・シミ・肌の老化の大きな原因です' : ''], ['天気', dull || inflamed ? '肌' : '', uvHi && ex.activeDays ? '運動' : '']);
+  // ---- 夜 ----
+  const S = ingSuggest(), names = S.top.map(x => x.e.ja.replace(/（.*?）/g, ''));
+  if (calm && strong.length) add('夜', `今夜は「${strong[0]}」${strong.length > 1 ? 'など' : ''}をお休み`, [red >= 3 ? `赤み・肌あれ（${red}）がある` : '', inflamed >= 3 ? `赤いニキビが${inflamed}個` : '', short ? `${sleepS}で肌が回復しきっていない` : '', lowHum && dry >= 4 ? `${wxs}で乾燥も強い` : '', '刺激の出やすい成分は、落ち着いてから再開します（処方薬は医師の指示を優先）'], ['肌', short ? '睡眠' : '', lowHum ? '天気' : '']);
+  if (names.length) add('夜', `${names.slice(0, 2).join('・')}の入ったケアを使う`, [ff.days ? `この1週間の3Dの記録：${faceFindingsText(ff)}` : '肌質診断の結果から', names.length > 2 ? `ほかに${names[2]}も合います` : ''], ['肌']);
+  if (dry >= 3 || lowHum || cold || calm) add('夜', '最後にクリームを重ねて、うるおいを閉じ込める', [dry >= 3 ? `乾燥（${dry}）` : '', lowHum ? `${wxs}` : '', calm ? '肌を休ませる日はバリアを守るのが先' : ''], [dry >= 3 || calm ? '肌' : '', lowHum || cold ? '天気' : '']);
+  if (acne) { const top = Object.entries(ff.days ? ff.acne.areas : sk.acneByArea).sort((a, b) => b[1] - a[1])[0]; add('夜', `${top ? top[0] + 'の' : ''}ニキビは触らない・つぶさない`, [`この1週間でニキビ${acne}個${inflamed ? `（赤いニキビ${inflamed}個）` : ''}`, '髪・マスク・枕カバーがふれる所は清潔に'], ['肌']); }
+  // ---- 生活（睡眠・食事・運動）----
+  if (short || late) { const bt = sl.avgBedtime ? (() => { const [h, m] = sl.avgBedtime.split(':').map(Number); let x = h * 60 + m - 30; if (x < 0) x += 1440; return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; })() : ''; add('生活', `今夜は${late && bt ? bt + 'まで' : 'いつもより30分早く'}に寝る`, [`平均${sl.avgHours}時間${sl.avgBedtime ? `・寝る時刻${sl.avgBedtime}ごろ` : ''}（目安${need}時間）`, dry >= 3 || acne ? `寝不足は${acne ? 'ニキビ' : ''}${acne && dry >= 3 ? 'や' : ''}${dry >= 3 ? '乾燥' : ''}を悪くしやすい` : '肌は寝ている間に回復します'], ['睡眠', dry >= 3 || acne ? '肌' : '']); }
+  else if (!hasSleep) add('生活', '睡眠を記録する', ['寝た時刻と起きた時刻を入れると、肌との関係も合わせて提案できます'], ['睡眠']);
+  if ((acne || oil >= 3) && snack) add('生活', '甘い間食をナッツ・ヨーグルトに替える', [`間食した日が${ml.snackDays}日`, acne ? `ニキビ${acne}個` : 'テカリが強め', '甘い物が多いと、皮脂やニキビが増えることがあります'], ['食事', '肌']);
+  if (protLow) add('生活', '毎食、卵・納豆・魚などを手のひら1枚分', [`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）`, '肌をつくる材料になります'], ['食事']);
+  else if ((dull || uvHi || inflamed) && (vitCLow || vegLow)) add('生活', 'キウイ・ブロッコリーなどビタミンCを1品', [vitCLow ? `ビタミンCの多い物を食べた日は${ml.vitCDays}日` : `野菜が1日${ml.avgVeg}g`, dull ? 'くすみ・ニキビ跡のケアにも' : uvHi ? `UV${Math.round(w.uv)}の日は特に` : ''], ['食事', dull || inflamed ? '肌' : '', uvHi ? '天気' : '']);
+  else if (dry >= 3 && hasMeal) add('生活', '鮭・さば・くるみなど良い脂をとる', [`乾燥（${dry}）`, '肌のうるおいを保つ脂質の材料になります'], ['食事', '肌']);
+  else if (!hasMeal) add('生活', '食事を記録する', ['食べた物を入れると、足りない栄養と肌の関係を合わせて提案できます'], ['食事']);
+  if (hasEx && ex.activeDays && (acne || oil >= 3)) add('生活', '運動で汗をかいたら、すぐ洗顔と保湿', [`1週間で${ex.activeDays}日・${ex.totalMin}分の運動`, '汗や皮脂をそのままにすると、ニキビができやすくなります'], ['運動', '肌']);
+  else if (hasEx && ex.activeDays < 2 && (short || dull)) add('生活', '10分の散歩をする', [`運動した日は${ex.activeDays}日`, short ? '体を動かすと寝つきが良くなります' : '血のめぐりが良くなり、顔色が明るく見えます', uvMid ? '日中なら日焼け止めを' : ''], ['運動', short ? '睡眠' : '肌', uvMid ? '天気' : '']);
+  else if (!hasEx) add('生活', '運動を記録する', ['運動した日を入れると、肌との関係も合わせて提案できます'], ['運動']);
+  items.forEach(x => { x.src = [...new Set(x.src.filter(Boolean))]; });
+  // ひとことのまとめ
+  const why = [lowHum ? `空気が乾燥（${wxs}）` : '', uvHi ? `紫外線が強い（UV${Math.round(w.uv)}）` : '', short ? `睡眠不足（${sl.avgHours}時間）` : '', dry >= 3 ? '肌の乾燥' : '', inflamed ? '赤いニキビ' : (acne ? 'ニキビ' : ''), red >= 3 ? '赤み' : '', oil >= 3 ? 'テカリ' : ''].filter(Boolean).slice(0, 3);
+  const lead = !hasSkin && !w ? '肌の記録と天気がそろうと、今日に合わせたケアを出せます。' : why.length ? `今日は${why.join('・')}が重なっています。${calm ? '刺激を減らして、守りのケアを優先しましょう。' : dry >= 3 || lowHum ? 'うるおいを守るケアを中心にしましょう。' : acne ? 'ニキビを増やさないケアを続けましょう。' : '基本のケアを続けましょう。'}` : '大きな問題は見つかりません。基本のケアを続けましょう。';
+  // 判断に使った記録（左に項目名、右に中身）
+  const fz = !ff.days ? (sk.days ? `調子${sk.cond != null ? sk.cond : '—'}・ニキビ${acne}個` : '') : [acne ? `ニキビ${acne}個` : '', ...Object.entries(ff.conc).sort((a, b) => b[1].max - a[1].max).slice(0, 2).map(([c, o]) => `${c}${o.max}`)].filter(Boolean).join('・');
+  const inputs = [
+    ['肌', fz || '記録なし', !fz],
+    ['天気', w ? `湿度${Math.round(w.hum)}%・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${w.uv == null ? '－' : Math.round(w.uv)}` : '地域が未設定', !w],
+    ['睡眠', hasSleep ? `平均${sl.avgHours}時間${sl.avgBedtime ? `・${sl.avgBedtime}ごろ就寝` : ''}` : '記録なし', !hasSleep],
+    ['食事', hasMeal ? [ml.avgProtein != null ? `たんぱく質${Math.round(ml.avgProtein)}g/日` : '', ml.snackDays ? `間食${ml.snackDays}日` : '', ml.avgVeg != null ? `野菜${ml.avgVeg}g/日` : ''].filter(Boolean).join('・') || `${ml.days}日分` : '記録なし', !hasMeal],
+    ['運動', hasEx ? `${ex.activeDays}日・合計${ex.totalMin}分` : '記録なし', !hasEx]
+  ];
+  return {lead, inputs, items, calm};
+}
+function careTodayHtml() {
+  let D; try { D = careTodayData(); } catch (e) { return ''; }
+  const sec = (k, ic) => { const L = D.items.filter(x => x.when === k); return L.length ? `<div class="ct2-sec"><h4>${icon(ic)}${k === '生活' ? '生活（睡眠・食事・運動）' : k}</h4>${L.map(x => `<div class="ct2-i"><b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.length ? `<div class="ct2-src">${x.src.map(s => `<span>${esc(s)}</span>`).join('')}</div>` : ''}</div>`).join('')}</div>` : ''; };
+  return `<div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2><span class="chip">${esc(fmtShort(todayStr()))}</span></div>
+    <p class="ct2-lead no-ph">${esc(D.lead)}</p>
+    <details class="ct2-in"><summary>判断に使った記録（直近7日・今日の天気）</summary>${D.inputs.map(([k, v, none]) => `<div class="ct2-r"><span>${k}</span><span class="${none ? 'muted' : ''}">${esc(v)}</span></div>`).join('')}</details>
+    ${sec('朝', 'sun')}${sec('夜', 'moon')}${sec('生活', 'spark')}</div>`;
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
 const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
