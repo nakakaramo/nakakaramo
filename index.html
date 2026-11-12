@@ -7795,6 +7795,14 @@ function faceFindingsText(f) {
   Object.entries(f.conc).sort((x, y) => y[1].max - x[1].max).slice(0, 3).forEach(([c, o]) => a.push(`${c}（強さ${o.max}${o.areas.size ? '：' + [...o.areas].slice(0, 2).join('・') : ''}）`));
   return a.join('、');
 }
+// 悩みごとの定番の成分（前ほど優先）。3Dの記録・肌質診断の悩みから、おすすめ成分を選ぶときの目安
+const ING_CORE = {
+  dry:['ceramide', 'hyaluronic', 'glycerin', 'ceramidenp'], sensitive:['ceramide', 'panthenol', 'centella', 'glycerin'],
+  redness:['centella', 'azelaic', 'panthenol', 'glycyrrhizinate', 'tranexamic'], acne:['niacinamide', 'azelaic', 'salicylic', 'zincpca'],
+  pore:['salicylic', 'niacinamide', 'vitcd'], oily:['niacinamide', 'zincpca', 'vitcd'], rough:['urea', 'lactic', 'pha', 'salicylic'],
+  dull:['vitcd', 'niacinamide', 'tranexamic'], acnemark:['vitcd', 'tranexamic', 'azelaic', 'niacinamide'], spot:['vitcd', 'tranexamic', 'niacinamide', 'arbutin'],
+  aging:['retinol', 'niacinamide', 'peptide', 'bakuchiol'], darkcircle:['vitcd', 'caffeine', 'retinol'], puffy:['caffeine', 'peptide'], uv:['niacinamide', 'vitcd']
+};
 function ingSuggest(d, ownedInfos) {
   d = d || diagCompute({}, concernKeysNow());
   const ff = faceFindings(7);
@@ -7807,12 +7815,15 @@ function ingSuggest(d, ownedInfos) {
   const scored = ING_MASTER.filter(e => !e.rx && !e.oral && !e.care).map(e => {
     let s = 0; const hit = [];
     pri.forEach((k, i) => { if (e.cs.includes(k)) { s += [3, 2.2, 1.6, 1.2, 1, 0.8][i] || 0.6; hit.push(k); } });
+    // その悩みの「定番の成分」（皮膚科でもよくすすめられるもの）を優先する。いちばんの悩みほど強く
+    pri.slice(0, 3).forEach((k, i) => { const core = (ING_CORE[k] || []); const at = core.indexOf(e.k); if (at >= 0) s += [3.2, 2, 1.2][i] * (1 - at * 0.15); });
     s *= EVW[e.ev] || 0.3;
     let block = '';
     if (avoidGrp.has(e.grp)) block = '過去に肌トラブルが起きた成分のため';
+    else if (e.grp === 'hq') block = '刺激が出やすく、医師や薬剤師に相談して使う成分のため';
     else if (calm && e.act >= 2) block = '今は赤み・刺激を落ち着かせることを優先するため';
     else if (e.ev === 'D') block = '肌への効果を示す根拠が不十分なため';
-    if (calm && e.act === 1) s *= 0.6;
+    if (calm && e.act === 1 && e.k !== 'azelaic') s *= 0.6; // アゼライン酸は赤みのあるニキビにも使いやすい
     if (owned.has(e.k)) s *= 1.25; // 持っている商品に入っているなら、新しく買わずに使える
     return {e, s, hit, block, owned:owned.get(e.k) || []};
   }).filter(x => x.hit.length);
@@ -7821,7 +7832,7 @@ function ingSuggest(d, ownedInfos) {
   for (const x of scored) {
     if (x.block || top.length >= 3) continue;
     if (usedGrp.has(x.e.grp)) continue;
-    if (x.hit.every(k => covered.has(k)) && top.length >= 2) continue; // すでにカバーできている悩みだけなら足さない
+    if (x.hit.every(k => covered.has(k)) && top.length >= 3) continue; // 3つまでは、同じ悩みに向く別の働きの成分も出す
     if (top.some(t => t.e.act >= 2) && x.e.act >= 2) continue; // 刺激の強い成分は1つまで
     top.push(x); usedGrp.add(x.e.grp); x.hit.forEach(k => covered.add(k));
   }
@@ -10445,6 +10456,8 @@ function adviceLocal(d) {
     if ((ff.conc['乾燥'] || {}).max >= 3 && !av.includes('エタノール')) av.push('エタノール（多く入った物）');
     if (ff.comedo || (ff.conc['テカリ'] || {}).max >= 3) av.push('油分の多いオイル・クリーム');
     if (ff.inflamed) av.push('ニキビを触る・つぶす');
+    if (ff.marks || (ff.conc['くすみ'] || {}).max) av.push('紫外線を浴びる（跡やくすみが濃くなる）');
+    if ((ff.conc['ざらつき'] || {}).max) av.push('ピーリングのやりすぎ');
     if (!av.length) av.push('ゴシゴシこする洗顔');
     const k0 = ff.keys[0], t0 = {acne:ff.inflamed ? '炎症ニキビをしずめる' : 'つまりニキビを防ぐ', redness:'赤みを落ち着かせる', sensitive:'刺激を減らしてバリアを守る', dry:'うるおいを守る', oily:'皮脂バランスを整える', pore:'毛穴のつまりをケア', rough:'ざらつきをなめらかに', dull:'くすみをケア', acnemark:'ニキビ跡をケア'}[k0] || '今の肌に合わせたケア';
     skin = {title:t0, text:`この1週間の3Dの記録：${faceFindingsText(ff)}。${calm && S.top.some(x => x.e.act >= 2) ? '' : ''}${names.length ? `合う成分は${names.slice(0, 3).join('・')}です。` : ''}`, good:names.length ? names.concat(['日焼け止め（毎朝）']).slice(0, 5) : ['セラミド', '日焼け止め（毎朝）'], avoid:av};
@@ -12981,6 +12994,28 @@ function placeHomeTabInd() {
     indX = b == null ? a + (d > 0 ? 1 : -1) * Math.min(14, Math.abs(d) / 12) * -1 : a + (b - a) * p;
     ind.style.transition = 'none'; ind.style.transform = `translateX(${indX.toFixed(1)}px)`;
   };
+  // 隣のタブの中身も、横に並べて一緒に動かす（めくるように見せる）。押せない「見た目だけ」のコピー
+  let ghosts = {};
+  const tabHtml = k => {
+    const rn = parseRoute().name, save = {h:ui.homeTab, l:ui.logTab, m:ui.myKind, sl:ui.htSlide};
+    try {
+      if (rn === 'log') { ui.logTab = k; return viewLog(); }
+      if (rn === 'my') { ui.myKind = k; return viewMy(); }
+      ui.homeTab = k; return viewHome();
+    } catch (e) { return ''; }
+    finally { ui.homeTab = save.h; ui.logTab = save.l; ui.myKind = save.m; ui.htSlide = save.sl; }
+  };
+  const makeGhost = (k, side) => {
+    const html = tabHtml(k); if (!html || !pane) return null;
+    const tmp = document.createElement('div'); tmp.innerHTML = html; const src = tmp.querySelector('.home-pane'); if (!src) return null;
+    src.querySelectorAll('[id]').forEach(x => x.removeAttribute('id')); src.querySelectorAll('canvas,script,iframe,ins').forEach(x => x.remove());
+    const g = document.createElement('div'); g.className = 'home-pane hp-ghost'; g.setAttribute('aria-hidden', 'true'); g.innerHTML = src.innerHTML;
+    const par = pane.parentElement; if (getComputedStyle(par).position === 'static') par.style.position = 'relative';
+    g.style.cssText = `position:absolute;top:${pane.offsetTop}px;left:${pane.offsetLeft}px;width:${pane.offsetWidth}px;pointer-events:none;transition:none;`;
+    g.dataset.side = side; par.appendChild(g); return g;
+  };
+  const ghostMove = (v, anim) => { const W = pane ? pane.offsetWidth + 16 : window.innerWidth; Object.values(ghosts).forEach(g => { if (!g) return; g.style.transition = anim || 'none'; g.style.transform = `translateX(${(Number(g.dataset.side) * W + v).toFixed(1)}px)`; }); };
+  const ghostClear = () => { Object.values(ghosts).forEach(g => g && g.remove()); ghosts = {}; };
   const indBack = () => { const ind = document.querySelector('.home-tabs .ht-ind'), a = indAt(page().cur); if (!ind || a == null) return; ind.style.transition = ''; ind.style.transform = `translateX(${a}px)`; indX = null; };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
@@ -13006,15 +13041,16 @@ function placeHomeTabInd() {
       if (lock === 'y') { x0 = null; return; }
       x0 = e.touches[0].clientX; // ここから動かす（はじめの10pxでカクッとしないように）
       pane.style.transition = 'none';
+      ghostClear(); { const g = page(), i = idx(); if (i > 0) ghosts.l = makeGhost(g.tabs[i - 1].k, -1); if (i < g.tabs.length - 1) ghosts.r = makeGhost(g.tabs[i + 1].k, 1); }
     }
     e.preventDefault();
     dx = e.touches[0].clientX - x0; tot = e.touches[0].clientX - sx; // tot：触り始めからの距離（移動するかの判定に使う）
     const i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === page().tabs.length - 1);
     const v = edge ? dx / 3 : dx; // 端のタブでは、ゴムのように重くする
-    pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = String(1 - Math.min(0.35, Math.abs(v) / 900));
-    indFollow(dx);
+    pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = '';
+    ghostMove(v); indFollow(dx);
   }, {passive:false});
-  const back = () => { indBack(); if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
+  const back = () => { indBack(); ghostMove(0, 'transform .38s cubic-bezier(.2,.8,.2,1)'); setTimeout(ghostClear, 400); if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
   const end = () => {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
@@ -13024,8 +13060,12 @@ function placeHomeTabInd() {
     const g = page();
     if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < g.tabs.length) {
       hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
-      ui.htSlide = tot < 0 ? 1 : -1; ui.indFromX = indX; indX = null; // 印は、指で動かしたところから続きを動かす
-      g.go(g.tabs[j].k);
+      // 今の中身は横へ出ていき、隣の中身が真ん中に入ってくる（そのあと本物の画面に切り替える）
+      const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .26s cubic-bezier(.2,.8,.2,1)';
+      pane.style.transition = ease; pane.style.transform = `translateX(${sgn * W}px)`; ghostMove(sgn * W, ease);
+      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ind.style.transform = `translateX(${tx}px)`; }
+      indX = null; const hadGhost = !!(ghosts.l || ghosts.r);
+      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 240 : 0);
     } else back();
   };
   window.addEventListener('touchend', e => { end(e); window.__hSwipe = false; }, {passive:true});
@@ -13033,7 +13073,7 @@ function placeHomeTabInd() {
 })();
 // タブを切り替えたあと、新しい中身をスワイプした向きからすべり込ませる
 function slideHomePane() {
-  const dir = ui.htSlide; ui.htSlide = 0; if (!dir) return;
+  const dir = ui.htSlide; ui.htSlide = 0; if (ui.hpNoSlide) { ui.hpNoSlide = false; return; } if (!dir) return;
   const p = document.querySelector('.home-pane'); if (!p) return;
   p.style.setProperty('--hp-from', `${dir * 36}%`); p.classList.add('hp-in');
   p.addEventListener('animationend', () => p.classList.remove('hp-in'), {once:true});
@@ -13120,7 +13160,8 @@ function render() {
     if (fromBar) NAV_STACK.length = 0; if (back) NAV_STACK.pop(); else NAV_STACK.push(prevRoute); if (NAV_STACK.length > 30) NAV_STACK.shift();
     const m = document.getElementById('main');
     const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
-    const dir = fromBar || sameScreen ? '' : back ? 'pg-pop' : 'pg-push';
+    const isMain = ['home', 'log', 'my', 'account'].includes(r.name) && !r.id; // 下のバーの4つの画面（メインの画面）は、戻ってきたときも動かさない
+    const dir = fromBar || sameScreen || isMain ? '' : back ? 'pg-pop' : 'pg-push';
     NAV_SRC.bar = 0; NAV_SRC.back = 0;
     if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); } }
   }
