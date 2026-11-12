@@ -2378,6 +2378,21 @@ img{image-rendering:auto}
 .pm-t{flex:1;min-width:0}.pm-t b{display:block;font-size:15px;font-weight:600}.pm-t small{display:block;font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:2px}
 .pm-row .btn{flex:none}
 .pm-ok{flex:none;font-size:13px;font-weight:600;color:var(--green-d)}
+
+/* はじめの許可（一般的なアプリと同じ、全画面で1つずつ） */
+.pm-ov{position:fixed;inset:0;z-index:4200;background:var(--bg);display:flex;align-items:stretch;justify-content:center;opacity:0;transform:translateY(24px);transition:opacity .28s ease,transform .32s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+.pm-ov.in{opacity:1;transform:none}
+.pm-in{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:calc(env(safe-area-inset-top) + 28px) 24px calc(env(safe-area-inset-bottom) + 24px)}
+.pm-dots{display:flex;gap:6px;height:8px;margin-bottom:28px}.pm-dots i{width:8px;height:8px;border-radius:50%;background:var(--line2,#D9D4CC)}.pm-dots i.on{background:var(--green-d);width:20px;border-radius:99px}
+.pm-big{width:108px;height:108px;border-radius:50%;background:var(--green-p,#EEF5EF);color:var(--green-d);display:flex;align-items:center;justify-content:center;margin:12px 0 26px}
+.pm-big svg{width:50px;height:50px;stroke-width:1.8}
+.pm-in h2{font-size:21px;font-weight:600;line-height:1.45;margin:0 0 12px}
+.pm-d{font-size:14.5px;line-height:1.75;color:var(--ink2);margin:0 0 18px}
+.pm-li{list-style:none;margin:0;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;text-align:left;width:100%;display:flex;flex-direction:column;gap:10px}
+.pm-li li{display:flex;gap:10px;font-size:13.5px;line-height:1.6;color:var(--ink2)}.pm-li svg{flex:none;width:16px;height:16px;color:var(--green-d);margin-top:3px}
+.pm-btns{margin-top:auto;padding-top:28px;width:100%;display:flex;flex-direction:column;gap:6px}
+.pm-btns .pm-go{width:100%;height:50px;font-size:16px;border-radius:14px}
+.pm-skip{background:none;border:0;color:var(--muted);font:inherit;font-size:14.5px;padding:12px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -3380,7 +3395,7 @@ function normalize(d) {
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
   out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
-  out.settings.permAsked = !!ds.permAsked; // 最初の「はじめの設定」（位置情報・お知らせ）を出したか
+  out.settings.permAsked2 = !!ds.permAsked2; // 最初の「はじめの設定」（位置情報・お知らせ）を出したか
   out.settings.notify = ds.notify && typeof ds.notify === 'object' ? {on:!!ds.notify.on, time:/^\d{2}:\d{2}$/.test(ds.notify.time || '') ? ds.notify.time : '21:00', expiry:ds.notify.expiry !== false} : null; // お知らせ（通知）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
@@ -10753,7 +10768,7 @@ function careTodayHtml() {
   const top = []; ['朝', '夜', '生活'].forEach(k => { const x = real.find(y => y.when === k && !top.includes(y)); if (x) top.push(x); });
   real.forEach(x => { if (top.length < 3 && !top.includes(x)) top.push(x); });
   const rest = real.filter(x => !top.includes(x));
-  return `<div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2><span class="chip">${esc(fmtShort(todayStr()))}</span></div>
+  return `<div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
     <p class="ct2-lead no-ph">${esc(D.lead)}</p>
     <div class="ct2-in">${D.inputs.map(([k, v, none]) => `<div class="ct2-r"><span>${k}</span><span class="${none ? 'muted' : ''}">${esc(v)}</span></div>`).join('')}</div>
     <h3 class="ct2-h3">まずはこの${top.length}つ</h3>${top.map(itemH).join('')}
@@ -11889,11 +11904,46 @@ function permBodyHtml() {
     <p class="small muted" style="margin:12px 0 0">あとで「アカウント」→「設定」から、いつでも変えられます。</p></div>`;
 }
 function permRefresh() { const b = document.getElementById('perm-body'); if (b) b.outerHTML = permBodyHtml(); }
-function permSheet(force) {
-  if (!force && (state.settings.permAsked || !state.settings.onboarded)) return;
-  if (document.querySelector('#modal-root .modal, .au-ov')) return; // ほかの画面が開いているときは出さない
-  state.settings.permAsked = true; save();
-  openModal({title:'はじめの設定', body:permBodyHtml(), footer:'<button type="button" class="btn btn-primary" data-action="close-modal">はじめる</button>'});
+// 位置情報が許可されているか（iPhoneのホーム画面アプリは答えが不正確なことがあるので、保存した位置もみる）
+async function geoGranted() {
+  if (state.settings.wxLoc && state.settings.wxPref === '現在地') return true;
+  try { if (navigator.permissions && navigator.permissions.query) return (await navigator.permissions.query({name:'geolocation'})).state === 'granted'; } catch (e) { /* 何もしない */ }
+  return false;
+}
+// 一般的なアプリと同じ、1画面に1つずつの許可の画面（位置情報 → お知らせ）
+async function permSheet(force) {
+  if (!force && (state.settings.permAsked2 || !state.settings.onboarded)) return;
+  if (document.querySelector('#modal-root .modal, .au-ov, .pm-ov')) return; // ほかの画面が開いているときは出さない
+  state.settings.permAsked2 = true; save();
+  const steps = [];
+  if (navigator.geolocation && !(await geoGranted())) steps.push('geo');
+  if (acct.user && pushSupported() && !(DEV.ios && !isStandalone()) && !notifyCfg().on && !(window.Notification && Notification.permission === 'denied')) steps.push('notify');
+  if (!steps.length) return;
+  const ov = document.createElement('div'); ov.className = 'pm-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov); lockScroll();
+  let k = 0;
+  const close = () => { ov.classList.remove('in'); setTimeout(() => { ov.remove(); unlockScroll(); render(); }, 300); };
+  const next = () => { k++; if (k >= steps.length) close(); else paint(); };
+  const T = {
+    geo:{ic:'pin', t:'位置情報の利用を許可してください', d:'今いる場所の湿度・気温・紫外線を自動で調べて、その日の肌に合ったケアを提案します。', li:['乾燥する日は保湿を多めに', '紫外線が強い日は日焼け止めの塗り直しを', '位置は約100mに丸めて、この端末の中だけに保存します'], ok:'許可する'},
+    notify:{ic:'bell', t:'お知らせを受け取りますか？', d:'記録を続けやすいように、ナカカラモからお知らせを送ります。', li:['決めた時刻に、その日まだ記録していないときだけ「記録しましょう」', '使用期限が近い化粧品を7日前にお知らせ', '時刻やオン・オフは、あとで設定から変えられます'], ok:'受け取る'}
+  };
+  const paint = () => {
+    const x = T[steps[k]];
+    ov.innerHTML = `<div class="pm-in"><div class="pm-dots">${steps.length > 1 ? steps.map((_, i) => `<i class="${i === k ? 'on' : ''}"></i>`).join('') : ''}</div>
+      <div class="pm-big">${icon(x.ic)}</div><h2>${x.t}</h2><p class="pm-d">${x.d}</p><ul class="pm-li">${x.li.map(l => `<li>${icon('check')}<span>${l}</span></li>`).join('')}</ul>
+      <div class="pm-btns"><button type="button" class="btn btn-primary pm-go">${x.ok}</button><button type="button" class="pm-skip">今はしない</button></div></div>`;
+    ov.querySelector('.pm-skip').onclick = next;
+    ov.querySelector('.pm-go').onclick = async e => {
+      const b = e.currentTarget; b.disabled = true; b.textContent = '確認中…';
+      if (steps[k] === 'geo') {
+        const g = await wxGeo(true);
+        if (g) { state.settings.wxPref = '現在地'; state.settings.wxLoc = g; state.wxGeoAt = todayStr(); state.wxFetched = ''; save(); WX_BUSY = false; wxPlaceName(g); wxFetch(true, false); toast('位置情報を設定しました'); }
+        else toast('位置情報を取得できませんでした。あとで設定から許可できます。', 'error');
+      } else await notifyEnable();
+      next();
+    };
+  };
+  paint(); requestAnimationFrame(() => ov.classList.add('in'));
 }
 function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); }
 document.addEventListener('change', e => {
@@ -13728,7 +13778,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && r.id === 'me' ? 'アカウント情報' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
@@ -13737,7 +13787,7 @@ function render() {
     else stopMomentumTop();
   }
   navRestoreY = null;
-  if (!state.settings.permAsked && state.settings.onboarded) setTimeout(() => permSheet(), 900); // 最初に開いたとき：位置情報・お知らせの許可
+  if (!state.settings.permAsked2 && state.settings.onboarded) setTimeout(() => permSheet(), 900); // 最初に開いたとき：位置情報・お知らせの許可
   if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'care') rtDragInit();
