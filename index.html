@@ -733,7 +733,7 @@ details.acc-cmp{margin-top:14px}
 .wg-rem{grid-column:1/-1;font-size:11.5px;font-weight:600;color:var(--green-d);text-decoration:none;border-top:1px solid var(--line);padding-top:6px}
 /* ホームの上の3つのタブ（Xのように画面の上にくっつく） */
 .home-pane{will-change:transform;touch-action:pan-y}
-.home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
+.home-pane.hp-in{animation:hpIn .54s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 @keyframes hpInMy{from{transform:translateX(var(--hp-from,0))}to{transform:none}}
 .mk-pane.home-pane.hp-in{animation-name:hpInMy}
@@ -742,7 +742,7 @@ details.acc-cmp{margin-top:14px}
 .my-tabs .ht-n{font-size:12px;font-weight:600;line-height:1.5;background:var(--surface2,#F4F1EC);color:var(--muted);border-radius:999px;padding:1px 8px;transition:background .2s,color .2s}
 .my-tabs .ht.active .ht-n{background:var(--green-l,#E5F2EA);color:var(--green-d)}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
-.ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
+.ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .54s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:19px;height:19px;flex:none}
 .ht.active{color:var(--ink)}
@@ -1307,7 +1307,7 @@ a.used-tile{color:inherit;text-decoration:none}
 @media (prefers-reduced-motion:reduce){#main.pg-in > *{animation:none}}
 @keyframes pgPush{from{opacity:.4;transform:translateX(42%)}to{opacity:1;transform:none}}
 @keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
-#main.pg-push{animation:pgPush .46s cubic-bezier(.22,.7,.2,1) both!important}#main.pg-pop{animation:pgPop .46s cubic-bezier(.22,.7,.2,1) both!important} /* ホームの「今日の記録⇄おすすめケア」と同じ速さ */
+#main.pg-push{animation:pgPush .54s cubic-bezier(.22,.7,.2,1) both!important}#main.pg-pop{animation:pgPop .54s cubic-bezier(.22,.7,.2,1) both!important} /* ホームの「今日の記録⇄おすすめケア」と同じ速さ */
 .my-del-btn{width:100%;justify-content:center;gap:6px;margin-top:10px}.my-del-btn svg{width:16px;height:16px}
 .fade-once{animation:fadeOnce .7s ease both}
 @keyframes fadeOnce{from{opacity:0}to{opacity:1}}
@@ -2205,7 +2205,7 @@ details > summary{transition:color .2s var(--ease-out)}
 /* 出てくる・消えるお知らせや小さな箱 */
 .field-error:not(:empty){animation:softIn .3s var(--ease-out) backwards}
 /* 画面の切り替え：横にすべる動きを、少しやわらかく */
-#main.pg-push{animation-duration:.46s!important;animation-timing-function:cubic-bezier(.22,.7,.2,1)!important}
+#main.pg-push{animation-duration:.54s!important;animation-timing-function:cubic-bezier(.22,.7,.2,1)!important}
 #main.pg-pop{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after,details::details-content{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -2460,7 +2460,7 @@ a.acc-me:active{transform:scale(.96)}
 .acc-me .am-t small .am-prem{font-size:13px;padding:3px 13px;margin-top:3px;line-height:1.4;-webkit-text-fill-color:#6B4A1C}
 
 /* お問い合わせ：横から出るページ（右へなぞると戻る） */
-.au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .46s cubic-bezier(.22,.7,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
+.au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .54s cubic-bezier(.22,.7,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
 .au-ov.sp-ov.in{transform:none}.au-ov.sp-ov.out{transform:translate3d(100%,0,0)}
 .sp-backbtn{display:flex;align-items:center;justify-content:center;color:var(--ink)}
 
@@ -4882,7 +4882,7 @@ function openSupport() {
   const onPop = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); if (!ov._closing) { ov._closing = true; ov.remove(); } }; // 戻る操作（iPhoneのスワイプ・Androidの戻る）で閉じたとき：iPhoneの動きにまかせて、すぐ消す
   const dropHist = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); history.back(); }; // ボタン・アプリ内のスワイプで閉じたとき：足した履歴を戻しておく（同じアドレスなので画面は変わらない）
   try { history.pushState({spOv:1}, '', location.href); histOn = true; window.addEventListener('popstate', onPop); } catch (e) { /* 何もしない */ }
-  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); dropHist(); setTimeout(() => ov.remove(), 480); };
+  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); dropHist(); setTimeout(() => ov.remove(), 560); };
   const head = `<div class="au-head"><button type="button" class="au-back sp-backbtn" data-sp="close" aria-label="戻る"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>お問い合わせ</h2><span></span></div>`;
   if (!premium) {
     ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
@@ -13912,7 +13912,17 @@ function stopMomentumTop() {
   de.style.overflow = 'hidden'; window.scrollTo(0, 0);
   requestAnimationFrame(() => { de.style.overflow = ''; window.scrollTo(0, 0); });
 }
+// Myアイテムの「化粧品 1」などの数字の丸：文字の色と同じ速さで、選ばれた色にかわる（パッと点滅しないように）
+function htBadgeMove(on, off, t) {
+  [[on, true], [off, false]].forEach(([b, act]) => {
+    const n = b && b.querySelector('.ht-n'); if (!n) return;
+    n.style.transition = 'none'; n.style.background = act ? 'var(--surface2,#F4F1EC)' : 'var(--green-l,#E5F2EA)'; n.style.color = act ? 'var(--muted)' : 'var(--green-d)'; void n.offsetWidth;
+    n.style.transition = `background-color ${t},color ${t}`; n.style.background = act ? 'var(--green-l,#E5F2EA)' : 'var(--surface2,#F4F1EC)'; n.style.color = act ? 'var(--green-d)' : 'var(--muted)';
+    setTimeout(() => { n.style.transition = ''; n.style.background = ''; n.style.color = ''; }, 650);
+  });
+}
 function placeHomeTabInd() {
+  const badgeDone = ui.htBadgeDone; ui.htBadgeDone = false;
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
   const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return b.offsetLeft + b.offsetWidth / 2 - 24; };
   const acc = nav.classList.contains('acc-tabs'), my = nav.classList.contains('my-tabs'), log = !acc && !my && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : my ? ui.myKind : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : my ? ui.mtFrom : log ? ui.ltFrom : ui.htFrom;
@@ -13922,7 +13932,8 @@ function placeHomeTabInd() {
   // 文字の色も、下の緑の棒と同じ速さで入れかえる（棒と文字の動きをそろえる）
   if (prev && prev !== cur && from !== to) {
     const bn = nav.querySelector(`.ht[data-id="${cur}"]`), bp = nav.querySelector(`.ht[data-id="${prev}"]`), full = Math.abs(to - at(prev)) || 1, p0 = Math.max(0, Math.min(1, 1 - Math.abs(to - from) / full));
-    const mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`, ease = 'color .44s cubic-bezier(.3,.8,.25,1)';
+    const mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`, ease = 'color .54s cubic-bezier(.3,.8,.25,1)';
+    if (!badgeDone) htBadgeMove(bn, bp, '.54s cubic-bezier(.3,.8,.25,1)');
     [[bn, p0, 1], [bp, 1 - p0, 0]].forEach(([b, a, z]) => { if (!b) return; b.style.transition = 'none'; b.style.color = mix(a); void b.offsetWidth; b.style.transition = ease; b.style.color = mix(z); setTimeout(() => { b.style.color = ''; b.style.transition = ''; }, 480); });
   }
 }
@@ -14022,13 +14033,14 @@ function placeHomeTabInd() {
     if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < g.tabs.length) {
       hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
       // 今の中身は横へ出ていき、隣の中身が真ん中に入ってくる（そのあと本物の画面に切り替える）
-      const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .26s cubic-bezier(.2,.8,.2,1)';
+      const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .34s cubic-bezier(.2,.8,.2,1)';
       pane.style.transition = ease; pane.style.transform = `translateX(${sgn * W}px)`; ghostMove(sgn * W, ease);
-      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ind.style.transform = `translateX(${tx}px)`;
-        const nv = ind.parentElement, ce = 'color .26s cubic-bezier(.2,.8,.2,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
-        if (bc) { bc.style.transition = ce; bc.style.color = 'var(--muted)'; } if (bj) { bj.style.transition = ce; bj.style.color = 'var(--ink)'; } } // 文字の色も棒と一緒に
+      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .34s cubic-bezier(.2,.8,.2,1)'; ind.style.transform = `translateX(${tx}px)`;
+        const nv = ind.parentElement, ce = 'color .34s cubic-bezier(.2,.8,.2,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
+        if (bc) { bc.style.transition = ce; bc.style.color = 'var(--muted)'; } if (bj) { bj.style.transition = ce; bj.style.color = 'var(--ink)'; }
+        htBadgeMove(bj, bc, '.34s cubic-bezier(.2,.8,.2,1)'); ui.htBadgeDone = true; } // 数字の丸も、文字と同じ速さで // 文字の色も棒と一緒に
       indX = null; const hadGhost = !!(ghosts.l || ghosts.r);
-      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 240 : 0);
+      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 320 : 0);
     } else back();
   };
   window.addEventListener('touchend', e => { end(e); window.__hSwipe = false; }, {passive:true});
@@ -14128,7 +14140,7 @@ function render() {
     const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
     const dir = fromBar || sameScreen || histQuiet ? '' : back ? 'pg-pop' : 'pg-push';
     NAV_SRC.bar = 0; NAV_SRC.back = 0;
-    if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 520); } }
+    if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 600); } }
   }
   fillAds();
   if (r.name === 'charts') drawFace3d();
