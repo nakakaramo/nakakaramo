@@ -2352,6 +2352,13 @@ img{image-rendering:auto}
 .ai-row b{display:block;font-size:16px;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ai-link{text-decoration:none!important;flex:none;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer;font-size:14px}
 .ai-note{font-size:12px;color:var(--muted);margin:8px 4px 0;line-height:1.6}
+
+/* アカウント情報：アイコンを少し小さく、全体を上に */
+.ai-hero{margin:0 0 4px!important}
+.ai-av>i{width:26px!important;height:26px!important;right:-2px!important;bottom:0!important}
+.ai-av>i svg{width:13px!important;height:13px!important}
+.ai-sec{margin:12px 4px 8px!important}
+.ai-link{font-size:13px!important;font-weight:500!important}
 </style>
 </head>
 <body>
@@ -12303,10 +12310,9 @@ function viewAccountMe() {
   const nm = state.settings.nickname;
   if (acct.status === 'idle') setTimeout(initCloud, 0);
   return `<a class="back" href="#/account">← アカウント</a>
-    <div class="ai-hero"><button type="button" class="ai-av" data-action="acc-profile" aria-label="アイコンを変える">${avatarHtml(96)}<i aria-hidden="true">${icon('edit')}</i></button></div>
+    <div class="ai-hero"><button type="button" class="ai-av" data-action="acc-profile" aria-label="アイコンを変える">${avatarHtml(80)}<i aria-hidden="true">${icon('edit')}</i></button></div>
     <h3 class="ai-sec">プロフィール</h3>
-    <div class="card ai-list"><div class="ai-row"><span><small>表示名</small><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '未設定'}</b></span><button type="button" class="link ai-link" data-action="acc-profile">編集する</button></div></div>
-    <p class="ai-note">名前とアイコンはこのアプリの中だけで使います。ほかの人には表示されません。</p>
+    <div class="card ai-list"><div class="ai-row"><span><small>表示名</small><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '未設定'}</b></span><button type="button" class="link ai-link" data-action="acc-name">編集する</button></div></div>
     <h3 class="ai-sec">プラン・ログイン</h3>
     ${embedView(() => viewPlan({}))}`;
 }
@@ -12314,15 +12320,18 @@ let avDraft = null;
 function openProfile() {
   avDraft = state.settings.avatar ? Object.assign({}, state.settings.avatar) : null;
   const cur = () => avDraft || {};
-  openModal({title:'名前とアイコン', body:`<div class="pf-top"><div id="pf-prev">${avatarHtml(84)}</div></div>
-    <div class="field"><label class="lbl" for="pf-name">名前<span class="opt">20文字まで</span></label><input class="input" id="pf-name" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：はだこ" autocomplete="nickname"></div>
-    <p class="lbl" style="margin:14px 0 8px">アイコン</p>
+  openModal({title:'アイコン', body:`<div class="pf-top"><div id="pf-prev">${avatarHtml(84)}</div></div>
     <div class="pf-row"><label class="btn btn-soft btn-sm pf-photo">${icon('camera')}写真から選ぶ<input type="file" accept="image/*" id="pf-file" hidden></label><button type="button" class="btn btn-ghost btn-sm" data-action="pf-reset">最初の文字に戻す</button></div>
     <div class="pf-emo" role="group" aria-label="絵文字のアイコン">${AVATAR_EMOJI.map(e => `<button type="button" class="pf-e ${cur().t === 'emoji' && cur().v === e ? 'on' : ''}" data-action="pf-emoji" data-id="${e}">${e}</button>`).join('')}</div>
     <p class="lbl" style="margin:12px 0 8px">背景の色</p>
     <div class="pf-col">${AVATAR_COLORS.map(c => `<button type="button" class="pf-c ${(cur().c || AVATAR_COLORS[0]) === c ? 'on' : ''}" style="background:${c}" data-action="pf-color" data-id="${c}" aria-label="背景の色"></button>`).join('')}</div>
-    <p class="small muted" style="margin:12px 0 0">名前とアイコンはこの端末に保存され、ログインしていればバックアップにも入ります。ほかの人には見えません。</p>`,
+    `,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="pf-save">保存する</button>`});
+}
+function openNameEdit() {
+  openModal({title:'表示名', body:`<div class="field"><label class="lbl" for="pf-name1">名前<span class="opt">20文字まで</span></label><input class="input" id="pf-name1" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：はだこ" autocomplete="nickname"></div>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="name-save">保存する</button>`});
+  setTimeout(() => { const i = document.getElementById('pf-name1'); if (i) i.focus(); }, 350);
 }
 function pfPaint() {
   const keep = state.settings.avatar; state.settings.avatar = avDraft; const n = document.getElementById('pf-name'), nk = state.settings.nickname; if (n) state.settings.nickname = n.value.trim();
@@ -12863,12 +12872,14 @@ const actions = {
     catch (e) { toast(authErrMsg(e), 'error'); }
   },
   'acc-profile': () => openProfile(),
+  'acc-name': () => openNameEdit(),
+  'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (save()) { closeModal(); toast('保存しました'); render(); } },
   'restore-no': () => { try { localStorage.setItem('nk_restore_no', '1'); } catch (e) { /* 何もしない */ } closeModal(); },
   'restore-yes': () => { try { const K = STORE_KEY + '_broken_backup', raw = localStorage.getItem(K); localStorage.setItem(STORE_KEY + '_before_restore', localStorage.getItem(STORE_KEY) || ''); state = normalize(JSON.parse(raw)); if (save()) { localStorage.removeItem(K); closeModal(); toast('以前のデータに戻しました'); render(); } } catch (e) { toast('戻せませんでした', 'error'); } },
   'pf-emoji': id => { avDraft = {t:'emoji', v:id, c:(avDraft && avDraft.c) || AVATAR_COLORS[0]}; pfPaint(); },
   'pf-color': id => { avDraft = {t:'emoji', v:avDraft && avDraft.t === 'emoji' ? avDraft.v : AVATAR_EMOJI[0], c:id}; pfPaint(); },
   'pf-reset': () => { avDraft = null; pfPaint(); },
-  'pf-save': () => { const n = document.getElementById('pf-name'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; state.settings.avatar = avDraft; if (save()) { closeModal(); toast('保存しました'); render(); } },
+  'pf-save': () => { const n = document.getElementById('pf-name'); if (n) state.settings.nickname = n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); state.settings.avatar = avDraft; if (save()) { closeModal(); toast('保存しました'); render(); } },
   'acct-logout': async () => { try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; acct.confirm = false; toast('ログアウトしました'); render(); },
   'acct-confirm': async () => {
     acct.confirm = true; render();
