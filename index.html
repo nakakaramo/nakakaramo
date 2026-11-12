@@ -1758,8 +1758,8 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 @media(max-width:420px){.food-pick{grid-template-columns:1fr 1fr}.food-pick > :first-child{grid-column:1/-1}}
 .btn.has-prem,.mpt-locked,.tab:has(.prem-sub){flex-direction:column;gap:0;line-height:1.25}
 .add-opt b .prem-sub{display:table;margin-top:3px}
-.badge-premium,.prem-sub{display:inline-block;padding:1px 8px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.04em;white-space:nowrap;
-  background:linear-gradient(135deg,#F3E7CF,#E9D6B0);color:#7A5A22;border:1px solid #E2CDA2}
+.badge-premium,.prem-sub{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.06em;white-space:nowrap;
+  background:linear-gradient(180deg,#F6ECD6 0%,#EBD9B3 100%);color:#6B4A1C!important;border:1.5px solid #D8C08F;box-shadow:inset 0 1px 0 rgba(255,255,255,.65)}
 .prem-sub{font-size:10px;line-height:1.35;padding:0 7px;margin-top:3px}
 .tab .prem-sub{display:table;margin:2px auto 0}
 .plan-table td,.plan-table th{text-align:center}.plan-table td:first-child,.plan-table th:first-child{text-align:left}
@@ -2030,7 +2030,7 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .rt-tags .chip svg{width:12px;height:12px}
 .rt-handle{flex:none;width:28px;height:34px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;cursor:grab;touch-action:none}
 .rt-handle i{display:block;width:14px;height:2px;border-radius:2px;background:var(--line2)}
-.rt-h-sp{flex:none;width:28px}
+.rt-h-sp{flex:none;width:6px}
 .rt-det{padding:0 14px 14px 56px;animation:itemIn .28s cubic-bezier(.2,.8,.2,1) both}
 .rt-dl{display:grid;grid-template-columns:6.4em 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.7}
 .rt-dl>b{font-size:12px;color:var(--ink2);padding-top:1px}
@@ -2455,6 +2455,9 @@ a.acc-me:active{transform:scale(.96)}
 /* ホームの今日の記録：見出しをなくして、中身を上に詰める */
 .t3-card{padding-top:14px}
 .t3-card>.t3-grid{margin-top:0}
+
+/* アカウントのプレミアム（写真の見た目：クリーム色の丸いラベルに茶色の文字） */
+.acc-me .am-t small .am-prem{font-size:13px;padding:3px 13px;margin-top:3px;line-height:1.4;-webkit-text-fill-color:#6B4A1C}
 </style>
 </head>
 <body>
@@ -8717,7 +8720,7 @@ function rtCardHtml(s, i, slot, lg) {
     <div class="rt-row">
       ${s.missing ? `<span class="rt-ck dis">${i + 1}</span>` : `<button type="button" class="rt-ck" data-action="rt-check" data-id="${esc(slot + '|' + s.id)}" aria-pressed="${done}" aria-label="${esc(s.label)}を${done ? '未完了にする' : 'やった'}">${done ? icon('check') : i + 1}</button>`}
       <button type="button" class="rt-main" data-action="rt-open" data-id="${esc(s.id)}" aria-expanded="${open}"><small>${esc(s.label)}</small><b>${rtProdName(s)}</b>${tags ? `<span class="rt-tags">${tags}</span>` : ''}</button>
-      ${s.locked || s.missing || s.kind === 'emulsify' ? '<span class="rt-h-sp"></span>' : `<span class="rt-handle" aria-label="長押しで並べ替え" title="長押しで並べ替え"><i></i><i></i><i></i></span>`}
+      ${true || s.locked || s.missing || s.kind === 'emulsify' ? '<span class="rt-h-sp"></span>' : `<span class="rt-handle" aria-label="長押しで並べ替え" title="長押しで並べ替え"><i></i><i></i><i></i></span>`}
     </div>
     ${open ? `<div class="rt-det">${rtDetailHtml(s, slot)}</div>` : ''}
   </li>`;
@@ -8912,6 +8915,7 @@ function rtCheck(slot, sid, next) {
 }
 // ---------- 長押しで持ち上げて並べ替え ----------
 function rtDragInit() {
+  return; // 長押しで動かせるのは、Myアイテムの商品だけにした
   const ol = document.querySelector('.rt-list'); if (!ol || ol._dg) return; ol._dg = 1;
   let st = null;
   const cards = () => [...ol.querySelectorAll('.rt-card')];
@@ -12247,7 +12251,7 @@ function openPremiumSheet(feature) {
   const el = document.createElement('div'); el.id = 'prem-sheet'; el.className = 'ps-wrap';
   el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
     <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
-    <h2 id="ps-t"><span class="prem-tx">${PREMIUM_NAME}プラン</span></h2><p class="ps-price"><b>${esc(LEGAL.price)}</b><span class="ps-cancel">いつでも解約できます。</span></p>
+    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b><span class="ps-cancel">いつでも解約できます。</span></p>
     <ul class="ps-list"><li>顔の写真を撮るだけで、今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養を自動で計算</li><li>記録から、あなた専用のケアと献立を提案</li></ul>
     ${logged ? '' : `<div class="ps-auth"><p class="small ps-note">申し込むには、先にアカウントを作ってください（無料・登録済みの人はログイン）</p>
       <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
@@ -12392,7 +12396,7 @@ function viewPlan(query) {
   if (isPremium() && EMBED) return done(html);
   if (isPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
-    html += `<div class="card"><div class="card-h"><h2><span class="prem-tx">${PREMIUM_NAME}プラン</span>をご利用中</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
+    html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
       <dl class="kv"><dt>状態</dt><dd>${s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み：${esc(end)}で終了します（それまでは使えます）</span>` : `有効（次回の更新日：${esc(end)}）`}</dd></dl>
       <button class="btn btn-ghost" style="margin-top:14px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button>
       <p class="hint">Stripe（決済サービス）の画面が開きます。解約すると、次回の更新日以降は請求されません。</p></div>`;
@@ -12403,7 +12407,7 @@ function viewPlan(query) {
     return done(html);
   }
   if (acct.polling) return done(html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>');
-  html += `<div class="card"><div class="card-h"><h2><span class="prem-tx">${PREMIUM_NAME}プラン</span>に申し込む</h2></div>
+  html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
     <p class="small">食事の写真から商品名と栄養成分表示を、化粧品の写真から商品名・全成分の文字を、写真から読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
@@ -12723,7 +12727,7 @@ function avatarHtml(size) {
 function accMeHtml() {
   const nm = state.settings.nickname;
   return `<a class="card acc-me" href="#/account/me">${avatarHtml(52)}
-    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? `<span class="prem-tx">${icon('spark')}${esc(PREMIUM_NAME)}プラン</span>` : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
+    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? `<span class="badge-premium am-prem">${esc(PREMIUM_NAME)}</span>` : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
 }
 // アカウント情報（一番上のプロフィールを押すと開く）：アイコン・名前・プランとログイン
 function viewAccountMe() {
