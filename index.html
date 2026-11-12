@@ -1058,6 +1058,9 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
 /* 下からページ（シート）が出ているときは、いちばん上（時計・電池のところ）も一緒に薄暗くする */
 body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before{background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
+/* iPhoneのSafariは、画面のいちばん上にある色で上のバーの色を決めるので、シートが出ている間は上に薄暗い帯を置く・ページの地の色も薄暗くする */
+body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before,body:has(.ps-wrap.on)::before{height:max(env(safe-area-inset-top),12px)}
+html:has(#modal-root .modal-backdrop:not(.closing)),html:has(#drawer-root.open){background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
 body:has(.ps-wrap.on)::before{background:color-mix(in srgb,rgb(20,20,20) 45%,var(--bg))}
 :root[data-theme="dark"] body:has(#modal-root .modal-backdrop:not(.closing))::before{background:color-mix(in srgb,#000 55%,var(--bg))}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body:has(#modal-root .modal-backdrop:not(.closing))::before{background:color-mix(in srgb,#000 55%,var(--bg))}}
@@ -1880,7 +1883,9 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 #sw-body .sw-opt.on{background:var(--green-s,#EEF5F0);color:var(--ink);border-color:var(--line)}
 #sw-body .sw-opt.on::before{border-color:var(--green-d);box-shadow:inset 0 0 0 5px var(--surface);background:var(--green-d)}
 #sw-body .sw-opts.multi .sw-opt.on::before{box-shadow:none;background:var(--green-d) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat}
-#sw-body .sw-opt:active{background:var(--surface2)}
+#sw-body,#sw-body *{-webkit-tap-highlight-color:transparent} /* 画面ごと光らないように */
+#sw-body .sw-opt{transition:background-color .18s ease}
+#sw-body .sw-opt:active{background:var(--green-s,#E3EFE6);transition:none} /* 押したボタンだけ光る */
 #sw-body .sw-opts > :last-child .sw-opt,#sw-body .sw-opts > .sw-opt:last-child{border-bottom:0}
 
 .start-simple .st-head{align-items:center;margin-bottom:12px}
@@ -4673,10 +4678,19 @@ function swClick(e) {
     const k = o.dataset.sw, val = o.dataset.v, v = swState.v;
     if (o.closest('.sw-opts.multi')) { const cur = Array.isArray(v[k]) ? v[k] : []; v[k] = val === 'none' ? (cur.includes('none') ? [] : ['none']) : (cur.includes(val) ? cur.filter(x => x !== val) : cur.filter(x => x !== 'none').concat(val)); }
     else { v[k] = v[k] === val && val !== '' ? '' : val; swState.none = swState.none || {}; swState.none[k] = val === '' ? !swState.none[k] : false; }
-    swPaint(); return;
+    swSyncOpts(o.closest('.sw-opts'), k); return; // 押したボタンのまわりだけ変える（全体を描き直すと画面ごとチカッと光るため）
   }
   const g = e.target.closest('[data-swgo]');
   if (g) { const n = Number(g.dataset.swgo); if (n > 0 && !swRead()) return; if (n < 0) swRead(); swState.i = clamp(swState.i + n, 0, swSteps().length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
+}
+function swSyncOpts(box, k) {
+  if (!box) { swPaint(); return; }
+  const v = swState.v, multi = box.classList.contains('multi'), cur = v[k];
+  box.querySelectorAll('[data-sw]').forEach(b => {
+    const val = b.dataset.v, on = multi ? (Array.isArray(cur) && cur.includes(val)) : val === '' ? !!(swState.none && swState.none[k]) && cur === '' : cur === val;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+  });
+  const sec = box.closest('.sw-card.sw-bad'); if (sec) { sec.classList.remove('sw-bad'); sec.querySelectorAll('.sw-err-in').forEach(x => x.remove()); }
 }
 function swSave(done) {
   const st = state.settings, v = swState ? swState.v : null;
@@ -12086,7 +12100,10 @@ const actions = {
   'f3-view': v => {
     const st = FACE3D.st; if (!st) return;
     const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
-    const t = {front:[0, 0], right:[P / 2, 0], left:[-P / 2, 0], back:[P, 0], top:[0, 1.25], bottom:[0, -1.0]}[v]; if (!t) return;
+    let t = {front:[0, 0], right:[P / 2, 0], left:[-P / 2, 0], back:[P, 0], top:[0, 1.25], bottom:[0, -1.0]}[v]; if (!t) return;
+    // 同じ向きのボタン（←・→など）をもう一度押したら、正面に戻す
+    const cur = st.target || {yaw:st.yaw, pitch:st.pitch || 0};
+    if (v !== 'front' && Math.abs(cur.yaw - (base + t[0])) < 0.15 && Math.abs((cur.pitch || 0) - t[1]) < 0.15) t = [0, 0];
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
