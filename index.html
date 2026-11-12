@@ -807,8 +807,8 @@ details.acc-cmp{margin-top:14px}
 .mrow-go{color:var(--muted);font-size:18px}
 .my-adds{margin:0 0 12px;width:100%}
 /* 化粧品を追加・塗り薬を追加：緑の点線で囲む（塗りつぶさない） */
-.my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:transparent!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
-.my-adds .btn.btn-primary:active{background:color-mix(in srgb,var(--green) 10%,transparent)!important}
+.my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:var(--green-p,#F2F7F2)!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
+.my-adds .btn.btn-primary:active{background:var(--green-s,#E4EDE5)!important}
 .my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line);position:relative}
 .mk-ind{position:absolute;left:0;bottom:-1px;width:50%;height:2.5px;border-radius:2px;background:var(--green-d);transform:translateX(calc(var(--mk,0) * 100%));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .mk-pane.mk-in-r{animation:mkInR .32s cubic-bezier(.2,.8,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .32s cubic-bezier(.2,.8,.2,1) both}
@@ -3653,7 +3653,10 @@ function hiResImg(u) {
   return u;
 }
 // 通販サイトの画像は、まわりの宣伝の文字や「送料無料」などのバッジが入っていることが多いので、真ん中を少し大きくして商品だけが見えるようにする
-function extImgHtml(u, cls, eager) { const src = hiResImg(u); return src ? `<span class="xim ${cls || ''}"><img src="${esc(src)}" alt="" ${eager ? '' : 'loading="lazy"'} referrerpolicy="no-referrer" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=${esc(JSON.stringify(u))}}"></span>` : ''; }
+// 一度読み込んだ商品の写真は、読み込んだ状態のまま手元に持っておく（画面を切り替えるたびに読み込み直して点滅しないように）
+const IMG_KEEP = new Map();
+function imgKeep(src) { if (!src || IMG_KEEP.has(src)) return; try { const im = new Image(); im.referrerPolicy = 'no-referrer'; im.decoding = 'async'; im.src = src; IMG_KEEP.set(src, im); if (IMG_KEEP.size > 400) IMG_KEEP.delete(IMG_KEEP.keys().next().value); } catch (e) { /* 何もしない */ } }
+function extImgHtml(u, cls, eager) { const src = hiResImg(u); if (src && eager) imgKeep(src); return src ? `<span class="xim ${cls || ''}"><img src="${esc(src)}" alt="" ${eager ? 'decoding="sync"' : 'loading="lazy"'} referrerpolicy="no-referrer" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=${esc(JSON.stringify(u))}}"></span>` : ''; }
 // 写真（data:のURL）は、一度だけ画像のファイルに変えて同じURLを使い回す。
 // 画面を描き直すたびに写真を読み込み直して点滅しないようにする（化粧品・塗り薬のタブを切り替えたときなど）
 const IMG_URL_CACHE = new Map();
@@ -3667,7 +3670,7 @@ function cachedImgUrl(d) {
 function thumbHtml(p, showSample=true) {
   const own = safeImg(p && p.image), img = own || (p && p.imageUrl) || '';
   const cat = (p && p.category) || 'その他';
-  const inner = own ? `<img src="${esc(cachedImgUrl(own))}" alt="${esc(p.name)}の画像" decoding="sync">` : img ? extImgHtml(img, 'thumb-x' + (p.imgClean ? ' clean' : ''), true)
+  const inner = own ? `<img src="${esc((u => (imgKeep(u), u))(cachedImgUrl(own)))}" alt="${esc(p.name)}の画像" decoding="sync">` : img ? extImgHtml(img, 'thumb-x' + (p.imgClean ? ' clean' : ''), true)
     : cat === '皮膚科の塗り薬' ? rxSvg(p && p.name)
     : `<div class="ph" style="background:${CAT_BG[cat] || '#F2F1EE'}"><div class="bottle"></div>${esc(CAT_EN[cat] || 'SKIN CARE')}</div>`;
   return `<div class="thumb">${inner}${showSample && p && p.isSample ? '<span class="tag badge-sample">サンプル</span>' : ''}</div>`;
@@ -10776,9 +10779,9 @@ function face3dSaveView(nextKey) {
   const same = nextKey === st.viewKey;
   // 次に表示するまでのつなぎに、今の顔の絵を写しておく（切り替えたとき一瞬消えないように）
   try { if (!st.lost) { st.renderer.render(st.scene, st.cam); FACE3D.snap = FACE3D.snap || {}; FACE3D.snap[st.viewKey] = st.renderer.domElement.toDataURL('image/png'); } } catch (e) { /* 何もしない */ }
-  if (!same || !st.auto) FACE3D.seen[st.viewKey] = true;
-  FACE3D.view[st.viewKey] = st.auto && same ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase}
-    : st.auto ? {yaw:0, pitch:0.05, z:st.cam.position.z} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z};
+  if (!st.auto) FACE3D.seen[st.viewKey] = true;
+  // 最初の1周の途中で別のタブに移ったときも、戻ってきたら途中から動きを続ける
+  FACE3D.view[st.viewKey] = st.auto ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z};
 }
 async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
