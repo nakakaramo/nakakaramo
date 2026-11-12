@@ -2359,6 +2359,16 @@ img{image-rendering:auto}
 .ai-av>i svg{width:13px!important;height:13px!important}
 .ai-sec{margin:12px 4px 8px!important}
 .ai-link{font-size:13px!important;font-weight:500!important}
+
+/* お知らせ（通知） */
+.nt-sw{flex:none;appearance:none;-webkit-appearance:none;width:46px;height:28px;margin:0;border-radius:99px;background:#D9D4CC;position:relative;cursor:pointer;transition:background .2s;border:0}
+.nt-sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.nt-sw:checked{background:var(--green-d)}.nt-sw:checked::after{transform:translateX(18px)}.nt-sw:disabled{opacity:.5}
+.nt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+.nt-row b{display:block;font-size:14px;font-weight:600}.nt-row small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.nt-opts{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.nt-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
+.nt-line .select{width:auto;min-width:110px}
 </style>
 </head>
 <body>
@@ -3361,6 +3371,7 @@ function normalize(d) {
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
   out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
+  out.settings.notify = ds.notify && typeof ds.notify === 'object' ? {on:!!ds.notify.on, time:/^\d{2}:\d{2}$/.test(ds.notify.time || '') ? ds.notify.time : '21:00', expiry:ds.notify.expiry !== false} : null; // お知らせ（通知）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
@@ -3404,7 +3415,7 @@ function load() {
 function save() {
   if (!storageOK) return false;
   state.savedAt = Date.now();
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); widgetSoon(); setTimeout(syncSoon, 0); return true; }
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); widgetSoon(); setTimeout(syncSoon, 0); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 0); return true; }
   catch (e) { toast('保存できませんでした。容量が不足している可能性があります（写真を減らしてください）。', 'error'); return false; }
 }
 // ---------- ウィジェット（スマホのホーム画面に置く小さな表示）用のデータ ----------
@@ -4815,7 +4826,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <p class="au-hint">8文字以上で、英字と数字を組み合わせてください</p>
         <label class="au-lbl" for="au-pw2">パスワード（確認）</label>
         <div class="au-pw"><input class="au-in" id="au-pw2" type="password" autocomplete="new-password" maxlength="72">${eye('au-pw2')}</div>
-        <p class="small muted au-chk" style="margin:4px 0 0">記録は、登録したメールアドレスのアカウントに自動でバックアップされます（写真は送りません）。</p>
+        <p class="small muted au-chk" style="margin:4px 0 0">記録と写真は、登録したメールアドレスのアカウントに自動でバックアップされます。</p>
         <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
         <button type="button" class="au-go" data-au="signup" ${st.busy ? 'disabled' : ''}>${st.busy ? '登録しています…' : '登録する'}</button>`;
       const keep = {}; if (!dir) ov.querySelectorAll('input').forEach(i => { if (i.id) keep[i.id] = i.type === 'checkbox' ? i.checked : i.value; });
@@ -9344,6 +9355,34 @@ async function openGuideCam(done, o = {}) {
     }
   });
 }
+// ===== ビフォー・アフターの画像：2枚の写真を横に並べ、日付と肌の調子を入れた1枚の画像にする（保存・共有用） =====
+async function baImage(a, b) {
+  const W = 1080, H = 760, top = 64, ph = 600, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
+  x.fillStyle = '#FAF9F6'; x.fillRect(0, 0, W, H);
+  const load = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  const [ia, ib] = await Promise.all([load(safeImg(a.photo)), load(safeImg(b.photo))]);
+  const draw = (img, dx) => { const w = 528, s = Math.max(w / img.width, ph / img.height), sw = w / s, sh = ph / s; x.save(); x.beginPath(); x.roundRect ? x.roundRect(dx, top, w, ph, 18) : x.rect(dx, top, w, ph); x.clip(); x.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, dx, top, w, ph); x.restore(); };
+  draw(ia, 8); draw(ib, 544);
+  const font = '"Hiragino Sans","Noto Sans JP",sans-serif';
+  x.fillStyle = '#2B3A31'; x.font = `600 30px ${font}`; x.textBaseline = 'middle';
+  x.textAlign = 'center'; x.fillText(`BEFORE  ${fmtMD(a.date)}`, 272, 34); x.fillText(`AFTER  ${fmtMD(b.date)}`, 808, 34);
+  const cond = l => COND_LABELS[l.condition] ? `肌の調子：${COND_LABELS[l.condition]}　ニキビ ${l.acneCount || 0}個` : '';
+  x.font = `400 24px ${font}`; x.fillStyle = '#5E6A62'; x.fillText(cond(a), 272, top + ph + 34); x.fillText(cond(b), 808, top + ph + 34);
+  x.font = `500 22px ${font}`; x.fillStyle = '#9AA39C'; x.textAlign = 'right'; x.fillText(`${diffDays(a.date, b.date)}日間の変化 ・ ナカカラモ`, W - 16, H - 22);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.9));
+}
+async function baMake() {
+  const list = photoList(), a = list.find(l => l.date === ($('#pc-a') || {}).value), b = list.find(l => l.date === ($('#pc-b') || {}).value);
+  if (!a || !b) return;
+  let blob; try { blob = await baImage(a, b); } catch (e) { toast('画像を作れませんでした', 'error'); return; }
+  const url = URL.createObjectURL(blob), name = `nakakaramo_${a.date}_${b.date}.jpg`, file = new File([blob], name, {type:'image/jpeg'});
+  const canShare = navigator.canShare && navigator.canShare({files:[file]});
+  openModal({title:'ビフォー・アフター', dismissable:true, body:`<img src="${url}" alt="ビフォー・アフターの画像" style="width:100%;border-radius:12px;display:block">
+    <p class="small muted" style="margin:10px 0 0">顔が写っている画像です。共有するときは、相手と場所に気をつけてください。</p>`,
+    footer:`<a class="btn btn-ghost" href="${url}" download="${name}">保存する</a>${canShare ? '<button type="button" class="btn btn-primary" data-action="ba-share">共有する</button>' : ''}`});
+  ui.baFile = file;
+}
 // ===== 2枚の肌写真を並べて比べる（スライドで重ねる） =====
 function openPhotoCompare() {
   const list = photoList(); if (list.length < 2) return;
@@ -9352,7 +9391,8 @@ function openPhotoCompare() {
   openModal({title:'写真を比べる', dismissable:true, body:`<div class="pc-sel"><label><small>前（左）</small><select class="select" id="pc-a">${opts(a0)}</select></label><label><small>後（右）</small><select class="select" id="pc-b">${opts(b0)}</select></label></div>
     <div class="pc-box" id="pc-box"><img id="pc-imgb" alt=""><div class="pc-clip" id="pc-clip"><img id="pc-imga" alt=""></div><div class="pc-line" id="pc-line"></div><span class="pc-tag l" id="pc-ta"></span><span class="pc-tag r" id="pc-tb"></span></div>
     <input type="range" class="pc-range" id="pc-range" min="0" max="100" value="50" aria-label="前と後の境目">
-    <p class="small muted" style="margin:8px 0 0">つまみを左右に動かすと、前と後の写真が入れかわります。</p>`});
+    <p class="small muted" style="margin:8px 0 0">つまみを左右に動かすと、前と後の写真が入れかわります。</p>
+    <button type="button" class="btn btn-soft btn-sm" style="margin-top:12px;width:100%" data-action="ba-make">${icon('image')}ビフォー・アフターの画像を作る</button>`});
   const set = () => { const a = list.find(l => l.date === $('#pc-a').value), b = list.find(l => l.date === $('#pc-b').value); $('#pc-imga').src = safeImg(a.photo); $('#pc-imgb').src = safeImg(b.photo); $('#pc-ta').textContent = fmtMD(a.date); $('#pc-tb').textContent = fmtMD(b.date); };
   const mv = () => { const v = $('#pc-range').value; $('#pc-imga').style.width = $('#pc-box').clientWidth + 'px'; $('#pc-clip').style.width = v + '%'; $('#pc-line').style.left = v + '%'; };
   set(); mv(); setTimeout(mv, 50); $('#pc-a').onchange = set; $('#pc-b').onchange = set; $('#pc-range').oninput = mv;
@@ -9369,7 +9409,7 @@ document.addEventListener('click', e => {
 });
 function viewPhotos() {
   const withPhoto = logsDesc().filter(l => safeImg(l.photo));
-  let html = `<div class="notice green">写真は任意です。保存した写真はこのブラウザ内だけにあり、外部へ送信されません。写真がなくても、すべての機能を使えます。</div>`;
+  let html = `<div class="notice green">写真は任意です。ログインしていると、写真もあなただけが見られる場所に自動でバックアップされ、機種変更しても戻せます。写真がなくても、すべての機能を使えます。</div>`;
   if (withPhoto.length) html = photoDayCardHtml(withPhoto.slice().reverse()) + html;
   if (!withPhoto.length) return html + `<div class="card">${emptyBox('note', '保存された写真はありません', '肌の記録で写真を選び、「ブラウザ内に保存する」にチェックすると、ここに一覧で表示されます。')}</div>`;
   if (withPhoto.length >= 2) {
@@ -11655,7 +11695,9 @@ const SYNC_ARRAYS = ['catalog', 'myProducts', 'skinLogs', 'lifeLogs', 'customFoo
 const isDataImg = v => typeof v === 'string' && v.startsWith('data:');
 function syncPayload() {
   const d = JSON.parse(JSON.stringify(state));
-  SYNC_ARRAYS.forEach(k => (d[k] || []).forEach(x => Object.keys(x).forEach(f => { if (isDataImg(x[f])) x[f] = null; })));
+  const m = photoMap(), refs = {};
+  photoWalk(d, (key, v, set) => { const p = photoPathOf(v, m); if (p) refs[key] = p; set(null); }); // 写真そのものは入れず、保存場所の目印だけ入れる
+  d.photoRefs = refs;
   if (d.settings) { delete d.settings.wxLoc; delete d.settings.wxPlace; } // 今いる場所はクラウドに送らない（端末の中だけ）
   return d;
 }
@@ -11673,6 +11715,7 @@ async function syncPush() {
   if (SYNC.busy) { SYNC.pending = true; return; }
   SYNC.busy = true; SYNC.err = '';
   try {
+    const more = await photoUpload(); if (more) SYNC.pending = true; // 先に写真を送る（送れた写真だけ目印をつける）
     const now = new Date().toISOString();
     const {error} = await acct.client.from('user_data').upsert({user_id:acct.user.id, data:syncPayload(), updated_at:now});
     if (error) throw error;
@@ -11701,7 +11744,134 @@ function syncApply(row) {
   state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
   SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
+  setTimeout(() => photoRestore(row.data && row.data.photoRefs), 300); // この端末にない写真も読み込む
 }
+// ===== 写真のバックアップ：ログインしている人の写真を、本人だけが見られる保存場所（Supabase Storage の photos）に入れる =====
+// 記録のバックアップ（user_data）には写真そのものは入れず、「どの写真か」の目印（photoRefs）だけを入れる
+const PHOTO = {off:false, busy:false};
+const PHOTO_MAP_KEY = 'nk_photo_map'; // 写真の中身の目印 → 保存場所のパス（同じ写真を何度も送らないため）
+function photoMap() { try { return JSON.parse(localStorage.getItem(PHOTO_MAP_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function photoMapSet(m) { try { localStorage.setItem(PHOTO_MAP_KEY, JSON.stringify(m)); } catch (e) { /* 何もしない */ } }
+function phHash(s) { let a = 0x811c9dc5, b = 0; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 16777619); b = (Math.imul(b, 31) + c) | 0; } return (a >>> 0).toString(36) + (b >>> 0).toString(36) + s.length.toString(36); }
+// 記録の中の写真を全部たどる（mealPhotos のような1段の入れ子も）
+function photoWalk(d, fn) {
+  SYNC_ARRAYS.forEach(k => (d[k] || []).forEach(x => { if (!x || !x.id) return; Object.keys(x).forEach(f => {
+    const v = x[f];
+    if (isDataImg(v)) fn(`${k}|${x.id}|${f}`, v, n => { x[f] = n; });
+    else if (v && typeof v === 'object' && !Array.isArray(v)) Object.keys(v).forEach(g => { if (isDataImg(v[g])) fn(`${k}|${x.id}|${f}.${g}`, v[g], n => { v[g] = n; }); });
+  }); }));
+}
+function photoPathOf(v, m) { const p = (m || photoMap())[phHash(v)]; return p && acct.user && p.startsWith(acct.user.id + '/') ? p : ''; }
+// まだ送っていない写真を送る（1回に12枚まで。残りは次のバックアップで）
+async function photoUpload() {
+  if (PHOTO.off || PHOTO.busy || !syncOn()) return false;
+  PHOTO.busy = true; let more = false;
+  try {
+    const m = photoMap(), todo = [];
+    photoWalk(state, (key, v) => { if (!photoPathOf(v, m) && !todo.some(t => t.v === v)) todo.push({v}); });
+    more = todo.length > 12;
+    for (const t of todo.slice(0, 12)) {
+      const h = phHash(t.v), type = (t.v.match(/^data:(image\/[a-z]+)/) || [])[1] || 'image/jpeg', path = `${acct.user.id}/${h}.${type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg'}`;
+      const blob = await (await fetch(t.v)).blob();
+      const {error} = await acct.client.storage.from('photos').upload(path, blob, {contentType:type, upsert:true});
+      if (error) { if (/not found|bucket/i.test(String(error.message || ''))) PHOTO.off = true; break; } // 保存場所がまだ作られていないときは、今回は送らない
+      m[h] = path; photoMapSet(m);
+    }
+  } catch (e) { /* 電波が悪いときは次のバックアップでやり直す */ }
+  PHOTO.busy = false; return more;
+}
+// クラウドから記録を戻したとき：この端末にない写真を、保存場所から読み込んで入れる
+async function photoRestore(refs) {
+  if (!refs || typeof refs !== 'object' || !syncOn()) return;
+  const keys = Object.keys(refs).filter(k => typeof refs[k] === 'string' && refs[k].startsWith(acct.user.id + '/'));
+  if (!keys.length) return;
+  const m = photoMap(); let n = 0;
+  for (const key of keys) {
+    const [arr, id, field] = key.split('|'), [f, g] = (field || '').split('.');
+    const x = (state[arr] || []).find(y => y.id === id); if (!x || !f) continue;
+    if (g ? (x[f] && x[f][g]) : x[f]) continue; // この端末にもうある
+    try {
+      const {data, error} = await acct.client.storage.from('photos').download(refs[key]); if (error || !data) continue;
+      const url = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(data); });
+      if (!safeImg(url)) continue;
+      if (g) { x[f] = x[f] && typeof x[f] === 'object' ? x[f] : {}; x[f][g] = url; } else x[f] = url;
+      m[phHash(url)] = refs[key]; n++;
+    } catch (e) { /* 読めなかった写真は飛ばす */ }
+  }
+  if (n) { photoMapSet(m); save(); render(); toast(`写真を${n}枚もどしました`); }
+}
+// アカウントを削除するとき：保存場所の写真も消す
+async function photoDeleteAll() {
+  try { if (!acct.client || !acct.user) return; const {data} = await acct.client.storage.from('photos').list(acct.user.id, {limit:1000}); if (data && data.length) await acct.client.storage.from('photos').remove(data.map(o => `${acct.user.id}/${o.name}`)); localStorage.removeItem(PHOTO_MAP_KEY); } catch (e) { /* 何もしない */ }
+}
+
+// ===== お知らせ（通知）：ホーム画面に追加したアプリに、記録のお知らせと使用期限のお知らせを送る =====
+// 送るのはサーバーの関数「push」。決めた時刻に、その日まだ肌を記録していないときだけ「記録しましょう」を送る
+function notifyCfg() { const n = state.settings.notify || {}; return {on:!!n.on, time:/^\d{2}:\d{2}$/.test(n.time || '') ? n.time : '21:00', expiry:n.expiry !== false}; }
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+function b64u(s) { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+async function callPush(action, extra) {
+  if (!acct.client) await initCloud();
+  if (!acct.client || !acct.user) throw new Error('ログイン（無料）すると使えます。');
+  const {data, error} = await acct.client.functions.invoke('push', {body:Object.assign({action}, extra || {})});
+  if (error || (data && data.error)) throw new Error('お知らせの設定ができませんでした。時間をおいて、もう一度お試しください。');
+  return data || {};
+}
+// サーバーに渡すのは「最後に肌を記録した日」と「使用期限の目安の日付」だけ（記録の中身は渡さない）
+function notifyInfo() {
+  const last = state.skinLogs.filter(l => !l.demo).map(l => l.date).sort().pop() || null;
+  const exps = state.myProducts.map(p => ({p, L:prodLife(p)})).filter(x => x.L).map(x => ({id:x.p.id, name:truncate(shortName(x.p.name), 20), exp:addDays(todayStr(), x.L.toExp)})).slice(0, 40);
+  return {last_log:last, exps};
+}
+async function pushSub() { const reg = await navigator.serviceWorker.ready; return reg.pushManager.getSubscription(); }
+async function notifySend(c) { const sub = await pushSub(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, expiry_on:c.expiry}, notifyInfo())); return true; }
+async function notifyEnable() {
+  if (!acct.user) { toast('先にログイン（無料）してください', 'error'); return; }
+  if (!pushSupported() || (DEV.ios && !isStandalone())) { openModal({title:'お知らせを使うには', body:`<p style="margin:0">iPhoneでは、ナカカラモを<b>ホーム画面に追加</b>して、そこから開いたときにお知らせを使えます。</p><ol class="points small"><li>Safariで下の共有ボタン（□に↑）を押す</li><li>「ホーム画面に追加」を押す</li><li>ホーム画面のナカカラモから開いて、もう一度オンにする</li></ol>`, footer:'<button type="button" class="btn btn-primary" data-action="close-modal">OK</button>'}); return; }
+  ui.notifyBusy = true; refreshNotifyCard();
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error(DEV.ios ? 'お知らせが許可されませんでした。iPhoneの「設定」→「通知」→「ナカカラモ」で許可できます。' : 'お知らせが許可されませんでした。ブラウザの設定で許可できます。');
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) { const {key} = await callPush('key'); sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64u(key)}); }
+    const c = notifyCfg(); c.on = true; state.settings.notify = c; save();
+    await notifySend(c); toast('お知らせをオンにしました');
+  } catch (e) { toast(e.message || 'お知らせをオンにできませんでした', 'error'); }
+  ui.notifyBusy = false; refreshNotifyCard();
+}
+async function notifyDisable() {
+  const c = notifyCfg(); c.on = false; state.settings.notify = c; save(); refreshNotifyCard();
+  try { const sub = await pushSub(); if (sub) { try { await callPush('unsubscribe', {endpoint:sub.endpoint}); } catch (e) { /* 何もしない */ } await sub.unsubscribe(); } } catch (e) { /* 何もしない */ }
+  toast('お知らせをオフにしました');
+}
+// 記録や化粧品が変わったら、サーバーの「最後に記録した日・使用期限」も新しくする（変わったときだけ）
+let notifyT = null;
+function notifySoon() {
+  if (!notifyCfg().on || !acct.user || !pushSupported()) return;
+  clearTimeout(notifyT); notifyT = setTimeout(async () => {
+    const c = notifyCfg(), sig = phHash(JSON.stringify([c, notifyInfo(), todayStr()]));
+    try { if (localStorage.getItem('nk_notify_sig') === sig) return; if (await notifySend(c)) localStorage.setItem('nk_notify_sig', sig); } catch (e) { /* 次に保存したときにやり直す */ }
+  }, 3000);
+}
+function notifyCardHtml() {
+  const c = notifyCfg(), busy = ui.notifyBusy, times = []; for (let h = 6; h <= 23; h++) ['00', '30'].forEach(m => times.push(`${String(h).padStart(2, '0')}:${m}`));
+  let body;
+  if (!acct.user) body = `<p class="small muted" style="margin:0 0 10px">記録のお知らせと、使用期限が近い化粧品のお知らせを受け取れます。使うにはログイン（無料）が必要です。</p><a class="btn btn-soft btn-sm" href="#/account/me">ログインする</a>`;
+  else body = `<label class="nt-row"><span><b>お知らせを受け取る</b><small>${DEV.ios && !isStandalone() ? 'iPhoneでは、ホーム画面に追加したアプリで使えます' : 'この端末に通知が届きます'}</small></span><input type="checkbox" switch class="nt-sw" data-action="notify-toggle" ${c.on ? 'checked' : ''} ${busy ? 'disabled' : ''}></label>
+    <div class="nt-opts" ${c.on ? '' : 'hidden'}>
+      <div class="nt-line"><span>記録のお知らせ</span><select class="select" id="f_notify_time" aria-label="お知らせの時刻">${times.map(t => `<option ${t === c.time ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <p class="small muted" style="margin:4px 0 10px">その日まだ肌を記録していないときだけ届きます。</p>
+      <label class="check"><input type="checkbox" id="f_notify_exp" ${c.expiry ? 'checked' : ''}>使用期限が近い化粧品をお知らせ（7日前）</label>
+      <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="notify-test">テストのお知らせを送る</button></div>`;
+  return `<div class="card" id="notify-card"><div class="card-h"><h2>お知らせ</h2></div>${body}</div>`;
+}
+function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); }
+document.addEventListener('change', e => {
+  if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp') return;
+  const c = notifyCfg(); if (e.target.id === 'f_notify_time') c.time = e.target.value; else c.expiry = e.target.checked;
+  state.settings.notify = c; save(); notifySoon();
+});
 function syncAsk(row) {
   ui.syncRow = row;
   openModal({title:'どちらのデータを使いますか？', body:`<p class="small" style="margin:0 0 8px">この端末とクラウドの両方に、新しい記録があります。</p>
@@ -11715,7 +11885,7 @@ function syncCardHtml() {
   const status = !acct.user ? '<p class="small muted" style="margin:8px 0 0">使うには、先に<a href="#/plan">ログイン</a>してください（無料）。</p>'
     : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : '自動でバックアップします'}</p>` : '';
   return `<div class="card" id="sync-card"><div class="card-h"><h2>自動バックアップ</h2></div>
-    <p class="small muted" style="margin:0 0 10px">ログインしていれば、記録・化粧品・設定を、登録したメールアドレスのアカウントに自動でバックアップします。機種変更したときや、ブラウザのデータが消えたときも、ログインすれば続きから使えます。<b>写真はクラウドに送らず、この端末の中だけ</b>に保存します。</p>
+    <p class="small muted" style="margin:0 0 10px">ログインしていれば、記録・化粧品・設定を、登録したメールアドレスのアカウントに自動でバックアップします。機種変更したときや、ブラウザのデータが消えたときも、ログインすれば続きから使えます。写真も、<b>あなただけが見られる場所</b>に自動でバックアップします。</p>
     ${acct.user ? `<p class="small" style="margin:0">バックアップ先：<b>${esc((acct.user.email || 'Googleのアカウント'))}</b></p>` : ''}${status}</div>`;
 }
 async function initCloud() {
@@ -11928,7 +12098,7 @@ function viewPlan(query) {
   let html = pageHead('プラン・アカウント', '有料プラン（プレミアム）の申し込み・管理と、アカウントの設定です。');
   let notes = ''; // アカウントの画面の中では、お知らせは下にまとめる
   if (CLOUD.testMode) notes += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
-  notes += `<div class="notice green">ログインすると、肌の記録・化粧品・設定が、登録したメールアドレスのアカウントに自動でバックアップされます（機種変更しても戻せます）。写真はこの端末の中だけに保存します。有料プランのカード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
+  notes += `<div class="notice green">ログインすると、肌の記録・化粧品・設定が、登録したメールアドレスのアカウントに自動でバックアップされます（機種変更しても戻せます）。写真もあなただけが見られる場所にバックアップされます。有料プランのカード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
   const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
     <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
   // アカウントの画面の中では、プランの比較は一番下に、押すと開く形で出す
@@ -12063,7 +12233,7 @@ async function handlePwSubmit(form) {
 const SNS_LINKS = [{l:'Instagram', url:'https://www.instagram.com/nakakaramo/'}, {l:'TikTok', url:'https://www.tiktok.com/@nakakaramo'}, {l:'X', url:'https://x.com/nakakaramo'}];
 const LEGAL = {
   draft: true,               // 下書きのあいだは true（画面に「下書き」と表示）
-  updated: '2026年11月12日',  // 最終改定日
+  updated: '2026年11月13日',  // 最終改定日
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額1,200円（税込）'
@@ -12135,7 +12305,7 @@ function viewPrivacy() {
   return legalWrap('プライバシーポリシー', `
 <p>${C}（以下「運営者」）は、「${S}」（以下「本サービス」）における利用者の情報の取り扱いについて、次のとおり定めます。</p>
 <h3>1. 基本の考え方</h3>
-<p>本サービスは、肌の記録・食事・生活習慣などのデータを、まず利用者の端末のブラウザ内（localStorage）に保存します。<b>ログインしている場合は、これらの記録（肌の記録・Myアイテム・設定）を、データの消失を防ぐために、登録したメールアドレスのアカウントに自動でバックアップ（Supabaseのサーバーに保存）</b>します。<b>写真と現在地はバックアップせず、端末の中だけに保存</b>します。ログインしていない場合、記録は運営者のサーバーに送信しません。また、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）を送信します。</p>
+<p>本サービスは、肌の記録・食事・生活習慣などのデータを、まず利用者の端末のブラウザ内（localStorage）に保存します。<b>ログインしている場合は、これらの記録（肌の記録・Myアイテム・設定）を、データの消失を防ぐために、登録したメールアドレスのアカウントに自動でバックアップ（Supabaseのサーバーに保存）</b>します。写真も、本人だけが読み書きできる保存場所（Supabase Storage）に<b>バックアップ</b>します。<b>現在地はバックアップせず、端末の中だけに保存</b>します。ログインしていない場合、記録は運営者のサーバーに送信しません。また、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）を送信します。</p>
 <h3>2. 取得する情報</h3>
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
@@ -12157,7 +12327,9 @@ function viewPrivacy() {
 <p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
 <div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
 ${row('Supabase（Supabase Inc.・サーバーは東京）', 'メールアドレス、パスワード、ログイン状態、契約状況', 'アカウントと有料プランの管理。ログイン・プラン画面を使ったときだけ')}
-${row('Supabase（自動バックアップ・東京）', '肌の記録・Myアイテム・設定などの記録（写真・現在地を除く）', 'データの消失を防ぐためのバックアップと、別の端末での復元。ログインしているときに、記録を保存・変更した数秒後')}
+${row('Supabase（自動バックアップ・東京）', '肌の記録・Myアイテム・設定などの記録と写真（現在地を除く）', 'データの消失を防ぐためのバックアップと、別の端末での復元。ログインしているときに、記録を保存・変更した数秒後')}
+${row('Supabase（お知らせ・東京）', '通知の宛先、お知らせの時刻、最後に肌を記録した日、化粧品の名前と使用期限の目安の日付', '記録のお知らせ・使用期限のお知らせの送信。設定でお知らせをオンにした場合だけ')}
+${row('Apple・Google・Mozilla（各ブラウザの通知の配信）', 'お知らせの文面（化粧品の名前を含むことがあります）', 'お知らせを端末に届けるため。お知らせをオンにした場合だけ')}
 ${row('Resend（Resend, Inc.）', 'メールアドレス、送るメールの内容（確認コード・ログイン用のリンク）', '登録・ログイン・パスワード再設定の確認メールの送信。メールを送るときだけ')}
 ${row('Google（Googleログイン）', 'Googleアカウントのメールアドレス・名前（Googleの画面で同意した場合）', '「Googleでログイン」を使ったときの本人確認')}
 ${row('Open-Meteo', '湿度・気温を表示する場所の座標（都道府県を選んだ場合はその代表地点）', 'ホームに今日の湿度・気温・紫外線を表示するため。ホームを開いたとき')}
@@ -12381,6 +12553,7 @@ function settingsEmbedHtml(kind) {
   const out = [], P = [];
   if (cards['身長・体重']) out.push(cards['身長・体重'].outerHTML);
   const skinC = cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) out.push(skinC.outerHTML);
+  if (!NATIVE_APP) out.push(notifyCardHtml()); // お知らせ（通知）
   if (cards['クラウドに保存']) P.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) P.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
@@ -12522,11 +12695,12 @@ function viewSettings() {
 ${NATIVE_APP ? '' : '</template>'}
     
     <div class="card"><div class="card-h"><h2>プライバシー</h2></div>
-      <p class="small" style="margin:0">記録は<b>この端末のブラウザの中</b>に保存されます。「クラウドに保存」をオンにした場合だけ、写真以外の記録をあなたのアカウントに保存します。</p>
+      <p class="small" style="margin:0">記録は<b>この端末のブラウザの中</b>に保存されます。ログインしている場合は、記録と写真をあなたのアカウントに自動でバックアップします。</p>
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <ul class="points small">
         <li><b>食品のバーコード</b>：食事の写真にバーコードが写っていた場合、その数字（JANコード）だけを食品データベース（Open Food Facts）に送り、栄養成分表示を受け取ります。写真そのものは送りません。</li><li><b>天気</b>：天気の地域を選んだ場合だけ、緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。都道府県を選んだときは県庁所在地の位置、「現在地」を選んで位置情報を許可したときは、約100mに丸めた今いる場所の位置です。現在地のときは、地名を表示するために同じ位置を地名の確認サービス（BigDataCloud）にも送ります。記録やアカウントの情報は送りません。位置はこの端末の中に保存します。</li><li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
-        <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
+        <li><b>肌写真</b>：保存は任意です。保存した写真は、ログインしている場合だけ、本人だけが読み書きできる保存場所（Supabase Storage・東京）にバックアップします。アカウントを削除すると一緒に削除します。</li>
+        <li><b>お知らせ（通知）</b>：設定でオンにした場合だけ、通知の宛先（ブラウザが作る送り先の情報）、お知らせの時刻、最後に肌を記録した日、化粧品の名前と使用期限の目安の日付をサーバーに保存し、決めた時刻にお知らせを送ります。記録の中身は送りません。オフにすると削除します。</li>
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
@@ -12872,6 +13046,10 @@ const actions = {
     catch (e) { toast(authErrMsg(e), 'error'); }
   },
   'acc-profile': () => openProfile(),
+  'ba-make': () => baMake(),
+  'ba-share': async () => { try { if (ui.baFile) await navigator.share({files:[ui.baFile], title:'ナカカラモ'}); } catch (e) { /* やめたとき */ } },
+  'notify-toggle': (id, el) => { if (el.checked) notifyEnable(); else notifyDisable(); },
+  'notify-test': async () => { try { await notifySend(notifyCfg()); await callPush('test'); toast('テストのお知らせを送りました（数秒で届きます）'); } catch (e) { toast(e.message, 'error'); } },
   'acc-name': () => openNameEdit(),
   'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (save()) { closeModal(); toast('保存しました'); render(); } },
   'restore-no': () => { try { localStorage.setItem('nk_restore_no', '1'); } catch (e) { /* 何もしない */ } closeModal(); },
@@ -12904,7 +13082,7 @@ const actions = {
     const warn = isPremium() ? '\n・ご契約中のプレミアムプランは、ただちに解約されます（日割りの返金はありません）' : '';
     if (!await confirmDialog(`アカウントを削除しますか？\n・メールアドレスと契約状況がサーバーから削除されます${warn}\n・この端末の中の肌の記録などは削除されません\n・元に戻せません`, {ok:'アカウントを削除する', title:'アカウントの削除'})) return;
     acct.busy = true; render();
-    try { await callBilling('delete_account'); try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; toast('アカウントを削除しました'); }
+    try { await photoDeleteAll(); try { const sub = pushSupported() ? await pushSub() : null; if (sub) { await callPush('unsubscribe', {endpoint:sub.endpoint}); await sub.unsubscribe(); } } catch (e) { /* 何もしない */ } await callBilling('delete_account'); try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; toast('アカウントを削除しました'); }
     catch (e) { toast(e.message, 'error'); }
     acct.busy = false; render();
   },
