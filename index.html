@@ -1056,6 +1056,11 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .agree-line{display:flex!important;align-items:flex-start;gap:10px}.agree-line>span{flex:1;min-width:0;line-height:1.6}
 /* iPhoneの上（時計・電池の場所）に、スクロールした中身が重ならないように、背景色で隠す */
 body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
+/* 下からページ（シート）が出ているときは、いちばん上（時計・電池のところ）も一緒に薄暗くする */
+body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before{background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
+body:has(.ps-wrap.on)::before{background:color-mix(in srgb,rgb(20,20,20) 45%,var(--bg))}
+:root[data-theme="dark"] body:has(#modal-root .modal-backdrop:not(.closing))::before{background:color-mix(in srgb,#000 55%,var(--bg))}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body:has(#modal-root .modal-backdrop:not(.closing))::before{background:color-mix(in srgb,#000 55%,var(--bg))}}
 .rx-svg{width:100%;height:100%;display:block}.rx-item .rx-svg{width:46px;height:46px;flex:none;border-radius:10px}
 .pop-sec{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}.pop-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 8px}.pop-h b{font-size:15px}.pop-h small{font-size:11.5px;color:var(--muted)}
 #pop-list{margin-top:8px}
@@ -1202,7 +1207,17 @@ a.used-tile{color:inherit;text-decoration:none}
 .use-all-mini[aria-pressed="true"]{background:var(--green-l,#E5F2EA);border-color:transparent}
 .fp-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:2px 0 10px;background:var(--surface2);border-radius:999px}
 .fp-mode button{border:0;background:transparent;border-radius:999px;padding:8px 6px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;transition:background .2s,color .2s}
-.fp-mode button.on{background:var(--surface);color:var(--green-d);box-shadow:var(--shadow)}
+.fp-mode button.on{color:var(--green-d)}
+/* ニキビ選択／肌質選択の切り替え：白い板がすべって動く＋下の中身がふわっと入れかわる */
+.fp-mode{position:relative}
+.fp-mode::before{content:'';position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 6px);border-radius:999px;background:var(--surface);transition:transform .32s cubic-bezier(.3,1.25,.5,1)}
+.fp-mode.r::before{transform:translateX(calc(100% + 4px))}
+.fp-mode button{position:relative;z-index:1}
+.fp-swap{animation:fpSwap .3s ease both}
+.fp-swap.r{animation-name:fpSwapR}
+@keyframes fpSwap{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes fpSwapR{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fp-mode::before{transition:none}.fp-swap{animation:none}}
 .used-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px} /* 4つ横に並べる */
 .used-ck{display:none!important} /* チェックマークは出さない（選んだものは枠が緑になる） */
 .used-tile{position:relative;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
@@ -9136,9 +9151,11 @@ function openLogForm(id) {
     if (b.dataset.fpMode) {
       fpRange = b.dataset.fpMode === 'range';
       $$('[data-fp-mode]', fpEl()).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+      const md = b.closest('.fp-mode'); if (md) md.classList.toggle('r', fpRange);
       const st = FACE3D.st; if (st && st.gridInfo) { st.gridInfo.uni.uZoneMode.value = fpRange ? 1 : 0; st.zoneMode = fpRange; st.dirty = true; }
       fpSel.clear(); fpLast = null; fpBlink(false); fpSync();
       const h = $('#fp-hint', fpEl()); if (h) h.textContent = fpRange ? FP_HINT_ZONE : FP_HINT_TAP;
+      [h, $('#fp-panel', fpEl())].forEach(x => { if (!x) return; x.classList.remove('fp-swap', 'r'); void x.offsetWidth; x.classList.add('fp-swap'); x.classList.toggle('r', fpRange); }); // 動きをつけて入れかえる
       return;
     }
     if (b.dataset.fpZoom) { const st = FACE3D.st; if (st) { st.zoomT = clamp((st.zoomT || st.cam.position.z) + (b.dataset.fpZoom === 'in' ? -7 : 7), st.minZ, st.maxZ); st.dirty = true; } return; }
@@ -10023,22 +10040,35 @@ function face3dAcneDots(st, marks) {
 // 毛穴の目立ち：そのマスのまわりに、小さな黒っぽい点を散らして毛穴のように見せる（多いほど点を増やす）
 function face3dPoreDots(st, marks) {
   const T = FACE3D.three, g = st && st.gridInfo; if (!g) return;
-  const pos = FACE3D.mesh.v, nr = g.nrm, nb = face3dPrep().nb;
-  if (!st.poreGeo) { st.poreGeo = new T.CircleGeometry(0.075, 10); st.poreMat = new T.MeshBasicMaterial({color:0x3B2A22, transparent:true, opacity:0.7, depthWrite:false, side:T.DoubleSide}); }
-  const z = new T.Vector3(0, 0, 1);
-  Object.entries(marks || {}).forEach(([k, m]) => {
-    const lv = Number(m && m['毛穴の目立ち']) || 0; if (!lv) return;
-    const [c, r] = k.split(',').map(Number), vi = g.cellPt[r * g.cols + c]; if (vi == null || vi < 0) return;
-    const dd = j => Math.hypot(pos[j * 3] - pos[vi * 3], pos[j * 3 + 1] - pos[vi * 3 + 1], pos[j * 3 + 2] - pos[vi * 3 + 2]);
-    const near = (nb[vi] || [vi]).filter(j => nr[j * 3 + 2] > 0 && dd(j) < 0.85); if (!near.length) return; // そのマスの近くだけ
-    const n = Math.min(near.length, 3 + lv * 2);
+  const pos = FACE3D.mesh.v, nr = g.nrm;
+  if (!st.poreGeo) { st.poreGeo = new T.CircleGeometry(0.065, 10); st.poreMat = new T.MeshBasicMaterial({color:0x3B2A22, transparent:true, opacity:0.7, depthWrite:false, side:T.DoubleSide}); }
+  // マスごとに、そのマスの中にある顔の表面の点を覚えておく（点をマスの外に出さないため）
+  if (!g.cellVerts) {
+    g.cellVerts = new Map(); const n = pos.length / 3;
     for (let i = 0; i < n; i++) {
-      const j = near[(i * 7919 + c * 31 + r * 17) % near.length]; // 毎回同じ場所に出す（ちらつかないように）
-      const a = ((i * 2654435761) % 1000) / 1000 * Math.PI * 2, rr = 0.12 + ((i * 40503) % 100) / 100 * 0.18;
-      const dot = new T.Mesh(st.poreGeo, st.poreMat), nv = new T.Vector3(nr[j * 3], nr[j * 3 + 1], nr[j * 3 + 2]).normalize();
-      dot.position.set(pos[j * 3] + Math.cos(a) * rr + nv.x * 0.06, pos[j * 3 + 1] + Math.sin(a) * rr + nv.y * 0.06, pos[j * 3 + 2] + nv.z * 0.06);
+      if (nr[i * 3 + 2] < 0.2) continue;
+      const c = Math.floor((pos[i * 3] - g.x0) / g.size), r = Math.floor((pos[i * 3 + 1] - g.y0) / g.size), k = r * g.cols + c;
+      const a = g.cellVerts.get(k); if (a) a.push(i); else g.cellVerts.set(k, [i]);
+    }
+  }
+  const z = new T.Vector3(0, 0, 1), m = 0.2; // m：マスのふちから離す割合（点の大きさの分）
+  Object.entries(marks || {}).forEach(([k, mk]) => {
+    const lv = Number(mk && mk['毛穴の目立ち']) || 0; if (!lv) return;
+    const [c, r] = k.split(',').map(Number), vs = g.cellVerts.get(r * g.cols + c); if (!vs || !vs.length) return;
+    const n = 3 + lv * 2, zone = g.cellZone[r * g.cols + c] || 0;
+    const rnd = x => { x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); return ((x ^ (x >>> 16)) >>> 0) / 4294967296; }; // 毎回同じ値になる乱数（ちらつかないように）
+    for (let i = 0, put = 0; put < n && i < n * 6; i++) {
+      const u = m + rnd(c * 7919 + r * 104729 + i * 31 + 1) * (1 - m * 2), w = m + rnd(c * 6271 + r * 3571 + i * 131 + 7) * (1 - m * 2);
+      const tx = g.x0 + (c + u) * g.size, ty = g.y0 + (r + w) * g.size;
+      if (zone && [[0, 0], [0.16, 0], [-0.16, 0], [0, 0.16], [0, -0.16]].some(([dx, dy]) => face3dZoneOf(tx + dx, ty + dy) !== zone)) continue; // 選んだ部分（区切りの線）の外・線の上には出さない
+      put++;
+      let j = vs[0], best = 1e9; vs.forEach(q => { const d = (pos[q * 3] - tx) ** 2 + (pos[q * 3 + 1] - ty) ** 2; if (d < best) { best = d; j = q; } });
+      const nv = new T.Vector3(nr[j * 3], nr[j * 3 + 1], nr[j * 3 + 2]).normalize();
+      const dot = new T.Mesh(st.poreGeo, st.poreMat);
+      const tz = pos[j * 3 + 2] - (nv.x * (tx - pos[j * 3]) + nv.y * (ty - pos[j * 3 + 1])) / Math.max(0.3, nv.z); // 近くの点の面の上にのせる
+      dot.position.set(tx + nv.x * 0.06, ty + nv.y * 0.06, tz + nv.z * 0.06);
       dot.quaternion.setFromUnitVectors(z, nv); // 肌の表面に沿わせる
-      const sc = 0.7 + ((i * 1103) % 60) / 100; dot.scale.set(sc, sc, sc);
+      const sc = 0.7 + ((i * 1103) % 50) / 100; dot.scale.set(sc, sc, sc);
       st.group.add(dot); st.dots.push(dot);
     }
   });
@@ -12973,6 +13003,17 @@ document.title = SERVICE;
 render();
 // はじめて開いたときは、先に「はじめの質問」を出す
 if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML) openSetupWizard(); }, 400);
+// シートが出ているときは、ブラウザのいちばん上の色（theme-color）も一緒に薄暗くする
+(() => {
+  const metas = [...document.querySelectorAll('meta[name="theme-color"]')], orig = metas.map(m => m.content); let last = '';
+  const upd = () => {
+    const open = !!document.querySelector('#modal-root .modal-backdrop:not(.closing), #drawer-root.open, .ps-wrap.on');
+    let c = open ? getComputedStyle(document.body, '::before').backgroundColor : '';
+    const m = c.match(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/); if (m) c = 'rgb(' + [m[1], m[2], m[3]].map(x => Math.round(Number(x) * 255)).join(',') + ')'; // 形式をそろえる
+    if (c === last) return; last = c; metas.forEach((m, i) => { m.content = c || orig[i]; });
+  };
+  new MutationObserver(() => requestAnimationFrame(upd)).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class']});
+})();
 </script>
 <script>['gesturestart','gesturechange','gestureend'].forEach(e=>document.addEventListener(e,ev=>ev.preventDefault(),{passive:false}));document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});</script>
 
