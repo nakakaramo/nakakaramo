@@ -1891,12 +1891,7 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 :root{--shadow:0 1px 2px rgba(30,42,35,.07),0 4px 12px rgba(30,42,35,.07),0 14px 32px rgba(30,42,35,.08);--shadow-btn:0 1px 1px rgba(30,42,35,.10),0 3px 8px rgba(30,42,35,.12);--shadow-btn-in:0 1px 2px rgba(30,42,35,.12)}
 :root[data-theme="dark"]{--shadow:0 1px 2px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.3);--shadow-btn:0 1px 1px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.45);--shadow-btn-in:0 1px 2px rgba(0,0,0,.5)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--shadow:0 1px 2px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.3);--shadow-btn:0 1px 1px rgba(0,0,0,.5),0 3px 10px rgba(0,0,0,.45);--shadow-btn-in:0 1px 2px rgba(0,0,0,.5)}}
-.btn:not(.link):not(:disabled),.care-btn,.sw-opt,.au-go,.st-go,.ing-kind:not(:disabled),.pop-item{box-shadow:var(--shadow-btn)}
-.f3-expand,.t3-stage .f3-expand{box-shadow:none!important} /* ズームボタンには影をつけない */
-.btn-primary:not(:disabled),.btn-danger:not(:disabled),.au-go,.st-go{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),var(--shadow-btn)}
-.btn:not(:disabled):active,.care-btn:active,.sw-opt:active,.au-go:active,.st-go:active,.ing-kind:active,.pop-item:active{box-shadow:var(--shadow-btn-in)}
-.btn:disabled{box-shadow:none}
-#sw-body .btn,#sw-body .sw-opt,#sw-body .care-btn,#sw-foot .btn,#sw-foot .btn:active,#sw-body .sw-opt:active{box-shadow:none} /* アンケートの中は影をつけない */
+/* ボタンには影をつけない（枠・カードの影だけ残す） */
 .log-item,.mitem,.pcard{box-shadow:var(--shadow)}
 
 /* ===== スキンケア設計 ===== */
