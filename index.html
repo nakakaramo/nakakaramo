@@ -2393,6 +2393,8 @@ img{image-rendering:auto}
 .pm-btns{margin-top:auto;padding-top:28px;width:100%;display:flex;flex-direction:column;gap:6px}
 .pm-btns .pm-go{width:100%;height:50px;font-size:16px;border-radius:14px}
 .pm-skip{background:none;border:0;color:var(--muted);font:inherit;font-size:14.5px;padding:12px;cursor:pointer}
+
+.acc-me .am-edit{flex:none;font-size:13px;font-weight:500;color:var(--green-d);padding:6px 12px;border:1px solid var(--line);border-radius:999px}
 </style>
 </head>
 <body>
@@ -11850,12 +11852,13 @@ function notifyInfo() {
 }
 async function pushSub() { const reg = await navigator.serviceWorker.ready; return reg.pushManager.getSubscription(); }
 async function notifySend(c) { const sub = await pushSub(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, expiry_on:c.expiry}, notifyInfo())); return true; }
-async function notifyEnable() {
+async function notifyEnable(opt) {
   if (!acct.user) { toast('先にログイン（無料）してください', 'error'); return; }
   if (!pushSupported() || (DEV.ios && !isStandalone())) { openModal({title:'お知らせを使うには', body:`<p style="margin:0">iPhoneでは、ナカカラモを<b>ホーム画面に追加</b>して、そこから開いたときにお知らせを使えます。</p><ol class="points small"><li>Safariで下の共有ボタン（□に↑）を押す</li><li>「ホーム画面に追加」を押す</li><li>ホーム画面のナカカラモから開いて、もう一度オンにする</li></ol>`, footer:'<button type="button" class="btn btn-primary" data-action="close-modal">OK</button>'}); return; }
   ui.notifyBusy = true; refreshNotifyCard();
   try {
     const perm = await Notification.requestPermission();
+    if (perm === 'granted' && opt && opt.early) opt.early(); // 許可されたら、サーバーへの登録を待たずに次へ進める
     if (perm !== 'granted') throw new Error(DEV.ios ? 'お知らせが許可されませんでした。iPhoneの「設定」→「通知」→「ナカカラモ」で許可できます。' : 'お知らせが許可されませんでした。ブラウザの設定で許可できます。');
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -11880,10 +11883,10 @@ function notifySoon() {
   }, 3000);
 }
 function notifyCardHtml() {
-  const c = notifyCfg(), busy = ui.notifyBusy, times = []; for (let h = 6; h <= 23; h++) ['00', '30'].forEach(m => times.push(`${String(h).padStart(2, '0')}:${m}`));
+  const c = notifyCfg(), busy = ui.notifyBusy, times = []; if (busy) c.on = true; /* 押したらすぐオンの見た目にする（許可の確認が終わるまで待たない） */ for (let h = 6; h <= 23; h++) ['00', '30'].forEach(m => times.push(`${String(h).padStart(2, '0')}:${m}`));
   let body;
   if (!acct.user) body = `<p class="small muted" style="margin:0 0 10px">記録のお知らせと、使用期限が近い化粧品のお知らせを受け取れます。使うにはログイン（無料）が必要です。</p><a class="btn btn-soft btn-sm" href="#/account/me">ログインする</a>`;
-  else body = `<label class="nt-row"><span><b>お知らせを受け取る</b><small>${DEV.ios && !isStandalone() ? 'iPhoneでは、ホーム画面に追加したアプリで使えます' : 'この端末に通知が届きます'}</small></span><input type="checkbox" switch class="nt-sw" data-action="notify-toggle" ${c.on ? 'checked' : ''} ${busy ? 'disabled' : ''}></label>
+  else body = `<label class="nt-row"><span><b>お知らせを受け取る</b><small>${busy ? '設定しています…' : DEV.ios && !isStandalone() ? 'iPhoneでは、ホーム画面に追加したアプリで使えます' : 'この端末に通知が届きます'}</small></span><input type="checkbox" switch class="nt-sw" data-action="notify-toggle" ${c.on ? 'checked' : ''}></label>
     <div class="nt-opts" ${c.on ? '' : 'hidden'}>
       <div class="nt-line"><span>記録のお知らせ</span><select class="select" id="f_notify_time" aria-label="お知らせの時刻">${times.map(t => `<option ${t === c.time ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
       <p class="small muted" style="margin:4px 0 10px">その日まだ肌を記録していないときだけ届きます。</p>
@@ -11939,7 +11942,7 @@ async function permSheet(force) {
         const g = await wxGeo(true);
         if (g) { state.settings.wxPref = '現在地'; state.settings.wxLoc = g; state.wxGeoAt = todayStr(); state.wxFetched = ''; save(); WX_BUSY = false; wxPlaceName(g); wxFetch(true, false); toast('位置情報を設定しました'); }
         else toast('位置情報を取得できませんでした。あとで設定から許可できます。', 'error');
-      } else await notifyEnable();
+      } else await new Promise(res => { notifyEnable({early:res}).then(res); });
       next();
     };
   };
@@ -12537,7 +12540,8 @@ const ACC_SECTIONS = {
     body:() => `<div class="mb-card" id="acc-money">${moneyCardHtml()}</div>`},
   plan: {icon:'user', t:'プラン・アカウント', d:() => acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み',
     body:() => embedView(() => viewPlan({}))},
-  settings: {icon:'gear', t:'設定', d:() => '名前・アイコン、身長・体重、肌質・性別、画面の表示', body:() => settingsEmbedHtml('settings')},
+  body: {icon:'user', t:'からだと肌', d:() => '身長・体重、肌質・性別・年代・肌悩み', body:() => settingsEmbedHtml('body')},
+  settings: {icon:'gear', t:'設定', d:() => 'お知らせ、画面の表示、アプリとして使う', body:() => settingsEmbedHtml('settings')},
   privacy: {icon:'shield', t:'プライバシー', d:() => 'クラウド保存、研究への協力、データの管理', body:() => settingsEmbedHtml('privacy')}
 };
 function accSectionHtml(k) {
@@ -12554,7 +12558,7 @@ function avatarHtml(size) {
 function accMeHtml() {
   const nm = state.settings.nickname;
   return `<a class="card acc-me" href="#/account/me">${avatarHtml(52)}
-    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン') : 'ログインしていません'}</small></span><i class="am-go" aria-hidden="true">›</i></a>`;
+    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
 }
 // アカウント情報（一番上のプロフィールを押すと開く）：アイコン・名前・プランとログイン
 function viewAccountMe() {
@@ -12606,7 +12610,7 @@ function viewAccount() {
   if (parseRoute().id === 'me') return viewAccountMe();
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return accMeHtml() + ['settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
+  return accMeHtml() + ['body', 'settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
     `<section class="card acc-sec"><button class="acc-row acc-toggle" data-action="support-open">${icon('chat')}<span><b>お問い合わせ</b><small>${isPremium() ? 'サポートに質問する' : 'メールで問い合わせる'}</small></span><i>›</i></button></section>`;
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
@@ -12629,9 +12633,9 @@ function settingsEmbedHtml(kind) {
   const cards = {}; top.forEach(c => { const h = c.querySelector('.card-h h2'); if (h) cards[h.textContent.trim()] = c; });
   const inner = c => { if (!c) return ''; const x = c.cloneNode(true); const h = x.querySelector('.card-h'); if (h) h.remove(); return x.innerHTML; };
   const sub = (title, c) => c ? `<div class="set-sub"><h3>${esc(title)}</h3>${inner(c)}</div>` : '';
-  const out = [], P = [];
-  if (cards['身長・体重']) out.push(cards['身長・体重'].outerHTML);
-  const skinC = cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) out.push(skinC.outerHTML);
+  const out = [], P = [], B = [];
+  if (cards['身長・体重']) B.push(cards['身長・体重'].outerHTML); // からだと肌（自分の情報）
+  const skinC = cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) B.push(skinC.outerHTML);
   if (!NATIVE_APP) out.push(notifyCardHtml()); // お知らせ（通知）
   if (cards['クラウドに保存']) P.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) P.push(cards['研究への協力'].outerHTML);
@@ -12642,7 +12646,7 @@ function settingsEmbedHtml(kind) {
   if (cards['プライバシー']) P.push(`<div class="card"><details class="fold set-fold"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details></div>`);
   const install = top.find(c => /アプリとして使う/.test(c.textContent)); if (install) out.push(install.outerHTML);
   const about = Object.keys(cards).find(k => /について$/.test(k)); if (about) out.push(cards[about].outerHTML);
-  return (kind === 'privacy' ? P : out).join('');
+  return (kind === 'privacy' ? P : kind === 'body' ? B : out).join('');
 }
 // 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
 function refreshAccPanel(k) { const pn = document.getElementById('acc-panel-' + k); if (pn && !pn.hidden) pn.innerHTML = ACC_SECTIONS[k].body(); const sec = document.getElementById('acc-sec-' + k); if (sec) { const sm = sec.querySelector('.acc-toggle small'); if (sm) sm.innerHTML = ACC_SECTIONS[k].d(); } }
@@ -13133,7 +13137,7 @@ const actions = {
   'perm-notify': () => { notifyEnable().then(permRefresh); setTimeout(permRefresh, 50); },
   'ba-make': () => baMake(),
   'ba-share': async () => { try { if (ui.baFile) await navigator.share({files:[ui.baFile], title:'ナカカラモ'}); } catch (e) { /* やめたとき */ } },
-  'notify-toggle': (id, el) => { if (el.checked) notifyEnable(); else notifyDisable(); },
+  'notify-toggle': (id, el) => { if (ui.notifyBusy) { el.checked = true; return; } if (el.checked) notifyEnable(); else notifyDisable(); },
   'notify-test': async () => { try { await notifySend(notifyCfg()); await callPush('test'); toast('テストのお知らせを送りました（数秒で届きます）'); } catch (e) { toast(e.message, 'error'); } },
   'acc-name': () => openNameEdit(),
   'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (save()) { closeModal(); toast('保存しました'); render(); } },
