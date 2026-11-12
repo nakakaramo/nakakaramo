@@ -812,7 +812,7 @@ details.acc-cmp{margin-top:14px}
 .my-adds .btn.btn-primary:active{background:var(--green-s,#E4EDE5)!important}
 .my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line);position:relative}
 .mk-ind{position:absolute;left:0;bottom:-1px;width:50%;height:2.5px;border-radius:2px;background:var(--green-d);transform:translateX(calc(var(--mk,0) * 100%));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
-.mk-pane.mk-in-r{animation:mkInR .32s cubic-bezier(.2,.8,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .32s cubic-bezier(.2,.8,.2,1) both}
+.mk-pane.mk-in-r{animation:mkInR .54s cubic-bezier(.22,.7,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .54s cubic-bezier(.22,.7,.2,1) both}
 @keyframes mkInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes mkInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .my-kind{transition:color .2s}
 .my-kind span{transition:background .2s,color .2s}
@@ -1262,7 +1262,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .fp-mode::before{content:'';position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 6px);border-radius:999px;background:var(--surface);transition:transform .32s cubic-bezier(.3,1.25,.5,1)}
 .fp-mode.r::before{transform:translateX(calc(100% + 4px))}
 .fp-mode button{position:relative;z-index:1}
-.fp-swap{animation:fpSwap .3s ease both}
+.fp-swap{animation:fpSwap .54s cubic-bezier(.22,.7,.2,1) both}
 .fp-swap.r{animation-name:fpSwapR}
 @keyframes fpSwap{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
 @keyframes fpSwapR{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
@@ -1835,7 +1835,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 @keyframes auInR{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
 @keyframes auInL{from{opacity:0;transform:translateY(-24px)}to{opacity:1;transform:none}}
 @keyframes auInF{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.au-in-r{animation:auInR .3s cubic-bezier(.2,.8,.2,1) both}.au-in-l{animation:auInL .3s cubic-bezier(.2,.8,.2,1) both}.au-in-f{animation:auInF .28s ease both}
+.au-in-r{animation:auInR .54s cubic-bezier(.22,.7,.2,1) both}.au-in-l{animation:auInL .54s cubic-bezier(.22,.7,.2,1) both}.au-in-f{animation:auInF .28s ease both}
 @media (prefers-reduced-motion:reduce){.au-in-r,.au-in-l,.au-in-f{animation:none}.au-ov{transition:none}}
 
 /* ダークモード：明るい背景のまま文字が読めなくなっていた箱を直す */
