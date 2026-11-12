@@ -1288,6 +1288,10 @@ a.used-tile{color:inherit;text-decoration:none}
 /* ===== 動き（モーション） ===== */
 @keyframes pgIn{from{opacity:0}to{opacity:1}} /* 動かすと、上にくっつくタブのバーが一瞬ずれるので、うすく出すだけにする */
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
+/* 別の画面を開いたとき：中身は下からふわっと（前と同じ動き）。上にくっつくタブのバーだけは動かさない（ずれないように） */
+@keyframes pgInY{from{transform:translateY(12px)}to{transform:none}}
+#main.pg-in > :not(.home-tabs):not(.hap-keep){animation:pgInY .42s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion:reduce){#main.pg-in > *{animation:none}}
 @keyframes pgPush{from{opacity:.4;transform:translateX(42%)}to{opacity:1;transform:none}}
 @keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
 #main.pg-push{animation:pgPush .34s cubic-bezier(.2,.8,.2,1) both!important}#main.pg-pop{animation:pgPop .34s cubic-bezier(.2,.8,.2,1) both!important}
@@ -3771,6 +3775,8 @@ const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'favorites', 'accoun
 const motionSeen = new Set();
 function motionIn(route) {
   const main = document.getElementById('main'); if (!main) return;
+  // 別の画面を開いたときは、画面全体をふわっと出す（カードや数字を1つずつ動かすのは止めたまま）
+  if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in'); }
   if (!MOTION_OK()) return;
   // どの画面も、一番上の見出しは開くたびにふわっとフェードイン（ホームの日付は動かさない）
   { const h = main.querySelector('.page-head h1'); if (h) { h.classList.remove('fade-once'); void h.offsetWidth; h.classList.add('fade-once'); } }
