@@ -154,7 +154,7 @@ button{font-family:inherit}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
-.topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
+.topbar .wm-home{position:absolute;left:0;right:0;top:env(safe-area-inset-top);bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;transform:none;font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
 .topbar .wm-brand{font-size:15px;letter-spacing:.24em;color:var(--ink2,#3B4A41)}
 .topbar .wm-wx{font-family:var(--font);letter-spacing:0;max-width:calc(100% - 24px);display:flex;justify-content:center}
@@ -1311,8 +1311,8 @@ a.used-tile{color:inherit;text-decoration:none}
 .my-del-btn{width:100%;justify-content:center;gap:6px;margin-top:10px}.my-del-btn svg{width:16px;height:16px}
 .fade-once{animation:fadeOnce .7s ease both}
 @keyframes fadeOnce{from{opacity:0}to{opacity:1}}
-.kt{display:inline-block;opacity:0;transform:translateY(.55em) scale(.96);filter:blur(3px);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
-@keyframes ktIn{to{opacity:1;transform:none;filter:none}}
+.kt{display:inline-block;opacity:0;transform:translateY(.55em);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
+@keyframes ktIn{to{opacity:1;transform:none}}
 .rv{opacity:0;transform:translateY(16px)}
 .rv.in{opacity:1;transform:none;transition:opacity .55s ease var(--d,0ms),transform .6s cubic-bezier(.2,.8,.2,1) var(--d,0ms)}
 .rv.in .bar i,.rv.in .budget-bar i{transform-origin:left center;animation:barGrow .9s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0ms) + .15s)}
@@ -2208,6 +2208,23 @@ details > summary{transition:color .2s var(--ease-out)}
 #main.pg-push{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
 #main.pg-pop{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after,details::details-content{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ===== 画質：文字・アイコン・枠をくっきり描く（iPhoneのRetina向け） =====
+   ・ずっと「動かす準備」（will-change／translateZ）をしていると、iPhoneは中身を画像にして描くので、文字や写真がにじむ → 動かす間だけにする
+   ・すりガラス（backdrop-filter）は、まわりがにじんで見えるうえ重いので使わない（色は今と同じ不透明な色にする）
+   ・細かい文字の色を少しだけこくして、輪郭がはっきり見えるようにする */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+.home-pane,.mrow-w,.mrow-in,.modal{will-change:auto}
+.mrow-w .mrow-t,.mrow-w .mrow .thumb{will-change:auto;transform:none;-webkit-backface-visibility:visible;backface-visibility:visible}
+.topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:#FFFFFF}
+:root[data-theme="dark"] .bottom-nav{background:var(--surface)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bottom-nav{background:var(--surface)}}
+:root:not([data-theme="dark"]){--muted:#737B76}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--muted:#8F9891}}
+svg{shape-rendering:geometricPrecision}
+img{image-rendering:auto}
 </style>
 </head>
 <body>
@@ -3736,7 +3753,10 @@ function readImage(file, max=640, quality=0.75) {
         const c = document.createElement('canvas');
         c.width = Math.max(1, Math.round(img.width * s));
         c.height = Math.max(1, Math.round(img.height * s));
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        // 大きな写真を一気に縮めるとギザギザ・ぼやけが出るので、半分ずつ縮めてから最後の大きさにする
+        let src = img, sw = img.width, sh = img.height;
+        while (sw / 2 > c.width * 1.1) { const t = document.createElement('canvas'); t.width = Math.round(sw / 2); t.height = Math.round(sh / 2); const tx = t.getContext('2d'); tx.imageSmoothingEnabled = true; tx.imageSmoothingQuality = 'high'; tx.drawImage(src, 0, 0, t.width, t.height); src = t; sw = t.width; sh = t.height; }
+        const cx = c.getContext('2d'); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high'; cx.drawImage(src, 0, 0, c.width, c.height);
         resolve(c.toDataURL('image/jpeg', quality));
       };
       img.onerror = () => reject(new Error('この形式の画像は読み込めません。JPEGまたはPNGを選んでください。'));
@@ -4113,7 +4133,7 @@ function viewHome() {
   // 広告と下の説明文も、スワイプで中身と一緒に動くように .home-pane の中に入れる
   const paneEnd = html.lastIndexOf('</div>'), tail0 = html.slice(paneEnd);
   html = html.slice(0, paneEnd);
-  html += adSlot('home');
+  if (tab !== 'today') html += adSlot('home'); // 肌の記録（3Dの顔）がある「今日の記録」には広告を出さない
   html += `<p class="small muted" style="margin-top:20px;text-align:center">ナカカラモは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
   html += tail0;
   return html;
@@ -5557,7 +5577,7 @@ function openCatForm(id, prefill) {
   $('#ing-clean').onclick = () => { form.elements.ingredients.value = cleanIngText(form.elements.ingredients.value); toast('読点（、）区切りに整えました。内容を確認してください'); };
   $('#f_image').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
-    try { image = await readImage(file, 600, 0.8); $('#img-prev').innerHTML = `<img class="img-prev" src="${image}" alt=""><button type="button" class="btn btn-ghost btn-sm" id="img-clear" style="margin-top:6px">画像を外す</button>`; bindClear(); }
+    try { image = await readImage(file, 900, 0.86); /* iPhoneの画面（3倍）でも粗く見えない大きさ */ $('#img-prev').innerHTML = `<img class="img-prev" src="${image}" alt=""><button type="button" class="btn btn-ghost btn-sm" id="img-clear" style="margin-top:6px">画像を外す</button>`; bindClear(); }
     catch (err) { toast(err.message, 'error'); e.target.value = ''; }
   };
   form.onsubmit = e => {
@@ -9554,7 +9574,7 @@ function openLogForm(id) {
   $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url)); };
   $('#f_photo').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
-    try { pendingPhoto = await readImage(file, 640, 0.72); renderPhoto(); }
+    try { pendingPhoto = await readImage(file, 800, 0.8); renderPhoto(); }
     catch (err) { toast(err.message, 'error'); e.target.value = ''; }
   };
   // ---- 顔の写真から、AIで今日の肌の記録を自動で入れる（プレミアム）----
@@ -9586,7 +9606,7 @@ function openLogForm(id) {
   const faceAi = async file => {
     const box = $('#faceai-info', form); if (!file || !box) return;
     let img; try { img = await readImage(file, 1024, 0.82); } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; return; }
-    pendingPhoto = await readImage(file, 640, 0.72).catch(() => img); renderPhoto();
+    pendingPhoto = await readImage(file, 800, 0.8).catch(() => img); renderPhoto();
     box.innerHTML = skelHtml(3, {dots:true, label:'顔の写真を読み取り中', note:'肌の状態を読み取っています（10秒ほどかかります）'});
     try {
       const r = (await callVision('skin', img)).result || {};
@@ -9607,7 +9627,7 @@ function openLogForm(id) {
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (isPremium()) { faceAi(f); return; }
-    try { form._setPhoto(await readImage(f, 640, 0.72)); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
+    try { form._setPhoto(await readImage(f, 800, 0.8)); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
   $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => openPremiumSheet('カメラで肌を記録'); lk.onclickOld = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
     e.preventDefault();
@@ -10800,7 +10820,7 @@ async function drawFace3d(opts) {
   let renderer;
   try { renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true}); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = 'この端末では3D表示を使えません。'; return; }
   const W = cv.clientWidth || 300, H = cv.clientHeight || 300;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.full ? 3 : 2)); renderer.setSize(W, H, false);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3)); renderer.setSize(W, H, false); // iPhoneの画面の細かさ（3倍）のまま描く
   renderer.outputEncoding = T.sRGBEncoding;
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(28, W / H, 1, 200);
   cam.position.set(0, 0.6, opts.camZ || 60);
@@ -11822,7 +11842,7 @@ async function handlePwSubmit(form) {
 const SNS_LINKS = [{l:'Instagram', url:'https://www.instagram.com/nakakaramo/'}, {l:'TikTok', url:'https://www.tiktok.com/@nakakaramo'}, {l:'X', url:'https://x.com/nakakaramo'}];
 const LEGAL = {
   draft: true,               // 下書きのあいだは true（画面に「下書き」と表示）
-  updated: '2026年10月30日',  // 最終改定日
+  updated: '2026年11月12日',  // 最終改定日
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額1,200円（税込）'
@@ -11894,7 +11914,7 @@ function viewPrivacy() {
   return legalWrap('プライバシーポリシー', `
 <p>${C}（以下「運営者」）は、「${S}」（以下「本サービス」）における利用者の情報の取り扱いについて、次のとおり定めます。</p>
 <h3>1. 基本の考え方</h3>
-<p>本サービスは、<b>肌の記録・写真・食事・生活習慣などのデータを、利用者の端末のブラウザ内（localStorage）だけに保存</b>します。これらのデータを運営者のサーバーに送信・保存することはありません。ただし、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）だけを送信します。</p>
+<p>本サービスは、肌の記録・食事・生活習慣などのデータを、まず利用者の端末のブラウザ内（localStorage）に保存します。<b>ログインしている場合は、これらの記録（肌の記録・Myアイテム・設定）を、データの消失を防ぐために、登録したメールアドレスのアカウントに自動でバックアップ（Supabaseのサーバーに保存）</b>します。<b>写真と現在地はバックアップせず、端末の中だけに保存</b>します。ログインしていない場合、記録は運営者のサーバーに送信しません。また、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）を送信します。</p>
 <h3>2. 取得する情報</h3>
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
@@ -11916,6 +11936,11 @@ function viewPrivacy() {
 <p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
 <div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
 ${row('Supabase（Supabase Inc.・サーバーは東京）', 'メールアドレス、パスワード、ログイン状態、契約状況', 'アカウントと有料プランの管理。ログイン・プラン画面を使ったときだけ')}
+${row('Supabase（自動バックアップ・東京）', '肌の記録・Myアイテム・設定などの記録（写真・現在地を除く）', 'データの消失を防ぐためのバックアップと、別の端末での復元。ログインしているときに、記録を保存・変更した数秒後')}
+${row('Resend（Resend, Inc.）', 'メールアドレス、送るメールの内容（確認コード・ログイン用のリンク）', '登録・ログイン・パスワード再設定の確認メールの送信。メールを送るときだけ')}
+${row('Google（Googleログイン）', 'Googleアカウントのメールアドレス・名前（Googleの画面で同意した場合）', '「Googleでログイン」を使ったときの本人確認')}
+${row('Open-Meteo', '湿度・気温を表示する場所の座標（都道府県を選んだ場合はその代表地点）', 'ホームに今日の湿度・気温・紫外線を表示するため。ホームを開いたとき')}
+${row('Google（Google AdSense）', 'Cookie等の識別子、IPアドレス、閲覧したページ、ブラウザの情報', '広告の配信と、広告の効果の測定。無料プランで広告が表示される画面を開いたとき（下の「5-2」）')}
 ${row('Stripe（Stripe, Inc.）', '支払いに必要な情報（カード情報はStripeに直接入力）', '有料プランの決済・解約。申し込み・管理画面を開いたときだけ')}
 ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', 'ログイン機能の部品の読み込み。プラン・アカウント画面を開いたとき')}
 ${row('Geoapify（Geoapify GmbH）', '入力した地名・駅名、検索する場所の座標', '近くの店舗の検索。店舗検索で「検索」を押したときだけ')}
@@ -11928,7 +11953,10 @@ ${row('Google（Gemini API）', '「写真から読み取る」「顔を撮っ�
 ${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
-<p class="small muted">広告（無料プラン）を配信する場合は、広告配信事業者に送られる情報（Cookie等）と、その無効化の方法をこの表に追加し、事前にお知らせします。現在は広告を配信していません。</p>
+<h3>5-2. 広告について（Google AdSense）</h3>
+<p>本サービスは、無料プランの一部の画面で、第三者配信の広告サービス「Google AdSense」を利用します（プレミアムプランでは広告を表示しません）。広告は、肌の記録を入力・確認する画面、写真の画面、Myアイテムの画面には表示しません。</p>
+<p>Googleなどの広告配信事業者は、利用者の興味に応じた広告を表示するために、Cookie等を使って、本サービスや他のサイトへのアクセスの情報を利用することがあります。<b>肌の記録・写真・健康に関する情報を、広告配信事業者に送ることはありません。</b></p>
+<p>利用者は、<a href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer">Googleの広告設定</a>で、興味に応じた広告（パーソナライズ広告）を無効にできます。また、<a href="https://www.aboutads.info/" target="_blank" rel="noopener noreferrer">www.aboutads.info</a> で、第三者配信事業者のCookieを無効にできます。Googleによる情報の扱いは、<a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener noreferrer">Googleのポリシーと規約</a>をご覧ください。</p>
 <h3>6. 安全管理</h3>
 <p>運営者は、アカウント情報への不正アクセス・漏えいを防ぐため、通信の暗号化（HTTPS）、アクセス権限の制限（本人の情報だけを読める設定）など、必要な安全管理措置を行います。</p>
 <h3>7. 保存期間</h3>
@@ -13107,7 +13135,7 @@ function placeHomeTabInd() {
       lock = Math.abs(mx) > Math.abs(my) && !window.__ptrOn ? 'x' : 'y'; window.__hSwipe = lock === 'x'; // 上に引っぱって更新が始まっていたら、横には動かさない
       if (lock === 'y') { x0 = null; return; }
       x0 = e.touches[0].clientX; // ここから動かす（はじめの10pxでカクッとしないように）
-      pane.style.transition = 'none';
+      pane.style.transition = 'none'; pane.style.willChange = 'transform'; // 動かしている間だけ
       ghostClear(); { const g = page(), i = idx(); if (i > 0) ghosts.l = makeGhost(g.tabs[i - 1].k, -1); if (i < g.tabs.length - 1) ghosts.r = makeGhost(g.tabs[i + 1].k, 1); }
     }
     e.preventDefault();
@@ -13117,7 +13145,7 @@ function placeHomeTabInd() {
     pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = '';
     ghostMove(v); indFollow(dx);
   }, {passive:false});
-  const back = () => { indBack(); ghostMove(0, 'transform .38s cubic-bezier(.2,.8,.2,1)'); setTimeout(ghostClear, 400); if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
+  const back = () => { setTimeout(() => { if (pane) pane.style.willChange = ''; }, 420); indBack(); ghostMove(0, 'transform .38s cubic-bezier(.2,.8,.2,1)'); setTimeout(ghostClear, 400); if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
   const end = () => {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
