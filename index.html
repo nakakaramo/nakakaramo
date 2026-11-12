@@ -12956,7 +12956,7 @@ function placeHomeTabInd() {
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
   const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return b.offsetLeft + b.offsetWidth / 2 - 24; };
   const acc = nav.classList.contains('acc-tabs'), my = nav.classList.contains('my-tabs'), log = !acc && !my && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : my ? ui.myKind : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : my ? ui.mtFrom : log ? ui.ltFrom : ui.htFrom;
-  const to = at(cur), from = prev ? at(prev) : to; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
+  const to = at(cur), from = ui.indFromX != null ? ui.indFromX : prev ? at(prev) : to; ui.indFromX = null; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
 }
@@ -12971,6 +12971,17 @@ function placeHomeTabInd() {
   const MY_TABS = [{k:'cos'}, {k:'rx'}];
   const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : parseRoute().name === 'my' ? {tabs:MY_TABS, cur:ui.myKind, go:k => actions['my-kind'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
   const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
+  // 上のタブの印（下線）も、指の動きに合わせて一緒に動かす
+  const indAt = k => { const nav = document.querySelector('.home-tabs'), b = nav && nav.querySelector(`.ht[data-id="${k}"]`); return b ? b.offsetLeft + b.offsetWidth / 2 - 24 : null; };
+  let indX = null;
+  const indFollow = d => {
+    const ind = document.querySelector('.home-tabs .ht-ind'); if (!ind) return;
+    const g = page(), i = idx(), j = d < 0 ? i + 1 : i - 1, a = indAt(g.tabs[i].k); if (a == null) return;
+    const b = j >= 0 && j < g.tabs.length ? indAt(g.tabs[j].k) : null, p = Math.min(1, Math.abs(d) / (window.innerWidth * 0.9));
+    indX = b == null ? a + (d > 0 ? 1 : -1) * Math.min(14, Math.abs(d) / 12) * -1 : a + (b - a) * p;
+    ind.style.transition = 'none'; ind.style.transform = `translateX(${indX.toFixed(1)}px)`;
+  };
+  const indBack = () => { const ind = document.querySelector('.home-tabs .ht-ind'), a = indAt(page().cur); if (!ind || a == null) return; ind.style.transition = ''; ind.style.transform = `translateX(${a}px)`; indX = null; };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
@@ -13001,8 +13012,9 @@ function placeHomeTabInd() {
     const i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === page().tabs.length - 1);
     const v = edge ? dx / 3 : dx; // 端のタブでは、ゴムのように重くする
     pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = String(1 - Math.min(0.35, Math.abs(v) / 900));
+    indFollow(dx);
   }, {passive:false});
-  const back = () => { if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
+  const back = () => { indBack(); if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
   const end = () => {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
@@ -13012,7 +13024,7 @@ function placeHomeTabInd() {
     const g = page();
     if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < g.tabs.length) {
       hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
-      ui.htSlide = tot < 0 ? 1 : -1;
+      ui.htSlide = tot < 0 ? 1 : -1; ui.indFromX = indX; indX = null; // 印は、指で動かしたところから続きを動かす
       g.go(g.tabs[j].k);
     } else back();
   };
