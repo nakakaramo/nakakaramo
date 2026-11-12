@@ -3416,7 +3416,7 @@ function haptic(ms=30) {
   } catch (e) { /* 対応していない端末では何もしない */ }
 }
 // 保存したときの、強めのバイブ（Android：長めに2回／iPhone：「コツッ」を3回続けて鳴らす）
-function switchTick() { try { const lb = document.createElement('label'); lb.setAttribute('aria-hidden', 'true'); lb.style.display = 'none'; const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); lb.appendChild(ip); document.head.appendChild(lb); lb.click(); lb.remove(); } catch (e) { /* 何もしない */ } }
+function switchTick() { try { const lb = document.createElement('label'); lb.setAttribute('aria-hidden', 'true'); lb.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden'; const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1; lb.appendChild(ip); document.body.appendChild(lb); lb.click(); setTimeout(() => lb.remove(), 50); } catch (e) { /* 何もしない */ } }
 function hapticStrong(skipFirst) {
   if (document.getElementById('sw-body')) return; // アンケートの中ではバイブしない
   hapticAt = Date.now();
@@ -4076,8 +4076,12 @@ function viewHome() {
   if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
+  // 広告と下の説明文も、スワイプで中身と一緒に動くように .home-pane の中に入れる
+  const paneEnd = html.lastIndexOf('</div>'), tail0 = html.slice(paneEnd);
+  html = html.slice(0, paneEnd);
   html += adSlot('home');
   html += `<p class="small muted" style="margin-top:20px;text-align:center">ナカカラモは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
+  html += tail0;
   return html;
 }
 const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'おすすめケア', i:'spark'}, {k:'sc', l:'ショートカット', i:'grid'}];
@@ -10739,9 +10743,19 @@ document.addEventListener('click', e => {
 });
 let lastScrollAt = 0;
 window.addEventListener('scroll', () => { lastScrollAt = performance.now(); }, {passive:true});
+// 3Dの顔の向きと「最初の動き」の進み具合を覚えておく。
+// 同じ顔を描き直すとき（データの更新など）は、最初の動きをそのまま続ける。別の画面・タブに移ったら、もう最初の動きはしない
+function face3dSaveView(nextKey) {
+  const st = FACE3D.st; if (!st || !st.viewKey) return; FACE3D.view = FACE3D.view || {}; FACE3D.seen = FACE3D.seen || {};
+  const same = nextKey === st.viewKey;
+  if (!same || !st.auto) FACE3D.seen[st.viewKey] = true;
+  FACE3D.view[st.viewKey] = st.auto && same ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase}
+    : st.auto ? {yaw:0, pitch:0.05, z:st.cam.position.z} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z};
+}
 async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
   const cv = document.getElementById(opts.canvas);
+  face3dSaveView(opts && opts.canvas); // 今の向きを覚える
   if (FACE3D.st) { FACE3D.st.stop = true; if (!FACE3D.st.lost) { FACE3D.st.lost = true; try { FACE3D.st.renderer.dispose(); FACE3D.st.renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } FACE3D.st = null; }
   if (!cv) return;
   try { await face3dLoad(); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = '3Dの顔を表示できませんでした。電波のよい場所で、ページを読み込み直してください。'; return; }
@@ -10775,9 +10789,15 @@ async function drawFace3d(opts) {
   face3dEars(T, group, headMat);
   if (face3dGender() === 'f') face3dHair(T, group, m);
   group.position.y = 0.4; scene.add(group);
+  // 自動で左右に回る動きは、アプリを開いて最初の1回だけ（画面を切り替えるたびには動かさない）。前に見ていた向きも覚えておく
+  FACE3D.seen = FACE3D.seen || {}; FACE3D.view = FACE3D.view || {};
+  const vk = opts.canvas, firstTime = !FACE3D.seen[vk], pv = FACE3D.view[vk];
   const st = FACE3D.st = {gridInfo, renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.34, 14, 12), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
-    yaw:0, pitch:0.05, phase:0, auto:opts.auto !== false, dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null};
+    yaw:pv ? pv.yaw : 0, pitch:pv ? pv.pitch : 0.05, phase:pv && pv.auto ? pv.phase : 0, auto:opts.auto !== false && (firstTime || !!(pv && pv.auto)), dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null, viewKey:vk, born:performance.now()};
+  if (pv && pv.z && !opts.full) { cam.position.z = pv.z; }
   opts.ready(st);
+  if (pv && !opts.full) { st.yaw = pv.yaw; st.pitch = pv.pitch; st.dirty = true; } // ready() が向きを変えても、前の向きに戻す
+  if (pv && pv.auto) delete pv.auto;
   const l = document.getElementById(opts.load); if (l) l.hidden = true;
   // 回す操作（指・マウス）
   // ホームでは、顔の上でも上下のスクロールができるようにする（左右の動きで回す）。肌の変化の画面では、上下左右すべて回転に使う
@@ -10849,7 +10869,7 @@ async function drawFace3d(opts) {
       if (Math.abs(st.yaw) > Math.PI) st.yaw = ((st.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; // 何周も回したあとは、近い向きに戻す
       st.phase += DEV.touch ? 0.0095 : 0.007; /* 自動で回る速さ */ const want = Math.sin(st.phase) * 0.95;
       st.yaw += (want - st.yaw) * (st.user ? 0.03 : 0.12); st.pitch += (0.05 - st.pitch) * 0.03;
-      if (DEV.touch && st.phase >= 2 * Math.PI) { st.auto = false; st.target = {yaw:0, pitch:0.05}; }
+      if (DEV.touch && st.phase >= 2 * Math.PI) { st.auto = false; st.target = {yaw:0, pitch:0.05}; if (st.viewKey) { FACE3D.seen = FACE3D.seen || {}; FACE3D.seen[st.viewKey] = true; } }
       st.dirty = true;
     }
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
@@ -12972,6 +12992,12 @@ function placeHomeTabInd() {
   const to = at(cur), from = ui.indFromX != null ? ui.indFromX : prev ? at(prev) : to; ui.indFromX = null; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
+  // 文字の色も、下の緑の棒と同じ速さで入れかえる（棒と文字の動きをそろえる）
+  if (prev && prev !== cur && from !== to) {
+    const bn = nav.querySelector(`.ht[data-id="${cur}"]`), bp = nav.querySelector(`.ht[data-id="${prev}"]`), full = Math.abs(to - at(prev)) || 1, p0 = Math.max(0, Math.min(1, 1 - Math.abs(to - from) / full));
+    const mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`, ease = 'color .44s cubic-bezier(.3,.8,.25,1)';
+    [[bn, p0, 1], [bp, 1 - p0, 0]].forEach(([b, a, z]) => { if (!b) return; b.style.transition = 'none'; b.style.color = mix(a); void b.offsetWidth; b.style.transition = ease; b.style.color = mix(z); setTimeout(() => { b.style.color = ''; b.style.transition = ''; }, 480); });
+  }
 }
 // ホームを横にスワイプ：今日の記録 ⇄ ケアポイント ⇄ ショートカット
 // 指に合わせて中身が動き、十分に動かすか、すばやく払うと隣のタブへ。縦のスクロールが先に始まったら、横には動かさない
@@ -12993,6 +13019,11 @@ function placeHomeTabInd() {
     const b = j >= 0 && j < g.tabs.length ? indAt(g.tabs[j].k) : null, p = Math.min(1, Math.abs(d) / (window.innerWidth * 0.9));
     indX = b == null ? a + (d > 0 ? 1 : -1) * Math.min(14, Math.abs(d) / 12) * -1 : a + (b - a) * p;
     ind.style.transition = 'none'; ind.style.transform = `translateX(${indX.toFixed(1)}px)`;
+    // 文字の色も、棒と同じだけ入れかえる
+    const nav = ind.parentElement, mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`;
+    const bc = nav.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bnx = b == null ? null : nav.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
+    nav.querySelectorAll('.ht').forEach(x => { if (x !== bc && x !== bnx) { x.style.transition = 'none'; x.style.color = ''; } });
+    if (bc) { bc.style.transition = 'none'; bc.style.color = mix(b == null ? 1 : 1 - p); } if (bnx) { bnx.style.transition = 'none'; bnx.style.color = mix(p); }
   };
   // 隣のタブの中身も、横に並べて一緒に動かす（めくるように見せる）。押せない「見た目だけ」のコピー
   let ghosts = {};
@@ -13016,7 +13047,8 @@ function placeHomeTabInd() {
   };
   const ghostMove = (v, anim) => { const W = pane ? pane.offsetWidth + 16 : window.innerWidth; Object.values(ghosts).forEach(g => { if (!g) return; g.style.transition = anim || 'none'; g.style.transform = `translateX(${(Number(g.dataset.side) * W + v).toFixed(1)}px)`; }); };
   const ghostClear = () => { Object.values(ghosts).forEach(g => g && g.remove()); ghosts = {}; };
-  const indBack = () => { const ind = document.querySelector('.home-tabs .ht-ind'), a = indAt(page().cur); if (!ind || a == null) return; ind.style.transition = ''; ind.style.transform = `translateX(${a}px)`; indX = null; };
+  const indBack = () => { const ind = document.querySelector('.home-tabs .ht-ind'), a = indAt(page().cur); if (!ind || a == null) return; ind.style.transition = ''; ind.style.transform = `translateX(${a}px)`; indX = null;
+    ind.parentElement.querySelectorAll('.ht').forEach(x => { x.style.transition = 'color .44s cubic-bezier(.3,.8,.25,1)'; x.style.color = ''; }); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
@@ -13063,7 +13095,9 @@ function placeHomeTabInd() {
       // 今の中身は横へ出ていき、隣の中身が真ん中に入ってくる（そのあと本物の画面に切り替える）
       const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .26s cubic-bezier(.2,.8,.2,1)';
       pane.style.transition = ease; pane.style.transform = `translateX(${sgn * W}px)`; ghostMove(sgn * W, ease);
-      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ind.style.transform = `translateX(${tx}px)`; }
+      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ind.style.transform = `translateX(${tx}px)`;
+        const nv = ind.parentElement, ce = 'color .26s cubic-bezier(.2,.8,.2,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
+        if (bc) { bc.style.transition = ce; bc.style.color = 'var(--muted)'; } if (bj) { bj.style.transition = ce; bj.style.color = 'var(--ink)'; } } // 文字の色も棒と一緒に
       indX = null; const hadGhost = !!(ghosts.l || ghosts.r);
       setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 240 : 0);
     } else back();
@@ -13160,8 +13194,7 @@ function render() {
     if (fromBar) NAV_STACK.length = 0; if (back) NAV_STACK.pop(); else NAV_STACK.push(prevRoute); if (NAV_STACK.length > 30) NAV_STACK.shift();
     const m = document.getElementById('main');
     const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
-    const isMain = ['home', 'log', 'my', 'account'].includes(r.name) && !r.id; // 下のバーの4つの画面（メインの画面）は、戻ってきたときも動かさない
-    const dir = fromBar || sameScreen || isMain ? '' : back ? 'pg-pop' : 'pg-push';
+    const dir = fromBar || sameScreen ? '' : back ? 'pg-pop' : 'pg-push';
     NAV_SRC.bar = 0; NAV_SRC.back = 0;
     if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); } }
   }
@@ -13169,7 +13202,7 @@ function render() {
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
   else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
-  else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
+  else if (FACE3D.st) { face3dSaveView(); FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
 // ほかのタブ・ウィンドウで記録を変えたとき、この画面にも反映する（古い内容で上書きしないため）
