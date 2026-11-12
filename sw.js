@@ -2,7 +2,7 @@
 // ・アプリ本体（index.html）は、ネットにつながるときは毎回新しいものを取り、つながらないときは保存しておいたものを使う
 // ・アイコンや薬局データは、一度読み込んだものを保存して使い回す
 // ・ログイン・決済・検索などの外部サービスへの通信には関わらない（保存しない）
-const CACHE = 'skinwise-v7'; // アイコンを変えたら番号を上げる（古いアイコンを消すため）
+const CACHE = 'skinwise-v8'; // アイコンを変えたら番号を上げる（古いアイコンを消すため）
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -40,4 +40,26 @@ self.addEventListener('fetch', (e) => {
       return hit || net;
     }))
   );
+});
+
+// ===== お知らせ（通知）：サーバーの関数 push から届いたお知らせを表示する =====
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'ナカカラモ', {
+    body: d.body || '',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: d.tag || (d.url || 'nakakaramo'),
+    data: { url: d.url || '#/home' },
+  }));
+});
+// お知らせを押したら、アプリを開いて、その画面に移る
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = new URL('./' + ((e.notification.data && e.notification.data.url) || '#/home'), self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) { c.navigate ? c.navigate(target).catch(() => {}) : null; return c.focus(); } }
+    return self.clients.openWindow ? self.clients.openWindow(target) : null;
+  }));
 });
