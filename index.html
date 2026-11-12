@@ -2458,6 +2458,11 @@ a.acc-me:active{transform:scale(.96)}
 
 /* アカウントのプレミアム（写真の見た目：クリーム色の丸いラベルに茶色の文字） */
 .acc-me .am-t small .am-prem{font-size:13px;padding:3px 13px;margin-top:3px;line-height:1.4;-webkit-text-fill-color:#6B4A1C}
+
+/* お問い合わせ：横から出るページ（右へなぞると戻る） */
+.au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .34s cubic-bezier(.2,.8,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
+.au-ov.sp-ov.in{transform:none}.au-ov.sp-ov.out{transform:translate3d(100%,0,0)}
+.sp-backbtn{display:flex;align-items:center;justify-content:center;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -4829,8 +4834,9 @@ function supportMail(withLog) {
 function openSupport() {
   const ov = document.createElement('div'); ov.className = 'au-ov sp-ov';
   const premium = isPremium();
-  const close = () => { ov.classList.add('out'); setTimeout(() => { ov.remove(); if (!$('#modal-root .modal-backdrop')) unlockScroll(); }, 260); };
-  const head = `<div class="au-head"><button type="button" class="au-back" data-sp="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button><h2>お問い合わせ</h2><span></span></div>`;
+  // 横から出るページ：うしろの画面はそのまま（固定しない）ので、戻ったときに画面がずれない
+  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); setTimeout(() => ov.remove(), 320); };
+  const head = `<div class="au-head"><button type="button" class="au-back sp-backbtn" data-sp="close" aria-label="戻る"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>お問い合わせ</h2><span></span></div>`;
   if (!premium) {
     ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
       <p class="sp-lead">ご質問・ご要望は、メールで受け付けています。</p>
@@ -4845,7 +4851,24 @@ function openSupport() {
       <p class="sp-note">自動の答えは間違うことがあります。解決しないときは <a href="${esc(supportMail(true))}" data-sp-mail>メールで問い合わせる</a></p>
     </div>`;
   }
-  document.body.appendChild(ov); lockScroll(); requestAnimationFrame(() => ov.classList.add('in'));
+  document.body.appendChild(ov); requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('in')));
+  { // 右へなぞると、指についてきて、離すと前の画面に戻る（ほかの画面の「戻る」と同じ）
+    let sx = null, sy = 0, dx = 0, lock = '', t0 = 0;
+    ov.addEventListener('touchstart', e => { if (e.touches.length !== 1 || ov._closing) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; lock = ''; t0 = performance.now(); }, {passive:true});
+    ov.addEventListener('touchmove', e => {
+      if (sx == null) return;
+      const mx = e.touches[0].clientX - sx, my = e.touches[0].clientY - sy;
+      if (!lock) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; lock = mx > 0 && Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y'; if (lock === 'y') { sx = null; return; } sx = e.touches[0].clientX; ov.style.transition = 'none'; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+      e.preventDefault(); dx = Math.max(0, e.touches[0].clientX - sx); ov.style.transform = `translate3d(${dx}px,0,0)`;
+    }, {passive:false});
+    const end = () => {
+      if (sx == null || lock !== 'x') { sx = null; return; } sx = null;
+      const v = dx / Math.max(1, performance.now() - t0);
+      if (dx > ov.offsetWidth * 0.3 || (v > 0.35 && dx > 40)) { ov._closing = true; ov.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = 'translate3d(100%,0,0)'; hapticTick(); setTimeout(() => ov.remove(), 280); }
+      else { ov.style.transition = 'transform .3s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = ''; }
+    };
+    ov.addEventListener('touchend', end); ov.addEventListener('touchcancel', end);
+  }
   const logBox = ov.querySelector('#sp-log'), inp = ov.querySelector('#sp-in');
   let busy = false;
   const paint = () => {
@@ -13855,7 +13878,7 @@ function placeHomeTabInd() {
     x0 = null; lock = '';
     const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
-    if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
+    if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full,.au-ov,.pm-ov')) return;
     const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
     if (!tg.closest || (!tg.closest('.home-pane') && !blank) || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || (rn.name === 'my' && tg.closest('button,.btn,.m-sw')) || scrollsX(tg) || document.body.classList.contains('m-dragging')) return; // Myアイテムの行は、左スワイプで削除・長押しで並べ替えに使うので除く // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
     pane = document.querySelector('.home-pane'); if (!pane) return;
@@ -14086,7 +14109,7 @@ function ptrRepaint() {
   };
   const easeOutCubic = k => 1 - Math.pow(1 - k, 3);
   const easeSettle = k => 1 - Math.pow(1 - k, 4); // Safariの戻り方に近い：はじめは速く、最後はなめらかに減速
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs'));
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs'));
   const settle = () => { // settling：くるくるを消してから、画面を元の位置へ戻す
     phase = 'settling'; ptr.classList.add('fade');
     setTimeout(() => animate(0, 480, easeSettle, null, () => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; phase = 'idle'; }), 160);
@@ -14152,7 +14175,7 @@ function ptrRepaint() {
     if (bar) bar.forEach(el => { el.style.transform = on2 ? `translate3d(0,${v.toFixed(2)}px,0)` : ''; });
     if (!on2) bar = null;
   };
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
   let x0 = 0;
   window.addEventListener('touchstart', e => { cancelAnimationFrame(raf); if (e.touches.length !== 1 || blocked(e.target) || page.style.transform && !on || e.touches[0].clientX < 30) { y0 = null; return; } y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; on = false; }, {passive:true}); // 左の端から：前の画面に戻る動きに任せる
   window.addEventListener('touchmove', e => {
