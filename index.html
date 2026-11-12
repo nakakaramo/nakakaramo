@@ -2481,8 +2481,8 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .acc-thin .acc-me .am-t b,.acc-thin .ai-row b{font-weight:600!important}
 
 /* ホームの拡大ボタン：少し小さく、枠の右の端に */
-.t3-fc{position:relative}
-.t3-fc>.t3-zoom{position:absolute;top:auto;left:auto;right:-8px;bottom:0;z-index:2;width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);color:var(--ink)}
+.t3-card{position:relative}
+.t3-card>.t3-zoom{position:absolute;top:10px;left:auto;right:10px;bottom:auto;z-index:2;width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);color:var(--ink)}
 /* 下のバー：押せる範囲を広く */
 .bn-item{padding-top:10px;padding-bottom:8px;touch-action:manipulation}
 .bn-item *{pointer-events:none}
@@ -4360,8 +4360,8 @@ function viewHome() {
   const side = L ? `<div class="t3-side"><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
-  const todayCard = `<div class="card t3-card">
-      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}<button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button></div></div>
+  const todayCard = `<div class="card t3-card"><button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button>
+      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
       ${lifeLine}</div>`;
   const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
@@ -11313,6 +11313,10 @@ function face3dApply(st, counts, max, mode, types) { st.counts = counts; st.type
 document.addEventListener('touchstart', () => {}, {passive:true});
 // どうやって画面を移ったか（下のバー／戻る）を覚えておく（画面の動きを変えるため）
 const NAV_SRC = {bar:0, back:0};
+// 画面の中を押さずに履歴が戻った（iPhoneの左の端からなぞる・ブラウザの戻る）ときを見分ける
+let LAST_TAP = 0, HIST_NAV = 0;
+document.addEventListener('click', () => { LAST_TAP = Date.now(); }, true);
+window.addEventListener('popstate', () => { if (Date.now() - LAST_TAP > 400) HIST_NAV = Date.now(); });
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#bottom-nav a.bn-item, .sidebar a.sn-item')) NAV_SRC.bar = Date.now(); }, true);
 const NAV_STACK = []; // 開いた画面の順番（ひとつ前の画面に戻ったかを見分ける）
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.back, [data-action="back"], a[aria-label="戻る"]')) NAV_SRC.back = Date.now(); }, true);
@@ -14056,18 +14060,20 @@ function render() {
   hapticizeTargets();
   requestAnimationFrame(swAnimAll); // 切り替えの印をすべらせる
   drawCharts();
-  if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
+  const histQuiet = Date.now() - HIST_NAV < 1200; HIST_NAV = 0; // iPhoneの「なぞって戻る」などで戻ったときは、iPhoneが動かしてくれるので、こちらでは動かさない（二重に動いてブレないように）
+  if (routeChanged && !histQuiet) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
   // 画面が変わったときの動き：
   //  ・下のバーで移ったとき … 動かさない
   //  ・ボタンなどで別の画面を開いたとき … 右から横にすべって出る（戻るときは左から）
   //  ・同じ画面の中のタブ（スキンケア設計のタブなど）… 画面は動かさない（タブの印だけ動く）
   if (routeChanged && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    if (histQuiet) { const mm = document.getElementById('main'); if (mm) mm.classList.remove('pg-push', 'pg-pop', 'pg-in'); }
     const fromBar = Date.now() - NAV_SRC.bar < 1500;
     const back = Date.now() - NAV_SRC.back < 1500 || NAV_STACK[NAV_STACK.length - 1] === key;
     if (fromBar) NAV_STACK.length = 0; if (back) NAV_STACK.pop(); else NAV_STACK.push(prevRoute); if (NAV_STACK.length > 30) NAV_STACK.shift();
     const m = document.getElementById('main');
     const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
-    const dir = fromBar || sameScreen ? '' : back ? 'pg-pop' : 'pg-push';
+    const dir = fromBar || sameScreen || histQuiet ? '' : back ? 'pg-pop' : 'pg-push';
     NAV_SRC.bar = 0; NAV_SRC.back = 0;
     if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); } }
   }
