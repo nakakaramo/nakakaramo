@@ -14033,14 +14033,14 @@ function placeHomeTabInd() {
     if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < g.tabs.length) {
       hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
       // 今の中身は横へ出ていき、隣の中身が真ん中に入ってくる（そのあと本物の画面に切り替える）
-      const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .34s cubic-bezier(.2,.8,.2,1)';
+      const W = pane.offsetWidth + 16, sgn = tot < 0 ? -1 : 1, ease = 'transform .54s cubic-bezier(.22,.7,.2,1)';
       pane.style.transition = ease; pane.style.transform = `translateX(${sgn * W}px)`; ghostMove(sgn * W, ease);
-      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .34s cubic-bezier(.2,.8,.2,1)'; ind.style.transform = `translateX(${tx}px)`;
-        const nv = ind.parentElement, ce = 'color .34s cubic-bezier(.2,.8,.2,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
+      const ind = document.querySelector('.home-tabs .ht-ind'), tx = indAt(g.tabs[j].k); if (ind && tx != null) { ind.style.transition = 'transform .54s cubic-bezier(.3,.8,.25,1)'; ind.style.transform = `translateX(${tx}px)`;
+        const nv = ind.parentElement, ce = 'color .54s cubic-bezier(.3,.8,.25,1)', bc = nv.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bj = nv.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
         if (bc) { bc.style.transition = ce; bc.style.color = 'var(--muted)'; } if (bj) { bj.style.transition = ce; bj.style.color = 'var(--ink)'; }
-        htBadgeMove(bj, bc, '.34s cubic-bezier(.2,.8,.2,1)'); ui.htBadgeDone = true; } // 数字の丸も、文字と同じ速さで // 文字の色も棒と一緒に
+        htBadgeMove(bj, bc, '.54s cubic-bezier(.3,.8,.25,1)'); ui.htBadgeDone = true; } // 数字の丸も、文字と同じ速さで // 文字の色も棒と一緒に
       indX = null; const hadGhost = !!(ghosts.l || ghosts.r);
-      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 320 : 0);
+      setTimeout(() => { ui.htSlide = hadGhost ? 0 : (tot < 0 ? 1 : -1); ui.hpNoSlide = hadGhost; ui.indFromX = tx; g.go(g.tabs[j].k); ghostClear(); }, hadGhost ? 520 : 0);
     } else back();
   };
   window.addEventListener('touchend', e => { end(e); window.__hSwipe = false; }, {passive:true});
