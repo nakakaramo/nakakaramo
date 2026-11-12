@@ -2488,11 +2488,21 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .bn-item *{pointer-events:none}
 
 /* ホームの今日の記録：左の数字は、3Dの頭の上から「良い」などのラベルの下までの高さにそろえる */
-.t3-card .t3-grid:has(.t3-side:not(.t3-empty)){align-items:stretch}
-.t3-card .t3-side:not(.t3-empty){justify-content:space-between;padding:2px 0 0;gap:0}
-.t3-card .t3-side:not(.t3-empty) .t3-acne{line-height:1.1;margin-top:-2px}
-.t3-card .t3-side:not(.t3-empty) .t3-m:last-child{margin-bottom:-9px}
 .t3-card .t3-side .t3-acne{margin:0}
+
+/* ホームの今日の記録：左側（ニキビの数と、赤み・乾燥・皮脂） */
+.t3-s2{justify-content:center;gap:12px;padding-right:4px}
+.t3-ac{display:flex;flex-direction:column;gap:2px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.t3-ac span{font-size:12.5px;color:var(--muted);letter-spacing:.04em}
+.t3-ac b{font-size:30px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.t3-ac b small{font-size:13px;font-weight:500;color:var(--muted);margin-left:3px}
+.t3-ms{display:flex;flex-direction:column;gap:10px}
+.t3-m2{display:flex;flex-direction:column;gap:5px}
+.t3-ml{display:flex;align-items:baseline;justify-content:space-between;font-size:13px;color:var(--ink2,var(--muted))}
+.t3-ml b{font-size:15px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.t3-ml b small{font-size:11px;font-weight:500;color:var(--muted);margin-left:1px}
+.t3-bar{display:block;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.t3-bar i{display:block;height:100%;border-radius:99px;background:var(--green)}
 </style>
 </head>
 <body>
@@ -4364,8 +4374,8 @@ function viewHome() {
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
   const condChip = L ? `<div class="t3-tags t3-under"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div>` : ''; // 「良い」などは3Dの顔の下に
-  const side = L ? `<div class="t3-side"><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
-      ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
+  const side = L ? `<div class="t3-side t3-s2"><div class="t3-ac"><span>ニキビ</span><b>${L.acneCount}<small>個</small></b></div>
+      <div class="t3-ms">${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m2"><span class="t3-ml">${lab}<b>${v}<small>/5</small></b></span><span class="t3-bar"><i style="width:${v / 5 * 100}%"></i></span></div>`; }).join('')}</div></div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
   const todayCard = `<div class="card t3-card"><button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button>
       <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
@@ -11319,6 +11329,42 @@ function face3dApply(st, counts, max, mode, types) { st.counts = counts; st.type
 // iPhoneでは、これがないと押した瞬間の見た目（:active）が出ない
 document.addEventListener('touchstart', () => {}, {passive:true});
 // どうやって画面を移ったか（下のバー／戻る）を覚えておく（画面の動きを変えるため）
+
+// ===== 「左の端から右へなぞって戻る」の範囲 =====
+// 主な4ページ（ホーム・肌の記録・Myアイテム・アカウント）は、なぞっても戻らない（履歴の一番下に置く）。
+// その4ページから開いたページだけ、なぞると1つ前に戻る。
+// 履歴ごとに「深さ」d を覚える：主な4ページ＝0、そこから開いたページ＝1、2…
+const ROOT_R = ['home', 'log', 'my', 'account'];
+const isRootHash = h => { if (!h || h === '#' || h === '#/') return true; const m = /^#\/([a-z]+)\/?$/.exec(h); return !!(m && ROOT_R.includes(m[1])); };
+let NAV_D = 0, REWIND = null, NAV_PASS = false;
+try {
+  const st = history.state;
+  if (st && typeof st.d === 'number') NAV_D = st.d;
+  else if (isRootHash(location.hash)) { NAV_D = 0; history.replaceState({d:0}, '', location.href); }
+  else { // 途中のページから開いたとき：下に主なページを1つ置いておく（そこへ戻れるように）
+    const m = /^#\/([a-z]+)/.exec(location.hash), root = m && ROOT_R.includes(m[1]) ? '#/' + m[1] : '#/home', here = location.href;
+    history.replaceState({d:0}, '', root); history.pushState({d:1}, '', here); NAV_D = 1;
+  }
+} catch (e) { /* 何もしない */ }
+const finishRewind = () => {
+  const t = REWIND; if (!t) return; REWIND = null; clearTimeout(t.timer);
+  try { history.replaceState({d:0}, '', t.to); } catch (e) { /* 何もしない */ }
+  NAV_D = 0; NAV_PASS = true; window.dispatchEvent(new HashChangeEvent('hashchange'));
+};
+window.addEventListener('popstate', () => { if (REWIND) setTimeout(finishRewind, 0); });
+window.addEventListener('hashchange', e => {
+  if (NAV_PASS) { NAV_PASS = false; return; }
+  if (REWIND) { e.stopImmediatePropagation(); return; } // 巻き戻している途中の画面は出さない
+  const st = history.state;
+  if (st && typeof st.d === 'number') { NAV_D = st.d; return; } // 戻る・進む
+  if (isRootHash(location.hash)) { // 主なページへ移るとき：新しく積まずに、一番下の主なページと入れ替える
+    e.stopImmediatePropagation();
+    REWIND = {to:location.hash, timer:setTimeout(finishRewind, 700)};
+    history.go(-(NAV_D + 1));
+    return;
+  }
+  NAV_D += 1; try { history.replaceState({d:NAV_D}, '', location.href); } catch (err) { /* 何もしない */ }
+});
 const NAV_SRC = {bar:0, back:0};
 // 画面の中を押さずに履歴が戻った（iPhoneの左の端からなぞる・ブラウザの戻る）ときを見分ける
 let LAST_TAP = 0, HIST_NAV = 0;
@@ -12425,7 +12471,7 @@ function priceText() {
 function viewPlan(query) {
   query = query || {};
   if (query.checkout) {
-    try { history.replaceState(null, '', '#/plan'); } catch (e) { /* 何もしない */ }
+    try { history.replaceState({d:NAV_D}, '', '#/plan'); } catch (e) { /* 何もしない */ }
     if (query.checkout === 'success') { toast('お申し込みを受け付けました。反映まで少しお待ちください'); setTimeout(pollSub, 0); }
     if (query.checkout === 'cancel') toast('お申し込みを中止しました（請求は発生していません）');
   }
@@ -14019,7 +14065,7 @@ function render() {
   applyHelpPref();
   const r = parseRoute();
   if (r.name === 'new') { // ウィジェット・ショートカットから：記録の画面を直接開く
-    const what = r.id; history.replaceState(null, '', '#/home'); render();
+    const what = r.id; history.replaceState({d:NAV_D}, '', '#/home'); render();
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
     return;
   }
@@ -14113,6 +14159,7 @@ window.addEventListener('hashchange', () => {
   if (navStack.length > 50) navStack.splice(0, navStack.length - 50);
 });
 function goBack(fallback) {
+  if (NAV_D > 0 && navStack.length > 1) { history.back(); return; } // 本当に1つ前の履歴へ戻る（なぞって戻るのと同じ）
   if (navStack.length > 1) { const to = navStack[navStack.length - 2]; location.hash = to; }
   else location.hash = fallback || '#/home';
 }
