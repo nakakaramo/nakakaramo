@@ -7034,7 +7034,9 @@ function wxGeo(ask) {
     // GPSも使って正確に取る（約100mに丸めて保存）。30分以内に取った位置はそのまま使う
     const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 1000) / 1000, lon:Math.round(p.coords.longitude * 1000) / 1000}); }, e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); }, {enableHighAccuracy:true, timeout:20000, maximumAge:30 * 60 * 1000});
     if (ask) return go();
-    if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' ? go() : res(null)).catch(() => res(null)); else res(null);
+    // ホーム画面に追加したアプリ（iPhone）は、許可の状態を正しく返さないことがあるので、まだ位置がないときは聞いてみる（iPhoneが許可の通知を出す）
+    const pwaAsk = isStandalone() && !state.settings.wxLoc;
+    if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' || (pwaAsk && st.state !== 'denied') ? go() : res(null)).catch(() => pwaAsk ? go() : res(null)); else pwaAsk ? go() : res(null);
   });
 }
 // 今この時間の湿度・UV（上の帯に出す。日ごとの平均とは別に、30分おきに取り直す）
@@ -7112,6 +7114,15 @@ function wxFit() {
 window.addEventListener('resize', () => { clearTimeout(wxFit.t); wxFit.t = setTimeout(wxFit, 120); });
 // アプリに戻ってきたとき・開いたままのときも、30分おきに今の湿度・UVを取り直す
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.settings.wxPref) wxFetch(false); });
+// ホーム画面に追加したアプリは、Safariとは保存場所が別なので、最初は湿度・気温の設定が空になる。
+// そのときは「現在地」で始めて、iPhoneの位置情報の許可を1回だけ聞く（許可すれば、そのまま湿度・気温が出る）
+setTimeout(() => {
+  try {
+    if (!isStandalone() || state.settings.wxLoc || (state.settings.wxPref && state.settings.wxPref !== '現在地')) return;
+    if (localStorage.getItem('nk_pwa_geo_asked') === todayStr()) return; localStorage.setItem('nk_pwa_geo_asked', todayStr());
+    state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); wxFetch(true, false);
+  } catch (e) { /* 何もしない */ }
+}, 1500);
 setInterval(() => { if (document.visibilityState === 'visible' && state.settings.wxPref) wxFetch(false); }, 10 * 60 * 1000);
 function wxTodayHtml() {
   const pin = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
