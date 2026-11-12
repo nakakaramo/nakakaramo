@@ -2335,6 +2335,23 @@ img{image-rendering:auto}
 .pf-col{display:flex;gap:10px}
 .pf-c{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line2,#ccc);cursor:pointer;padding:0}
 .pf-c.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--green-d)!important}
+
+/* アカウント：一番上のプロフィール（押すとアカウント情報） */
+.acc-me .am-go{font-style:normal;color:var(--muted);font-size:22px;line-height:1;flex:none}
+.acc-me .am-t small{font-size:13px}
+.ai-hero{display:flex;justify-content:center;margin:6px 0 18px}
+.ai-av{position:relative;border:0;background:none;padding:0;cursor:pointer}
+.ai-av>i{position:absolute;right:0;bottom:2px;width:30px;height:30px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--green-d)}
+.ai-av>i svg{width:15px;height:15px}
+.ai-sec{font-size:13px;font-weight:600;color:var(--muted);margin:18px 4px 8px}
+.ai-list{padding-top:4px!important;padding-bottom:4px!important}
+.ai-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+.ai-row+.ai-row{border-top:1px solid var(--line)}
+.ai-row>span{min-width:0}
+.ai-row small{display:block;font-size:12px;color:var(--muted)}
+.ai-row b{display:block;font-size:16px;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-link{text-decoration:none!important;flex:none;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer;font-size:14px}
+.ai-note{font-size:12px;color:var(--muted);margin:8px 4px 0;line-height:1.6}
 </style>
 </head>
 <body>
@@ -11904,7 +11921,7 @@ function viewPlan(query) {
   let html = pageHead('プラン・アカウント', '有料プラン（プレミアム）の申し込み・管理と、アカウントの設定です。');
   let notes = ''; // アカウントの画面の中では、お知らせは下にまとめる
   if (CLOUD.testMode) notes += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
-  notes += `<div class="notice green">アカウントは、有料プランの申し込み・管理のためだけに使います。肌の記録・写真・食事などのデータは、これまでどおり<b>この端末の中だけ</b>に保存し、サーバーには送りません。カード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
+  notes += `<div class="notice green">ログインすると、肌の記録・化粧品・設定が、登録したメールアドレスのアカウントに自動でバックアップされます（機種変更しても戻せます）。写真はこの端末の中だけに保存します。有料プランのカード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
   const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
     <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
   // アカウントの画面の中では、プランの比較は一番下に、押すと開く形で出す
@@ -12277,18 +12294,28 @@ function avatarHtml(size) {
   return `<span class="av av-def" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px">${nm ? esc([...nm][0].toUpperCase()) : icon('user')}</span>`;
 }
 function accMeHtml() {
-  const nm = state.settings.nickname, em = acct.user ? (acct.user.email || 'Googleのアカウント') : '';
-  const bk = !acct.user ? '' : SYNC.err ? 'バックアップできませんでした' : SYNC.busy ? 'バックアップしています…' : SYNC.at ? `バックアップ済み：${new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})}` : '';
-  return `<div class="card acc-me"><button type="button" class="am-av" data-action="acc-profile" aria-label="名前とアイコンを変える">${avatarHtml(56)}<i aria-hidden="true">${icon('edit')}</i></button>
-    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b>${em ? `<small class="am-em">${esc(em)}</small>` : '<small>ログインしていません</small>'}${acct.user ? `<small>${isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン'}${bk ? '・' + esc(bk) : ''}</small>` : ''}</span>
-    ${acct.user ? `<button type="button" class="link small am-edit" data-action="acc-profile">編集</button>` : `<a class="link small am-edit" href="#/plan">ログイン ›</a>`}</div>`;
+  const nm = state.settings.nickname;
+  return `<a class="card acc-me" href="#/account/me">${avatarHtml(52)}
+    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン') : 'ログインしていません'}</small></span><i class="am-go" aria-hidden="true">›</i></a>`;
+}
+// アカウント情報（一番上のプロフィールを押すと開く）：アイコン・名前・プランとログイン
+function viewAccountMe() {
+  const nm = state.settings.nickname;
+  if (acct.status === 'idle') setTimeout(initCloud, 0);
+  return `<a class="back" href="#/account">← アカウント</a>
+    <div class="ai-hero"><button type="button" class="ai-av" data-action="acc-profile" aria-label="アイコンを変える">${avatarHtml(96)}<i aria-hidden="true">${icon('edit')}</i></button></div>
+    <h3 class="ai-sec">プロフィール</h3>
+    <div class="card ai-list"><div class="ai-row"><span><small>表示名</small><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '未設定'}</b></span><button type="button" class="link ai-link" data-action="acc-profile">編集する</button></div></div>
+    <p class="ai-note">名前とアイコンはこのアプリの中だけで使います。ほかの人には表示されません。</p>
+    <h3 class="ai-sec">プラン・ログイン</h3>
+    ${embedView(() => viewPlan({}))}`;
 }
 let avDraft = null;
 function openProfile() {
   avDraft = state.settings.avatar ? Object.assign({}, state.settings.avatar) : null;
   const cur = () => avDraft || {};
   openModal({title:'名前とアイコン', body:`<div class="pf-top"><div id="pf-prev">${avatarHtml(84)}</div></div>
-    <div class="field"><label class="lbl" for="pf-name">名前<span class="opt">20文字まで</span></label><input class="input" id="pf-name" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：けいいちろう" autocomplete="nickname"></div>
+    <div class="field"><label class="lbl" for="pf-name">名前<span class="opt">20文字まで</span></label><input class="input" id="pf-name" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：はだこ" autocomplete="nickname"></div>
     <p class="lbl" style="margin:14px 0 8px">アイコン</p>
     <div class="pf-row"><label class="btn btn-soft btn-sm pf-photo">${icon('camera')}写真から選ぶ<input type="file" accept="image/*" id="pf-file" hidden></label><button type="button" class="btn btn-ghost btn-sm" data-action="pf-reset">最初の文字に戻す</button></div>
     <div class="pf-emo" role="group" aria-label="絵文字のアイコン">${AVATAR_EMOJI.map(e => `<button type="button" class="pf-e ${cur().t === 'emoji' && cur().v === e ? 'on' : ''}" data-action="pf-emoji" data-id="${e}">${e}</button>`).join('')}</div>
@@ -12316,9 +12343,10 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint(); });
 function viewAccount() {
+  if (parseRoute().id === 'me') return viewAccountMe();
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return accMeHtml() + ['settings', 'privacy', 'plan'].map(accSectionHtml).join('') + // 支出はなくした
+  return accMeHtml() + ['settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
     `<section class="card acc-sec"><button class="acc-row acc-toggle" data-action="support-open">${icon('chat')}<span><b>お問い合わせ</b><small>${isPremium() ? 'サポートに質問する' : 'メールで問い合わせる'}</small></span><i>›</i></button></section>`;
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
@@ -13476,7 +13504,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && r.id === 'me' ? 'アカウント情報' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
