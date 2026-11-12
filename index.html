@@ -2491,18 +2491,27 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .t3-card .t3-side .t3-acne{margin:0}
 
 /* ホームの今日の記録：左側（ニキビの数と、赤み・乾燥・皮脂） */
-.t3-s2{justify-content:center;gap:12px;padding-right:4px}
-.t3-ac{display:flex;flex-direction:column;gap:2px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.t3-s2{justify-content:center;gap:12px;padding-right:2px}
+.t3-ac{display:flex;align-items:baseline;justify-content:space-between;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .t3-ac span{font-size:12.5px;color:var(--muted);letter-spacing:.04em}
-.t3-ac b{font-size:30px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.t3-ac b{font-size:26px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
 .t3-ac b small{font-size:13px;font-weight:500;color:var(--muted);margin-left:3px}
-.t3-ms{display:flex;flex-direction:column;gap:10px}
-.t3-m2{display:flex;flex-direction:column;gap:5px}
+.t3-ms{display:flex;flex-direction:column;gap:9px}
+.t3-m2{display:flex;flex-direction:column;gap:4px}
 .t3-ml{display:flex;align-items:baseline;justify-content:space-between;font-size:13px;color:var(--ink2,var(--muted))}
 .t3-ml b{font-size:15px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 .t3-ml b small{font-size:11px;font-weight:500;color:var(--muted);margin-left:1px}
 .t3-bar{display:block;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
 .t3-bar i{display:block;height:100%;border-radius:99px;background:var(--green)}
+
+/* 緑の線：いつも同じ太さに見えるように（動かしている間もにじまない） */
+.ht-ind{will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+/* 今日の記録：左右の釣り合い（左は顔とラベルの高さに収め、真ん中にそろえる） */
+.t3-card .t3-grid{align-items:center;column-gap:18px}
+.t3-card>.t3-zoom{min-width:0!important;min-height:0!important;width:28px!important;height:28px!important;top:12px;right:12px;box-shadow:none}
+.t3-ac span{font-size:13px}
+.t3-ml{font-size:12.5px}
+.t3-ml b{font-size:14px}
 </style>
 </head>
 <body>
@@ -13926,7 +13935,7 @@ function htBadgeMove(on, off, t) {
 function placeHomeTabInd() {
   const badgeDone = ui.htBadgeDone; ui.htBadgeDone = false;
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
-  const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return b.offsetLeft + b.offsetWidth / 2 - 24; };
+  const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return Math.round(b.offsetLeft + b.offsetWidth / 2 - 24); };
   const acc = nav.classList.contains('acc-tabs'), my = nav.classList.contains('my-tabs'), log = !acc && !my && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : my ? ui.myKind : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : my ? ui.mtFrom : log ? ui.ltFrom : ui.htFrom;
   const to = at(cur), from = ui.indFromX != null ? ui.indFromX : prev ? at(prev) : to; ui.indFromX = null; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
@@ -13951,14 +13960,14 @@ function placeHomeTabInd() {
   const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : parseRoute().name === 'my' ? {tabs:MY_TABS, cur:ui.myKind, go:k => actions['my-kind'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
   const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
   // 上のタブの印（下線）も、指の動きに合わせて一緒に動かす
-  const indAt = k => { const nav = document.querySelector('.home-tabs'), b = nav && nav.querySelector(`.ht[data-id="${k}"]`); return b ? b.offsetLeft + b.offsetWidth / 2 - 24 : null; };
+  const indAt = k => { const nav = document.querySelector('.home-tabs'), b = nav && nav.querySelector(`.ht[data-id="${k}"]`); return b ? Math.round(b.offsetLeft + b.offsetWidth / 2 - 24) : null; };
   let indX = null;
   const indFollow = d => {
     const ind = document.querySelector('.home-tabs .ht-ind'); if (!ind) return;
     const g = page(), i = idx(), j = d < 0 ? i + 1 : i - 1, a = indAt(g.tabs[i].k); if (a == null) return;
     const b = j >= 0 && j < g.tabs.length ? indAt(g.tabs[j].k) : null, p = Math.min(1, Math.abs(d) / (window.innerWidth * 0.9));
     indX = b == null ? a + (d > 0 ? 1 : -1) * Math.min(14, Math.abs(d) / 12) * -1 : a + (b - a) * p;
-    ind.style.transition = 'none'; ind.style.transform = `translateX(${indX.toFixed(1)}px)`;
+    ind.style.transition = 'none'; ind.style.transform = `translateX(${Math.round(indX)}px)`; // 半端な位置にすると、iPhoneで線がにじんで太く見えるので、1px単位にする
     // 文字の色も、棒と同じだけ入れかえる
     const nav = ind.parentElement, mix = q => `color-mix(in srgb,var(--ink) ${Math.round(q * 100)}%,var(--muted))`;
     const bc = nav.querySelector(`.ht[data-id="${g.tabs[i].k}"]`), bnx = b == null ? null : nav.querySelector(`.ht[data-id="${g.tabs[j].k}"]`);
