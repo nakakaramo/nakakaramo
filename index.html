@@ -2479,6 +2479,13 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* アカウント：自分の名前以外は、普通の太さ */
 .acc-thin,.acc-thin *{font-weight:400!important}
 .acc-thin .acc-me .am-t b,.acc-thin .ai-row b{font-weight:600!important}
+
+/* ホームの拡大ボタン：小さくして、枠の右上の端に */
+.t3-card{position:relative}
+.t3-card>.t3-zoom{position:absolute;top:10px;right:10px;left:auto;bottom:auto;z-index:3;width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:11.5px;border-radius:50%;background:var(--surface);border:1px solid var(--line2)}
+/* 睡眠・運動・食事の行：少し触れただけでは凹まない（押し続けたときだけ、うすく色が変わる）。中の記号も動かない */
+.ls-main,.ls-radar{transition:background-color .12s ease!important;transform:none!important;opacity:1!important}
+.ls-main:active,.ls-radar:active{transform:none!important;opacity:1!important;background:var(--surface2);transition:background-color .12s ease .1s!important}
 </style>
 </head>
 <body>
@@ -4353,8 +4360,8 @@ function viewHome() {
   const side = L ? `<div class="t3-side"><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
-  const todayCard = `<div class="card t3-card">
-      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
+  const todayCard = `<div class="card t3-card"><button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button>
+      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
       ${lifeLine}</div>`;
   const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
