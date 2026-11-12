@@ -300,7 +300,7 @@ label.btn{position:relative}
 @keyframes swIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes swInR{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}} /* 横に動かすと画面が横にゆれるので、縦にふわっと */
 /* 選ぶボタン（0〜5・肌の調子など）：選んだときに、ぽんと動く */
-.seg-opt input:checked + span{animation:segPop .26s ease}
+.seg-opt.pop input:checked + span{animation:segPop .26s ease} /* 開いたときに最初から選ばれているものは動かさない */
 @keyframes segPop{0%{transform:scale(.9)}60%{transform:scale(1.05)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.sw-ind{transition:none}.sw-in,.sw-in-r,.seg-opt input:checked + span{animation:none}}
 
@@ -2193,14 +2193,14 @@ button:not(:disabled):active,.btn:active,.pcard:active,.mrow:active,.add-opt:act
 /* チェック・スイッチ・入力欄 */
 input,textarea,select,.input,.textarea{transition:border-color .2s var(--ease-out),box-shadow .2s var(--ease-out),background-color .2s var(--ease-out)}
 input[type=checkbox],input[type=radio]{transition:transform .25s var(--ease-spring)}
-input[type=checkbox]:checked,input[type=radio]:checked{animation:chkPop .3s var(--ease-spring)}
+input[type=checkbox].chk-pop:checked,input[type=radio].chk-pop:checked{animation:chkPop .3s var(--ease-spring)} /* 押したときだけ（開いたときに最初から入っているものは動かさない） */
 @keyframes chkPop{0%{transform:scale(.8)}100%{transform:none}}
 /* 開いたり閉じたりするもの（くわしく見る など）：高さがなめらかに変わる */
 details::details-content{transition:height .32s var(--ease-out),content-visibility .32s allow-discrete;height:0;overflow:clip}
 details[open]::details-content{height:auto}
 details > summary{transition:color .2s var(--ease-out)}
 /* あとから中身が入れかわるところ（検索結果・一覧など）は、ふわっと出す */
-#find-list > *,#pop-list > *,#ld-detail > *,#ld-info > *{animation:softIn .32s var(--ease-out) backwards}
+#find-list > *,#pop-list > *{animation:softIn .32s var(--ease-out) backwards}
 @keyframes softIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 /* 出てくる・消えるお知らせや小さな箱 */
 .field-error:not(:empty){animation:softIn .3s var(--ease-out) backwards}
@@ -2463,6 +2463,16 @@ a.acc-me:active{transform:scale(.96)}
 .au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .34s cubic-bezier(.2,.8,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
 .au-ov.sp-ov.in{transform:none}.au-ov.sp-ov.out{transform:translate3d(100%,0,0)}
 .sp-backbtn{display:flex;align-items:center;justify-content:center;color:var(--ink)}
+
+/* ホームの今日の記録：「良い」などは3Dの顔の下。拡大ボタンは顔にかからない右下 */
+.t3-card{padding-top:10px}
+.t3-fc{display:flex;flex-direction:column;align-items:center;min-width:0;width:100%}
+.t3-fc .t3-stage{width:100%}
+.t3-grid:has(.t3-empty) .t3-fc .t3-stage,.t3-grid:not(:has(.t3-side)) .t3-fc .t3-stage{width:min(240px,72%)}
+.t3-under{justify-content:center;margin-top:4px}
+.t3-under span{font-size:13px;padding:2px 12px}
+.t3-stage .f3-expand{top:auto;bottom:4px;right:0}
+.t3-grid{align-items:center}
 </style>
 </head>
 <body>
@@ -3845,6 +3855,7 @@ function hapticizeSegs(root) {
       if (r.disabled) return;
       hapticAt = Date.now(); try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (e) { /* 何もしない */ }
       if (r.type === 'radio') { if (r.checked) return; r.checked = true; } else r.checked = !r.checked;
+      userPop(r);
       r.dispatchEvent(new Event('input', {bubbles:true})); r.dispatchEvent(new Event('change', {bubbles:true}));
     });
   });
@@ -4332,11 +4343,12 @@ function viewHome() {
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
-  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
+  const condChip = L ? `<div class="t3-tags t3-under"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div>` : ''; // 「良い」などは3Dの顔の下に
+  const side = L ? `<div class="t3-side"><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
   const todayCard = `<div class="card t3-card">
-      <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
+      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
       ${lifeLine}</div>`;
   const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
@@ -9688,6 +9700,14 @@ function spotRow(s) {
 }
 const FP_HINT_TAP = '「ニキビ選択」：ニキビがある場所のマスを押すと赤い点が付きます（押したマスは四角い枠で点滅します。間違えたら「ニキビ ○個」の横の「戻る」で1つ前に戻せます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
 const FP_HINT_ZONE = '「肌質選択」：額・眉間・鼻・こめかみ（左右）・頬（左右）・顎に分かれています。部分を押して選び、乾燥・テカリなどの状態と強さを入れてください（もう一度押すと外れます）。';
+// 押したときだけ「ぽん」と動かす（開いたときに最初から選ばれているものは動かさない）
+function userPop(ip) {
+  if (!ip || ip.tabIndex === -1) return;
+  ip.classList.remove('chk-pop'); void ip.offsetWidth; ip.classList.add('chk-pop');
+  const o = ip.type === 'radio' && ip.closest('.seg-opt'); if (!o) return;
+  const g = o.parentElement; if (g) g.querySelectorAll('.seg-opt.pop').forEach(x => x.classList.remove('pop')); void o.offsetWidth; o.classList.add('pop');
+}
+document.addEventListener('change', e => { const ip = e.target; if (e.isTrusted && ip && (ip.type === 'radio' || ip.type === 'checkbox')) userPop(ip); });
 function openLogForm(id) {
   const ex = id ? getLog(id) : null;
   const t = todayStr(), map = logMap();
