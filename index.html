@@ -1307,7 +1307,7 @@ a.used-tile{color:inherit;text-decoration:none}
 @media (prefers-reduced-motion:reduce){#main.pg-in > *{animation:none}}
 @keyframes pgPush{from{opacity:.4;transform:translateX(42%)}to{opacity:1;transform:none}}
 @keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
-#main.pg-push{animation:pgPush .34s cubic-bezier(.2,.8,.2,1) both!important}#main.pg-pop{animation:pgPop .34s cubic-bezier(.2,.8,.2,1) both!important}
+#main.pg-push{animation:pgPush .46s cubic-bezier(.22,.7,.2,1) both!important}#main.pg-pop{animation:pgPop .46s cubic-bezier(.22,.7,.2,1) both!important} /* ホームの「今日の記録⇄おすすめケア」と同じ速さ */
 .my-del-btn{width:100%;justify-content:center;gap:6px;margin-top:10px}.my-del-btn svg{width:16px;height:16px}
 .fade-once{animation:fadeOnce .7s ease both}
 @keyframes fadeOnce{from{opacity:0}to{opacity:1}}
@@ -2205,7 +2205,7 @@ details > summary{transition:color .2s var(--ease-out)}
 /* 出てくる・消えるお知らせや小さな箱 */
 .field-error:not(:empty){animation:softIn .3s var(--ease-out) backwards}
 /* 画面の切り替え：横にすべる動きを、少しやわらかく */
-#main.pg-push{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
+#main.pg-push{animation-duration:.46s!important;animation-timing-function:cubic-bezier(.22,.7,.2,1)!important}
 #main.pg-pop{animation-duration:.42s!important;animation-timing-function:var(--ease-out)!important}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after,details::details-content{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -2460,7 +2460,7 @@ a.acc-me:active{transform:scale(.96)}
 .acc-me .am-t small .am-prem{font-size:13px;padding:3px 13px;margin-top:3px;line-height:1.4;-webkit-text-fill-color:#6B4A1C}
 
 /* お問い合わせ：横から出るページ（右へなぞると戻る） */
-.au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .34s cubic-bezier(.2,.8,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
+.au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .46s cubic-bezier(.22,.7,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
 .au-ov.sp-ov.in{transform:none}.au-ov.sp-ov.out{transform:translate3d(100%,0,0)}
 .sp-backbtn{display:flex;align-items:center;justify-content:center;color:var(--ink)}
 
@@ -2486,6 +2486,13 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* 下のバー：押せる範囲を広く */
 .bn-item{padding-top:10px;padding-bottom:8px;touch-action:manipulation}
 .bn-item *{pointer-events:none}
+
+/* ホームの今日の記録：左の数字は、3Dの頭の上から「良い」などのラベルの下までの高さにそろえる */
+.t3-card .t3-grid:has(.t3-side:not(.t3-empty)){align-items:stretch}
+.t3-card .t3-side:not(.t3-empty){justify-content:space-between;padding:2px 0 0;gap:0}
+.t3-card .t3-side:not(.t3-empty) .t3-acne{line-height:1.1;margin-top:-2px}
+.t3-card .t3-side:not(.t3-empty) .t3-m:last-child{margin-bottom:-9px}
+.t3-card .t3-side .t3-acne{margin:0}
 </style>
 </head>
 <body>
@@ -4865,7 +4872,7 @@ function openSupport() {
   const onPop = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); if (!ov._closing) { ov._closing = true; ov.remove(); } }; // 戻る操作（iPhoneのスワイプ・Androidの戻る）で閉じたとき：iPhoneの動きにまかせて、すぐ消す
   const dropHist = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); history.back(); }; // ボタン・アプリ内のスワイプで閉じたとき：足した履歴を戻しておく（同じアドレスなので画面は変わらない）
   try { history.pushState({spOv:1}, '', location.href); histOn = true; window.addEventListener('popstate', onPop); } catch (e) { /* 何もしない */ }
-  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); dropHist(); setTimeout(() => ov.remove(), 320); };
+  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); dropHist(); setTimeout(() => ov.remove(), 480); };
   const head = `<div class="au-head"><button type="button" class="au-back sp-backbtn" data-sp="close" aria-label="戻る"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>お問い合わせ</h2><span></span></div>`;
   if (!premium) {
     ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
@@ -14075,7 +14082,7 @@ function render() {
     const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
     const dir = fromBar || sameScreen || histQuiet ? '' : back ? 'pg-pop' : 'pg-push';
     NAV_SRC.bar = 0; NAV_SRC.back = 0;
-    if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); } }
+    if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 520); } }
   }
   fillAds();
   if (r.name === 'charts') drawFace3d();
