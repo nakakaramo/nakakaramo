@@ -2296,6 +2296,14 @@ img{image-rendering:auto}
 .acc-me .am-t b{display:block;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-me .am-t small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
 .acc-me .am-t small.ok{color:var(--green-d)}
+
+/* ダークモード：比較の「良いほう」の色 */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cmp2-t em.a{background:rgba(110,180,130,.18);color:#9BD3AA}:root:not([data-theme="light"]) .cmp2-t em.b{background:rgba(194,124,59,.2);color:#E7B07A}}
+:root[data-theme="dark"] .cmp2-t em.a{background:rgba(110,180,130,.18);color:#9BD3AA}:root[data-theme="dark"] .cmp2-t em.b{background:rgba(194,124,59,.2);color:#E7B07A}
+
+/* プランの表：○の列はせまく、機能の名前を広く */
+.plan-table th:not(:first-child),.plan-table td:not(:first-child){width:4.6em;white-space:nowrap;text-align:center;padding-left:4px;padding-right:4px}
+.plan-table td:first-child{line-height:1.55}
 </style>
 </head>
 <body>
@@ -6593,7 +6601,7 @@ function viewVisit() {
       <dt>気になる部位</dt><dd>${esc(areas.join('、') || '記録なし')}</dd>
       <dt>ニキビの種類</dt><dd>${esc(types.join('、') || '記録なし')}</dd>
       <dt>その他の状態</dt><dd>${esc(others.join('、') || '記録なし')}</dd>
-      ${lastSpots ? `<dt>最新のニキビの詳細</dt><dd>${fmtShort(lastSpots.date)}：${esc(lastSpots.acneSpots.map(x => `${areaName(x.area)} ${x.count}個（${x.type}・${x.size.replace(/（.*）/, '')}・${x.status}${x.onset ? '・' + fmtShort(x.onset) + 'ごろから' : ''}）`).join('／'))}</dd>` : ''}
+      ${lastSpots ? `<dt>最新のニキビの詳細</dt><dd>${fmtShort(lastSpots.date)}：${esc(lastSpots.acneSpots.map(x => `${areaName(x.area)} ${x.count}個${(() => { const d = [x.type, String(x.size || '').replace(/（.*）/, ''), x.status, x.onset ? fmtShort(x.onset) + 'ごろから' : ''].filter(Boolean); return d.length ? '（' + d.join('・') + '）' : ''; })()}`).join('／'))}</dd>` : ''}
       <dt>睡眠</dt><dd>${sl.length ? `平均 ${esc(fmtHM(avg(sl)))}（${sl.length}日分）` : '記録なし'}</dd></dl>
     <p class="small muted" style="margin-top:10px">自己評価による記録です。診断や治療の効果を示すものではありません。</p></div>
   <div class="card"><div class="card-h"><h2>この期間に使った化粧品</h2></div>
@@ -8825,7 +8833,7 @@ function comboLevelsHtml() {
   if (!A.pairs.length && !uv) return '';
   return `<div class="card"><div class="card-h"><h2>使っている商品の併用の注意</h2><span class="chip">${A.pairs.length + (uv ? 1 : 0)}件</span></div>
     ${uv ? comboCardHtml(uv, {a:'レチノイド・AHAなど', b:'紫外線対策の不足', sub:esc(uv.products.map(p => truncate(p.name, 18)).join('、'))}) : ''}
-    ${A.pairs.map(p => comboCardHtml(p.r, {a:truncate(p.x.p.name, 22), b:truncate(p.y.p.name, 22), sub:`${p.shared.length ? `どちらも${esc(p.shared.join('・'))}に使っています` : '使う時間は別です'}`})).join('')}</div>`;
+    ${A.pairs.map(p => comboCardHtml(p.r, {compact:true, a:truncate(p.x.p.name, 22), b:truncate(p.y.p.name, 22), sub:`${p.shared.length ? `どちらも${esc(p.shared.join('・'))}に使っています` : '使う時間は別です'}`})).join('')}</div>`;
 }
 // 商品名に書かれた濃度（例：「ナイアシンアミド10%」）。書かれていなければ空
 function concOf(name) { return [...String(name || '').normalize('NFKC').matchAll(/([぀-ヿ一-鿿A-Za-z\-]{2,}?)\s*([0-9]+(?:\.[0-9]+)?)\s*%/g)].map(m => `${m[1].replace(/^.*[ 　]/, '')} ${m[2]}%`).slice(0, 3); }
@@ -8874,7 +8882,7 @@ async function careAiRun() {
     else ui.careAiErr = '説明が空でした。';
   } catch (e) {
     const m = String(e.message || e);
-    ui.careAiErr = /種類が正しくありません/.test(m) ? '説明ができませんでした（サーバーの更新がまだです）。' : '説明ができませんでした（' + m.slice(0, 80) + '）';
+    ui.careAiErr = userErr(m, '説明');
   }
   ui.careAiBusy = false; render();
 }
@@ -10658,7 +10666,7 @@ function adviceLocal(d) {
     if ((ff.conc['ざらつき'] || {}).max) av.push('ピーリングのやりすぎ');
     if (!av.length) av.push('ゴシゴシこする洗顔');
     const k0 = ff.keys[0], t0 = {acne:ff.inflamed ? '炎症ニキビをしずめる' : 'つまりニキビを防ぐ', redness:'赤みを落ち着かせる', sensitive:'刺激を減らしてバリアを守る', dry:'うるおいを守る', oily:'皮脂バランスを整える', pore:'毛穴のつまりをケア', rough:'ざらつきをなめらかに', dull:'くすみをケア', acnemark:'ニキビ跡をケア'}[k0] || '今の肌に合わせたケア';
-    skin = {title:t0, text:`この1週間の3Dの記録：${faceFindingsText(ff)}。${calm && S.top.some(x => x.e.act >= 2) ? '' : ''}${names.length ? `合う成分は${names.slice(0, 3).join('・')}です。` : ''}`, good:names.length ? names.concat(['日焼け止め（毎朝）']).slice(0, 5) : ['セラミド', '日焼け止め（毎朝）'], avoid:av};
+    skin = {title:t0, text:`直近7日の3Dの顔の記録から選びました。${calm ? '今は刺激の少ない成分を優先しています。' : ''}`, good:names.length ? names.concat(['日焼け止め（毎朝）']).slice(0, 5) : ['セラミド', '日焼け止め（毎朝）'], avoid:av};
   }
   else if (!sk.days) skin = {title:'肌の記録から', text:'数日分の記録で、肌に合う成分を出せます。', good:['セラミド', '日焼け止め（毎朝）'], avoid:[]};
   else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らして鎮静', text:`赤みが平均${sk.redness}。こすらず、鎮静成分で落ち着かせましょう。${warn('fragrance', '香料')}${warn('ethanol', 'エタノール')}${warn('retinoid', 'レチノール')}`, good:['ツボクサ（CICA）', 'パンテノール', 'アラントイン', 'セラミド'], avoid:['香料', 'エタノール', 'AHA・BHA（ピーリング）', 'レチノール']};
@@ -10713,6 +10721,8 @@ const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
 function adviceSig(d) { const str = todayStr() + JSON.stringify(d); let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return String(h); }
 let adviceBusy = false, adviceErr = '';
+// 使う人に見せるエラーの文：サーバーの設定の話などは出さず、どうすればいいかだけを書く
+function userErr(m, what) { m = String(m || ''); if (/ログイン/.test(m)) return 'ログインし直すと使えます（アカウント → プラン・アカウント）。'; if (/上限|回数|quota|429/i.test(m)) return `今日は${what}の回数の上限に達しました。明日また使えます。`; if (/network|fetch|Failed|通信|timeout|abort/i.test(m)) return `通信できませんでした。電波のよい場所で、もう一度お試しください。`; return `今は${what}ができませんでした。時間をおいて、もう一度お試しください。`; }
 function adviceHtml() {
   const d = adviceInput(), c = adviceCache(), sig = adviceSig(d);
   const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length && c.res.points.every(x => x.area) ? c.res : null; // 4つの角度で出した結果だけ使う
@@ -10852,7 +10862,7 @@ async function runMenu(force) {
     else menuErr = '献立を作れませんでした。';
   } catch (e) {
     const m = String(e.message || e);
-    menuErr = /種類が正しくありません/.test(m) ? '献立を作れませんでした。サーバーの関数「vision」が古いままです（5_関数_vision.txt を貼り付けて Deploy してください）。' : '献立を作れませんでした（' + m.slice(0, 80) + '）';
+    menuErr = userErr(m, '献立を作ること');
     try { localStorage.setItem(MENU_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig, failAt:Date.now()}))); } catch (er) { /* 何もしない */ }
   }
   menuBusy = false; ui.menuPick = {}; box();
@@ -10916,8 +10926,7 @@ async function runAdvice(force) {
     else adviceErr = '分析結果が空でした。';
   } catch (e) {
     const m = String(e.message || e);
-    adviceErr = /種類が正しくありません/.test(m) ? '分析ができませんでした。サーバーの関数「vision」が古いままです（5_関数_vision.txt を貼り付けて Deploy してください）。'
-      : '分析ができませんでした（' + m.slice(0, 80) + '）';
+    adviceErr = userErr(m, '分析');
     try { localStorage.setItem(ADVICE_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig, failAt:Date.now()}))); } catch (er) { /* 何もしない */ }
   }
   adviceBusy = false; box();
@@ -11705,6 +11714,7 @@ async function callVision(mode, image, payload) {
 }
 // ---------- 写真読み取り・AI分析がうまく動かないときの診断 ----------
 let diagRes = null, diagBusy = false;
+function isDev() { try { if (/[?&]dev=1/.test(location.search)) localStorage.setItem('nk_dev', '1'); if (/[?&]dev=0/.test(location.search)) localStorage.removeItem('nk_dev'); return localStorage.getItem('nk_dev') === '1'; } catch (e) { return false; } }
 function diagCardHtml() {
   let body = '<p class="small muted" style="margin:0">写真読み取りや分析がうまく動かないときに、サーバーの設定のどこに問題があるかを調べます（回数には数えません）。</p>';
   if (diagBusy) body += skelHtml(6, {dots:true, label:'診断中', note:'調べています（20秒ほどかかることがあります）'});
@@ -11831,7 +11841,7 @@ async function pollSub() {
   if (isPremium()) toast('プレミアムプランが有効になりました');
 }
 function planTable() {
-  return `<div class="table-wrap"><table class="table plan-table"><thead><tr><th>機能</th><th>無料</th><th>${PREMIUM_NAME}（有料）</th></tr></thead><tbody>
+  return `<div class="table-wrap"><table class="table plan-table"><thead><tr><th>機能</th><th>無料</th><th>${PREMIUM_NAME}</th></tr></thead><tbody>
     ${PLAN_ROWS.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function priceText() {
@@ -11890,7 +11900,7 @@ function viewPlan(query) {
       <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd></dl>
     <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
-  html += diagCardHtml();
+  if (isDev()) html += diagCardHtml(); // サーバーの設定の診断は、運営者だけ（?dev=1 で開いた端末）に出す
   if (!acct.subLoaded) return done(html);
   if (isPremium() && EMBED) return done(html);
   if (isPremium()) {
@@ -13639,6 +13649,7 @@ if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root'
   function run(root){
     (root.querySelectorAll?root:document).querySelectorAll(SEL).forEach(el=>{
       if(el.closest('input,textarea,[contenteditable],.no-ph'))return;
+      if(!/^H[1-6]$/.test(el.tagName)&&el.textContent.replace(/\u200B/g,'').length>34)return; /* 長い文章は、ふつうに折り返す（早めの改行で右側が空いて読みにくくならないように） */
       let hit=false;
       const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;const list=[];
       while(n=w.nextNode()){if(done.get(n)!==n.nodeValue&&JP.test(n.nodeValue)&&n.nodeValue.length>6&&!n.nodeValue.includes('​'))list.push(n)}
