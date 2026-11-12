@@ -2397,12 +2397,12 @@ img{image-rendering:auto}
 .acc-me .am-edit{flex:none;font-size:13px;font-weight:500;color:var(--green-d);padding:6px 12px;border:1px solid var(--line);border-radius:999px}
 
 /* アカウント：枠ごと押せる行（押すと枠全体がへこむ） */
-.acc-link{display:block;width:100%;padding:0;border:1px solid var(--line);font:inherit;text-align:left;color:inherit;text-decoration:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .14s ease,background-color .14s ease,box-shadow .14s ease}
+.acc-link{display:block;width:100%;padding:0;border:1px solid var(--line);font:inherit;text-align:left;color:inherit;text-decoration:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
 .acc-link .acc-row{padding:17px 18px}
-.acc-link:active{transform:scale(.975);background:var(--surface2)!important;box-shadow:inset 0 2px 6px rgba(0,0,0,.08)!important}
+.acc-link:active{transform:scale(.96)}
 .acc-link:active .acc-row{transform:none!important;opacity:1!important}
-a.acc-me{transition:transform .14s ease,background-color .14s ease,box-shadow .14s ease;-webkit-tap-highlight-color:transparent}
-a.acc-me:active{transform:scale(.975);background:var(--surface2)!important;box-shadow:inset 0 2px 6px rgba(0,0,0,.08)!important}
+a.acc-me{transition:transform .15s ease;-webkit-tap-highlight-color:transparent}
+a.acc-me:active{transform:scale(.96)}
 .acc-page>.card{margin-bottom:12px}
 /* プレミアム：金色の文字 */
 .prem-tx{display:inline-flex;align-items:center;gap:3px;font-weight:700;letter-spacing:.02em;background:linear-gradient(100deg,#9C6B1E 0%,#D9A93E 38%,#F1D488 52%,#C8902C 70%,#8E5E17 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
@@ -2441,6 +2441,16 @@ a.acc-me:active{transform:scale(.975);background:var(--surface2)!important;box-s
 .ng-banner svg{width:20px;height:20px;flex:none}.ng-banner span{flex:1;min-width:0}.ng-banner b{display:block;font-size:14px;font-weight:600}.ng-banner small{display:block;font-size:12px;opacity:.85}.ng-banner i{font-style:normal}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ng-banner{background:#3A2620;border-color:#5A3A2E;color:#F0B9A0}:root:not([data-theme="light"]) .ng-sym input:checked+span,:root:not([data-theme="light"]) .mtools a .mt-n{background:#4A2E24;border-color:#6A4334;color:#F0B9A0}}
 :root[data-theme="dark"] .ng-banner{background:#3A2620;border-color:#5A3A2E;color:#F0B9A0}:root[data-theme="dark"] .ng-sym input:checked+span,:root[data-theme="dark"] .mtools a .mt-n{background:#4A2E24;border-color:#6A4334;color:#F0B9A0}
+
+/* 2つを選んで調べる：入力＋候補 */
+.cc-pick{position:relative}.cc-in{position:static;min-width:0}.cc-iw{position:relative;display:block}
+.cc-in .input{width:100%;font-size:16px;padding-right:30px}
+.cc-x{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:0;border-radius:50%;background:var(--surface2);color:var(--muted);font:inherit;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cc-sug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:300px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:4px}
+.cc-opt{display:flex;align-items:baseline;justify-content:space-between;gap:8px;width:100%;border:0;background:none;border-radius:10px;padding:10px 10px;font:inherit;text-align:left;color:var(--ink);cursor:pointer}
+.cc-opt b{font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cc-opt small{flex:none;font-size:11px;color:var(--muted)}
+.cc-opt.on,.cc-opt:active{background:var(--surface2)}
+.cc-none{margin:0;padding:10px;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -9001,6 +9011,47 @@ function comboCardHtml(r, opts) {
   </div>`;
 }
 // 成分・塗り薬で調べる：検索・絞り込み・2つ選ぶ
+// 2つを選んで調べる：入力すると候補が出る（ひらがなでも探せる）
+let CC_CHOICES = null;
+function ccChoices() {
+  if (CC_CHOICES) return CC_CHOICES;
+  const rx = RX_DRUGS.filter(d => !/水虫|ヘルペス|汗|傷|乾癬/.test(d[0])), out = [];
+  ING_MASTER.filter(e => !e.oral && !e.care && !e.rx && !e.inci.some(n => rx.some(d => d[2].includes(n)))).forEach(e => out.push({v:e.k, label:e.ja, g:'成分', s:[e.ja, e.en || ''].concat(e.inci || [])}));
+  ING_MASTER.filter(e => e.rx && !e.oral).forEach(e => out.push({v:e.k, label:e.ja, g:'処方の成分', s:[e.ja, e.en || ''].concat(e.inci || [])}));
+  rx.forEach(d => out.push({v:'rx:' + d[1], label:d[1], g:'皮膚科の薬', s:[d[1], d[0], d[2]]}));
+  ING_MASTER.filter(e => e.oral || e.care).forEach(e => out.push({v:e.k, label:e.ja, g:e.oral ? '飲み薬・サプリ' : 'ケアの方法', s:[e.ja, e.en || ''].concat(e.inci || [])}));
+  const seen = new Set();
+  CC_CHOICES = out.filter(x => !seen.has(x.v) && seen.add(x.v)).map(x => Object.assign(x, {n:x.s.map(ccNorm)}));
+  return CC_CHOICES;
+}
+const ccNorm = t => normIng(t).replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60)).replace(/[・\-‐ー（）()]/g, '');
+function ccLabel(v) { const c = v && ccChoices().find(x => x.v === v); return c ? c.label : ''; }
+function ccInHtml(k, v, ph) {
+  return `<div class="cc-in"><span class="cc-iw"><input type="text" class="input" id="cc-${k}" value="${esc(ccLabel(v))}" placeholder="${ph}" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="cc-${k}-sug" aria-label="${k === 'a' ? '1つ目' : '2つ目'}">${v ? `<button type="button" class="cc-x" data-action="cc-clear" data-id="${k}" aria-label="消す">×</button>` : ''}</span><div class="cc-sug" id="cc-${k}-sug" role="listbox" hidden></div></div>`;
+}
+function ccSuggest(inp) {
+  const box = document.getElementById(inp.id + '-sug'); if (!box) return;
+  const q = ccNorm(inp.value);
+  if (!q) { box.hidden = true; box.innerHTML = ''; inp.setAttribute('aria-expanded', 'false'); return; }
+  const other = inp.id === 'cc-a' ? ui.ccB : ui.ccA;
+  const L = ccChoices().filter(x => x.v !== other).map(x => ({x, r:x.n[0].startsWith(q) ? 0 : x.n.some(n => n.startsWith(q)) ? 1 : x.n.some(n => n.includes(q)) ? 2 : 9})).filter(o => o.r < 9).sort((a, b) => a.r - b.r || a.x.label.length - b.x.label.length).filter((o, i, A) => A.findIndex(z => z.x.label === o.x.label) === i).slice(0, 8);
+  box.innerHTML = L.length ? L.map((o, i) => `<button type="button" class="cc-opt no-ph ${i ? '' : 'on'}" role="option" data-v="${esc(o.x.v)}"><b>${esc(o.x.label)}</b><small class="no-ph">${esc(o.x.g)}</small></button>`).join('') : '<p class="cc-none">見つかりませんでした</p>';
+  box.hidden = false; inp.setAttribute('aria-expanded', 'true');
+}
+function ccChoose(k, v) { ui[k === 'a' ? 'ccA' : 'ccB'] = v; hapticTick(); render(); if (k === 'a' && !ui.ccB) setTimeout(() => { const b = document.getElementById('cc-b'); if (b && !matchMedia('(pointer:coarse)').matches) b.focus(); }, 30); }
+document.addEventListener('input', e => { const t = e.target; if (t && (t.id === 'cc-a' || t.id === 'cc-b')) ccSuggest(t); });
+document.addEventListener('focusin', e => { const t = e.target; if (t && (t.id === 'cc-a' || t.id === 'cc-b') && t.value && !ccLabel(t.id === 'cc-a' ? ui.ccA : ui.ccB)) ccSuggest(t); });
+document.addEventListener('focusout', e => { const t = e.target; if (!t || (t.id !== 'cc-a' && t.id !== 'cc-b')) return; setTimeout(() => { const box = document.getElementById(t.id + '-sug'); if (box && !box.contains(document.activeElement)) { box.hidden = true; t.setAttribute('aria-expanded', 'false'); const cur = t.id === 'cc-a' ? ui.ccA : ui.ccB; if (document.activeElement !== t) t.value = ccLabel(cur) || t.value; } }, 150); });
+document.addEventListener('pointerdown', e => { const o = e.target.closest && e.target.closest('.cc-opt'); if (o) e.preventDefault(); }); // 候補を押したときに、入力欄から外れて候補が消えないように
+document.addEventListener('click', e => { const o = e.target.closest && e.target.closest('.cc-opt'); if (!o) return; const k = o.parentElement.id === 'cc-a-sug' ? 'a' : 'b'; ccChoose(k, o.dataset.v); });
+document.addEventListener('keydown', e => {
+  const t = e.target; if (!t || (t.id !== 'cc-a' && t.id !== 'cc-b')) return;
+  const box = document.getElementById(t.id + '-sug'); if (!box || box.hidden) return;
+  const os = [...box.querySelectorAll('.cc-opt')], i = os.findIndex(o => o.classList.contains('on'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!os.length) return; const j = (i + (e.key === 'ArrowDown' ? 1 : -1) + os.length) % os.length; os.forEach((o, n) => o.classList.toggle('on', n === j)); }
+  else if (e.key === 'Enter') { e.preventDefault(); const o = os[Math.max(0, i)]; if (o) ccChoose(t.id === 'cc-a' ? 'a' : 'b', o.dataset.v); }
+  else if (e.key === 'Escape') { box.hidden = true; }
+});
 function comboOptsHtml(cur, ph) {
   const rx = RX_DRUGS.filter(d => !/水虫|ヘルペス|汗|傷|乾癬/.test(d[0]));
   const ms = ING_MASTER.filter(e => !e.oral && !e.care && !(e.rx && e.inci.some(n => rx.some(d => d[2].includes(n)))));
@@ -9012,7 +9063,7 @@ function comboOptsHtml(cur, ph) {
 function comboPickerHtml() {
   const a = ui.ccA || '', b = ui.ccB || '', A = comboItem(a), B = comboItem(b), d = diagNow(), S = skinStateNow();
   let h = `<div class="card"><div class="card-h"><h2>2つを選んで調べる</h2></div>
-    <div class="cc-pick"><select class="select" id="cc-a" aria-label="1つ目">${comboOptsHtml(a, '1つ目を選ぶ')}</select><span>×</span><select class="select" id="cc-b" aria-label="2つ目">${comboOptsHtml(b, '2つ目（空欄＝すべて）')}</select></div>`;
+    <div class="cc-pick">${ccInHtml('a', a, '1つ目（例：レチノール）')}<span>×</span>${ccInHtml('b', b, '2つ目（任意）')}</div>`;
   if (A && B) h += comboCardHtml(comboEval(A, B), {sub:esc([A.sub, B.sub].filter(Boolean).join(' ／ '))});
   else if (A) {
     const rxRep = [], seen = new Set();
@@ -9105,7 +9156,7 @@ async function careAiRun() {
 // 併用チェックの選択欄
 document.addEventListener('input', e => { if (e.target && e.target.id === 'cc-q2') { ui.ccQ2 = e.target.value; const L = document.getElementById('cc-list2'); if (L) L.innerHTML = comboDbListHtml(normIng(ui.ccQ2), e.target.dataset.lv); } });
 document.addEventListener('input', e => { if (e.target && e.target.id === 'cc-q') { ui.ccQ = e.target.value; const L = document.getElementById('cc-list'); if (L) L.innerHTML = comboDbListHtml(normIng(ui.ccQ), ui.ccLv || 0); } });
-document.addEventListener('change', e => { const id = e.target && e.target.id; if (id === 'cmp-a' || id === 'cmp-b') { ui[id === 'cmp-a' ? 'cmpA' : 'cmpB'] = e.target.value; render(); return; } if (id === 'cc-a' || id === 'cc-b') { ui[id === 'cc-a' ? 'ccA' : 'ccB'] = e.target.value; render(); } });
+document.addEventListener('change', e => { const id = e.target && e.target.id; if (id === 'cmp-a' || id === 'cmp-b') { ui[id === 'cmp-a' ? 'cmpA' : 'cmpB'] = e.target.value; render(); return; }  });
 
 // ===== 朝・夜の「いつものケア」をワンタップで記録 =====
 // Myアイテムで使うタイミングが「朝」「夜」「朝・夜」の使用中の化粧品を、まとめて「今日使った」にする
@@ -13004,6 +13055,7 @@ const actions = {
   'rt-step': n => { ui.rtStep = Math.max(0, (ui.rtStep || 0) + Number(n)); render(); window.scrollTo({top:0, behavior:'smooth'}); },
   'ing-c': k => { ui.ingC = k; render(); },
   'combo-tab': k => { ui.comboTab = k; hapticTick(); render(); },
+  'cc-clear': k => { ui[k === 'a' ? 'ccA' : 'ccB'] = ''; if (k === 'a') { ui.ccA = ui.ccB || ''; ui.ccB = ''; } render(); setTimeout(() => { const i = document.getElementById('cc-' + (k === 'a' && ui.ccA ? 'b' : k)); if (i) i.focus(); }, 30); },
   'cc-pick': v => { ui.ccB = v; render(); setTimeout(() => { const c = document.querySelector('.cc-pick'); if (c) c.scrollIntoView({block:'start', behavior:'smooth'}); }, 30); },
   'cc-lv': v => { ui.ccLv = ui.ccLv === Number(v) ? 0 : Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
   'care-go': () => { closeModal(); location.hash = '#/care/routine'; },
@@ -14039,7 +14091,7 @@ function ptrRepaint() {
     ptrRefresh(true).catch(() => {}).finally(() => setTimeout(() => { done = true; if (!touching) { ptrRepaint(); settle(); } }, Math.max(250, 800 - (performance.now() - t0))));
   };
   window.addEventListener('touchstart', e => {
-    if (phase !== 'idle' || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; }
+    if (phase !== 'idle' || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target) || e.touches[0].clientX < 30) { y0 = null; return; } // 左の端から：前の画面に戻る動き（ブラウザ）に任せる
     y0 = e.touches[0].clientY; ptrX0 = e.touches[0].clientX; started = false;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
@@ -14049,7 +14101,7 @@ function ptrRepaint() {
     if (!started) {
       // 一番上で、下向きに動かし始めた最初の1回から引き受ける（ブラウザのスクロールに取られて途中で止まらないように）
       if (dy <= 0 || window.scrollY > 0) { if (dy < 0) y0 = null; return; }
-      if (Math.abs(e.touches[0].clientX - ptrX0) > dy) { y0 = null; return; } // 横向きのスワイプ（ホームのタブ切り替え）は、更新にしない
+      if (Math.abs(e.touches[0].clientX - ptrX0) * 1.5 >= dy) { y0 = null; return; } // 横向きのスワイプ（ホームのタブ切り替え）は、更新にしない
       started = true; touching = true; phase = 'pulling'; window.__ptrOn = true; ptr.classList.remove('spin', 'fade');
     }
     e.preventDefault();
@@ -14093,11 +14145,12 @@ function ptrRepaint() {
     if (!on2) bar = null;
   };
   const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
-  window.addEventListener('touchstart', e => { cancelAnimationFrame(raf); if (e.touches.length !== 1 || blocked(e.target) || page.style.transform && !on) { y0 = null; return; } y0 = e.touches[0].clientY; on = false; }, {passive:true});
+  let x0 = 0;
+  window.addEventListener('touchstart', e => { cancelAnimationFrame(raf); if (e.touches.length !== 1 || blocked(e.target) || page.style.transform && !on || e.touches[0].clientX < 30) { y0 = null; return; } y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; on = false; }, {passive:true}); // 左の端から：前の画面に戻る動きに任せる
   window.addEventListener('touchmove', e => {
     if (y0 == null) return;
     const dy = y0 - e.touches[0].clientY; // 上に動かした量
-    if (!on) { if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY;
+    if (!on) { const ax = Math.abs(e.touches[0].clientX - x0); if (ax < 8 && Math.abs(dy) < 8) return; if (ax > Math.abs(dy)) { y0 = null; return; } if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY;
       const tb = document.querySelector('.home-tabs'); bar = tb && tb.getBoundingClientRect().top <= 1 ? [tb] : null; return; } // 上の帯はいつも、タブのバーは上にくっついているときだけ、ページといっしょに動かさない // バーが上にくっついている（止まっている）ときだけ
     if (dy <= 0) { setY(0); return; }
     e.preventDefault(); setY(90 * (1 - Math.exp(-dy / 200)));
