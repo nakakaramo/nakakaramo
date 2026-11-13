@@ -3098,9 +3098,13 @@ const ICONS = {
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   bottle:'<path d="M9.5 2h5v4l2.5 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9l2.5-3z"/><path d="M7 13h10"/>',
   note:'<path d="M5 3h10l4 4v14H5z"/><path d="M9 12h6M9 16h6M9 8h3"/>',
-  run:'<circle cx="14.8" cy="4.3" r="2"/><path d="M6.5 10.2 9.8 8h3.6l2.4 3.2 3 .6"/><path d="M13.2 8.2 10.6 13.6l3.6 2.6-1 4.8"/><path d="M10.6 13.6 8 17.4l-3.6-.6"/>',
-  meal:'<path d="M6.5 3v5.5a2.2 2.2 0 0 0 4.4 0V3M8.7 3v18"/><path d="M17.5 21V3c-2.2 1.4-3.3 4-3.3 7.2 0 1.7.9 2.7 3.3 2.7"/>',
-  bodyskin:'<circle cx="9" cy="6.2" r="2.7"/><path d="M3.8 20.5v-3.2a5.2 5.2 0 0 1 10.4 0v3.2"/><path d="M18.5 8.8c1.5 1.9 2.6 3.3 2.6 4.8a2.6 2.6 0 0 1-5.2 0c0-1.5 1.1-2.9 2.6-4.8z"/>',
+  run:'<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>', // Lucide: activity（運動）
+  meal:'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 3 2h3Zm0 0v7"/>', // Lucide: utensils（食事）
+  bodyskin:'<path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/>', // Lucide: id-card（カラダと肌）
+  house:'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', // Lucide: house（ホーム）
+  notebookPen:'<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>', // Lucide: notebook-pen（記録）
+  sprout:'<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>', // Lucide: sprout（ケア管理）
+  shoppingBag:'<path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/>', // Lucide: shopping-bag（Myアイテム）
   drop:'<path d="M12 3.5c3.2 4 6 7.2 6 10.6a6 6 0 0 1-12 0c0-3.4 2.8-6.6 6-10.6z"/>',
   chart:'<path d="M4 20V4M4 20h16"/><path d="m7 15 4-5 3 3 5-6"/>',
   calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -3131,13 +3135,14 @@ const ICONS = {
   shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   alert:'<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/>'
 };
-const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
+const MENU_ICONS = ['house', 'notebookPen', 'sprout', 'shoppingBag', 'bodyskin', 'run', 'meal']; // メニューの7つ（Lucide Icons）：線の太さ・形をそろえる
+const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${MENU_ICONS.includes(n) ? 1.75 : 1.7}"${MENU_ICONS.includes(n) ? ' class="mi"' : ''} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
 
 const NAV = [
-  {r:'home', label:'ホーム', icon:'home', g:''},
-  {r:'log', label:'肌の記録', icon:'note', g:'記録'},
-  {r:'routine', label:'ケア管理', icon:'drop', g:'記録'},
-  {r:'my', label:'Myアイテム', icon:'bottle', g:'記録'},
+  {r:'home', label:'ホーム', icon:'house', g:''},
+  {r:'log', label:'肌の記録', icon:'notebookPen', g:'記録'},
+  {r:'routine', label:'ケア管理', icon:'sprout', g:'記録'},
+  {r:'my', label:'Myアイテム', icon:'shoppingBag', g:'記録'},
   {r:'charts', label:'肌の変化・比較', icon:'chart', g:'振り返り'},
   {r:'report', label:'週次レポート', icon:'calendar', g:'振り返り'},
   {r:'combo', label:'成分組み合わせ', icon:'flask', g:'振り返り'},
