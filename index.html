@@ -130,7 +130,7 @@ body{touch-action:pan-y}
 a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 /* アプリのように：文字や画像を長押ししても、選択・コピーのメニューが出ないようにする（入力欄は今までどおり選べる） */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-input,textarea,[contenteditable="true"],.selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 @media(max-width:959px){
   .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
   .bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--surface)!important}
@@ -138,7 +138,7 @@ input,textarea,[contenteditable="true"],.selectable{-webkit-user-select:text;use
 }
 body{margin:0;font-family:var(--font);background:transparent;color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
 #main{overflow-wrap:anywhere;word-break:normal}
-#main .card,#main .offer,#main .offer-top>div{min-width:0}
+#main .card{min-width:0}
 body.no-scroll{position:fixed;left:0;right:0;overflow:hidden;width:100%}
 a{color:var(--green-d)}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:.02em}
@@ -157,10 +157,8 @@ button{font-family:inherit}
 .topbar .wm-home{position:absolute;left:0;right:0;top:env(safe-area-inset-top);bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;transform:none;font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
 .topbar .wm-brand{font-size:15px;letter-spacing:.24em;color:var(--ink2,#3B4A41)}
-.topbar .wm-wx{font-family:var(--font);letter-spacing:0;max-width:calc(100% - 24px);display:flex;justify-content:center}
 .twx{display:flex;align-items:center;justify-content:space-between;gap:.8em;background:none;border:0;padding:6px 0;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;white-space:nowrap}
 .twx svg{vertical-align:-.08em;margin-right:.2em;color:var(--green-d);width:.85em;height:.85em}
-.twx-pl{font-size:.87em;font-weight:700;max-width:6.5em;overflow:hidden;text-overflow:ellipsis}
 .twx-n{font-size:1em;font-weight:700;display:flex;align-items:baseline;gap:.2em}.twx-n small{font-size:.67em;font-weight:500;color:var(--muted)}.twx-n.warn{color:var(--warn)}
 .twx-load{font-size:13px;color:var(--muted);font-weight:500}
 .twx-set{font-size:13px;font-weight:600;color:var(--green-d);padding:6px 12px;border-radius:999px;background:var(--green-l,#E5F2EA)}
@@ -182,7 +180,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area
 .bn-item.active svg{transform:none}
 .bn-item.active span{transform:none} /* 文字は大きくしない（押したときに横にずれて見えないように） */
 .bn-item svg{transform-origin:50% 50%}
-.acc-list{padding:4px 0}
 .acc-row{display:grid;grid-template-columns:22px 1fr 12px;align-items:center;gap:12px;padding:14px 18px;color:var(--ink);text-decoration:none}
 .acc-row+.acc-row{border-top:1px solid var(--line)}
 .acc-row svg{width:22px;height:22px;color:var(--green-d)}
@@ -214,7 +211,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area
 .card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .card-h h2{font-size:16px}
 .card-h .link{font-size:13px;text-decoration:none;color:var(--green-d);white-space:nowrap}
-.eyebrow{font-size:11px;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;font-weight:600}
 .grid{display:grid;gap:16px}
 .grid > .card + .card{margin-top:0}
 .mt{margin-top:16px}
@@ -309,22 +305,9 @@ label.btn{position:relative}
 @keyframes heroFlow{from{background-position:0% 0%}to{background-position:100% 100%}}
 @media (prefers-reduced-motion:reduce){.hero{animation:none}}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,105,.16),transparent 70%)}
-.hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
-.hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
-.hero-date{margin:0;font-family:var(--serif);font-size:22px;font-size:6.6cqw;font-weight:500;color:var(--ink);line-height:1.2;white-space:nowrap;letter-spacing:.06em}
-.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:36px;text-align:center;container-type:inline-size}
-.streak{display:inline-flex;align-items:center;gap:4px;flex:none}
-.streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
-.streak-star svg{position:absolute;inset:0;width:100%;height:100%}
-.streak-star b{position:relative;font-size:14px;font-weight:800;color:#7A4A00;margin-top:3px;line-height:1}
-.streak-star .glint{position:absolute;right:2px;top:1px;width:9px;height:9px;background:radial-gradient(circle,#fff 0 30%,rgba(255,255,255,0) 70%);border-radius:50%;animation:starGlint 2.6s ease-in-out infinite}
-.streak-l{font-size:12.5px;font-weight:600;color:#9A6A10;display:flex;flex-direction:column;line-height:1.25}
-.streak-l small{font-size:10.5px;font-weight:500;color:var(--muted)}
 @keyframes starGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(245,184,46,.45))}50%{filter:drop-shadow(0 0 10px rgba(245,184,46,.85))}}
 @keyframes starGlint{0%,70%,100%{opacity:0;transform:scale(.4)}80%{opacity:1;transform:scale(1.2)}}
-@media (prefers-reduced-motion:reduce){.streak-star,.streak-star .glint{animation:none}}
-.hero-actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
-@media(min-width:720px){.hero{padding:20px 28px 24px}.hero-brand{font-size:44px}}
+@media(min-width:720px){.hero{padding:20px 28px 24px}}
 .big-stat{font-size:30px;font-weight:600;letter-spacing:.01em;line-height:1.2}
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat{background:var(--surface2);border-radius:var(--radius-s);padding:12px}
@@ -410,54 +393,25 @@ label.btn{position:relative}
 .alert-card + .alert-card{margin-top:10px}
 .alert-card b{display:block;margin-bottom:4px}
 .alert-card.info{border-left-color:var(--green);background:var(--green-p)}
-
-/* ---------- Prices ---------- */
-.offer{border:1px solid var(--line);border-radius:var(--radius-s);padding:14px;background:var(--surface)}
-.offer + .offer{margin-top:10px}
-.offer.best{border-color:var(--green);box-shadow:0 0 0 2px var(--green-s)}
-.offer-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
-.offer-name{font-weight:600;font-size:14.5px}
-.offer-total{font-size:20px;font-weight:700;text-align:right;line-height:1.2}
-.offer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 14px;font-size:12.5px;margin-top:10px;color:var(--ink2)}
-@media(min-width:640px){.offer-grid{grid-template-columns:repeat(4,1fr)}}
-.offer-grid span{color:var(--muted);display:block;font-size:11px}
-.offer-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .vs{display:grid;gap:12px}
 @media(min-width:720px){.vs{grid-template-columns:1fr 1fr}}
-.vs-box{border-radius:var(--radius-s);padding:16px;background:var(--surface2)}
-.vs-box h3{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px}
 .ext-links{display:flex;flex-wrap:wrap;gap:8px}
 .ph{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--radius-s);padding:10px;background:var(--surface)}
 .ph + .ph{margin-top:8px}
 .ph img{width:56px;height:56px;object-fit:contain;border-radius:6px;background:#fff;flex:none}
-.ph-body{flex:1;min-width:0}
-.ph-name{font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
-.ph-price{font-weight:700;font-size:17px;white-space:nowrap;text-align:right}
-.ph-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .pr-tag{display:inline-block;font-size:10px;font-weight:700;border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-right:4px;color:var(--muted)}
 
 /* ---------- Logs ---------- */
 .log-month{font-size:13px;color:var(--muted);font-weight:600;margin:20px 0 10px;letter-spacing:.06em}
-.log-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-.log-item + .log-item{margin-top:10px}
-.log-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.log-date{font-weight:600}
 .log-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
 .log-grid .stat{padding:8px 10px}
 .log-grid .val{font-size:16px}
 .log-memo{margin-top:10px;font-size:13.5px;color:var(--ink2);white-space:pre-wrap;word-break:break-word}
 .log-photo{margin-top:10px;width:96px;height:96px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
-.log-actions{display:flex;gap:6px}
-.sub-line{font-size:12.5px;color:var(--ink2);margin-top:8px}
-.sub-line b{color:var(--muted);font-weight:600;margin-right:6px}
 .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 @media(min-width:720px){.photo-grid{grid-template-columns:repeat(5,1fr)}}
-.photo-cell{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--surface2);cursor:pointer;padding:0}
-.photo-cell img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
-.photo-cell span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:1px 7px;border-radius:6px}
 .photo-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .photo-pair img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
-.life-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
 
 /* ---------- Forms ---------- */
 .form-grid{display:grid;gap:16px}
@@ -492,10 +446,6 @@ label.btn{position:relative}
 .mini .input,.mini .select{margin-top:3px;min-height:40px;font-size:16px;padding:6px 10px}
 .mini .select{padding-right:30px;background-position:right 10px center}
 .spot-del{grid-column:1/-1;justify-self:end}
-.meal-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;margin-bottom:8px}
-.meal-row .input{min-height:40px;font-size:16px;padding:6px 10px}
-.used-list{display:grid;gap:6px}
-.used-list .check{padding:8px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);justify-content:flex-start}
 .face-wrap{display:grid;gap:12px;align-items:center}
 @media(min-width:640px){.face-wrap{grid-template-columns:220px 1fr}}
 .face{width:100%;max-width:220px;margin:0 auto;display:block;user-select:none;-webkit-user-select:none}
@@ -510,9 +460,6 @@ label.btn{position:relative}
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
-/* ホームの「今日の肌を記録・睡眠・運動・食事」：うしろの枠はなくして、ボタンは「化粧品を追加」と同じ大きさ */
-.hero.hero-plain{background:none;border:0;padding:0;border-radius:0;animation:none;overflow:visible;box-shadow:none}
-.hero.hero-plain::after{display:none}
 .hero.hero-home{padding:12px;overflow:visible} /* 上下左右・中の間をすべて同じ広さ（12〜14px）にそろえる */
 .hero-home .twx{padding:0;line-height:1.2;font-size:14px;gap:1.1em;justify-content:center}
 .hero-home .hero-wx{display:flex;justify-content:center;align-items:center;min-height:20px;margin:0 0 9px;padding:0 0 9px;border-bottom:1px solid rgba(0,0,0,.06);position:relative;z-index:1}
@@ -525,15 +472,10 @@ label.btn{position:relative}
 .hero-home .life-btns .life-main{min-height:46px;gap:8px}
 .hero-home .life-btns .hap-keep{width:100%;display:block}
 .hero-home .life-btns .hap-keep>.btn{width:100%}
-.hero-plain .life-btns{max-width:none;margin-top:0;gap:10px}
-.hero-plain .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)} /* Myアイテムの「化粧品を追加」と同じ大きさ */
-.hero-plain .life-btns .hap-keep{width:100%;display:block}
-.hero-plain .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
 .life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 .life-btns .life-main{grid-column:1 / -1;grid-row:1}
 .life-btns>:not(.life-main){grid-row:2}
-.life-links{display:inline-flex;gap:10px;margin-left:6px}
 .life-sum{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .ls-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--surface2);font-size:13px}
 .ls-head .link{background:none;border:0;padding:0;font-family:inherit;cursor:pointer;color:var(--green-d);text-decoration:underline}
@@ -571,10 +513,6 @@ label.btn{position:relative}
 .mb-total{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .mb-total span{font-size:13px;color:var(--muted)}
 .mb-total b{font-size:24px;letter-spacing:.01em}
-.mb-sub{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
-.mb-chip{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--surface);color:var(--muted)}
-.mb-chip.good{color:#2F7A4A;background:#E5F4E4}
-.mb-chip.bad{color:#C0563B;background:#FBEBEB}
 :root[data-theme="dark"] .mb-chip.good{background:rgba(70,160,100,.18);color:#8FD3A6}
 :root[data-theme="dark"] .mb-chip.bad{background:rgba(220,90,70,.18);color:#F0A08C}
 .mb-cats{margin-top:12px;display:flex;flex-direction:column;gap:6px}
@@ -589,8 +527,6 @@ label.btn{position:relative}
 .mb-list small{font-size:11.5px;color:var(--muted)}
 .mb-list em{font-style:normal;font-weight:700;white-space:nowrap}
 .mb-flash{animation:itemIn .35s ease both}
-.mb-edit{border:1px dashed var(--line2);background:var(--surface);color:var(--green-d);font-family:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
-.mb-edit svg{width:13px;height:13px}
 .mb-bform{margin-top:10px;background:var(--surface);border-radius:12px;padding:10px 12px;animation:itemIn .3s ease both}
 .mb-brow{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
 .mb-brow .input{flex:1 1 110px;min-width:0;min-height:40px;font-size:16px;padding:6px 10px}
@@ -599,9 +535,8 @@ label.btn{position:relative}
 .fav-heart{position:absolute;top:8px;right:8px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9590}
 .fav-heart svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2}
 .fav-heart.on{color:#E0566B}
-.fav-heart.on svg,.fav-btn.on svg{fill:#E0566B;stroke:#E0566B}
-.fav-btn.on{color:#C8405A;border-color:#F2C4CC}
-.fav-heart.pop svg,.fav-btn.pop svg{animation:heartPop .45s cubic-bezier(.2,.9,.3,1.6)}
+.fav-heart.on svg{fill:#E0566B;stroke:#E0566B}
+.fav-heart.pop svg{animation:heartPop .45s cubic-bezier(.2,.9,.3,1.6)}
 @keyframes heartPop{0%{transform:scale(.6)}55%{transform:scale(1.35)}100%{transform:none}}
 .pcard.fav-out{opacity:0;transform:scale(.96);transition:opacity .25s ease,transform .25s ease}
 .tabs .tab svg{width:14px;height:14px;vertical-align:-2px;margin-right:3px}
@@ -621,48 +556,23 @@ label.btn{position:relative}
 .sc-opt.on{border-color:var(--green);background:var(--green-p,#EEF5EF);box-shadow:inset 0 0 0 1px var(--green)}
 .sc-opt b{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
 .acc-sec .acc-row{padding:16px 18px}
-.acc-panel{padding:0 16px 16px;border-top:1px solid var(--line)}
-/* 枠の中の小さなカードは、線で区切るだけにする */
-.acc-panel .card{box-shadow:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 2px;margin:0;background:transparent}
-.acc-panel .card:last-child{border-bottom:0}
-.acc-panel .notice{margin:14px 0 0}
 .set-sub{padding:12px 0;border-top:1px dashed var(--line)}
 .set-sub:first-of-type{border-top:0;padding-top:4px}
 .set-sub h3{font-size:13.5px;margin:0 0 8px;color:var(--ink2)}
 .set-sub details.fold{margin-top:8px!important}
-.acc-panel details.set-fold{border:0;padding:0;background:transparent}
 details.set-fold>summary{font-size:16px;font-weight:700;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center}
 details.set-fold>summary::-webkit-details-marker{display:none}
 details.set-fold>summary::after{content:'›';font-size:18px;color:var(--muted);transition:transform .25s ease}
 details.set-fold[open]>summary::after{transform:rotate(90deg)}
 details.acc-cmp{margin-top:14px}
-.acc-panel .mb-card .card-h{margin-top:14px}
-.acc-panel.open{animation:itemIn .35s ease both}
 /* 商品検索：検索バーと絞り込み */
 .sbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:10px}
-.sbar-top{margin-bottom:12px}
 .net-card{margin-top:14px}
 .net-card:empty{display:none}
 .net-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
 .net-h b{display:flex;align-items:center;gap:6px;font-size:15px}
 .net-h svg{width:16px;height:16px;color:var(--green-d)}
-.pcmp-best{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:12px;background:var(--green-s)}
-.pcmp-best>div{display:flex;flex-direction:column;min-width:0}
-.pcmp-best small{font-size:11px;color:var(--green-d);font-weight:700}
-.pcmp-best b{font-size:22px;line-height:1.3}
-.pcmp-best span{font-size:11.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.pcmp-best .btn{flex:none}
-.pcmp-best i.chip,.cart-ph i.chip{font-style:normal}
-.pcmp-sites{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.pcmp-sites>div{border:1px solid var(--line);border-radius:10px;padding:6px 10px;display:flex;flex-direction:column}
-.pcmp-sites small{font-size:11px;color:var(--muted)}
-.pcmp-list{margin-top:8px}
-.pcmp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-top:1px solid var(--line);color:inherit;text-decoration:none}
-.pcmp-row>span{display:flex;flex-direction:column;min-width:0}
-.pcmp-row b{font-size:13px;font-weight:600;overflow-wrap:anywhere}
-.pcmp-row small{font-size:11px;color:var(--muted)}
-.pcmp-row em{font-style:normal;font-weight:700;white-space:nowrap;text-align:right;display:flex;flex-direction:column}
-.pcmp-row em i{font-style:normal;font-size:11px;color:var(--green-d);font-weight:700}
+.cart-ph i.chip{font-style:normal}
 .cart-row{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .cart-row .thumb,.cart-row img{width:52px;height:52px}
 .cart-t{display:flex;flex-direction:column;min-width:0;color:inherit;text-decoration:none}
@@ -706,16 +616,9 @@ details.acc-cmp{margin-top:14px}
 .sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
 .sbig .input{min-height:44px;height:44px;padding-left:44px;padding-right:50px;font-size:16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
 .sbig .input::-webkit-search-cancel-button{display:none}
-.sbar-in{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:0;background:var(--surface2);color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;-webkit-tap-highlight-color:transparent}
-.sbar-in svg{width:17px;height:17px}
-.sbar-in.on{background:var(--green-d);color:#fff}
-.sbar-in b{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:#D9473A;color:#fff;font-size:11px;line-height:18px;text-align:center;padding:0 4px}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
-.sbar-top .sbar-f{min-height:44px;width:44px;padding:0;border-radius:50%;justify-content:center}
-.top-actions{display:flex;gap:8px;margin:0 0 12px}
 .my-add{width:100%;justify-content:center}
-.my-filters .my-add{gap:4px}.my-filters .my-add svg{width:16px;height:16px}
 /* ウィジェットのプレビュー */
 .wg-row{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;padding-bottom:2px}
 .wg{flex:none;border-radius:22px;background:var(--surface);box-shadow:0 2px 10px rgba(0,0,0,.08);border:1px solid var(--line);color:var(--ink);text-decoration:none;padding:12px}
@@ -753,22 +656,9 @@ details.acc-cmp{margin-top:14px}
 .log-tabs .ht,.home-tabs .ht{font-size:12.5px;font-weight:700;letter-spacing:-.01em;min-width:0}
 @media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){.ht-ind{transition:none}}
-.my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}
-.my-f{justify-content:center;gap:6px;padding-left:6px;padding-right:6px;white-space:nowrap}
-.my-f span{font-size:11.5px;font-weight:700;color:var(--muted)}
-.my-f.active{background:#E3F0E6;border-color:var(--green);color:var(--green-d)}
-.my-f.active span{color:var(--green-d)}
 .sbar .input{min-height:46px}
-.sbar-f{min-height:46px;padding:0 14px;position:relative;gap:6px}
-.sbar-f svg{width:18px;height:18px}
-.sbar-f.on{border-color:var(--green);color:var(--green-d)}
-.sbar-f b{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:99px;background:var(--green);color:#fff;font-size:11.5px;display:flex;align-items:center;justify-content:center;padding:0 5px}
 .fchips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-.fchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--green);background:var(--green-p,#EEF5EF);color:var(--green-d);border-radius:999px;padding:4px 10px;font-size:12.5px;font-family:inherit;cursor:pointer}
-.fchip i{font-style:normal;font-weight:700}
-.fchip.clear{border-color:var(--line2);background:var(--surface);color:var(--muted)}
 .rhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px}
-.sort-sel{width:auto;min-height:36px;padding:4px 30px 4px 10px;font-size:14px;border-radius:999px}
 /* 商品の一覧：横長の行で見やすく */
 .pgrid{grid-template-columns:1fr!important;gap:8px}
 @media(min-width:900px){.pgrid{grid-template-columns:1fr 1fr!important}}
@@ -805,13 +695,10 @@ details.acc-cmp{margin-top:14px}
 .mrow-b{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow-t b{font-size:14.5px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.mrow-go{color:var(--muted);font-size:18px}
 .my-adds{margin:0 0 12px;width:100%}
 /* 化粧品を追加・塗り薬を追加：緑の点線で囲む（塗りつぶさない） */
 .my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:var(--green-p,#F2F7F2)!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
 .my-adds .btn.btn-primary:active{background:var(--green-s,#E4EDE5)!important}
-.my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line);position:relative}
-.mk-ind{position:absolute;left:0;bottom:-1px;width:50%;height:2.5px;border-radius:2px;background:var(--green-d);transform:translateX(calc(var(--mk,0) * 100%));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .mk-pane.mk-in-r{animation:mkInR .54s cubic-bezier(.22,.7,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .54s cubic-bezier(.22,.7,.2,1) both}
 @keyframes mkInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes mkInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .my-kind{transition:color .2s}
@@ -841,7 +728,6 @@ body.m-dragging .mrow-w:not(.lift) .mrow-in{background:transparent}
 .mrow-w.lift{overflow:hidden;z-index:20;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.20),0 2px 6px rgba(0,0,0,.08);border-radius:14px}
 .mrow-w.lift.drop{box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .mrow-w.lift .mrow-in{border-radius:14px;background:var(--surface)}.mrow-w.lift .mrow,.mrow-w.lift .mrow:active{background:transparent}
-.mrows>.mk-x{display:none}
 .rx-info{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:600;background:var(--surface)}
 .rx-info span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rx-info svg{width:18px;height:18px;color:var(--green-d);flex:none}.rx-info span{flex:1;min-width:0}.rx-info i{font-style:normal;color:var(--muted)}
 body.m-dragging .mrow-w:not(.lift){pointer-events:none}
@@ -854,8 +740,6 @@ body.m-dragging{touch-action:none}
 .m-sw i::after{content:'';position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .m-sw.on i{background:var(--green)}.m-sw.on i::after{transform:translateX(17px)}
 .m-sw span{font-size:10.5px;font-weight:700;transition:color .2s ease}.m-sw.on span{color:var(--green-d)}
-.sdot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
-.sdot.s-0{background:var(--green)}.sdot.s-1{background:#D6A06A}.sdot.s-2{background:#7FA3C9}.sdot.s-3{background:#B9B3AA}
 .mtools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .mtools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
 .mtools a{min-width:0;white-space:nowrap;font-size:12.5px!important;padding:12px 10px!important;gap:6px!important}.mtools a svg{flex:none;width:16px!important;height:16px!important}.mtools a span{min-width:0;overflow:hidden;text-overflow:ellipsis}.mtools a i{flex:none}
@@ -871,22 +755,17 @@ body.m-dragging{touch-action:none}
 .fp-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .fp-h b{font-size:16px}
 .fp-h .link{background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline}
-.fp-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.fp-row .select{min-height:36px;font-size:14px;padding:4px 28px 4px 8px;width:auto;max-width:150px}
 .counter.sm{display:flex;align-items:center;gap:8px}
 .counter.sm .icon-btn{width:32px;height:32px;font-size:16px}
 .counter.sm b{min-width:1.5em;text-align:center;font-size:16px}
 .fp-chips{display:flex;flex-wrap:wrap;gap:6px}
 .fp-chip{border:1px solid var(--line2);background:var(--surface);color:var(--ink2);border-radius:999px;padding:5px 10px;font-size:12.5px;font-family:inherit;cursor:pointer}
 .fp-chip.on{background:var(--green);border-color:var(--green);color:#fff}
-.fp-sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
 /* ボタンを押すと、少し凹む（小さくなる） */
-button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:active,a.btn:active,.tab:active,.seg-opt:active span,.used-tile:active,.mrow:active,.pcard:active,.sc-opt:active,.ls-main:active,.acc-row:active,.fchip:active{transform:scale(.96)}
+button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:active,a.btn:active,.tab:active,.seg-opt:active span,.used-tile:active,.mrow:active,.pcard:active,.sc-opt:active,.ls-main:active,.acc-row:active{transform:scale(.96)}
 .hap-wrap:active > .btn{transform:scale(.96)}
-.sbar-in:active{transform:translateY(-50%) scale(.92)}
 /* 閉じる（×）ボタン：文字ではなく線で描いて、丸の真ん中にぴったり置く */
 .xi{position:relative;display:block;width:16px;height:16px;margin:auto}
 .xi::before,.xi::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:2px;border-radius:2px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
@@ -900,7 +779,6 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .fp-open{position:absolute;top:0;right:0;width:52px;height:52px;z-index:3;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fp-open i{position:absolute;top:4px;right:2px;width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px;color:var(--ink)}
 .fp-sumline{text-align:center;font-size:13px;color:var(--ink2);margin:8px 0 0}
-.fp-openbtn{display:flex;margin:10px auto 0;justify-content:center;min-width:220px}
 /* 大きくしたとき：今日の肌記録の大きい画面と同じ形。顔の下に「ニキビ選択／肌質選択」、その下に入力 */
 .fp-field.fp-big{position:fixed;inset:0;z-index:300;margin:0;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
 .fp-big .fp-bighead{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px;order:0}
@@ -916,7 +794,6 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 #modal-root.fp-open{z-index:400!important}
 .fp-lbl{display:block}
 .fp-lbl .opt{display:block;margin:4px 0 0;font-size:12px}
-.fp-hl{display:inline-flex;align-items:center;gap:8px}
 .fp-undo{height:32px;padding:0 14px!important;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--green-d);font-size:13px;font-weight:600;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:inherit}
 .fp-undo:disabled{opacity:.35;cursor:default}
 /* ニキビ選択：種類はイラストで選ぶ。「戻る」は右下、「すべて消す」は小さく */
@@ -932,12 +809,6 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .fp-chips.fp-ill .fp-chip{flex-direction:column;justify-content:center;gap:3px;border-radius:14px;padding:7px 4px 6px;font-size:12px;font-weight:600;border-width:1.5px}
 .fp-chips.fp-ill .fp-chip.on{border-color:var(--cc)!important;background:color-mix(in srgb,var(--cc) 14%,var(--surface))!important;color:var(--ink)!important}
 .fp-chips.fp-ill .fp-chip.dis{opacity:.55}
-.fp-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.fp-steps .btn{min-height:40px;justify-content:center}
-.fp-steps .btn:disabled{opacity:.4}
-.lifeacc-sum{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;padding:4px 0;border:0!important;background:none!important;border-radius:0;min-height:0;-webkit-tap-highlight-color:transparent}
-.lifeacc-sum::-webkit-details-marker{display:none}
-.life-acc[open] .meal-chev{transform:rotate(90deg)}
 .meal-acc{padding:0}
 .meal-acc > *:not(summary){margin-left:12px;margin-right:12px}
 .meal-acc > .food-list,.meal-acc > .food-ac,.meal-acc > .food-pick{margin-left:12px;margin-right:12px}
@@ -969,15 +840,11 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .meal-photo-top.mpt-even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .meal-photo-top>.mpt-locked{flex-direction:column;min-height:52px;border-radius:999px;padding:4px 12px;gap:0}
 .mpt-blk.meal-photo-top>.mpt-locked{min-height:44px}
-.meal-photo-top .mpt-one{grid-column:1/-1}
 .mpt-blk{margin-top:8px}
 .mpt-blk .mpt-btn{min-height:44px;font-size:13px}
 .mpt-blk .mpt-locked{min-height:64px}
 .health-btn{justify-self:start;margin-top:-4px}
 .health-note{font-size:12px;color:var(--muted);margin:-6px 0 0;padding:8px 12px;background:var(--surface2);border-radius:12px}
-.mpt-col{display:flex;flex-direction:column;align-items:center;gap:4px}
-.mpt-col .mpt-btn{width:100%}
-.mpt-prem{font-size:11px;font-weight:700;color:#9A7B3E;letter-spacing:.04em}
 .meal-now{display:none;margin-left:6px;font-size:11px;font-weight:600;color:#fff;background:var(--green-d);border-radius:999px;padding:2px 8px}
 .meal-block.now{border-color:var(--green);box-shadow:0 0 0 2px rgba(90,138,105,.15)}
 .meal-block.now .meal-now{display:inline-block}
@@ -991,7 +858,6 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .mpt-btn .badge-premium{font-size:11px}
 .mpt-mid,.mpt-locked{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .mpt-locked .mpt-l svg{color:#fff}
-.mpt-col .mpt-btn{opacity:1}
 .mpt-mid svg{color:#fff}
 .mpt-locked{flex-direction:column;gap:6px;min-height:76px;border-radius:18px;padding:10px 8px}
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
@@ -1060,20 +926,10 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .care-btn b{font-size:13.5px}
 .care-btn small{font-size:11px;color:var(--muted)}
 .care-btn.done{background:var(--green-s);border-color:transparent}
-.wx-bar{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:6px 12px;min-height:36px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--ink2);overflow:hidden;white-space:nowrap}
-.wx-bar svg{flex:none;vertical-align:-2px;margin-right:3px;color:var(--green-d)}
-.wx-b-pl{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--ink);display:flex;align-items:center;cursor:pointer;flex:none;max-width:72px;overflow:hidden;text-overflow:ellipsis}
-.wx-b-n{display:flex;align-items:baseline;gap:3px;flex:none}.wx-b-n small{font-size:10px;color:var(--muted)}.wx-b-n b{font-size:13px;color:var(--ink)}
-.wx-b-tip{margin-left:auto;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;min-width:0}.wx-b-tip.warn{color:var(--warn)}
-.wx-bar-setup{white-space:normal;flex-wrap:wrap;gap:6px 10px}.wx-bar-setup>span{flex:1 1 180px;min-width:0}
-.wx-b-btn{border:0;border-radius:999px;padding:5px 12px;background:var(--green-l,#E5F2EA);color:var(--green-d);font:inherit;font-weight:700;font-size:12px;cursor:pointer}
-.wx-b-link{border:0;background:none;padding:0;color:var(--muted);font:inherit;font-size:11.5px;text-decoration:underline;cursor:pointer}
-@media(max-width:360px){.wx-b-tip{display:none}}
 .remind-card .rc-h{display:flex;align-items:center;gap:8px}.remind-card .rc-h svg{width:18px;height:18px;color:var(--green-d)}.remind-card .rc-h b{flex:1;font-size:14px}
 .rc-x{width:30px;height:30px}.rc-row{display:flex;gap:8px;align-items:center}.rc-row .select{width:auto;min-width:90px}
 .combo-hint,.derm-hint{display:flex;gap:8px;align-items:flex-start}.combo-hint>svg,.derm-hint>svg{flex:none;width:18px;height:18px;margin-top:2px}
 .combo-hint small,.derm-hint small{display:block;margin-top:2px}.ch-act{display:flex;gap:14px;margin-top:6px}.ch-act .link{background:none;border:0;padding:0;font:inherit;cursor:pointer}
-.start-demo{margin:10px 0 0}.start-demo .link{background:none;border:0;padding:0;font:inherit;font-size:inherit;color:var(--green-d);text-decoration:underline;cursor:pointer}
 .sc-h{display:flex;align-items:center;justify-content:center;gap:16px;margin:2px 0 8px}
 .sc-w,.sc-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.sc-w span{text-align:center;font-size:11px;color:var(--muted)}
 .sc-d{position:relative;aspect-ratio:1;border:0;border-radius:10px;background:var(--surface2,#F4F1EC);color:var(--muted);font:inherit;padding:0;display:flex;align-items:center;justify-content:center;cursor:default}
@@ -1089,7 +945,6 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .ps-wrap.on .ps-bg{opacity:1}.ps-wrap.on .ps{transform:none}
 @media(min-width:640px){.ps-wrap{align-items:center}.ps{border-radius:24px}}
 .ps-x{position:absolute;top:12px;right:12px;width:36px;height:36px}
-.ps-kicker{margin:0 40px 4px 0;font-size:12px;color:var(--green-d);font-weight:700}
 .ps h2{margin:0;font-size:22px}.ps-price{margin:4px 0 10px;font-size:13px;color:var(--ink2)}.ps-price b{font-size:18px;color:var(--ink)}
 .ps-list{margin:0 0 14px;padding:12px 14px 12px 32px;background:var(--green-l,#E5F2EA);border-radius:14px;font-size:13.5px;line-height:1.7}
 #ps-form{display:flex;flex-direction:column;gap:10px}.ps-note,.ps-me{margin:0}
@@ -1134,44 +989,20 @@ details.fold summary{transition:color .18s}
 #modal-ghost .modal{animation:ghostDown .22s cubic-bezier(.4,0,1,1) forwards}
 @keyframes ghostBg{to{background-color:transparent;opacity:0}}@keyframes ghostDown{to{transform:translateY(105%)}}
 @media(min-width:640px){@keyframes ghostDown{to{transform:translateY(24px) scale(.97);opacity:0}}}
-@media (prefers-reduced-motion:reduce){.mk-pane,.mk-ind,#modal-ghost *,details.fold[open]>*{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion:reduce){.mk-pane,#modal-ghost *,details.fold[open]>*{animation:none!important;transition:none!important}}
 .rx-g{font-size:13px;color:var(--green-d);margin:16px 0 6px}
 .rx-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
 .rx-item span{flex:1;min-width:0}.rx-item b{display:block;font-size:14px}.rx-item small{display:block;font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
 .rx-item i{flex:none;color:var(--green-d)}.rx-item i svg{width:18px;height:18px}
-.wx-box{display:flex;flex-direction:column;gap:6px;margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);position:relative}
-.wx-box.wx-setup{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
-.wx-box.wx-setup svg{width:16px;height:16px;color:var(--green-d)}
-.wx-box.wx-setup span{flex:1 1 200px}
-.wx-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.wx-nums span{display:flex;flex-direction:column;align-items:center}
-.wx-nums small{font-size:10.5px;color:var(--muted)}
-.wx-nums b{font-size:16px}
-.wx-tip{margin:0;font-size:12.5px;color:var(--ink2);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.wx-tip i.chip{font-style:normal}
-.wx-pref{margin-left:auto;background:none;border:0;padding:2px;color:var(--muted);font-size:10.5px;text-decoration:underline;cursor:pointer;font-family:inherit}
 .st-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}.st-head h2{margin:0;font-size:17px}
-.st-sub{margin:2px 0 0;font-size:12px;color:var(--muted)}
 .st-x{flex:none;width:32px;height:32px;border-radius:50%;border:0;background:var(--surface2,#F4F1EC);color:var(--ink2);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:-4px -4px 0 0}
-.st-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 12px}.st-steps i{height:5px;border-radius:3px;background:var(--surface2,#EEE9E1);transition:background .3s}.st-steps i.on{background:var(--green-d)}
-.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.st-grid>.st-tile:first-child:nth-last-child(odd){grid-column:1/-1}
 .start-row.st-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;min-height:0;grid-template-columns:none}
-.st-tile .st-ic{width:32px;height:32px;border-radius:10px;background:var(--green-l,#E5F2EA);color:var(--green-d);display:flex;align-items:center;justify-content:center;margin-bottom:4px}.st-tile .st-ic svg{width:17px;height:17px}
 .st-tile b{font-size:14px;line-height:1.35;white-space:nowrap}.st-tile small{font-size:11px;line-height:1.5;color:var(--muted)}
-.start-row.st-tile.done{background:var(--surface2,#F7F4EF);border-color:transparent}.st-tile.done .st-ic{background:var(--green-d);color:#fff}.start-row.st-tile.done b{text-decoration:none;color:var(--ink2)}
-.start-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin:-2px 0 6px}
-.start-bar i{display:block;height:100%;background:var(--green-d);border-radius:3px;transition:width .4s}
+.start-row.st-tile.done{background:var(--surface2,#F7F4EF);border-color:transparent}.start-row.st-tile.done b{text-decoration:none;color:var(--ink2)}
 .start-row{display:grid;grid-template-columns:28px minmax(0,1fr) 10px;gap:10px;align-items:center;width:100%;padding:10px 2px;border:0;border-top:1px solid var(--line);background:none;font-family:inherit;text-align:left;color:var(--ink);cursor:pointer}
 .start-row:first-of-type{border-top:0}
-.start-n{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green-d);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
-.start-n svg{width:15px;height:15px}
-.start-row.done .start-n{background:var(--green-d);color:#fff}
 .start-row.done b{color:var(--muted);text-decoration:line-through}
-.start-t{display:flex;flex-direction:column}
-.start-t b{font-size:14px}
-.start-t small{font-size:11.5px;color:var(--muted)}
 .start-row i{font-style:normal;color:var(--muted)}
-.start-close{display:block;margin:6px 0 0 auto;background:none;border:0;padding:0;font-family:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
 .a2hs-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
 .a2hs-steps li b{display:block;font-size:14px}
 .a2hs-steps li small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
@@ -1208,11 +1039,6 @@ details.fold summary{transition:color .18s}
 .nut-v b{color:var(--ink);font-size:12.5px}
 .nut-p{text-align:right;font-weight:700;color:var(--muted)}
 .nut-p.ok{color:var(--green-d)}.nut-p.over{color:#C0503C}
-.qm{display:flex;gap:12px;align-items:center}
-.qm-img{width:96px;height:96px;object-fit:cover;border-radius:16px;flex:none;box-shadow:var(--shadow)}
-.qm-t{display:flex;flex-direction:column;gap:4px;min-width:0}
-.qm-t b{font-size:16px}
-.qm-slot .seg-opt span{min-height:40px}
 .rs-list{display:flex;flex-direction:column;gap:6px}
 .rs-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;font-size:12px}
 .rs-row b{grid-column:1/-1;font-size:13px;display:flex;justify-content:space-between;gap:8px}
@@ -1230,7 +1056,7 @@ details.fold summary{transition:color .18s}
 .hap-ov{position:absolute;inset:0;z-index:2;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:inherit}
 .seg-opt.hap-seg{position:relative}
 /* 設定で「説明文を表示しない」にしたとき */
-.no-help .hint,.no-help .opt-d,.no-help .cond-ai,.no-help .help-text{display:none!important}
+.no-help .hint,.no-help .opt-d,.no-help .cond-ai{display:none!important}
 .seg-opt > .hap-ov{border-radius:inherit}
 .hap-ov input{position:absolute;left:50%;top:50%;width:1px;height:1px;margin:0;opacity:0.01;pointer-events:none}
 .cond-seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
@@ -1284,18 +1110,14 @@ a.used-tile{color:inherit;text-decoration:none}
 .fp-zoom{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
 .fp-zoom .icon-btn{width:32px;height:32px;font-size:16px;background:var(--surface);box-shadow:var(--shadow)}
 .fp-h b small{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
-.fp-row span small{font-size:11px;color:var(--muted);margin-left:2px}
 .fp-chip{display:inline-flex;align-items:center;gap:5px}
 .fp-chip i{width:9px;height:9px;border-radius:50%;background:var(--cc);display:inline-block}
 .fp-chip.on{background:var(--cc)!important;border-color:var(--cc)!important;color:#fff}
 .fp-chip.on i{background:#fff}
-.fp-sliders{display:flex;flex-direction:column;gap:10px;margin-top:10px}
 .fp-slider{display:block;padding:8px 10px 6px;border-radius:12px;background:var(--surface2)}
 .fp-slider>span:first-child{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600}
 .fp-slider>span:first-child b{color:var(--cc);font-size:15px}
 .fp-slider input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--cc);height:28px}
-.fp-ticks{display:flex;justify-content:space-between;padding:0 6px;font-size:10.5px;color:var(--muted)}
-.fp-ticks i{font-style:normal;width:12px;text-align:center}
 .fp-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:12px}
 .fp-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 /* ===== 動き（モーション） ===== */
@@ -1360,9 +1182,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .diag small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .diag em{display:block;font-style:normal;color:#C0563B;font-size:12.5px;margin-top:2px}
 .advice h3{margin:0 0 4px;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-/* AI分析：グラデーションはやめて、落ち着いた緑の文字 */
-.advice .ai-badge{font-size:12px;font-weight:700;padding:0 2px;letter-spacing:.04em}
-.advice .ai-badge,.ai-text{color:var(--green-d)!important}
+.ai-text{color:var(--green-d)!important}
 .advice ol{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
 .advice li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:13.5px;line-height:1.6}
 .advice li i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--surface2);color:var(--green-d);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
@@ -1408,14 +1228,11 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pick::-webkit-scrollbar{display:none}
 .mn-pick .mn-pb{flex:none;padding:5px 9px;font-size:11.5px}
 .mn-sep{flex:none;width:1px;height:18px;background:var(--line2);margin:0 3px}
-.mn-pl{font-size:11px;font-weight:700;color:var(--muted);min-width:52px}
 .mn-item{display:flex;align-items:center;gap:10px;min-width:0}
 .mn-item a{color:var(--ink);font-size:14px;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
 .mn-img{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--surface2);border:1px solid var(--line);object-position:center;opacity:0;transition:opacity .25s ease}
 .mn-img.shown{opacity:1}.mn-img.bad{opacity:1;content:url('data:image/gif;base64,R0lGODlhAQABAAAAACw=')}
 @keyframes mnIn{from{opacity:.3}to{opacity:1}}
-.mn-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.mn-noimg svg{width:20px;height:20px}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .ld-life{margin-top:12px}
@@ -1454,9 +1271,6 @@ a.used-tile{color:inherit;text-decoration:none}
 .pd-img{display:block;width:100%;max-width:300px;aspect-ratio:3/4;object-fit:cover;border-radius:16px;margin:36px auto 8px;background:var(--surface2)}
 .pd-miss{text-align:center;padding:90px 0 70px;font-size:15px;line-height:1.8}
 .pd-miss b{font-size:18px}
-.adv-link{border:0;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
-.adv-link i{font-style:normal;opacity:.6}
-.adv-tap{font-style:normal;font-size:10px;color:var(--green-d);margin-left:6px;font-weight:600}
 button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d);text-decoration:underline;cursor:pointer}
 .cam-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cam-pick .btn{justify-content:center;min-height:52px;font-size:15px}
@@ -1473,12 +1287,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .rc-ing b{font-weight:600;color:var(--ink2,#444);white-space:nowrap}
 .rc-steps{margin:0;padding-left:1.3em;display:grid;gap:7px;font-size:14px;line-height:1.6}
 .mn-point{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.55}
-.adv-basis{font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:6px 9px;margin:6px 0 0;line-height:1.55}
-.adv-basis b{display:inline-block;font-size:10.5px;color:var(--green-d);margin-right:6px}
-.adv-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
-.adv-chips + .adv-text,.adv-chips + .adv-chips + .adv-text{margin-top:8px}
 .advice .adv-text{display:block;font-size:13px;color:var(--muted);line-height:1.6}
-.adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
 .adv-ing{border:0;font:inherit;font-size:12.5px;font-weight:600;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}.adv-ing i{font-style:normal;opacity:.6}
 .ing-b .nw{display:inline-block}.sun-k{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin-top:2px}.sun-k i{font-style:normal;font-weight:700;white-space:nowrap}.ing-dl{display:grid;gap:8px;margin:0 0 10px}.ing-b{background:var(--surface2,#F6F3EE);border-radius:12px;padding:10px 12px}.ing-b b{display:block;font-size:12px;color:var(--green-d);margin-bottom:2px}.ing-b.warn b{color:#B0662A}.ing-b p{margin:0;font-size:13.5px;line-height:1.7}
 .ing-go{font-style:normal;font-size:20px;color:var(--muted)}
@@ -1493,11 +1302,10 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ing-kinds{display:flex;gap:6px;overflow-x:auto;margin:0 -2px 10px;padding:2px;scrollbar-width:none}.ing-kinds::-webkit-scrollbar{display:none}
 .ing-kind{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ing-kind small{font-size:11px;font-weight:600;color:var(--muted)}.ing-kind.on{background:var(--green-d);border-color:var(--green-d);color:#fff}.ing-kind.on small{color:rgba(255,255,255,.8)}.ing-kind:disabled{opacity:.4;cursor:default}
-.ing-more{width:100%;justify-content:center;margin-top:4px}.ing-sales{color:#B0662A;font-weight:700}
+.ing-more{width:100%;justify-content:center;margin-top:4px}
 .irk-list{display:grid;gap:8px}.irk-list .hap-keep{display:block}
 .pop-item.ir{display:grid;grid-template-columns:26px 64px minmax(0,1fr) 12px;align-items:center;gap:12px;margin:0;padding:10px 12px;border-radius:16px}
-.ir-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);background:var(--surface2,#F4F1EC)}
-.ir-n.top1{background:#E8B43A;color:#fff}.ir-n.top2{background:#A9B1B8;color:#fff}.ir-n.top3{background:#C98B5C;color:#fff}
+.ir-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);background:var(--surface2,#F4F1EC)}.ir-n.top3{background:#C98B5C;color:#fff}
 .pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
 .ir-t{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1515,12 +1323,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .adv-ic{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}.adv-ic svg{width:14px;height:14px;display:block}
 .adv-box.good .adv-ic{background:var(--green)}.adv-box.bad .adv-ic{background:#D9694B}
 .adv-cl{display:flex;flex-wrap:wrap;gap:6px}
-.advice .adv4 li{padding-bottom:14px}.advice .adv4 li+li{border-top:1px solid var(--line);padding-top:14px}
-.advice .adv4 li b{font-size:15px;line-height:1.5}
 @media(min-width:520px){.adv-gb{grid-template-columns:1fr 1fr}}
 html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-theme="dark"] .adv-box.bad{background:rgba(217,105,75,.14)}html[data-theme="dark"] .adv-c{background:transparent}
-.adv-area{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--green-d);letter-spacing:.04em}
-.advice .adv4 li>i{background:none;font-size:18px;width:22px;height:22px}
 .ldc-note i{width:5px;height:5px;border-radius:50%;background:var(--green)}
 .ld-miss{text-align:center;margin:4px 0 0}
 .ld-card{position:relative}
@@ -1528,10 +1332,6 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-none .ld-detail{display:none}
 .ld-none .ld-miss{position:absolute;left:16px;right:16px;top:38%;font-size:15px;color:var(--ink);line-height:1.8;margin:0}
 .ld-none .ld-miss b{font-size:18px}
-/* はじめの質問 */
-.sw-dots{display:flex;gap:6px;justify-content:center;margin:0 0 16px}
-.sw-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)}
-.sw-dots i.on{background:var(--green-d);width:18px;border-radius:999px}
 .sw-q{font-size:18px;font-weight:700;margin:0 0 4px;text-align:center}
 .sw-sub{font-size:13px;color:var(--muted);text-align:center;margin:0 0 16px}
 .sw-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1554,10 +1354,6 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .sw-auth{display:flex;flex-direction:column;gap:6px;text-align:left}
 .sw-auth .lbl{margin:6px 0 0}
 .sw-auth .check{margin-top:6px;align-items:flex-start}
-.sw-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
-.sw-seg .seg-opt{border:1px solid var(--line2);background:var(--surface);border-radius:999px;min-height:38px;font:inherit;font-weight:600;font-size:13.5px;color:var(--ink2);cursor:pointer}
-.sw-seg .seg-opt.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
-.sw-auth-go{margin-top:10px;width:100%}
 .sw-auth-msg{margin:6px 0 0;color:var(--green-d);line-height:1.6}
 .sw-foot{display:flex;gap:8px;width:100%}
 .sw-foot .btn{flex:1}
@@ -1594,9 +1390,6 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 @keyframes ldf{from{opacity:.3;transform:translateY(3px)}to{opacity:1;transform:none}}
 :root[data-theme="dark"] .t3-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .t3-stage{background:transparent}}
-.f3-tags{position:absolute;left:8px;top:8px;right:52px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
-.f3-tags span{font-size:12px;line-height:1.4;padding:2px 8px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line2);box-shadow:var(--shadow);white-space:nowrap}
-.f3-tags .t-cond{color:#fff;border-color:transparent}
 .t3-side{display:flex;flex-direction:column;gap:6px;min-width:0}
 .t3-tags{display:flex;flex-wrap:wrap;gap:3px}
 .t3-tags span{font-size:12.5px;line-height:1.5;padding:1px 8px;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
@@ -1689,10 +1482,6 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .delta{font-size:12px;font-weight:600;color:var(--muted)}
 .delta.good{color:var(--green-d)}
 .delta.bad{color:var(--danger)}
-.hbar{display:grid;grid-template-columns:110px 1fr 80px;gap:10px;align-items:center;font-size:13px;margin-bottom:8px}
-.hbar .bar{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden}
-.hbar .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#8DB295);border-radius:99px}
-.hbar .v{text-align:right;font-weight:600}
 .table{width:100%;border-collapse:collapse;font-size:13.5px}
 .table th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
 .table td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -1723,19 +1512,14 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .rp-pt b{display:block;font-size:14px;line-height:1.6}
 .rp-pt p{margin:4px 0 0;font-size:13px;line-height:1.75;color:var(--ink2)}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.map-frame{width:100%;height:260px;border:0;border-radius:12px;background:var(--surface2);display:block}
 .store-map{width:100%;height:340px;border-radius:12px;background:var(--surface2);overflow:hidden;position:relative;z-index:0}
 .map-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .map-legend{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 0;font-size:12px;color:var(--muted)}
 .map-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 .store-pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
 .store-pin b{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:700;font-family:var(--font)}
-.maplibregl-popup-content{font-family:var(--font);font-size:13px;line-height:1.5;padding:10px 12px;border-radius:10px}
-.maplibregl-popup-content a{color:var(--green-d)}
 .pin-wrap{width:34px;height:36px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
 .center-dot{width:14px;height:14px;border-radius:50%;background:#2B6CB0;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 0 8px rgba(43,108,176,.18)}
-.offer.shop-card{cursor:pointer;transition:background .2s,box-shadow .2s,border-color .2s}
-.offer.shop-card.selected{background:#FFF8E6;border-color:#E2B23A;box-shadow:0 0 0 3px rgba(226,178,58,.35)}
 .store-pin.sel{width:34px;height:34px;margin-bottom:-2px;box-shadow:0 0 0 4px rgba(226,178,58,.6),0 2px 6px rgba(0,0,0,.4)}
 .store-pin.sel b{font-size:13px}
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
@@ -1768,7 +1552,6 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .ad-ph{min-height:90px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--surface2);color:var(--muted);font-size:12.5px;text-align:center;padding:8px}
 .lock-card{border-style:dashed;background:linear-gradient(135deg,#FFFDF8,#FBF5EA)}
 .tab .badge-premium{margin-left:4px;font-size:10px;padding:0 5px}
-.map-table td,.map-table th{text-align:center;white-space:nowrap}.map-table td:first-child,.map-table th:first-child{text-align:left;white-space:normal}
 @media print{.sidebar,.topbar,.bottom-nav,#toast-root,.no-print,.back{display:none!important}body{background:#fff}main{padding:0;max-width:none}.card{box-shadow:none;break-inside:avoid;border-color:#ccc}textarea{border:1px solid #ccc}}
 .chip-x{border:0;background:none;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:0 0 0 6px}
 .meal-thumb{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
@@ -1907,14 +1690,9 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .ps-price{display:flex;flex-direction:column;gap:2px}
 .ps-cancel{font-size:13px;color:var(--muted)}
 #prem-sheet #ps-t{margin-right:44px}
-
-/* はじめにやること：アンケート1つだけ */
-.start-card .st-grid{grid-template-columns:1fr}
 .start-card .st-tile{flex-direction:row;align-items:center;gap:12px;padding:14px}
-.start-card .st-tile .st-ic{margin:0;flex:none;width:40px;height:40px;border-radius:12px}
 .start-card .st-tile b{display:block;font-size:15.5px;white-space:normal}
 .start-card .st-tile small{display:block;font-size:12px;white-space:normal;margin-top:2px}
-.start-card .st-tile .st-txt{display:flex;flex-direction:column;min-width:0;flex:1}
 /* アンケート：1ページ */
 .sw-intro{margin:0 0 14px;font-size:13.5px;color:var(--ink2);line-height:1.8}
 .sw-card{padding:16px 0 18px;border-top:1px solid var(--line);counter-increment:swq}
@@ -1923,8 +1701,6 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .sw-card .sw-q::before{content:counter(swq);flex:none;width:24px;height:24px;border-radius:50%;background:var(--green-d);color:#fff;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .sw-card .sw-sub{margin:0 0 12px}
 .sw-card.sw-bad{background:rgba(192,86,59,.06);border-radius:12px;padding-left:10px;padding-right:10px}
-#sw-body .sw-dots{display:none}
-.start-card .st-chev{flex:none;font-style:normal;font-size:22px;color:var(--muted);line-height:1}
 .start-card .st-tile b,.start-card .st-tile small{overflow:visible}
 .sw-card .sw-sub,.sw-card .sw-sec{text-align:left}
 .sw-card .sw-sub{padding-left:32px}
@@ -1975,11 +1751,11 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .sw-q small{font-weight:500;color:var(--muted);font-size:12px;margin-left:2px}
 .used-tile .used-nm,.used-tile .used-sub{display:none} /* 今日使った物：写真の下に名前は出さない */
 .f3-expand,.fp-mode button.on,.fp-zoom .icon-btn,.fp-open i,.fav-heart,.rt-mode.on{box-shadow:none!important}
-.log-item,.mitem,.pcard{box-shadow:var(--shadow)}
+.mitem,.pcard{box-shadow:var(--shadow)}
 /* 影はすべてなくす（枠・カード・シート・お知らせなど）。スイッチのつまみ・地図の印・選んだ枠の色の輪だけは残す */
 :root,:root[data-theme="dark"]{--shadow:none!important;--shadow-btn:none!important;--shadow-btn-in:none!important;--shadow-lg:none!important}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--shadow:none!important;--shadow-btn:none!important;--shadow-btn-in:none!important}}
-.card,.hero,.pcard,.mitem,.log-item,.modal,.drawer,.wg,.toast,.toast.error,.otp-card,.rt-mode.on,.rt-card,.rt-card.lift,.mrow-w.lift,.mrow-w.lift.drop,.mrow,.add-opt,.ac-list,.ls-main,.acc-sec,.pop-item,.f3-expand,.t3-stage .f3-expand,.fp-big,.fp-panel,.sc-opt,.hero-home,.mb-card,.cc,.combo-card,.lp,.cmp-card,.tl-row,.sheet,.popover,.menu,.tip,.f3-tip,.ld-arrow,.ldc-nav,.icon-btn,.fav-heart,.ct.on,.tab.active,.sw-ind{box-shadow:none!important}
+.card,.hero,.pcard,.mitem,.modal,.drawer,.wg,.toast,.toast.error,.otp-card,.rt-mode.on,.rt-card,.rt-card.lift,.mrow-w.lift,.mrow-w.lift.drop,.mrow,.add-opt,.ac-list,.ls-main,.acc-sec,.pop-item,.f3-expand,.t3-stage .f3-expand,.fp-big,.fp-panel,.sc-opt,.hero-home,.mb-card,.cc,.combo-card,.lp,.cmp-card,.tl-row,.sheet,.menu,.tip,.f3-tip,.ld-arrow,.ldc-nav,.icon-btn,.fav-heart,.ct.on,.tab.active,.sw-ind{box-shadow:none!important}
 .mb-col.on .mb-bar{box-shadow:none!important}
 
 /* ===== スキンケア設計 ===== */
@@ -2119,7 +1895,6 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .cc-pick{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:10px}
 .cc-pick span{color:var(--muted);font-weight:700}
 .cc-pick .select{min-width:0}
-.ing-ev{margin-left:6px}
 @media (max-width:380px){.rt-det{padding-left:14px}.rt-dl{grid-template-columns:1fr;gap:2px}}
 #sw-body .sw-sec small{font-weight:500;color:var(--muted);font-size:12px;margin-left:4px}
 
@@ -2186,7 +1961,7 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 /* ===== 全体の動きをなめらかに（瞬間的に変わらないように） ===== */
 :root{--ease-out:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.4,.64,1);interpolate-size:allow-keywords}
 /* ボタン・カード・リンク：押すと少し沈み、離すと弾むように戻る。色や枠の変化もふわっと */
-button,.btn,a.btn,.tab,.ct,.rt-mode,.chip,.fchip,.pcard,.mrow,.add-opt,.sc-opt,.ls-main,.acc-row,.used-tile,.pop-item,.fp-chip,.fp-kind,.sw-opt,.seg-opt span,.ht,.ldc-d,.icon-btn,.f3-expand{
+button,.btn,a.btn,.tab,.ct,.rt-mode,.chip,.pcard,.mrow,.add-opt,.sc-opt,.ls-main,.acc-row,.used-tile,.pop-item,.fp-chip,.fp-kind,.sw-opt,.seg-opt span,.ht,.ldc-d,.icon-btn,.f3-expand{
   transition:transform .32s var(--ease-spring),background-color .25s var(--ease-out),color .25s var(--ease-out),border-color .25s var(--ease-out),box-shadow .25s var(--ease-out),opacity .25s var(--ease-out)}
 button:not(:disabled):active,.btn:active,.pcard:active,.mrow:active,.add-opt:active,.used-tile:active,.pop-item:active,.fp-kind:active,.fp-chip:active,.icon-btn:active{transition-duration:.08s}
 #sw-body .sw-opts .sw-opt,#sw-body .sw-opts .sw-opt:active{transition:background-color .2s var(--ease-out),color .2s var(--ease-out)}
@@ -2290,8 +2065,7 @@ img{image-rendering:auto}
 .t3-m .bar{height:8px}
 .t3-m b{font-size:15px}
 /* アカウントの一番上：ログイン中のメールとバックアップ */
-.acc-me{display:flex;align-items:center;gap:12px;text-decoration:none!important;color:inherit}.acc-me *{text-decoration:none!important}.acc-me .am-ic svg{width:22px;height:22px}.acc-me .link{flex:none;color:var(--green-d);font-weight:600}
-.acc-me .am-ic{flex:none;width:44px;height:44px;border-radius:50%;background:var(--green-p,#EEF5EF);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600}
+.acc-me{display:flex;align-items:center;gap:12px;text-decoration:none!important;color:inherit}.acc-me *{text-decoration:none!important}.acc-me .link{flex:none;color:var(--green-d);font-weight:600}
 .acc-me .am-t{min-width:0;flex:1}
 .acc-me .am-t b{display:block;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-me .am-t small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
@@ -2315,16 +2089,10 @@ img{image-rendering:auto}
 .combo-sum b{font-weight:500}
 .cb-more{margin:4px 2px 12px}.cb-note b{font-weight:500}
 .cb-tabs .rt-mode{font-weight:500}
-
-/* アカウント：名前・アイコン */
-.acc-me .am-av{position:relative;flex:none;border:0;background:none;padding:0;cursor:pointer}
-.acc-me .am-av>i{position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink2)}
-.acc-me .am-av>i svg{width:12px;height:12px}
 .av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;line-height:1;flex:none}
 .av img{width:100%;height:100%;object-fit:cover;display:block}
 .av-def{background:var(--green-p,#EEF5EF);color:var(--green-d);font-weight:600}.av-def svg{width:55%;height:55%}
 .acc-me .am-t b{font-size:16px}
-.acc-me .am-em{color:var(--ink2)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-me .am-edit{flex:none;align-self:flex-start;margin-top:4px;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer}
 .pf-top{display:flex;justify-content:center;margin:2px 0 14px}
 .pf-row{display:flex;gap:8px;flex-wrap:wrap}
@@ -2335,9 +2103,6 @@ img{image-rendering:auto}
 .pf-col{display:flex;gap:10px}
 .pf-c{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line2,#ccc);cursor:pointer;padding:0}
 .pf-c.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--green-d)!important}
-
-/* アカウント：一番上のプロフィール（押すとアカウント情報） */
-.acc-me .am-go{font-style:normal;color:var(--muted);font-size:22px;line-height:1;flex:none}
 .acc-me .am-t small{font-size:13px}
 .ai-hero{display:flex;justify-content:center;margin:6px 0 18px}
 .ai-av{position:relative;border:0;background:none;padding:0;cursor:pointer}
@@ -2351,7 +2116,6 @@ img{image-rendering:auto}
 .ai-row small{display:block;font-size:12px;color:var(--muted)}
 .ai-row b{display:block;font-size:16px;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ai-link{text-decoration:none!important;flex:none;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer;font-size:14px}
-.ai-note{font-size:12px;color:var(--muted);margin:8px 4px 0;line-height:1.6}
 
 /* アカウント情報：アイコンを少し小さく、全体を上に */
 .ai-hero{margin:0 0 4px!important}
@@ -2404,9 +2168,6 @@ img{image-rendering:auto}
 a.acc-me{transition:transform .15s ease;-webkit-tap-highlight-color:transparent}
 a.acc-me:active{transform:scale(.96)}
 .acc-page>.card{margin-bottom:12px}
-/* プレミアム：金色の文字 */
-.prem-tx{display:inline-flex;align-items:center;gap:3px;font-weight:700;letter-spacing:.02em;background:linear-gradient(100deg,#9C6B1E 0%,#D9A93E 38%,#F1D488 52%,#C8902C 70%,#8E5E17 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
-.prem-tx svg{width:13px;height:13px;color:#C8902C;stroke:#C8902C;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .prem-tx{background-image:linear-gradient(100deg,#D9A93E,#F7E2A2 50%,#D9A93E)}}
 :root[data-theme="dark"] .prem-tx{background-image:linear-gradient(100deg,#D9A93E,#F7E2A2 50%,#D9A93E)}
 /* 成分の組み合わせ：下の「›」の行 */
@@ -2456,9 +2217,6 @@ a.acc-me:active{transform:scale(.96)}
 .t3-card{padding-top:14px}
 .t3-card>.t3-grid{margin-top:0}
 
-/* アカウントのプレミアム（写真の見た目：クリーム色の丸いラベルに茶色の文字） */
-.acc-me .am-t small .am-prem{font-size:13px;padding:3px 13px;margin-top:3px;line-height:1.4;-webkit-text-fill-color:#6B4A1C}
-
 /* お問い合わせ：横から出るページ（右へなぞると戻る） */
 .au-ov.sp-ov{transform:translate3d(100%,0,0);transition:transform .54s cubic-bezier(.22,.7,.2,1);box-shadow:-8px 0 24px rgba(0,0,0,.08);will-change:transform}
 .au-ov.sp-ov.in{transform:none}.au-ov.sp-ov.out{transform:translate3d(100%,0,0)}
@@ -2490,28 +2248,11 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* ホームの今日の記録：左の数字は、3Dの頭の上から「良い」などのラベルの下までの高さにそろえる */
 .t3-card .t3-side .t3-acne{margin:0}
 
-/* ホームの今日の記録：左側（ニキビの数と、赤み・乾燥・皮脂） */
-.t3-s2{justify-content:center;gap:12px;padding-right:2px}
-.t3-ac{display:flex;align-items:baseline;justify-content:space-between;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--line)}
-.t3-ac span{font-size:12.5px;color:var(--muted);letter-spacing:.04em}
-.t3-ac b{font-size:26px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
-.t3-ac b small{font-size:13px;font-weight:500;color:var(--muted);margin-left:3px}
-.t3-ms{display:flex;flex-direction:column;gap:9px}
-.t3-m2{display:flex;flex-direction:column;gap:4px}
-.t3-ml{display:flex;align-items:baseline;justify-content:space-between;font-size:13px;color:var(--ink2,var(--muted))}
-.t3-ml b{font-size:15px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-.t3-ml b small{font-size:11px;font-weight:500;color:var(--muted);margin-left:1px}
-.t3-bar{display:block;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
-.t3-bar i{display:block;height:100%;border-radius:99px;background:var(--green)}
-
 /* 緑の線：いつも同じ太さに見えるように（動かしている間もにじまない） */
 .ht-ind{will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 /* 今日の記録：左右の釣り合い（左は顔とラベルの高さに収め、真ん中にそろえる） */
 .t3-card .t3-grid{align-items:center;column-gap:18px}
 .t3-card>.t3-zoom{min-width:0!important;min-height:0!important;width:28px!important;height:28px!important;top:12px;right:12px;box-shadow:none}
-.t3-ac span{font-size:13px}
-.t3-ml{font-size:12.5px}
-.t3-ml b{font-size:14px}
 
 /* Myアイテムの右上のメニュー */
 .my-hb-btn{position:absolute;right:14px;bottom:calc((65px - 40px) / 2);width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}
@@ -2533,9 +2274,6 @@ a,img,button,label{-webkit-touch-callout:none!important}
 
 /* 今日の記録：左の「ニキビ」の上＝3Dの頭のてっぺん、「皮脂」のゲージの下＝「良い」などのラベルの下。その間に均等に並べる */
 .t3-card .t3-grid:has(.t3-s2){align-items:stretch}
-.t3-card .t3-s2{justify-content:flex-start;gap:0;padding-top:var(--t3-top,4px);padding-bottom:0}
-.t3-card .t3-s2 .t3-ac{margin-top:-4px}
-.t3-card .t3-s2 .t3-ms{flex:1;justify-content:space-between;gap:6px;padding-top:10px}
 .t3-card .t3-fc{justify-content:flex-start}
 .t3-card .t3-under{margin-bottom:0}
 
@@ -2556,6 +2294,23 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .t3-card .t3-old .t3-m b{font-size:14px}
 .t3-card .t3-old .t3-m{margin:0}
 .t3-card .t3-old .t3-m:last-child{margin-bottom:-2px}
+
+/* 注意アイテムと同じ成分の警告 */
+.ngw{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:#FBF0EA;border:1px solid #EFCDBD;color:#7A3A1E;margin-bottom:12px}
+.ngw>svg{flex:none;width:20px;height:20px;margin-top:1px;color:#C2562C}
+.ngw b{display:block;font-size:14px;font-weight:600;line-height:1.5}
+.ngw p{margin:4px 0 0;font-size:13px;line-height:1.65}
+.ngw .ngw-s{font-size:12px;opacity:.85}
+.ngw .ngw-l{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:#A8461F;text-decoration:none}
+.ngw-card{padding:0;border:0;background:none;box-shadow:none;margin-bottom:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ngw{background:#3A2620;border-color:#5A3A2E;color:#F0C2AC}:root:not([data-theme="light"]) .ngw .ngw-l,:root:not([data-theme="light"]) .ngw>svg{color:#F0A27E}}
+:root[data-theme="dark"] .ngw{background:#3A2620;border-color:#5A3A2E;color:#F0C2AC}:root[data-theme="dark"] .ngw .ngw-l,:root[data-theme="dark"] .ngw>svg{color:#F0A27E}
+
+/* 記録の連続日数 */
+.streak{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 0;font-size:13px;color:var(--ink2,var(--muted))}
+.streak svg{width:15px;height:15px;color:var(--green-d);flex:none}
+.streak b{font-size:15px;font-weight:700;color:var(--green-d);margin-right:1px}
+.streak small{font-size:11.5px;color:var(--muted);margin-left:4px}
 </style>
 </head>
 <body>
@@ -4048,7 +3803,6 @@ function verifyBadge(p) {
   return '<span class="badge badge-unverified">情報未確認</span>';
 }
 const val = (v, empty='未確認') => (v === '' || v == null) ? `<span class="na">${esc(empty)}</span>` : esc(v);
-function condPill(c) { return `<span class="cond-pill" style="background:${COND_COLORS[c] || '#999'};color:${COND_FG[c] || '#fff'}">${esc(COND_LABELS[c] || '—')}</span>`; }
 function statusChip(s) {
   const cls = s === '使用中' ? 'green' : s === '一時停止' ? 'warn' : s === STOCK ? 'beige' : 'gray';
   return `<span class="chip ${cls}">${esc(s === '使用終了' ? '使用終了（過去）' : s)}</span>`;
@@ -4155,13 +3909,6 @@ let chartDefs = [];
 // ・端末の設定で「視差効果を減らす」をオンにしている人には動かさない
 const MOTION_OK = () => false; // 画面を変えるたびに数字・グラフ・カードが動くのは不自然なので、動きはすべて止める
 let motionIO = null;
-function splitChars(el, base = 0) {
-  if (!el || el.dataset.kt) return 0;
-  const text = el.textContent; if (!text || el.children.length) return 0; // 中に別の要素がある見出しは分けない
-  el.dataset.kt = '1'; el.setAttribute('aria-label', text);
-  el.innerHTML = [...text].map((c, i) => c === ' ' || c === '　' ? c : `<span class="kt" aria-hidden="true" style="--k:${base + i}">${esc(c)}</span>`).join('');
-  return text.length;
-}
 function countUp(el) {
   if (el.dataset.cu) return; el.dataset.cu = '1';
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [];
@@ -4242,22 +3989,6 @@ function lineChart(w, o) {
   });
   return s + '</svg>';
 }
-function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
-function barChart(w, o) {
-  const h = o.height || 200, pl = 52, pr = 10, pt = 18, pb = 28;
-  const iw = w - pl - pr, ih = h - pt - pb, n = o.labels.length;
-  const top = niceMax(Math.max(1, ...o.values));
-  const bw = Math.min(42, iw / n * 0.56);
-  let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.label || '棒グラフ')}">`;
-  [0, top/2, top].forEach(t => { const yy = pt + ih - t / top * ih; s += `<line class="grid" x1="${pl}" x2="${w-pr}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}"/><text class="ax" x="${pl-8}" y="${(yy+4).toFixed(1)}" text-anchor="end">${esc(o.fmt ? o.fmt(t) : t)}</text>`; });
-  o.values.forEach((v, i) => {
-    const cx = pl + iw / n * (i + 0.5), bh = v / top * ih;
- s += `<rect class="br" style="--i:${i}" x="${(cx-bw/2).toFixed(1)}" y="${(pt+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,bh).toFixed(1)}" rx="6" fill="${o.highlight === i ? '#3F6B4E' : '#B9D1BF'}"><title>${esc(o.labels[i])}：${esc(o.fmt ? o.fmt(v) : v)}</title></rect>`;
-    s += `<text class="ax" x="${cx.toFixed(1)}" y="${h-8}" text-anchor="middle">${esc(o.labels[i])}</text>`;
-    if (v > 0) s += `<text class="ax" x="${cx.toFixed(1)}" y="${(pt+ih-bh-5).toFixed(1)}" text-anchor="middle" style="fill:#46524B">${esc(o.short ? o.short(v) : v)}</text>`;
-  });
-  return s + '</svg>';
-}
 function timelineChart(w, o) {
   const pl = 34, pr = 14, lineH = 120, rowH = 36, top = 10, n = o.dates.length, iw = Math.max(10, w - pl - pr);
   const x = i => pl + (n <= 1 ? iw/2 : i * iw / (n - 1));
@@ -4299,14 +4030,6 @@ function recordStreak(map, t) {
   let d = map[t] ? t : addDays(t, -1), n = 0;
   while (map[d] && n < 3650) { n++; d = addDays(d, -1); }
   return {n, today:!!map[t]};
-}
-function streakHtml(map, t) {
-  const st = recordStreak(map, t);
-  if (st.n < 1) return '';
-  // 光る星の中に、連続して記録した日数を入れる
-  return `<span class="streak" title="${st.today ? '' : '今日記録すると更新されます'}" aria-label="連続記録 ${st.n}日${st.today ? '' : '（今日の記録で更新）'}">
-    <span class="streak-star"><svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="stg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE27A"/><stop offset=".55" stop-color="#F5B82E"/><stop offset="1" stop-color="#E39410"/></linearGradient></defs><path d="M24 3.5l6.1 12.9 14.1 1.8-10.3 9.8 2.6 14L24 35.2 11.5 42l2.6-14L3.8 18.2l14.1-1.8z" fill="url(#stg)" stroke="#D98A0B" stroke-width="1.2" stroke-linejoin="round"/></svg><b>${st.n}</b><i class="glint"></i></span>
-    <span class="streak-l">日連続${st.today ? '' : '<small>今日で更新</small>'}</span></span>`;
 }
 // ---------- 今日の睡眠・運動・食事のまとめ（ホーム） ----------
 // 運動の強さ（METs：国立健康・栄養研究所「改訂版 身体活動のメッツ表」を参考にした目安）
@@ -4409,6 +4132,17 @@ function openShortcutEdit() {
   });
   m._getSel = () => sel; m._setSel = v => { sel = v; refresh(); };
 }
+// 記録が続いている日数：今日（まだなら昨日）からさかのぼって、毎日つけている日数
+function logStreak(map, t) {
+  let d = map[t] ? t : addDays(t, -1), n = 0;
+  while (map[d] && !map[d].demo) { n++; d = addDays(d, -1); if (n > 3650) break; }
+  return {n, today:!!map[t]};
+}
+function streakLine(map, t) {
+  const {n, today} = logStreak(map, t); if (n < 2 && !(n === 1 && !today)) return '';
+  const best = (() => { const ds = Object.keys(map).filter(k => !map[k].demo).sort(); let b = 0, c = 0, prev = ''; ds.forEach(d => { c = prev && addDays(prev, 1) === d ? c + 1 : 1; prev = d; if (c > b) b = c; }); return b; })();
+  return `<p class="streak">${icon('spark')}${today ? `<span><b>${n}日</b>連続で記録しています${best > n ? `<small>（いちばん長かったのは${best}日）</small>` : n >= 7 ? '<small>（今までで一番）</small>' : ''}</span>` : `<span>今日記録すると<b>${n + 1}日</b>連続になります</span>`}</p>`;
+}
 function viewHome() {
   const t = todayStr(), map = logMap();
   const todayLog = map[t], todayLife = getLife(t);
@@ -4421,7 +4155,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero hero-home"><div class="hero-wx" id="top-wx">${wxTopInner()}</div>
-    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div>${streakLine(map, t)}</section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
@@ -4493,7 +4227,6 @@ function meter(label, v) {
    画面：商品検索 / 商品詳細
    ========================================================= */
 // 商品検索の画面の上のタブ（商品を探す／取扱店舗を探す）
-function searchTabs(cur) { const n = (state.favorites || []).length; return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'favorites' ? 'active' : ''}" href="#/favorites">${icon('heart')}お気に入り${n ? `（${n}）` : ''}</a><a class="tab ${cur === 'cart' ? 'active' : ''}" href="#/cart">${icon('cart')}買い物リスト${(state.cart || []).length ? `（${state.cart.length}）` : ''}</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
 // 「化粧品を追加」を押したら：カメラで登録（バーコード・商品の写真）か、自分で入力（バーコードの数字・商品名から候補を選ぶ）
 // 実際の商品を名前で探して追加するのは「商品検索」でできるので、ここには置かない
 // ===== 皮膚科で処方される主な塗り薬（アプリに最初から入っている一覧。名前・成分は添付文書の一般名） =====
@@ -5296,24 +5029,6 @@ function toggleFav(id, el) {
   if (parseRoute().name === 'favorites' && !on) { const c = el && el.closest('.pcard'); if (c) { c.classList.add('fav-out'); setTimeout(render, 260); } }
   toast(on ? 'お気に入りに追加しました' : 'お気に入りから外しました');
 }
-function viewFavorites() {
-  const list = (state.favorites || []).map(getCat).filter(Boolean).reverse();
-  return searchTabs('favorites') +
-    (list.length ? `<p class="small muted" style="margin-bottom:10px">${list.length}件（新しく追加した順）</p><div class="pgrid">${list.map(pcardHtml).join('')}</div>`
-      : `<div class="card">${emptyBox('heart', 'お気に入りはまだありません', '商品検索で気になる商品のハート（♡）を押すと、ここにまとめて表示されます。', '<a class="btn btn-primary btn-sm" href="#/search">商品を探す</a>')}</div>`);
-}
-function viewSearch() {
-  const active = searchActiveFilters();
-  // 一番上に大きな検索バー（見出しはなし）
-  // 絞り込みボタンは検索バーの中の右端に置く
-  return `<div class="sbar-top">
-      <div class="ac-wrap sbig">${icon('search')}<input type="search" id="flt-q" class="input" placeholder="検索する" value="${esc(ui.q)}" aria-label="商品名・ブランド・JANコードで検索" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-list">
-        <button type="button" class="sbar-in ${active.length ? 'on' : ''}" data-action="flt-sheet" aria-label="絞り込み">${icon('filter')}${active.length ? `<b>${active.length}</b>` : ''}</button>
-        <div class="ac-list" id="ac-list" role="listbox" hidden></div></div>
-    </div>` + searchTabs('search') +
-    `${active.length ? `<div class="fchips">${active.map(a => `<button class="fchip" data-action="flt-clear" data-id="${a.k}" aria-label="${esc(a.l)}の条件を外す">${esc(a.l)}<i>×</i></button>`).join('')}<button class="fchip clear" data-action="clear-filter">すべて外す</button></div>` : ''}
-    <div id="search-results">${searchResults()}</div><div class="card net-card" id="net-results">${netHtml()}</div>${adSlot('search')}`;
-}
 // 今かかっている絞り込み条件
 // ---------- 商品検索：実際の商品（楽天市場・Yahoo!ショッピング）を探す ----------
 let netTimer = null;
@@ -5513,18 +5228,6 @@ function recoSetCap(v) {
     setTimeout(() => { const f = document.getElementById('f_recoCap'); if (f) f.focus(); }, 50); return;
   }
   state.settings.recoBudget = Number(v); save(); switchTick(); RECO.res = null; RECO.err = ''; recoPaint(); recoRun(false);
-}
-function searchActiveFilters() {
-  const a = [];
-  if (ui.brand) a.push({k:'brand', l:ui.brand});
-  if (ui.cat) a.push({k:'cat', l:ui.cat});
-  if (ui.origin) a.push({k:'origin', l:ui.origin});
-  if (ui.purpose) a.push({k:'purpose', l:ui.purpose});
-  if (ui.ingQ) a.push({k:'ingQ', l:`成分：${ui.ingQ}`});
-  if (ui.sort && ui.sort !== 'std') a.push({k:'sort', l:({price:'安い順', unit:'1ml・1gあたり安い順', new:'新しい順'})[ui.sort] || ''});
-  if (ui.maxPrice) a.push({k:'maxPrice', l:`${ui.maxPrice}円まで`});
-  if (ui.ing) a.push({k:'ing', l:'成分でも検索'});
-  return a;
 }
 function openFilterSheet() {
   const brands = Array.from(new Set(state.catalog.map(p => p.brand).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ja'));
@@ -5982,20 +5685,6 @@ function openCatForm(id, prefill) {
 /* =========================================================
    画面：価格比較（通販・店舗）
    ========================================================= */
-function offerTotal(o) {
-  if (!(o.price > 0)) return null;
-  if (o.kind === 'store') return o.price - (o.coupon || 0);
-  if (o.shipping == null) return null;
-  return o.price + o.shipping - (o.coupon || 0);
-}
-function offerIssues(o, p) {
-  const out = [];
-  if (!o.same) out.push('同一商品か未確認（容量違い・セット・旧パッケージ等の可能性）');
-  const pv = parseVol(p.volume), ov = parseVol(o.volume);
-  if (pv && ov && (pv.unit !== ov.unit || Math.abs(pv.amt - ov.amt) > 0.01)) out.push(`内容量が異なる（商品：${p.volume}／この販売先：${o.volume}）`);
-  if (o.kind === 'online' && o.shipping == null) out.push('送料未確認のため合計を出せません');
-  return out;
-}
 function searchLinks(p) {
   const raw = `${p.brand} ${p.name}`.replace(/【サンプル】/g, '').trim(), q = encodeURIComponent(raw);
   const gsite = site => `https://www.google.com/search?q=${encodeURIComponent('site:' + site + ' ' + raw)}`;
@@ -6013,269 +5702,14 @@ function searchLinks(p) {
   ];
 }
 const PRICE_SHIP = {included:'送料込み', conditional:'条件付き送料無料', extra:'送料別'};
-async function priceSearch(pid, quiet) {
-  const p = getCat(pid); if (!p) return;
-  const st = ui.priceRes[pid] = {loading:true, items:[], errors:[], msg:''};
-  if (!quiet) render();
-  try {
-    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 30000); // 30秒で打ち切る（「調べています」のまま止まらないように）
-    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key},
-      body:JSON.stringify({q:`${p.brand} ${p.name}`.replace(/【サンプル】/g, '').trim(), jan:p.jan || ''})});
-    const j = await res.json().catch(() => ({})); clearTimeout(tm);
-    if (!res.ok || j.error) throw new Error(j.error || '価格を調べられませんでした。');
-    st.items = Array.isArray(j.items) ? j.items : []; st.errors = Array.isArray(j.errors) ? j.errors : []; st.at = j.fetchedAt || '';
-  } catch (e) {
-    st.msg = e && e.name === 'AbortError' ? '時間がかかりすぎたため中止しました。もう一度お試しください。' : /fetch|network|Failed/i.test(String(e && e.message)) ? 'サーバーに接続できませんでした。インターネットの接続を確認して、もう一度お試しください。' : String((e && e.message) || e);
-  }
-  st.loading = false;
-  if (location.hash.startsWith('#/prices/') || location.hash.startsWith('#/cart') || location.hash.startsWith('#/product/' + encodeURIComponent(pid))) render();
-}
 // ミニ・セット・お試し・詰め替えなど、元の商品と違う可能性が高いものを見分ける（元の商品名に含まれる言葉は対象外）
 const PRICE_SET_WORDS = [['セット', /セット/], ['ミニ', /ミニ|mini/i], ['お試し', /お試し|トライアル|サンプル|試供/], ['まとめ買い', /まとめ買い|(\d+)\s*(個|本|点|袋)\s*(セット|組)|[×x✕]\s*\d+\s*(個|本|袋)?(?!\s*(ml|g))/i], ['詰め替え', /詰め?替え?|つめかえ|レフィル|refill/i]];
-function priceSetWord(name, base) {
-  const n = toHalf(name), b = toHalf(base);
-  const hit = PRICE_SET_WORDS.find(([, re]) => re.test(n) && !re.test(b));
-  return hit ? hit[0] : '';
-}
 // 商品名に書かれた容量と、登録した容量を比べる。'same'：一致／'diff'：違う／''：商品名に容量が書かれていない
-function priceVolMatch(name, vol) {
-  const v = parseVol(vol); if (!v) return '';
-  const found = [...toHalf(name).toLowerCase().matchAll(/(\d+(?:\.\d+)?)\s*(ml|g|枚)(?![a-z])/g)].map(m => ({amt:parseFloat(m[1]), unit:m[2]}));
-  if (!found.length) return '';
-  return found.some(f => f.unit === v.unit && Math.abs(f.amt - v.amt) < 0.01) ? 'same' : 'diff';
-}
-function priceHitsHtml(p) {
-  const st = ui.priceRes[p.id];
-  let h = `<div class="card"><div class="card-h"><h2>ネットの価格を自動で調べる</h2><span class="small muted">楽天市場・Yahoo!ショッピング</span></div>`;
-  if (p.isSample) return h + '<p class="small muted">サンプル（架空）の商品のため、検索できません。</p></div>';
-  h += `<p class="small muted">商品名${p.jan ? '（JANコードがあればJANコード）' : ''}で、楽天市場とYahoo!ショッピングの公式APIから検索します。<b>商品価格の安い順</b>に並べます（送料は含みません）。</p>
-    <div class="page-actions" style="margin-top:8px"><button class="btn btn-primary btn-sm" data-action="price-search" data-id="${esc(p.id)}" ${st && st.loading ? 'disabled' : ''}>${st && st.loading ? '調べています…' : (st ? 'もう一度調べる' : '価格を調べる')}</button></div>`;
-  if (st && st.loading) h += skelHtml(4, {dots:true, label:'価格を検索中'});
-  if (st && !st.loading) {
-    if (st.msg) h += `<p class="small" style="color:var(--warn);margin-top:10px">${esc(st.msg)}</p>`;
-    else {
-      if (st.errors.length) h += `<p class="small" style="color:var(--warn);margin-top:10px">一部のサイトは調べられませんでした：${esc(st.errors.join('／'))}</p>`;
-      if (!st.items.length) h += '<p class="small muted" style="margin-top:10px">見つかりませんでした。商品名を短くする（ブランド名と商品名だけにする）と見つかることがあります。</p>';
-      else {
-        const hasVol = !!parseVol(p.volume);
-        const rows = st.items.map((x, i) => ({x, i, set:priceSetWord(x.name, p.name), vol:priceVolMatch(x.name, p.volume)}));
-        const shown = rows.filter(r => !(ui.priceSet && r.set) && !(ui.priceVol && hasVol && r.vol === 'diff'));
-        const anyJan = st.items.some(x => x.byJan);
-        h += `<div class="notice" style="margin-top:12px">${p.jan ? (anyJan ? `JANコード（${esc(p.jan)}）で探しました。<b>「JAN一致」</b>の付いた商品は、同じ商品です。` : `JANコード（${esc(p.jan)}）では見つからなかったため、商品名で探しました。`)
-            : `この商品には<b>JANコードが登録されていません</b>。下の結果から同じ商品を見つけて<b>「これと同じ商品」</b>を押すと、JANコードが登録され、次から同じ商品だけを探せます（Yahoo!ショッピングの結果のみ）。`}</div>
-          <div class="chips" style="margin-top:10px;gap:14px">
-            <label class="check"><input type="checkbox" data-change="price-set" ${ui.priceSet ? 'checked' : ''}> ミニ・セット・お試し・詰め替えを除く</label>
-            ${hasVol ? `<label class="check"><input type="checkbox" data-change="price-vol" ${ui.priceVol ? 'checked' : ''}> 容量が違うもの（${esc(p.volume)}以外）を除く</label>` : ''}
-          </div>
-          <p class="small muted" style="margin-top:6px">${st.items.length}件中 ${shown.length}件を表示${shown.length < st.items.length ? '（条件に合わないものを除外）' : ''}</p>`;
-        if (!shown.length) h += '<p class="small muted" style="margin-top:8px">条件に合う商品がありません。上のチェックを外すと、すべて表示されます。</p>';
-        h += `<div style="margin-top:8px">${shown.slice(0, 30).map(({x, i, set, vol}) => `<div class="ph">${safeUrl(x.image) ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
-          <div class="ph-body"><div class="ph-name">${x.ad ? '<span class="pr-tag">PR</span>' : ''}${esc(x.name)}</div>
-            <div class="small muted" style="margin-top:2px">${esc(x.site)}｜${esc(x.shop || 'ショップ名不明')}</div>
-            <div class="chips" style="margin-top:4px"><span class="chip ${x.shipping === 'included' ? 'green' : x.shipping === 'conditional' ? 'beige' : 'gray'}">${esc(PRICE_SHIP[x.shipping] || '送料別')}</span>${x.byJan && p.jan ? '<span class="chip green">JAN一致</span>' : ''}${vol === 'same' ? '<span class="chip green">容量一致</span>' : vol === 'diff' ? '<span class="chip red">容量違い</span>' : hasVol ? '<span class="chip gray">容量不明</span>' : ''}${set ? `<span class="chip beige">${esc(set)}</span>` : ''}</div>
-            <div class="ph-acts">${extLink(safeUrl(x.url), '商品ページ')}<button class="btn btn-ghost btn-sm" data-action="add-price-hit" data-id="${esc(p.id)}|${i}">${icon('plus')}比較に追加</button>${!p.jan && isValidJan(x.jan || '') ? `<button class="btn btn-ghost btn-sm" data-action="price-set-jan" data-id="${esc(p.id)}|${i}">これと同じ商品</button>` : ''}</div></div>
-          <div class="ph-price">${yen(x.price)}<div class="small muted" style="font-weight:400">商品価格</div></div></div>`).join('')}</div>
-          <p class="small muted" style="margin-top:10px">${st.at ? `取得：${esc(new Date(st.at).toLocaleString('ja-JP'))}。` : ''}価格や在庫は変わることがあります。購入前に各サイトで確認してください。検索結果には、容量違い・セット品・別の商品が含まれることがあります。${st.items.some(x => x.ad) ? '「PR」はアフィリエイト（広告）リンクです。並び順は広告かどうかに関係なく、商品価格の安い順です。' : '並び順は商品価格の安い順です。'}</p>`;
-      }
-    }
-  }
-  return h + '<p class="small muted" style="margin-top:8px">Supported by Rakuten Developers ／ Web Services by Yahoo! JAPAN</p></div>';
-}
 // ===== 値段の比較（商品ページの中）と、買い物リスト =====
 // 楽天市場・Yahoo!ショッピングの価格を、アプリの中でまとめて比べる。買うときだけ、そのお店のページを開く
-function pcmpItems(p) {
-  const st = ui.priceRes[p.id]; if (!st || st.loading || st.msg) return null;
-  let rows = st.items.filter(x => x && Number(x.price) > 0 && safeUrl(x.url) && !priceSetWord(x.name, p.name) && priceVolMatch(x.name, p.volume) !== 'diff');
-  if (p.jan && rows.some(x => x.byJan)) rows = rows.filter(x => x.byJan);
-  return rows.slice().sort((a, b) => a.price - b.price);
-}
-function pcmpHtml(p) {
-  if (p.isSample) return '';
-  const st = ui.priceRes[p.id], inCart = cartHas(p.id);
-  const head = `<div class="card mt" id="pcmp"><div class="card-h"><h2>値段の比較</h2><span class="small muted">楽天市場・Yahoo!ショッピング</span></div>`;
-  const cartBtn = `<button class="btn ${inCart ? 'btn-ghost' : 'btn-soft'} btn-sm" data-action="cart-toggle" data-id="${esc(p.id)}">${icon(inCart ? 'check' : 'cart')}${inCart ? '買い物リストに入っています' : '買い物リストに入れる'}</button>`;
-  if (!st || st.loading) return head + skelHtml(3, {dots:true, label:'値段を比べています'}) + '</div>';
-  if (st.msg) return head + `<p class="small muted">${esc(st.msg)}</p><button class="btn btn-ghost btn-sm" data-action="price-search" data-id="${esc(p.id)}">もう一度調べる</button></div>`;
-  const rows = pcmpItems(p);
-  if (!rows.length) return head + `<p class="small muted">楽天市場・Yahoo!ショッピングで同じ商品が見つかりませんでした。</p><div class="page-actions" style="margin-top:8px">${cartBtn}<a class="btn btn-ghost btn-sm" href="${esc(amazonUrl(p.name))}" target="_blank" rel="noopener sponsored">Amazonで探す ›</a><a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">くわしく比較する</a></div></div>`;
-  const low = rows[0], lowInc = rows.find(x => x.shipping === 'included');
-  const sites = ['楽天市場', 'Yahoo!ショッピング'].map(s => ({s, x:rows.find(x => x.site === s)})).filter(v => v.x);
-  return head + `<div class="pcmp-best"><div><small>いちばん安い</small><b>${yen(low.price)}</b><span>${esc(low.site)}・${esc(truncate(low.shop || '', 16))}<i class="chip ${low.shipping === 'included' ? 'green' : 'gray'}">${esc(PRICE_SHIP[low.shipping] || '送料別')}</i></span></div>
-      <a class="btn btn-primary btn-sm" href="${esc(safeUrl(low.url))}" target="_blank" rel="noopener sponsored">このお店で買う</a></div>
-    ${lowInc && lowInc !== low ? `<p class="small" style="margin:8px 0 0">送料込みでいちばん安い：<b>${yen(lowInc.price)}</b>（${esc(lowInc.site)}・${esc(truncate(lowInc.shop || '', 16))}）<a class="link" href="${esc(safeUrl(lowInc.url))}" target="_blank" rel="noopener sponsored" style="margin-left:6px">買う</a></p>` : ''}
-    <div class="pcmp-sites">${sites.map(v => `<div><small>${esc(v.s)}の最安</small><b>${yen(v.x.price)}</b></div>`).join('')}</div>
-    <div class="pcmp-list">${rows.slice(0, 6).map((x, i) => `<a class="pcmp-row" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener sponsored"><span><b>${esc(truncate(x.shop || 'ショップ', 22))}</b><small>${esc(x.site)}・${esc(PRICE_SHIP[x.shipping] || '送料別')}${x.byJan && p.jan ? '・JAN一致' : ''}</small></span><em>${yen(x.price)}</em></a>`).join('')}</div>
-    <a class="pcmp-row" href="${esc(amazonUrl((p.brand ? p.brand + ' ' : '') + p.name.replace(/[【\[].*?[】\]]/g, '')))}" target="_blank" rel="noopener sponsored"><span><b>Amazon</b><small>Amazonの値段は、Amazonのページで確認できます</small></span><em><i>Amazonで見る ›</i></em></a>
-    <div class="page-actions" style="margin-top:10px">${cartBtn}<a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">すべての価格を見る</a></div>
-    <p class="small muted" style="margin-top:8px"><span class="pr-badge">PR</span> 商品価格の安い順（送料は「送料別」のお店で別にかかります）。リンクから購入されると、運営者に紹介料が入ることがあります。価格は調べた時点のものです。</p></div>`;
-}
 // ---- 買い物リスト：気になる商品を入れて、どのお店でまとめて買うと安いかを比べる ----
 const cartHas = id => (state.cart || []).includes(id);
-function cartToggle(id) {
-  state.cart = state.cart || [];
-  if (cartHas(id)) { state.cart = state.cart.filter(x => x !== id); toast('買い物リストから外しました'); }
-  else { state.cart.push(id); toast('買い物リストに入れました'); const p = getCat(id); if (p && !ui.priceRes[id]) priceSearch(id, true); }
-  save(); hapticTick(); render();
-}
-function cartPlans(ps) {
-  const lists = ps.map(p => ({p, rows:pcmpItems(p)}));
-  if (lists.some(l => l.rows === null)) return null; // まだ調べている
-  const ok = lists.filter(l => l.rows.length);
-  const out = [];
-  // 1つのお店でぜんぶ買える（送料が1回で済む）
-  const shops = {};
-  ok.forEach(l => { const seen = new Set(); l.rows.forEach(x => { const k = x.site + '|' + (x.shop || ''); if (seen.has(k)) return; seen.add(k); (shops[k] = shops[k] || {site:x.site, shop:x.shop || 'ショップ', picks:[]}).picks.push({p:l.p, x}); }); });
-  Object.values(shops).filter(s => s.picks.length === ok.length && ok.length >= 2).map(s => ({kind:'shop', title:`${s.shop}でまとめて買う`, sub:`${s.site}・1つのお店なので送料が1回で済みます`, picks:s.picks, total:s.picks.reduce((a, v) => a + v.x.price, 0)}))
-    .sort((a, b) => a.total - b.total).slice(0, 2).forEach(v => out.push(v));
-  // サイトごと（楽天市場だけ／Yahoo!だけ）で、いちばん安いお店を組み合わせる
-  ['楽天市場', 'Yahoo!ショッピング'].forEach(site => {
-    const picks = ok.map(l => ({p:l.p, x:l.rows.find(x => x.site === site)})).filter(v => v.x);
-    if (picks.length) out.push({kind:'site', title:`${site}だけで買う`, sub:picks.length < ok.length ? `${ok.length - picks.length}つは${site}にありません` : `${new Set(picks.map(v => v.x.shop)).size}つのお店から買います`, picks, total:picks.reduce((a, v) => a + v.x.price, 0), missing:ok.length - picks.length});
-  });
-  // それぞれ、いちばん安いお店で買う
-  if (ok.length) out.push({kind:'low', title:'それぞれいちばん安いお店で買う', sub:`${new Set(ok.map(l => l.rows[0].site + l.rows[0].shop)).size}つのお店から買います（お店ごとに送料がかかることがあります）`, picks:ok.map(l => ({p:l.p, x:l.rows[0]})), total:ok.reduce((a, l) => a + l.rows[0].price, 0)});
-  const seen = new Set(), plans = out.filter(v => { const k = v.picks.map(({x}) => x.url).join('|'); if (seen.has(k)) return false; seen.add(k); return true; }) // 同じ買い方は1つにまとめる
-    .map(v => { const n = new Set(v.picks.map(({x}) => x.site + '|' + x.shop)).size; if (n === 1 && v.kind !== 'shop' && v.picks.length >= 2) Object.assign(v, {title:`${v.picks[0].x.shop}でまとめて買う`, sub:`${v.picks[0].x.site}・1つのお店なので送料が1回で済みます`}); return v; })
-    .sort((a, b) => (a.missing || 0) - (b.missing || 0) || a.total - b.total);
-  return {plans, none:lists.filter(l => !l.rows.length).map(l => l.p)};
-}
-function viewCart() {
-  const ps = (state.cart || []).map(getCat).filter(Boolean);
-  ps.forEach(p => { if (!ui.priceRes[p.id] && !p.isSample) setTimeout(() => priceSearch(p.id, true), 0); });
-  let html = searchTabs('cart') + pageHead('買い物リスト', '気になる商品を入れておくと、どのお店でまとめて買うと安いかを比べます。');
-  if (!ps.length) return html + `<div class="card">${emptyBox('cart', '買い物リストは空です', '商品の詳しいページで「買い物リストに入れる」を押すと、ここに入ります。', '<a class="btn btn-primary btn-sm" href="#/search">商品を探す</a>')}</div>`;
-  html += `<div class="card"><div class="card-h"><h2>リストの商品</h2><span class="small muted">${ps.length}点</span></div>${ps.map(p => { const r = pcmpItems(p);
-    return `<div class="cart-row">${thumbHtml(p)}<a class="cart-t" href="#/product/${encodeURIComponent(p.id)}"><b>${esc(truncate(p.name, 50))}</b><small>${r === null ? '値段を調べています…' : r.length ? `最安 ${yen(r[0].price)}（${esc(r[0].site)}）` : 'ネットで見つかりませんでした'}</small></a><button class="btn btn-ghost btn-sm" data-action="cart-toggle" data-id="${esc(p.id)}">外す</button></div>`; }).join('')}</div>`;
-  const cp = cartPlans(ps);
-  if (!cp) return html + `<div class="card">${skelHtml(3, {dots:true, label:'お店ごとの合計を計算中'})}</div>`;
-  if (!cp.plans.length) return html + '<div class="card"><p class="small muted">ネットで買えるお店が見つかりませんでした。</p></div>';
-  const best = cp.plans.filter(v => !v.missing).sort((a, b) => a.total - b.total)[0];
-  html += `<div class="card"><div class="card-h"><h2>どこで買うと安い？</h2><span class="pr-badge">PR</span></div>${cp.plans.map(v => `<div class="cart-plan ${v === best ? 'best' : ''}">
-      <div class="cart-ph"><span><b>${esc(v.title)}</b>${v === best ? '<i class="chip green">いちばん安い</i>' : ''}<small>${esc(v.sub)}</small></span><em>${yen(v.total)}${v.missing ? '<small>（一部のみ）</small>' : ''}</em></div>
-      ${v.picks.map(({p, x}) => `<a class="pcmp-row" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener sponsored"><span><b>${esc(truncate(p.name, 28))}</b><small>${esc(x.site)}・${esc(truncate(x.shop || '', 16))}・${esc(PRICE_SHIP[x.shipping] || '送料別')}</small></span><em>${yen(x.price)}<i>買う ›</i></em></a>`).join('')}</div>`).join('')}
-    ${cp.none.length ? `<p class="small muted" style="margin-top:8px">ネットで見つからなかった商品：${cp.none.map(p => esc(truncate(p.name, 20))).join('、')}</p>` : ''}
-    <p class="small muted" style="margin-top:8px">合計は商品価格の合計です（送料は「送料別」のお店で別にかかります）。支払いはそれぞれのお店のページで行います。リンクから購入されると、運営者に紹介料が入ることがあります。価格は調べた時点のものです。</p>
-    <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>`;
-  return html;
-}
 function mapLink(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
-function viewPrices(id) {
-  const p = getCat(id);
-  if (!p) return notFound('商品が見つかりません', '#/my', 'Myアイテムに戻る');
-  const online = p.offers.filter(o => o.kind === 'online'), stores = p.offers.filter(o => o.kind === 'store');
-  const eligible = online.filter(o => offerIssues(o, p).length === 0 && offerTotal(o) != null);
-  const best = eligible.slice().sort((a,b) => offerTotal(a) - offerTotal(b))[0];
-  const stockRank = s => ({'在庫あり（確認済）':0, '取扱いあり（在庫未確認）':1, '未確認':2, '在庫なし（確認済）':3}[s] ?? 2);
-  const storesSorted = stores.slice().sort((a,b) => stockRank(a.stock) - stockRank(b.stock) || (a.distance ?? 999) - (b.distance ?? 999));
-  const fast = storesSorted.find(s => s.stock !== '在庫なし（確認済）');
-  let html = `<a class="back" href="#/product/${encodeURIComponent(p.id)}">← 商品詳細</a>` +
-    pageHead('価格・店舗の比較', `${p.brand}｜${p.name}${p.volume ? '（' + p.volume + '）' : ''}`, `<button class="btn btn-primary btn-sm" data-action="new-offer" data-id="${esc(p.id)}|online">${icon('plus')}通販の価格</button><button class="btn btn-ghost btn-sm" data-action="new-offer" data-id="${esc(p.id)}|store">${icon('plus')}店舗</button>`) +
-    `<div class="notice">楽天市場・Yahoo!ショッピングは、下の「価格を調べる」で自動で検索できます。ほかのサイト（Amazon・Qoo10・@cosme SHOPPING など）は、「外部サイトで探す」で確認して、価格を入力してください。比較表には、<b>同じ商品だと確認したもの</b>だけが最安値として表示されます。</div>` + priceHitsHtml(p);
-
-  html += `<div class="card"><div class="card-h"><h2>安さ優先？ すぐ欲しい？</h2></div><div class="vs">
-    <div class="vs-box"><h3>安さ優先（通販・送料込み）</h3>
-      ${best ? `<div class="big-stat">${yen(offerTotal(best))}</div><p class="small" style="margin-top:4px">${esc(best.shop)}${best.isSample ? ' <span class="badge-sample">サンプル</span>' : ''}</p>
-        <p class="small muted">商品 ${yen(best.price)} ＋ 送料 ${best.shipping ? yen(best.shipping) : '無料'}${best.coupon ? ` − 割引 ${yen(best.coupon)}` : ''}${best.delivery ? `／配送：${esc(best.delivery)}` : ''}</p>
-        <p class="small muted">確認日：${best.checkedAt ? fmtShort(best.checkedAt) : '未確認'}（確認できた範囲での最安値）</p>`
-      : '<p class="small muted">比較できる通販の情報がまだありません。同一商品であることを確認し、送料まで分かる情報を追加すると表示されます。</p>'}
-    </div>
-    <div class="vs-box"><h3>すぐ欲しい（店舗）</h3>
-      ${fast ? `<div class="big-stat" style="font-size:22px">${esc(fast.shop)}</div>${fast.isSample ? '<span class="badge-sample">サンプル</span>' : ''}
-        <p class="small" style="margin-top:4px">${fast.distance != null ? `約${fast.distance}km` : '距離未確認'}／${esc(fast.hours || '営業時間未確認')}</p>
-        <p class="small">${stockChip(fast.stock)}${fast.price ? `　店頭価格 ${yen(fast.price)}` : ''}</p>
-        <div class="page-actions" style="margin-top:8px">${extLink(mapLink(fast.address && !fast.isSample ? fast.address : fast.shop), '地図で見る')}${fast.phone ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(fast.phone)}">電話で在庫を確認</a>` : ''}</div>`
-      : '<p class="small muted">店舗の情報がまだありません。「取扱店舗を探す」で地図から探し、確認した店舗を追加できます。</p><a class="btn btn-ghost btn-sm" style="margin-top:8px" href="#/stores">取扱店舗を探す</a>'}
-    </div></div>
-    ${best && fast && fast.price ? `<p class="small muted" style="margin-top:12px">差額の目安：店舗のほうが ${fast.price - offerTotal(best) >= 0 ? yen(fast.price - offerTotal(best)) + ' 高い' : yen(offerTotal(best) - fast.price) + ' 安い'}（交通費・時間は含みません）</p>` : ''}
-  </div>`;
-
-  html += `<div class="card"><div class="card-h"><h2>通販の比較</h2><span class="small muted">${online.length}件</span></div>
-    ${online.length ? online.slice().sort((a,b) => (offerTotal(a) ?? Infinity) - (offerTotal(b) ?? Infinity)).map(o => offerCard(o, p, best === o)).join('') : '<p class="small muted">まだ登録がありません。</p>'}</div>`;
-  html += `<div class="card"><div class="card-h"><h2>店舗</h2><span class="small muted">${stores.length}件</span></div>
-    ${stores.length ? storesSorted.map(o => offerCard(o, p, false)).join('') : '<p class="small muted">まだ登録がありません。</p>'}
-    <p class="small muted" style="margin-top:10px">「取扱いあり」と「在庫あり」は別の情報です。在庫は時間とともに変わるため、来店前に電話や公式サイトで確認してください。</p></div>`;
-  html += `<div class="card"><div class="card-h"><h2>外部サイトで探す</h2></div>
-    ${p.isSample ? '<p class="small muted">サンプル（架空）の商品のため、外部サイトでは検索できません。</p>'
-      : `<div class="ext-links">${searchLinks(p).map(l => extLink(l.url, l.label)).join('')}</div>
-      <p class="small muted" style="margin-top:10px">各サイトの検索結果が開きます（一部はGoogleのサイト内検索）。内容量・セット内容・リニューアル前後を確認したうえで、「通販の価格」から比較表に追加してください。これらは広告・アフィリエイトリンクではありません。</p>`}</div>`;
-  return html;
-}
-function stockChip(s) {
-  const cls = s === '在庫あり（確認済）' ? 'green' : s === '在庫なし（確認済）' ? 'red' : s === '取扱いあり（在庫未確認）' ? 'beige' : 'gray';
-  return `<span class="chip ${cls}">${esc(s === '未確認' ? '在庫未確認' : s)}</span>`;
-}
-function offerCard(o, p, isBest) {
-  const total = offerTotal(o), issues = offerIssues(o, p);
-  const unit = perUnitText(o.price, o.volume || p.volume);
-  const url = safeUrl(o.url);
-  return `<div class="offer ${isBest ? 'best' : ''}">
-    <div class="offer-top"><div><div class="offer-name">${esc(o.shop)}</div>
-      <div class="chips" style="margin-top:4px">${isBest ? '<span class="badge badge-best">確認できた範囲で最安</span>' : ''}${o.isSample ? '<span class="badge-sample">サンプル</span>' : ''}${o.kind === 'store' ? stockChip(o.stock) : ''}</div></div>
-      <div class="offer-total">${o.kind === 'online' ? (total != null ? yen(total) : '<span class="na">合計未確定</span>') : (o.price ? yen(o.price) : '<span class="na">価格未確認</span>')}<div class="small muted" style="font-weight:400">${o.kind === 'online' ? '送料・割引込み' : '店頭価格'}</div></div></div>
-    <div class="offer-grid">
-      ${o.kind === 'online' ? `<div><span>商品価格</span>${o.price ? yen(o.price) : '未確認'}</div><div><span>送料</span>${o.shipping == null ? '未確認' : o.shipping === 0 ? '無料' : yen(o.shipping)}</div>
-        <div><span>割引・クーポン</span>${o.coupon == null ? 'なし／未確認' : yen(o.coupon)}</div><div><span>配送予定</span>${esc(o.delivery || '未確認')}</div>`
-      : `<div><span>距離</span>${o.distance != null ? `約${o.distance}km` : '未確認'}</div><div><span>営業時間</span>${esc(o.hours || '未確認')}</div><div><span>住所</span>${esc(o.address || '未確認')}</div><div><span>電話</span>${esc(o.phone || '未確認')}</div>`}
-      <div><span>内容量</span>${esc(o.volume || p.volume || '未確認')}</div><div><span>単価</span>${esc(unit || '—')}</div><div><span>確認日</span>${o.checkedAt ? fmtShort(o.checkedAt) : '未確認'}</div>
-    </div>
-    ${issues.length ? `<p class="small" style="color:var(--warn);margin-top:8px">比較対象外：${esc(issues.join('／'))}</p>` : ''}
-    ${o.memo ? `<p class="small muted" style="margin-top:6px">${esc(o.memo)}</p>` : ''}
-    <div class="offer-actions">${extLink(url, o.kind === 'store' ? '公式サイト' : '商品ページ')}${o.kind === 'store' ? extLink(mapLink(o.address && !o.isSample ? o.address : o.shop), '地図') : ''}${o.kind === 'store' && o.phone ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(o.phone)}">電話</a>` : ''}
-      <button class="btn btn-ghost btn-sm" data-action="edit-offer" data-id="${esc(p.id)}|${esc(o.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-offer" data-id="${esc(p.id)}|${esc(o.id)}">削除</button></div>
-  </div>`;
-}
-function openOfferForm(pid, kindOrId, isEdit) {
-  const p = getCat(pid); if (!p) return;
-  const ex = isEdit ? p.offers.find(o => o.id === kindOrId) : null;
-  const kind = ex ? ex.kind : kindOrId;
-  const t = todayStr();
-  const o = ex || {shop:'', url:'', price:'', shipping:null, coupon:null, volume:p.volume, same:false, delivery:'', address:'', distance:null, hours:'', phone:'', stock:'未確認', checkedAt:t, memo:''};
-  const isStore = kind === 'store';
-  openModal({title:(ex ? '編集：' : '追加：') + (isStore ? '店舗' : '通販の価格'), body:`<form id="offer-form" novalidate><div class="form-grid two">
-    <p class="small muted span2">${esc(p.name)}${p.volume ? `（${esc(p.volume)}）` : ''}</p>
-    ${field(isStore ? '店舗名' : 'ショップ名', `<input class="input" id="f_shop" name="shop" maxlength="60" value="${esc(o.shop)}" placeholder="${isStore ? '例：〇〇ドラッグ 渋谷店' : '例：〇〇公式ショップ（楽天市場）'}">`, {name:'shop', required:true, cls:'span2'})}
-    ${field(isStore ? '店頭価格（円）' : '商品価格（円）', `<input class="input" id="f_price" name="price" inputmode="numeric" value="${esc(o.price || '')}">`, {name:'price', required:!isStore, hint:isStore ? '分からなければ空欄' : '税込の表示価格'})}
-    ${isStore ? field('在庫状況', selectHtml('stock', STOCK_STATUS, o.stock), {name:'stock', required:true, hint:'電話・公式サイトで確認できた場合のみ「確認済」を選んでください'})
-      : field('送料（円）', `<input class="input" id="f_shipping" name="shipping" inputmode="numeric" value="${o.shipping == null ? '' : esc(o.shipping)}" placeholder="無料なら0">`, {name:'shipping', hint:'空欄は「未確認」として扱い、最安値の判定から外します'})}
-    ${field('割引・クーポン（円）', `<input class="input" id="f_coupon" name="coupon" inputmode="numeric" value="${o.coupon == null ? '' : esc(o.coupon)}">`, {name:'coupon', hint:'確認できた場合のみ。ポイント還元は含めません'})}
-    ${field('内容量', `<input class="input" id="f_volume" name="volume" maxlength="20" value="${esc(o.volume)}" placeholder="例：200ml、200ml×2">`, {name:'volume'})}
-    ${isStore ? `${field('住所', `<input class="input" id="f_address" name="address" maxlength="100" value="${esc(o.address)}">`, {name:'address', cls:'span2'})}
-      ${field('距離（km）', `<input class="input" id="f_distance" name="distance" inputmode="decimal" value="${o.distance == null ? '' : esc(o.distance)}" placeholder="例：0.8">`, {name:'distance'})}
-      ${field('営業時間', `<input class="input" id="f_hours" name="hours" maxlength="40" value="${esc(o.hours)}" placeholder="例：9:00〜22:00">`, {name:'hours'})}
-      ${field('電話番号', `<input class="input" id="f_phone" name="phone" inputmode="tel" maxlength="20" value="${esc(o.phone)}">`, {name:'phone'})}
-      ${field('公式サイト・店舗ページのURL', `<input class="input" id="f_url" name="url" inputmode="url" maxlength="500" value="${esc(o.url)}" placeholder="https://">`, {name:'url', cls:'span2', hint:'在庫や営業時間を確認できるページ'})}`
-    : `${field('商品ページのURL', `<input class="input" id="f_url" name="url" inputmode="url" maxlength="500" value="${esc(o.url)}" placeholder="https://">`, {name:'url', cls:'span2'})}
-      ${field('配送予定', `<input class="input" id="f_delivery" name="delivery" maxlength="40" value="${esc(o.delivery)}" placeholder="例：翌日、2〜4日">`, {name:'delivery'})}`}
-    ${field('確認日', `<input type="date" class="input" id="f_checkedAt" name="checkedAt" value="${esc(o.checkedAt)}" max="${t}">`, {name:'checkedAt', required:true})}
-    <div class="span2"><label class="check"><input type="checkbox" name="same" ${o.same ? 'checked' : ''}> 同じ商品であることを確認した（内容量・セット内容・リニューアル前後）</label><div class="hint">チェックがない場合は、最安値の比較から外します。</div></div>
-    ${field('メモ', `<input class="input" id="f_memo" name="memo" maxlength="100" value="${esc(o.memo)}">`, {name:'memo', cls:'span2'})}
-  </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="offer-form" class="btn btn-primary">保存する</button>`});
-  const form = $('#offer-form');
-  form.onsubmit = e => {
-    e.preventDefault();
-    const v = n => form.elements[n] ? String(form.elements[n].value).trim() : '';
-    const errors = {};
-    if (!v('shop')) errors.shop = '名前を入力してください。';
-    const price = parseYen(v('price'));
-    if (isNaN(price)) errors.price = '半角数字の整数で入力してください。';
-    else if (!isStore && !(price > 0)) errors.price = '商品価格を入力してください。';
-    const ship = isStore ? '' : parseYen(v('shipping'));
-    if (isNaN(ship)) errors.shipping = '半角数字の整数で入力してください。';
-    const coupon = parseYen(v('coupon'));
-    if (isNaN(coupon)) errors.coupon = '半角数字の整数で入力してください。';
-    else if (coupon !== '' && price > 0 && coupon > price) errors.coupon = '割引額が価格を上回っています。';
-    if (v('url') && !safeUrl(v('url'))) errors.url = '「https://」または「http://」から始まるURLを入力してください。';
-    let dist = null;
-    if (isStore && v('distance')) { dist = Number(toHalf(v('distance'))); if (!isFinite(dist) || dist < 0 || dist > 1000) errors.distance = '0以上の数字で入力してください。'; }
-    if (!isValidYmd(v('checkedAt')) || v('checkedAt') > t) errors.checkedAt = '確認した日を選んでください（未来の日付は不可）。';
-    if (!showErrors(form, errors)) return;
-    const data = normOffer(Object.assign({}, ex || {}, {id:ex ? ex.id : uid(), isSample:ex ? ex.isSample : false, kind, shop:v('shop'), url:v('url'), price:price === '' ? 0 : price,
-      shipping:ship === '' ? null : ship, coupon:coupon === '' ? null : coupon, volume:v('volume'), same:form.elements.same.checked, delivery:v('delivery'),
-      address:v('address'), distance:dist, hours:v('hours'), phone:v('phone'), stock:isStore ? v('stock') : '未確認', checkedAt:v('checkedAt'), memo:v('memo')}));
-    if (ex) Object.assign(ex, data); else p.offers.push(data);
-    if (save()) { closeModal(); toast('保存しました'); render(); }
-  };
-}
 
 /* =========================================================
    画面：取扱店舗を探す
@@ -6389,27 +5823,11 @@ function shopAddress(t) {
   return ['addr:province','addr:city','addr:suburb','addr:quarter','addr:neighbourhood'].map(k => t[k] || '').join('') + hn;
 }
 const PLACE_JA = {city:'市', town:'町', village:'村', suburb:'地区', quarter:'地区', neighbourhood:'地区'};
-function buildCands(els) {
-  const out = [];
-  els.forEach(el => {
-    if (el.type !== 'node') return;
-    const t = el.tags || {}, kind = t.railway === 'station' ? 'station' : 'place', name = String(t.name || '').replace(/駅$/, ''), op = t.operator || t.network || '';
-    const near = out.find(c => c.kind === kind && c.name === name && kmBetween(c.lat, c.lng, el.lat, el.lon) < 1.5);
-    if (near) { if (op && !near.ops.includes(op)) near.ops.push(op); return; }
-    out.push({kind, name, lat:el.lat, lng:el.lon, ops:op ? [op] : [], ptype:t.place || '', area:t.is_in || t['addr:province'] || ''});
-  });
-  out.sort((a, b) => (a.kind === 'station' ? 0 : 1) - (b.kind === 'station' ? 0 : 1));
-  return out.slice(0, 8).map(c => Object.assign(c, {label:c.kind === 'station' ? `${c.name}駅${c.ops.length ? '（' + c.ops.slice(0, 3).join('・') + '）' : ''}` : `${c.name}（${c.area || PLACE_JA[c.ptype] || '地名'}）`}));
-}
 function storeErrMsg(e) {
   if (navigator.onLine === false) return 'インターネットに接続されていません。接続を確認してから、もう一度お試しください。';
   if (e && e.name === 'AbortError') return '時間内に応答がありませんでした。範囲を狭めるか、少し時間をおいてお試しください。';
   if (e && e.message === 'busy') return '無料の地図データのサーバーが、どれも混み合っています。数分おいてから、もう一度お試しください。急ぎの場合は、下の「地図アプリで探す」をお使いください。';
   return '店舗の情報を取得できませんでした。通信状況を確認するか、下の「地図アプリで探す」をお使いください。';
-}
-function storeTypeCounts(items) {
-  const m = {}; items.forEach(x => { const t = x.type || 'その他'; m[t] = (m[t] || 0) + 1; });
-  return '内訳：' + Object.entries(m).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${esc(t)} ${n}件`).join('／') + '（近い順）';
 }
 function setStoreRes(r) { ui.storeRes = r; ui.storeBusy = r.status === 'loading'; if (parseRoute().name === 'stores') render(); }
 function storeThrottle() {
@@ -6521,24 +5939,6 @@ async function storeSearchAt(center, chained) {
   setStoreRes({status:'done', center, items, radius:R, source, pharm:pharmOk ? {n:pharm.length, date:pharmIdx && pharmIdx.date} : null, pharmFailed:wantPharm && !pharmOk});
 }
 // 地図データの営業時間の書き方（例：Mo-Su 10:00-22:00）を日本語に直す
-function jaHours(h) {
-  if (!h) return '';
-  const D = {Mo:'月', Tu:'火', We:'水', Th:'木', Fr:'金', Sa:'土', Su:'日', PH:'祝日'};
-  return String(h).replace(/24\/7/g, '24時間営業')
-    .replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/g, m => D[m])
-    .replace(/([月火水木金土日])-([月火水木金土日])/g, '$1〜$2')
-    .replace(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/g, '$1〜$2')
-    .replace(/\boff\b|\bclosed\b/gi, '休み').replace(/\s*;\s*/g, '／').replace(/,/g, '・');
-}
-function shopCard(s, i) {
-  const tel = s.phone.replace(/[^\d+\-]/g, '');
-  return `<div class="offer shop-card ${ui.storeSel === i ? 'selected' : ''}" id="shop-${i}" data-shop="${i}" title="押すと地図で場所を表示します"><div class="offer-top"><div><div class="offer-name"><span class="chip" style="background:${PIN_COLORS[s.type] || PIN_COLORS['その他']};color:#fff;margin-right:6px">${i + 1}</span>${esc(s.name)}</div>
-      <div class="chips" style="margin-top:4px"><span class="chip">${esc(s.type)}</span>${s.brand ? `<span class="chip beige">${esc(s.brand)}</span>` : ''}${stockChip('未確認')}</div></div>
-      <div class="offer-total" style="font-size:16px">${esc(fmtDist(s.km))}</div></div>
-    <div class="offer-grid" style="grid-template-columns:1fr"><div><span>${s.src === 'mhlw' ? '営業時間（医療情報ネットへの届出内容）' : '営業時間（地図データの登録内容・未確認）'}</span>${esc(jaHours(s.hours) || '登録なし')}</div><div><span>住所</span>${esc(s.address || '登録なし')}${s.approx ? '<div class="small muted">※位置は住所から推定しています</div>' : ''}</div>${s.phone ? `<div><span>電話</span>${esc(s.phone)}</div>` : ''}</div>
-    <div class="offer-actions">${extLink(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`, '地図')}${extLink(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`, '経路')}${extLink(`https://maps.apple.com/?q=${encodeURIComponent(s.name)}&ll=${s.lat},${s.lng}`, 'Appleマップ')}
-      ${tel ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(tel)}">電話で在庫を確認</a>` : ''}${extLink(s.url, '公式サイト')}<button class="btn btn-soft btn-sm" data-action="store-add" data-id="${i}">価格比較に追加</button></div></div>`;
-}
 // ---------- 店舗の地図（国土地理院のベクトル地図・航空写真を MapLibre で表示。拡大しても文字や線がくっきり） ----------
 const PIN_COLORS = {'薬局':'#2F855A', 'ドラッグストア':'#C05621', '化粧品店':'#B83280', 'バラエティショップ':'#6B46C1', '百貨店':'#6B46C1', 'その他':'#4A5568'};
 const MAP_LIBS = {
@@ -6627,52 +6027,6 @@ async function drawStoreMap() {
   if (ui.storeSel != null && R.items[ui.storeSel]) { const s = R.items[ui.storeSel]; map.jumpTo({center:[s.lng, s.lat], zoom:16.5}); setTimeout(() => { const m = storeMarkers[ui.storeSel]; if (m && !m.getPopup().isOpen()) m.togglePopup(); }, 300); }
   el.addEventListener('click', e => { const a = e.target.closest('[data-jump]'); if (a) { e.preventDefault(); const t = document.getElementById(a.dataset.jump); if (t) t.scrollIntoView({behavior:'smooth', block:'center'}); } });
 }
-function storeResultsHtml() {
-  const R = ui.storeRes;
-  if (!R) return '';
-  if (R.status === 'loading') return `<div class="card mt" aria-live="polite"><p class="small">${esc(R.note || '検索しています…')}</p>${skelHtml(4, {dots:true})}${/予備/.test(R.note || '') ? '<p class="small muted" style="margin-top:4px">予備のサーバーは混み合っていると1分ほどかかることがあります。</p>' : ''}</div>`;
-  if (R.status === 'pick') return `<div class="card mt"><div class="card-h"><h2>場所を選んでください</h2></div>
-    <div class="chips">${(ui.storeCands || []).map((x, i) => `<button class="tab" data-action="store-pick" data-id="${i}">${esc(x.label)}</button>`).join('')}</div>
-    ${ui.stationPending ? '' : ''}
-    <p class="small muted" style="margin-top:10px">見つからない場合は、「〇〇区」「〇〇市〇〇町」のような地名や、住所で入力してみてください。</p></div>`;
-  if (R.status === 'error') return `<div class="notice red mt">${esc(R.msg)}</div>`;
-  const c = R.center, cands = ui.storeCands || [];
-  const dLat = R.radius / 111000 * 1.15, dLng = R.radius / (111000 * Math.cos(c.lat * Math.PI / 180)) * 1.15;
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${(c.lng - dLng).toFixed(5)},${(c.lat - dLat).toFixed(5)},${(c.lng + dLng).toFixed(5)},${(c.lat + dLat).toFixed(5)}&layer=mapnik&marker=${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
-  const others = cands.map((x, i) => x.lat === c.lat && x.lng === c.lng ? '' : `<button class="tab" data-action="store-pick" data-id="${i}">${esc(x.label)}</button>`).join('');
-  return `<div class="card mt"><div class="card-h"><h2>「${esc(c.label)}」から${R.radius >= 1000 ? R.radius / 1000 + 'km' : R.radius + 'm'}以内（${R.items.length}件）</h2></div>
-    ${others ? `<p class="small muted" style="margin-bottom:6px">場所が違う場合は、ほかの候補を選んでください：</p><div class="chips" style="margin-bottom:12px">${others}</div>` : ''}
-    <div class="map-tabs"><button class="tab ${ui.mapLayer !== 'photo' ? 'active' : ''}" data-action="map-layer" data-id="std">地図</button><button class="tab ${ui.mapLayer === 'photo' ? 'active' : ''}" data-action="map-layer" data-id="photo">航空写真</button></div>
-    <div id="store-map" class="store-map" role="region" aria-label="検索した場所の周辺地図"><noscript><iframe class="map-frame" title="周辺地図" src="${esc(src)}"></iframe></noscript></div>
-    <div class="map-legend">${Object.entries(PIN_COLORS).filter(([t]) => R.items.some(x => (x.type || 'その他') === t)).map(([t, c]) => `<span><i style="background:${c}"></i>${esc(t)}</span>`).join('')}<span><i style="background:#2B6CB0"></i>検索の中心</span></div>
-    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。一覧のお店を押すと、地図がそのお店の場所に移動します。地図：国土地理院（${DEV.touch ? '地図は2本の指で動かせます' : `地図はドラッグで動かせます。拡大・縮小は${DEV.mod}を押しながらスクロール`}）。距離は検索の中心からの直線距離です。</p>
-    ${R.items.length ? `<p class="small muted" style="margin-bottom:8px">${storeTypeCounts(R.items)}</p>` + R.items.slice(0, ui.storeShow).map((s, i) => shopCard(s, i)).join('') + (R.items.length > ui.storeShow ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px" data-action="store-more">さらに表示（残り${R.items.length - ui.storeShow}件）</button>` : '') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
-    ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
-    ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
-    <p class="small muted" style="margin-top:12px">${R.source === 'geoapify' ? 'Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Geoapify</a>／' : ''}店舗データ：<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>（ODbL）。閉店・移転している店舗や、登録されていない店舗がある場合があります。</p></div>`;
-}
-function openStoreAddForm(i) {
-  const s = ui.storeRes && ui.storeRes.items && ui.storeRes.items[i]; if (!s) return;
-  if (!state.catalog.length) { toast('先に「商品検索」で商品を登録してください', 'error'); return; }
-  const opts = state.catalog.map(c => ({v:c.id, label:`${c.isSample ? '[サンプル] ' : ''}${c.brand}｜${c.name}`}));
-  const pre = ui.storeProduct.trim() ? state.catalog.map(c => ({c, s:similarity(ui.storeProduct, c.name)})).filter(x => x.s >= 0.5).sort((a, b) => b.s - a.s)[0] : null;
-  const label = ui.storeRes.center.label;
-  openModal({title:'価格比較に店舗を追加', size:'small', body:`<form id="sa-form" novalidate><div class="form-grid"><p class="small"><b>${esc(s.name)}</b>（「${esc(label)}」から${esc(fmtDist(s.km))}）</p>
-    ${field('どの商品の比較に追加しますか', selectHtml('pid', opts, pre ? pre.c.id : '', '選んでください'), {name:'pid', required:true})}
-    <p class="hint">店頭価格・取扱い・在庫は「未確認」として追加します。電話や店頭で確認できたら、価格比較の画面で編集してください。</p></div></form>`,
-    footer:'<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="sa-form" class="btn btn-primary">追加する</button>'});
-  const form = $('#sa-form');
-  form.onsubmit = e => {
-    e.preventDefault();
-    const pid = form.elements.pid.value;
-    if (!pid) { showErrors(form, {pid:'商品を選んでください。'}); return; }
-    const p = getCat(pid); if (!p) return;
-    if (p.offers.some(o => o.kind === 'store' && o.shop === s.name)) { showErrors(form, {pid:'この店舗は、すでにこの商品の比較に追加されています。'}); return; }
-    p.offers.push(normOffer({kind:'store', shop:s.name, address:s.address, distance:Math.round(s.km * 10) / 10, hours:jaHours(s.hours), phone:s.phone, url:s.url, stock:'未確認', same:true, checkedAt:todayStr(),
-      memo:`地図データ（OpenStreetMap）から追加。距離は「${label}」からの直線距離。営業時間・取扱い・在庫は未確認です`}));
-    if (save()) { closeModal(); toast('価格比較に追加しました'); location.hash = '#/prices/' + encodeURIComponent(pid); }
-  };
-}
 // 位置情報をオンにする手順（端末・ブラウザごと）。使っている端末の手順を先に、ほかは折りたたみで表示
 const GEO_STEPS = {
   iphone_site:  ['iPhone・iPad（Safari）', ['アドレスバーの「ぁあ」（または「AA」）を押す', '「Webサイトの設定」→「位置情報」を「確認」か「許可」にする']],
@@ -6695,67 +6049,6 @@ function geoDevice() {
   const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const android = /Android/.test(ua), chrome = /Chrome|CriOS|Edg/.test(ua), mac = /Macintosh/.test(ua) && !ios, win = /Windows/.test(ua);
   return {ios, android, chrome, mac, win, safari: /Safari/.test(ua) && !chrome};
-}
-function geoStepsHtml(kind) {
-  const d = geoDevice();
-  const siteKey = d.ios ? 'iphone_site' : d.android ? 'android_site' : (d.mac && d.safari) ? 'safari_site' : 'chrome_site';
-  const osKey = d.ios ? 'iphone_os' : d.android ? 'android_os' : d.mac ? 'mac_os' : d.win ? 'win_os' : '';
-  const first = kind === 'site' ? [siteKey] : kind === 'both' ? [siteKey].concat(osKey ? [osKey] : []) : [osKey || siteKey];
-  const block = k => `<p class="small" style="margin:8px 0 2px"><b>${esc(GEO_STEPS[k][0])}</b></p><ol style="margin:0;padding-left:20px">${GEO_STEPS[k][1].map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
-  const others = Object.keys(GEO_STEPS).filter(k => !first.includes(k));
-  return `<p class="small" style="margin-top:6px">お使いの端末の手順：</p>${first.map(block).join('')}
-    <details class="fold" style="margin-top:8px"><summary class="small">ほかの端末・ブラウザの手順</summary>${others.map(block).join('')}</details>`;
-}
-function geoHelpHtml(kind) {
-  const retry = '<button class="btn btn-primary btn-sm" data-action="use-geo" style="margin-top:10px">設定を変えたので、もう一度試す</button>';
-  const alt = '<p class="small" style="margin-top:8px">位置情報を使いたくない場合は、下の欄に駅名・地名・住所を入力して探せます。</p>';
-  if (kind === 'blocked-site' || kind === 'denied') {
-    return `<div class="notice warn" style="margin:10px 0 0"><b>このサイトの位置情報が「許可しない」になっています。</b><br>一度「許可しない」を選ぶと、ブラウザの決まりで、アプリからもう一度たずねることができません。次の手順で許可してください（1分ほどでできます）。${geoStepsHtml('site')}${retry}${alt}</div>`;
-  }
-  if (kind === 'blocked-either') {
-    return `<div class="notice warn" style="margin:10px 0 0"><b>位置情報を使えませんでした。</b><br>ブラウザか端末の設定で、位置情報がオフになっています。次の2か所を確認してください。${geoStepsHtml('both')}${retry}${alt}</div>`;
-  }
-  if (kind === 'blocked-os') {
-    return `<div class="notice warn" style="margin:10px 0 0"><b>端末の設定で、ブラウザの位置情報がオフになっています。</b>次の手順でオンにしてください。${geoStepsHtml('os')}${retry}${alt}</div>`;
-  }
-  if (kind === 'blocked-os-maybe') return geoHelpHtml('blocked-os').replace('ブラウザの位置情報がオフになっています。', 'ブラウザの位置情報がオフになっている可能性があります（屋内や地下では、現在地を取れないこともあります）。');
-  if (kind === 'unavailable') return '<div class="notice warn" style="margin:10px 0 0">現在地を特定できませんでした。屋内や地下では取得しにくいことがあります。少し場所を変えてもう一度試すか、下の欄に駅名・地名を入力してください。</div>';
-  if (kind === 'timeout') return '<div class="notice warn" style="margin:10px 0 0">現在地の取得に時間がかかっています。もう一度ボタンを押すか、下の欄に駅名・地名を入力してください。</div>';
-  if (kind === 'insecure') return '<div class="notice warn" style="margin:10px 0 0">ファイルを直接開いている場合は、位置情報を使えません。公開しているURL（${esc(SITE_HOME)}）から開いてください。</div>';
-  return '<div class="notice warn" style="margin:10px 0 0">このブラウザでは位置情報を使えません。下の欄に駅名・地名・住所を入力して探してください。</div>';
-}
-function viewStores() {
-  const myStores = [];
-  state.catalog.forEach(p => p.offers.filter(o => o.kind === 'store' && !o.isSample).forEach(o => myStores.push({o, p}))); // サンプル（架空）の店舗は出さない
-  myStores.sort((a, b) => (a.o.distance == null ? 999 : a.o.distance) - (b.o.distance == null ? 999 : b.o.distance));
-  const links = storeLinks(), busy = ui.storeBusy;
-  return searchTabs('stores') +
-    `<div class="notice">店舗の情報は、誰でも編集できる地図データ「OpenStreetMap」から、店舗検索サービスGeoapifyを通して取得します。場所の検索には、Geoapifyと国土地理院の地名検索を使います。場所・営業時間は実際と異なることがあり、<b>在庫は取得できません（在庫未確認）</b>。来店前に、店舗の公式サイトや電話で確認してください。</div>
-    <div class="card"><div class="card-h"><h2>近くの店舗を検索</h2></div>
-      <button class="btn btn-primary btn-block" style="width:100%" data-action="use-geo" ${busy ? 'disabled' : ''}>${icon('pin')}現在地の近くの店舗を探す</button>
-      <p class="hint" style="text-align:center">位置情報の利用を許可すると、今いる場所の近くの店舗をすぐに表示します。</p>
-      ${ui.geoHelp ? geoHelpHtml(ui.geoHelp) : ''}
-      <div class="divider"></div>
-      <p class="small muted" style="margin-bottom:10px">または、場所を入力して探す</p>
-      <div class="form-grid two">
-        <div class="field"><label class="lbl" for="st-area">駅名・地名・住所</label><input class="input" id="st-area" value="${esc(ui.storeArea)}" placeholder="例：渋谷駅、梅田、福岡市中央区天神、住所" enterkeyhint="search"></div>
-        <div class="field"><label class="lbl" for="st-radius">検索する範囲</label><select class="select" id="st-radius">${RADII.map(r => `<option value="${r}" ${ui.storeRadius === r ? 'selected' : ''}>${r >= 1000 ? r / 1000 + 'km' : r + 'm'}以内</option>`).join('')}</select></div>
-        <div class="field span2"><span class="lbl">店舗の種類</span><div class="checks">${STORE_TYPES.map(x => `<label class="check"><input type="checkbox" name="st-type" value="${x.k}" ${ui.storeTypes.includes(x.k) ? 'checked' : ''}>${esc(x.l)}</label>`).join('')}</div></div>
-        <div class="field span2"><label class="lbl" for="st-prod">探している商品<span class="opt">任意</span></label><input class="input" id="st-prod" value="${esc(ui.storeProduct)}" placeholder="例：〇〇 トナー"><div id="st-prod-links" style="margin-top:8px">${prodStoreLinks()}</div></div>
-      </div>
-      <div class="page-actions" style="margin-top:14px"><button class="btn btn-soft" data-action="store-search" ${busy ? 'disabled' : ''}>${icon('search')}入力した場所の近くを検索</button></div>
-      <p class="hint">検索ボタンを押したときだけ、入力した場所（または現在地）を店舗検索サービスに送ります。現在地はアプリに保存しません。肌の記録や写真などは送りません。</p>
-      ${ui.geo ? '<p class="small muted" style="margin-top:6px">現在地を使用中（この画面を離れると破棄します）<a href="#" data-action="clear-geo">現在地の使用をやめる</a></p>' : ''}
-    </div>
-    ${storeResultsHtml()}
-    <div class="card mt"><div class="card-h"><h2>地図アプリで探す</h2></div>
-      <div class="ext-links" id="st-links">${links.length ? links.map(l => extLink(l.url, l.label, 'btn btn-ghost btn-sm')).join('') : '<span class="small muted">地域名・駅名を入力すると、地図のリンクが表示されます。</span>'}</div>
-      <p class="hint">Googleマップ・Appleマップでは、より新しい営業時間や口コミを確認できます。</p></div>
-    <div class="card"><div class="card-h"><h2>価格比較に登録した店舗</h2><span class="small muted">${myStores.length}件</span></div>
-      ${myStores.length ? myStores.map(({o, p}) => `<div style="padding:10px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:14px">${esc(o.shop)}</b><span class="small">${o.distance != null ? `${o.distance}km` : ''}</span></div>
-        <div class="chips" style="margin-top:4px">${o.isSample ? '<span class="badge-sample">サンプル</span>' : ''}${stockChip(o.stock)}<span class="chip">${esc(o.hours || '営業時間未確認')}</span></div>
-        <a class="small" href="#/prices/${encodeURIComponent(p.id)}">${esc(truncate(p.name, 30))}の価格比較 →</a></div>`).join('') : '<p class="small muted">まだありません。上の検索結果で「価格比較に追加」を押すと、その店舗を商品の価格比較に登録でき、ここに一覧で表示されます。</p>'}
-    </div>${adSlot('stores')}`;
 }
 
 /* =========================================================
@@ -6808,58 +6101,6 @@ function candRow(c, s) {
 /* =========================================================
    画面：ケアの提案（ルールに基づく整理。効果を保証するものではありません）
    ========================================================= */
-function viewSuggest() {
-  const t = todayStr(), concerns = state.settings.concerns;
-  const recent = logsInRange(addDays(t, -13), t), st = stats(recent);
-  let html = pageHead('ケアの提案', '肌悩み・手持ちの化粧品・予算をふまえて、ケアの考え方と商品の候補を整理します。') +
-    '<div class="notice">この提案は、登録された情報を決められたルールで整理したものです。商品の効果や、肌に合うことを保証するものではありません。高い商品を優先せず、手持ちの商品で足りるかどうかを先に確認する設計です。</div>';
-  html += `<div class="card"><div class="card-h"><h2>あなたの肌悩み</h2></div>
-    <div class="checks">${CONCERNS.map(c => `<label class="check"><input type="checkbox" name="sg-concern" value="${esc(c)}" ${concerns.includes(c) ? 'checked' : ''}>${esc(c)}</label>`).join('')}</div>
-    <button class="btn btn-primary btn-sm" style="margin-top:12px" data-action="sg-save">保存して提案を更新</button></div>`;
-  // 記録から見えること
-  const notes = [];
-  if (st.n >= 3) {
-    if (st.acneAvg >= 1) notes.push(`ニキビの記録が1日平均${f1(st.acneAvg)}個ありました。`);
-    if (st.dry >= 3) notes.push(`乾燥の自己評価が平均${f1(st.dry)}と高めでした。`);
-    if (st.red >= 3) notes.push(`赤みの自己評価が平均${f1(st.red)}と高めでした。`);
-    if (st.oil >= 3) notes.push(`皮脂の自己評価が平均${f1(st.oil)}と高めでした。`);
-  }
-  html += `<div class="card"><div class="card-h"><h2>直近2週間の記録から</h2><span class="chip">ルールに基づく集計</span></div>${st.n < 3
-    ? `<p class="small muted">記録が増えると、記録から見える傾向を表示します（直近2週間の記録：${st.n}日）。</p>`
-    : notes.length ? `<ul class="points">${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '<p class="small muted">目立って高い項目はありませんでした。</p>'}
-    ${st.n >= 3 && (st.acneAvg >= 5 || st.red >= 3.5) ? '<div class="notice red" style="margin:12px 0 0">症状が強い・長引く・悪化している場合は、商品を増やす前に皮膚科の受診を検討してください。「受診用まとめ」で、医師に見せる記録を整理できます。<br><a href="#/visit">受診用まとめを開く</a></div>' : ''}</div>`;
-  if (!concerns.length) return html + `<div class="card">${emptyBox('leaf', '肌悩みを選んでください', '肌悩みを選んで保存すると、手持ちの化粧品で足りている役割と、足りない役割を整理します。')}</div>`;
-  // 役割ごとの整理
-  const purposes = Array.from(new Set(BASIC_PURPOSES.concat(...concerns.map(c => CONCERN_PURPOSES[c] || []))));
-  const owned = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || p.status === STOCK);
-  const budget = state.settings.monthlyBudget, remain = budget > 0 ? budget - monthTotal(monthKey(t)) : null;
-  const rows = purposes.map(pu => {
-    const mine = owned.filter(p => p.purposes.includes(pu));
-    const basic = BASIC_PURPOSES.includes(pu);
-    let body;
-    if (mine.length) body = `<div class="chips">${mine.map(p => `<a class="chip green" style="white-space:normal" href="#/my/${encodeURIComponent(p.id)}">${esc(truncate(p.name, 26))}（${esc(p.status === STOCK ? 'ストック' : p.status)}）</a>`).join('')}</div><p class="small muted" style="margin-top:4px">手持ちの商品があります。まずは、これを続けて記録してみましょう。</p>`;
-    else {
-      const cands = state.catalog.filter(c => c.purposes.includes(pu) && c.price > 0 && (remain == null || c.price <= remain))
-        .sort((a, b) => (perUnitValue(a.price, a.volume) ?? Infinity) - (perUnitValue(b.price, b.volume) ?? Infinity) || a.price - b.price).slice(0, 3);
-      body = `<p class="small" style="color:var(--warn)">この目的の商品は、手持ち（使用中・ストック）にありません。</p>` +
-        (cands.length ? `<p class="small muted" style="margin:6px 0 4px">登録済みの商品から、${remain != null ? `今月の残り予算（${yen(Math.max(0, remain))}）以内で、` : ''}単価が安い順の候補：</p>` + cands.map(c => `<div style="padding:4px 0"><a href="#/product/${encodeURIComponent(c.id)}">${esc(c.name)}</a> ${c.isSample ? '<span class="badge-sample">サンプル</span>' : verifyBadge(c)}<div class="small muted">${yen(c.price)}${c.volume ? '／' + esc(c.volume) : ''}${perUnitText(c.price, c.volume) ? '・' + esc(perUnitText(c.price, c.volume)) : ''}</div></div>`).join('')
-          : `<p class="small muted" style="margin-top:4px">${remain != null && remain <= 0 ? '今月の予算を使い切っています。来月まで待つことも選択肢です。' : '条件に合う登録商品がありません。'}</p>`);
-    }
-    return `<div style="padding:12px 0;border-top:1px solid var(--line)"><div style="margin-bottom:6px"><b>${esc(pu)}</b>${basic ? ' <span class="chip">基本のケア</span>' : ''}</div>${body}</div>`;
-  }).join('');
-  html += `<div class="card"><div class="card-h"><h2>ケアの役割ごとの整理</h2></div>
-    <p class="small muted" style="margin-bottom:8px">選んだ肌悩みに関係する「使用目的」と、基本のケア（洗浄・保湿・紫外線対策）について、手持ちの商品があるかを整理しました。</p>
-    ${rows}
-    <p class="small muted" style="margin-top:8px">「使用目的」は、商品を登録したときに選んだものです。候補は登録済みの商品からだけ表示し、広告やアフィリエイト報酬による並び替えはしていません。</p></div>`;
-  html += `<div class="card"><div class="card-h"><h2>時間とお金をかけすぎないための考え方</h2></div><ul class="points">
-    <li>まずは「洗う・保湿する・日中に紫外線対策をする」の基本がそろっているかを確認しましょう。</li>
-    <li>新しい商品は、一度に1つずつ試すと、肌の記録を見比べやすくなります。</li>
-    <li>同じ目的の商品を重ねて使っている場合は、手間と費用が増えていないか見直す材料にしてください。</li>
-    <li>初めての商品は、目立たない場所で試してから使うと安心です。</li>
-    <li>症状が強い・長引く場合は、商品を増やすより、皮膚科の受診を検討してください。</li></ul>
-    <div class="page-actions" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/combo">成分組み合わせ</a></div></div>`;
-  return html;
-}
 
 /* =========================================================
    画面：受診用まとめ（医師に見せるための記録の整理。診断ではありません）
@@ -7050,7 +6291,6 @@ function openNgForm(id, date) {
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="ng-save" data-id="${esc(p.id)}">保存する</button>`});
 }
 // 化粧品／塗り薬を切り替えたとき、下の線を前の位置からすべらせる
-function myKindsAnimate() { const n = document.querySelector('.my-kinds[data-to]'); if (!n) return; requestAnimationFrame(() => requestAnimationFrame(() => { n.style.setProperty('--mk', n.dataset.to); })); }
 // ===== Myアイテム：使用中／停止中のスイッチ（本物のスイッチなので、iPhoneでも押すと「コツッ」と鳴る） =====
 document.addEventListener('change', e => {
   const ip = e.target; if (!ip || !ip.classList || !ip.classList.contains('m-sw-in')) return;
@@ -7209,6 +6449,7 @@ function viewMyDetail(id) {
     const use = isRx ? rxUseOf(p.name) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
     const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
     return `<a class="back" href="#/my">← Myアイテム</a>
+    ${p.ng ? '' : (() => { const h = ngWarnFor(p); return h.length ? `<div class="card ngw-card">${ngWarnHtml(h, true)}</div>` : ''; })()}
     ${p.ng ? `<a class="card ng-banner" href="#/trouble">${icon('alert')}<span><b>肌に合わなかった（${fmtShort(p.ng.date)}）</b><small>${esc(p.ng.sym.join('・') || '症状は未記録')}</small></span><i>›</i></a>` : ''}
     <div class="card detail-top">
       <div>
@@ -7404,27 +6645,6 @@ function openMyForm(id, fromCatId) {
       state.myProducts.push(target);
     }
     if (save()) { closeModal(); toast(ex ? '保存しました' : 'Myアイテムに登録しました'); location.hash = '#/my/' + encodeURIComponent(target.id); render(); if (!ex) setTimeout(() => comboAfterAdd(target.id), 450); }
-  };
-}
-function openPurchaseForm(pid) {
-  const p = getMy(pid); if (!p) return;
-  const t = todayStr();
-  openModal({title:'購入記録を追加', size:'small', body:`<form id="pur-form" novalidate><div class="form-grid">
-    <p class="small muted">${esc(p.name)}</p>
-    ${field('購入日', `<input type="date" class="input" id="f_date" name="date" value="${t}" max="${t}">`, {name:'date', required:true})}
-    ${field('金額（円）', `<input class="input" id="f_price" name="price" inputmode="numeric" placeholder="例：1800">`, {name:'price', required:true})}
-    ${field('メモ', `<input class="input" id="f_memo" name="memo" maxlength="60" placeholder="例：セールで購入、2個セット">`, {name:'memo'})}
-  </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="pur-form" class="btn btn-primary">追加する</button>`});
-  const form = $('#pur-form');
-  form.onsubmit = e => {
-    e.preventDefault();
-    const date = form.elements.date.value, price = parseYen(form.elements.price.value);
-    const errors = {};
-    if (!isValidYmd(date)) errors.date = '購入日を選択してください。'; else if (date > t) errors.date = '未来の日付は選べません。';
-    if (isNaN(price) || !(price > 0)) errors.price = '1円以上の整数（半角数字）で入力してください。';
-    if (!showErrors(form, errors)) return;
-    p.purchases.push({id:uid(), date, price, memo:form.elements.memo.value.trim()});
-    if (save()) { closeModal(); toast('購入記録を追加しました'); render(); }
   };
 }
 
@@ -7706,18 +6926,6 @@ setTimeout(() => {
       footer:`<button type="button" class="btn btn-ghost" data-action="restore-no">戻さない</button><button type="button" class="btn btn-primary" data-action="restore-yes">以前のデータに戻す</button>`});
   } catch (e) { /* 読めない退避データは何もしない */ }
 }, 1500);
-function wxTodayHtml() {
-  const pin = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
-  if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !state.weather[todayStr()]))
-    return `<div class="wx-bar wx-bar-setup" id="wx-box"><span>${pin}${state.settings.wxPref ? '位置情報を許可すると' : '位置情報で'}、湿度・気温・紫外線を自動で記録</span><button type="button" class="wx-b-btn" data-action="wx-geo">現在地を使う</button><button type="button" class="wx-b-link" data-action="wx-setup">地域を選ぶ</button></div>`;
-  const w = state.weather[todayStr()];
-  if (!w) return `<div class="wx-bar" id="wx-box"><span class="muted">${pin}${esc(state.settings.wxPref)}の天気を読み込み中…</span></div>`;
-  const tip = w.hum < 40 ? 'とても乾燥・保湿多めに' : w.hum < 50 ? '乾燥ぎみ・保湿をしっかり' : w.uv >= 6 ? '紫外線が強い・日焼け止めを' : w.tmax >= 28 ? '汗と皮脂に注意' : w.tmax < 10 ? '寒さで乾燥しやすい' : '肌にやさしい天気';
-  const warn = w.hum < 50 || w.uv >= 6;
-  return `<div class="wx-bar" id="wx-box"><button type="button" class="wx-b-pl" data-action="wx-setup" aria-label="天気の地域を変える">${pin}${esc(state.settings.wxPref)}</button>
-    <span class="wx-b-n"><small>湿度</small><b>${Math.round(w.hum)}%</b></span><span class="wx-b-n"><small>気温</small><b>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</b></span><span class="wx-b-n"><small>UV</small><b>${w.uv == null ? '－' : Math.round(w.uv)}</b></span>
-    <span class="wx-b-tip ${warn ? 'warn' : ''}">${esc(tip)}</span></div>`;
-}
 function openGeoHelp() {
   const ios = DEV.ios, denied = WX_GEO_ERR === 1, standalone = isStandalone();
   const steps = !denied ? ['電波のよい場所で、もう一度「現在地を使う」を押してください', 'iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」が「オン」になっているか確かめてください']
@@ -8588,7 +7796,6 @@ function comboEval(A, B) {
   if (hitTr.length) res.trouble = '肌質診断で「過去に肌トラブルが起きた」と答えた種類の成分が入っています。';
   return res;
 }
-function comboCheck(k1, k2) { return comboEval(comboItem(k1), comboItem(k2)); }
 // 商品を、判定に使う形にする（成分表示から見つけた成分・処方薬の有効成分）
 function prodComboItem(x) {
   if (x.rx) { const d = RX_DRUGS.find(z => z[1] === x.p.name); if (d) return Object.assign(rxComboItem(d[1], d[0], d[2], 'p:' + x.p.id), {label:truncate(x.p.name, 18)}); }
@@ -9203,14 +8410,6 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Enter') { e.preventDefault(); const o = os[Math.max(0, i)]; if (o) ccChoose(t.id === 'cc-a' ? 'a' : 'b', o.dataset.v); }
   else if (e.key === 'Escape') { box.hidden = true; }
 });
-function comboOptsHtml(cur, ph) {
-  const rx = RX_DRUGS.filter(d => !/水虫|ヘルペス|汗|傷|乾癬/.test(d[0]));
-  const ms = ING_MASTER.filter(e => !e.oral && !e.care && !(e.rx && e.inci.some(n => rx.some(d => d[2].includes(n)))));
-  return `<option value="">${ph}</option><optgroup label="成分">${ms.filter(e => !e.rx).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`
-    + `<optgroup label="処方薬・海外の処方成分">${ING_MASTER.filter(e => e.rx && !e.oral).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`
-    + `<optgroup label="皮膚科の薬（商品名）">${rx.map(d => `<option value="rx:${esc(d[1])}" ${'rx:' + d[1] === cur ? 'selected' : ''}>${esc(d[1])}</option>`).join('')}</optgroup>`
-    + `<optgroup label="飲み薬・サプリ・ケアの方法">${ING_MASTER.filter(e => e.oral || e.care).map(e => `<option value="${e.k}" ${e.k === cur ? 'selected' : ''}>${esc(e.ja)}</option>`).join('')}</optgroup>`;
-}
 function comboPickerHtml() {
   const a = ui.ccA || '', b = ui.ccB || '', A = comboItem(a), B = comboItem(b), d = diagNow(), S = skinStateNow();
   let h = `<div class="card"><div class="card-h"><h2>2つを選んで調べる</h2></div>
@@ -9255,14 +8454,33 @@ function comboLevelsHtml() {
 // 商品名に書かれた濃度（例：「ナイアシンアミド10%」）。書かれていなければ空
 function concOf(name) { return [...String(name || '').normalize('NFKC').matchAll(/([぀-ヿ一-鿿A-Za-z\-]{2,}?)\s*([0-9]+(?:\.[0-9]+)?)\s*%/g)].map(m => `${m[1].replace(/^.*[ 　]/, '')} ${m[2]}%`).slice(0, 3); }
 // 商品を登録したら、すぐに成分を調べて、使っている商品・薬との組み合わせを知らせる
+// ===== 注意アイテム（肌に合わなかった化粧品）と同じ成分が入っていないか =====
+// どの化粧品にも入っているような基本の成分（水・グリセリン・BGなど）は、比べても意味がないので数えない
+const NG_COMMON = new Set(['水', '精製水', '水（溶剤）', 'グリセリン', '濃グリセリン', 'BG', 'DPG', '1,3-ブチレングリコール', 'ブチレングリコール', 'ペンチレングリコール', 'プロパンジオール', '1,2-ヘキサンジオール', 'ヘキサンジオール', 'カルボマー', 'カルボキシビニルポリマー', 'キサンタンガム', '水酸化K', '水酸化Na', '水酸化カリウム', '水酸化ナトリウム', 'クエン酸', 'クエン酸Na', 'EDTA-2Na', 'エデト酸塩', 'EDTA-4Na', 'トコフェロール', 'グリセレス-26', 'ジメチコン', 'シクロペンタシロキサン', 'メチルグルセス-10', 'ベタイン', 'セルロースガム', 'アルギニン', '乳酸Na', 'リン酸Na', 'エチルヘキシルグリセリン', 'ポリソルベート80', 'ポリソルベート60', 'ステアリン酸グリセリル', 'セタノール', 'ベヘニルアルコール', 'スクワラン', 'ミネラルオイル', 'ワセリン'].map(normIng));
+function ngIngMap(p) { const m = new Map(); splitIngs(ingsOfMy(p)).forEach(x => { const n = normIng(x); if (n && n.length > 1 && !NG_COMMON.has(n) && !m.has(n)) m.set(n, x); }); return m; }
+function ngWarnFor(p) {
+  if (!p || p.ng) return [];
+  const mine = ngIngMap(p); if (!mine.size) return [];
+  return state.myProducts.filter(q => q.ng && q.id !== p.id).map(q => { const s = ngIngMap(q); return {q, same:[...mine.keys()].filter(k => s.has(k)).map(k => mine.get(k))}; }).filter(x => x.same.length);
+}
+function ngWarnHtml(hits, compact) {
+  if (!hits.length) return '';
+  const names = [...new Set(hits.flatMap(h => h.same))];
+  return `<div class="ngw">${icon('alert')}<div><b>前に肌に合わなかった化粧品と、同じ成分が入っています</b>
+    <p>${hits.slice(0, 3).map(h => `「${esc(truncate(h.q.name, 22))}」と同じ：${esc(h.same.slice(0, 5).join('、'))}${h.same.length > 5 ? ` など${h.same.length}つ` : ''}`).join('<br>')}</p>
+    ${compact ? '' : '<p class="ngw-s">同じ成分が原因とは限りません。使うときは、腕の内側などで少しだけ試してからにすると安心です。</p>'}
+    <a href="#/trouble" class="ngw-l">注意アイテムを見る ›</a></div></div>`;
+}
 function comboAfterAdd(pid) {
+  const p0 = getMy(pid), ngHits = ngWarnFor(p0);
+  if (p0 && p0.status !== '使用中' && ngHits.length) { openModal({title:'成分の自動チェック', size:'small', dismissable:true, body:ngWarnHtml(ngHits), footer:'<button type="button" class="btn btn-primary" data-action="close-modal">わかった</button>'}); return; } // ストックで登録したときも、注意アイテムと同じ成分は知らせる
   const p = getMy(pid); if (!p || p.status !== '使用中') return;
   const all = state.myProducts.filter(x => x.status === '使用中').map(prodInfo), me = all.find(x => x.p.id === pid); if (!me) return;
   const it = prodComboItem(me), pairs = [];
   all.filter(x => x !== me).forEach(x => { const o = prodComboItem(x); if (!it.tags.size || !o.tags.size) return; const r = comboEval(it, o); if (r && r.lv >= 2) pairs.push({r, x}); });
   pairs.sort((a, b) => b.r.lv - a.r.lv);
   const cs = concOf(p.name);
-  const body = `<div class="ca-sum">
+  const body = ngWarnHtml(ngHits) + `<div class="ca-sum">
     <div class="rt-dl"><b>商品名</b><div>${esc(p.name)}</div></div>
     <div class="rt-dl"><b>見つけた成分</b><div>${me.src === 'none' ? '<span class="chip warn">成分情報未確認</span><p class="small muted">全成分が登録されていないため、推測はしていません。商品ページで全成分を入れると、くわしく調べられます。</p>' : me.ings.length ? me.ings.map(e => `<a class="chip ${e.act >= 2 ? 'warn' : 'green'}" href="#/ingredients/${e.k}">${esc(e.ja)}</a>`).join('') + `<small class="muted rt-src">${me.src === 'verified' ? '成分表示（確認済み）から' : me.src === 'rx' ? '処方薬の有効成分から' : '登録された成分表示から（未確認）'}</small>` : '<span class="muted">データベースにある注意が必要な成分は見つかりませんでした</span>'}</div></div>
     <div class="rt-dl"><b>濃度</b><div>${cs.length ? `商品名に書かれた濃度：${esc(cs.join('、'))}` : '<span class="muted">不明（成分表示には濃度が書かれていないため、一般的な濃度を想定して判定します）</span>'}</div></div>
@@ -9312,24 +8530,6 @@ document.addEventListener('change', e => { const id = e.target && e.target.id; i
 // ===== 朝・夜の「いつものケア」をワンタップで記録 =====
 // Myアイテムで使うタイミングが「朝」「夜」「朝・夜」の使用中の化粧品を、まとめて「今日使った」にする
 const careSet = k => state.myProducts.filter(p => p.status === '使用中' && (k === 'am' ? /朝/.test(p.timing) : /夜/.test(p.timing)));
-function careQuickHtml() {
-  const am = careSet('am'), pm = careSet('pm'); if (!am.length && !pm.length) return '';
-  const c = state.careLogs[todayStr()] || {};
-  const b = (k, ic, l, list) => list.length ? `<button type="button" class="care-btn ${c[k] ? 'done' : ''}" data-action="care-done" data-id="${k}">${icon(c[k] ? 'check' : ic)}<span><b>${l}</b><small>${c[k] ? `記録済み・${list.length}品（押すと取り消し）` : `${list.length}品・押すだけで記録`}</small></span></button>` : '';
-  return `<div class="care-quick">${b('am', 'sun', '朝のケア', am)}${b('pm', 'moon', '夜のケア', pm)}</div>`;
-}
-function careDone(k) {
-  const t = todayStr(), c = state.careLogs[t] = state.careLogs[t] || {am:false, pm:false, ids:[]};
-  const ids = careSet(k).map(p => p.id);
-  if (c[k]) { // もう一度押したら取り消す
-    c[k] = false; const other = c[k === 'am' ? 'pm' : 'am'] ? careSet(k === 'am' ? 'pm' : 'am').map(p => p.id) : [];
-    c.ids = c.ids.filter(id => !ids.includes(id) || other.includes(id));
-    toast(`${k === 'am' ? '朝' : '夜'}のケアの記録を取り消しました`);
-  } else { c[k] = true; c.ids = [...new Set(c.ids.concat(ids))]; hapticSaved(); toast(`${k === 'am' ? '朝' : '夜'}のケアを記録しました（${ids.length}品）`); }
-  const L = state.skinLogs.find(l => l.date === t); // 今日の肌の記録があれば、使った化粧品にも入れる
-  if (L) { L.usedProducts = [...new Set((c[k] ? L.usedProducts.concat(ids) : L.usedProducts.filter(id => c.ids.includes(id))))]; L.usageRecorded = L.usedProducts.length > 0 || L.usageRecorded; }
-  save(); render();
-}
 // ===== はじめにやること（4つ。全部終わるか「閉じる」で消える） =====
 function startItems() {
   const st = state.settings;
@@ -9343,14 +8543,6 @@ function startHtml() {
   // はじめにやること：アンケートに答えるだけ（シンプルに）
   return `<div class="card start-card start-simple"><div class="st-head"><h2>はじめにやること</h2><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
     <button type="button" class="btn btn-primary st-go" data-action="setup">${icon('spark')}肌質診断をする</button></div>`;
-}
-function openA2hsGuide() {
-  const ios = DEV.ios, steps = ios ? [['画面の下の「共有」ボタン（四角から上向きの矢印）を押す', 'Safariで開いているときです。ほかのアプリの中で開いているときは、先にSafariで開きます'], ['「ホーム画面に追加」を押す', '見つからないときは、下に少しスクロールします'], ['右上の「追加」を押す', 'ホーム画面にナカカラモのアイコンができます。次からはそこから開いてください']]
-    : DEV.android ? [['右上の「︙」（メニュー）を押す', 'Chromeで開いているときです'], ['「ホーム画面に追加」または「アプリをインストール」を押す', ''], ['「追加」を押す', 'ホーム画面にナカカラモのアイコンができます']]
-    : [['スマホのブラウザでこのページを開く', 'パソコンでは、ブックマークに追加しておくと便利です'], ['ブラウザのメニューから「ホーム画面に追加」を選ぶ', ''], ['「追加」を押す', '']];
-  openModal({title:'ホーム画面に追加する', dismissable:true, body:`<p class="small" style="margin:0 0 10px">アプリのように1回で開けるようになります。iPhoneでは、ホーム画面から開くと、記録が消えにくくなります。</p>
-    <ol class="a2hs-steps">${steps.map(([t, s]) => `<li><b>${esc(t)}</b>${s ? `<small>${esc(s)}</small>` : ''}</li>`).join('')}</ol>`,
-    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">あとで</button><button type="button" class="btn btn-primary" data-action="a2hs-done">追加した</button>`});
 }
 // 振り返りの画面（グラフ・週のまとめ・受診用）は、記録タブの「最近の肌状態」からまとめて開く
 function reviewLinksHtml() {
@@ -9760,36 +8952,6 @@ function viewPhotos() {
       <div><img src="${safeImg(last.photo)}" alt="${esc(last.date)}の写真"><p class="small muted" style="margin-top:4px">${fmtMD(last.date)}・${esc(COND_LABELS[last.condition])}</p></div></div>
       <p class="small muted" style="margin-top:8px">明るさ・角度・距離が違うと、見え方が大きく変わります。同じ場所・同じ時間帯に撮ると比べやすくなります。</p></div>`;
   }
-  return html;
-}
-function viewLife() {
-  const t = todayStr();
-  const list = state.lifeLogs.slice().sort((a,b) => b.date.localeCompare(a.date));
-  const week = lifeInRange(addDays(t, -6), t);
-  const sl = week.map(sleepMin).filter(v => v != null);
-  const exW = week.filter(l => l.exRecorded), nutW = week.filter(l => l.foods.length);
-  const stepsW = week.filter(l => l.steps != null).map(l => l.steps);
-  let html = `<div class="card"><div class="card-h"><h2>直近7日間</h2></div><div class="stat-row" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
-    <div class="stat"><div class="lbl">記録した日</div><div class="val">${week.length}<span class="small muted"> / 7</span></div></div>
-    <div class="stat"><div class="lbl">平均睡眠</div><div class="val" style="font-size:16px">${sl.length ? esc(fmtHM(avg(sl))) : '記録なし'}</div></div>
-    <div class="stat"><div class="lbl">運動の合計</div><div class="val" style="font-size:16px">${exW.length ? esc(fmtMin(exW.reduce((a, l) => a + exTotal(l), 0))) : '記録なし'}</div>${exW.length ? `<div class="sub">${exW.filter(l => exTotal(l) > 0).length}日 運動</div>` : ''}</div>
-    <div class="stat"><div class="lbl">平均歩数</div><div class="val" style="font-size:16px">${stepsW.length ? Math.round(avg(stepsW)).toLocaleString() + '歩' : '記録なし'}</div></div>
-    <div class="stat"><div class="lbl">栄養（1日平均・目安）</div><div class="val" style="font-size:16px">${nutW.length ? Math.round(avg(nutW.map(l => nutTotals(l.foods).kcal))).toLocaleString() + 'kcal' : '記録なし'}</div>${nutW.length ? `<div class="sub">${nutW.length}日分・野菜 ${Math.round(avg(nutW.map(l => nutTotals(l.foods).veg)))}g</div>` : ''}</div>
-    </div><p class="small muted" style="margin-top:10px">肌記録との比較は「肌の変化・比較」で確認できます。相関が見られても、原因とは断定できません。栄養は概算の目安です。</p></div>`;
-  if (!list.length) return html + `<div class="card">${emptyBox('moon', '食事・運動・睡眠の記録はまだありません', '分かる項目だけで大丈夫です。食べたものはリストから選ぶだけで、栄養の目安が表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-life">記録する</button>')}</div>`;
-  html += list.map(l => {
-    const ph = FOOD_MEALS.filter(m => l.mealPhotos[m.k]);
-    const eaten = FOOD_MEALS.map(m => { const a = l.foods.filter(x => x.meal === m.k); return a.length ? `${m.l}：${a.map(x => x.name.replace(/（.*?）/g, '') + (x.qty !== 1 ? '×' + qtyLabel(x.qty) : '')).join('・')}` : ''; }).filter(Boolean).join('／');
-    // 日付だけを出して、押すと中身が開く（アコーディオン）
-    return `<details class="log-item life-acc"><summary class="lifeacc-sum"><span class="log-date">${fmtMD(l.date)}${l.demo ? ' <span class="badge-sample">デモ</span>' : ''}</span><i class="meal-chev" aria-hidden="true">›</i></summary>
-      <div class="log-actions" style="margin:4px 0 6px"><button class="btn btn-ghost btn-sm" data-action="edit-life" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-life" data-id="${esc(l.id)}">削除</button></div>
-      <p class="sub-line"><b>睡眠</b>${l.bed && l.wake ? `${esc(l.bed)} 〜 ${esc(l.wake)}（${esc(fmtHM(sleepMin(l)))}）` : '記録なし'}</p>
-      <p class="sub-line"><b>運動</b>${l.exercise.length ? esc(l.exercise.map(e => `${e.type} ${e.minutes}分`).join('、')) : l.exRecorded ? 'なし' : '記録なし'}${l.steps != null ? `／${l.steps.toLocaleString()}歩` : ''}</p>
-      <p class="sub-line"><b>食事</b>${MEALS.map(m => `${m.l}${l.meals[m.k].ate ? (l.meals[m.k].time ? ` ${esc(l.meals[m.k].time)}` : ' ○') : ' —'}`).join('　')}</p>
-      ${l.foods.length ? `<p class="sub-line"><b>食べたもの</b>${esc(eaten)}</p><p class="sub-line"><b>栄養の目安</b>${esc(nutLine(nutTotals(l.foods)))}</p>` : ''}
-      ${ph.length ? `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${ph.map(m => `<figure style="margin:0;text-align:center"><img class="meal-thumb" src="${safeImg(l.mealPhotos[m.k])}" alt="${m.l}の写真"><figcaption class="small muted">${m.l}</figcaption></figure>`).join('')}</div>` : ''}
-      ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}</details>`;
-  }).join('');
   return html;
 }
 
@@ -10261,71 +9423,6 @@ function mealByTime(hm) {
   return 'snack';                               // それ以外は間食
 }
 const blankLife = date => ({id:uid(), demo:false, date, bed:'', wake:'', meals:Object.fromEntries(MEALS.map(m => [m.k, {ate:false, time:''}])), veg:'', protein:'', sweets:'', water:'', tags:[], foods:[], mealPhotos:{}, exercise:[], exRecorded:false, steps:null, memo:''});
-function quickMeal() {
-  // 押したらすぐカメラを開く
-  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment'); inp.className = 'vh'; inp.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(inp);
-  const done = () => setTimeout(() => inp.remove(), 0);
-  inp.addEventListener('change', async () => { const f = inp.files && inp.files[0]; done(); if (f) await quickMealSave(f); });
-  inp.addEventListener('cancel', done);
-  inp.click();
-}
-async function quickMealSave(file) {
-  let img, hiImg; try { img = await readImage(file, 480, 0.7); hiImg = isPremium() ? await readImage(file, 800, 0.8) : img; } catch (e) { toast(e.message, 'error'); return; }
-  const now = new Date(), tm = (await photoTime(file)) || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const t = todayStr(); let L = getLife(t); if (!L) { L = blankLife(t); state.lifeLogs.push(L); }
-  const q = {k:mealByTime(tm), tm, img, added:[], ai:'idle', aiMsg:''};
-  const put = k => { L.mealPhotos[k] = img; if (L.meals[k]) L.meals[k] = {ate:true, time:tm}; };
-  put(q.k); if (save()) hapticSaved(); render();
-  const sheet = () => {
-    const m = FOOD_MEALS.find(x => x.k === q.k), foods = L.foods.filter(x => q.added.includes(x.id));
-    return `<div class="qm"><img class="qm-img" src="${img}" alt="撮った食事の写真"><div class="qm-t"><b>${esc(m.l)}として記録しました</b><span class="small muted">${esc(tm)} に撮った写真</span></div></div>
-      <p class="small muted" style="margin:12px 0 6px">違うときは押して直せます</p>
-      <div class="seg qm-slot" role="radiogroup">${FOOD_MEALS.map(x => `<label class="seg-opt"><input type="radio" name="qm-slot" value="${x.k}" ${x.k === q.k ? 'checked' : ''}><span>${x.l}</span></label>`).join('')}</div>
-      <div id="qm-ai" style="margin-top:12px">${(q.checking || []).length ? `<p class="small muted" style="margin:0 0 8px">「${esc(q.checking.join('」「'))}」の栄養成分を、メーカーの公式情報で確認しています…</p>` : ''}${q.ai === 'busy' ? skelHtml(2, {dots:true, label:q.busyLabel || '写真を読み取り中', note:q.busyLabel === 'バーコードを確認中' ? 'バーコードが写っていれば、すぐに出ます' : '商品名と栄養成分表示を読み取っています'})
-        : foods.length ? `<div class="notice green" style="margin:0"><b>読み取った食べ物</b>${q.sec ? `<span class="small muted">（${q.sec}秒）</span>` : ''}<div class="chips" style="margin-top:6px">${foods.map(x => `<span class="chip">${esc(x.name)} <span class="muted">${Math.round(x.kcal)}kcal</span></span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${esc(nutLine(nutTotals(foods)))}</p></div>`
-        : q.ai === 'err' ? `<div class="notice" style="margin:0">${esc(q.aiMsg)}</div>`
-        : isPremium() ? '' : `<p class="small muted" style="margin:0">${PREMIUM_NAME}プランなら、写真から商品名と栄養成分表示を読み取って自動で入れます。食べたものは「詳しく編集」からリストで選べます。</p>`}</div>`;
-  };
-  openModal({title:'食事の記録', body:`<div id="qm-body">${sheet()}</div>`, footer:`<button type="button" class="btn btn-ghost" data-action="meal-edit">詳しく編集</button><button type="button" class="btn btn-primary" data-action="close-modal">完了</button>`});
-  const body = $('#qm-body'), redraw = () => { if (document.body.contains(body)) body.innerHTML = sheet(); };
-  body.addEventListener('change', e => {
-    if (e.target.name !== 'qm-slot') return;
-    const nk = e.target.value; if (nk === q.k) return;
-    // 写真・時刻・読み取った料理を、選び直した食事へ移す
-    if (L.mealPhotos[q.k] === img) delete L.mealPhotos[q.k];
-    if (L.meals[q.k] && L.meals[q.k].time === tm && !L.foods.some(x => x.meal === q.k && !q.added.includes(x.id))) L.meals[q.k] = {ate:false, time:''};
-    L.foods.forEach(x => { if (q.added.includes(x.id)) x.meal = nk; });
-    q.k = nk; put(nk); if (save()) hapticSaved(); render(); redraw();
-  });
-  if (isPremium()) {
-    q.ai = 'busy'; q.busyLabel = 'バーコードを確認中'; q.t0 = Date.now(); redraw();
-    try {
-      // ① バーコードが写っていれば、AIを使わずに一瞬で出す
-      const jan = await janFromFile(file), off = jan ? await offNutrition(jan) : null;
-      let r;
-      if (off) r = {items:[off]};
-      else { q.busyLabel = '写真を読み取り中'; redraw(); r = (await callVision('meal', hiImg)).result || {items:[]}; }
-      q.sec = ((Date.now() - q.t0) / 1000).toFixed(1);
-      const miss = [], later = (r.items || []).filter(x => x.needOfficial);
-      const addOne = x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return null; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); return f; };
-      const ids = (r.items || []).map(addOne);
-      if (later.length) { // ② 表示が写っていない商品は、目安の数字で先に入れ、メーカー公式の数字が見つかったら差し替える
-        q.checking = later.map(x => x.name);
-        const lid = (r.items || []).map((x, i) => x.needOfficial ? ids[i] : undefined).filter((v, i) => (r.items || [])[i].needOfficial);
-        officialFill(later).then(got => {
-          q.checking = [];
-          got.forEach((x, i) => { const f = lid[i]; if (!f || x.basis !== '公式') return; const rec = aiFoodToRec(x, q.k); if (!rec) return; const cur = L.foods.find(y => y.id === f.id); if (cur) Object.assign(cur, normFood(Object.assign(rec, {id:f.id}))); });
-          save(); render(); redraw();
-        });
-      }
-      q.ai = q.added.length ? 'done' : 'err';
-      q.aiMsg = (!q.added.length && !miss.length ? (r.note || '食べ物を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は数字を出せませんでした。「詳しく編集」から入力できます。` : '');
-      save(); render();
-    } catch (err) { q.ai = 'err'; q.aiMsg = err.message; }
-    redraw();
-  }
-}
 function openLifeForm(id, part, forDate) {
   part = LIFE_PARTS[part] ? part : '';
   const show = k => !part || part === k ? '' : 'hidden';
@@ -11823,11 +10920,6 @@ function face3dZoneAtEvent(st, e) {
   const lp = st.face.worldToLocal(hit.point.clone()); return face3dZoneOf(lp.x, lp.y);
 }
 // 押した点のマス目から部位を決め、その部位のマス目を光らせる
-function face3dGridSelect(st, area) {
-  const g = st && st.gridInfo; if (!g) return;
-  const sel = new Set(); for (let k = 0; k < g.cellArea.length; k++) if (area && g.cellArea[k] === area) sel.add(`${k % g.cols},${Math.floor(k / g.cols)}`);
-  face3dGridPaint(st, {}, sel);
-}
 function face3dGridArea(st, e) {
   const T = FACE3D.three, g = st && st.gridInfo; if (!g) return null;
   const cv = st.renderer.domElement, rc = cv.getBoundingClientRect();
@@ -11849,21 +10941,6 @@ function face3dAreaAt(e) {
   const ray = new T.Raycaster(); ray.setFromCamera(p, st.cam);
   const hit = ray.intersectObject(st.face)[0]; if (!hit) return null;
   return FACE3D_REGIONS[FACE3D.mesh.r[hit.face.a]] || null;
-}
-function face3dPick(e) {
-  const st = FACE3D.st, T = FACE3D.three; if (!st) return;
-  const cv = st.renderer.domElement, rc = cv.getBoundingClientRect();
-  const p = new T.Vector2(((e.clientX - rc.left) / rc.width) * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
-  const ray = new T.Raycaster(); ray.setFromCamera(p, st.cam);
-  const hit = ray.intersectObject(st.face)[0], tip = document.getElementById(st.tip);
-  if (!tip) return;
-  if (!hit) { tip.hidden = true; return; }
-  const ri = FACE3D.mesh.r[hit.face.a], id = FACE3D_REGIONS[ri];
-  if (!id) { tip.hidden = true; return; }
-  const unit = st.unit || (face3dWeeks(8).mode === 'spots' ? '個' : '日');
-  tip.textContent = unit === 'flag' ? `${areaName(id)}：${st.counts[id] ? '今日気になる' : '記録なし'}` : `${areaName(id)}：${st.counts[id] || 0}${unit}`;
-  tip.style.left = (e.clientX - rc.left) + 'px'; tip.style.top = (e.clientY - rc.top - 34) + 'px'; tip.hidden = false;
-  clearTimeout(tip._t); tip._t = setTimeout(() => { tip.hidden = true; }, 2200);
 }
 function viewCharts() {
   if (ui.chartRange === 90 && locked()) ui.chartRange = 30;
@@ -12061,108 +11138,10 @@ function viewReport() {
 /* =========================================================
    画面：支出管理
    ========================================================= */
-function viewSpending() {
-  const mk = ui.spendMonth, cur = monthKey(todayStr());
-  const total = monthTotal(mk), prevTotal = monthTotal(shiftMonth(mk, -1));
-  const months = [-5,-4,-3,-2,-1,0].map(n => shiftMonth(mk, n));
-  const vals = months.map(monthTotal);
-  const avg5 = vals.slice(0, 5).filter(v => v > 0);
-  const budget = state.settings.monthlyBudget;
-  const list = allPurchases().filter(x => monthKey(x.date) === mk);
-  const byCat = {};
-  list.forEach(x => byCat[x.category] = (byCat[x.category] || 0) + x.price);
-  const catRows = Object.entries(byCat).sort((a,b) => b[1] - a[1]);
-  const catMax = Math.max(1, ...catRows.map(r => r[1]));
-  let html = pageHead('支出', 'スキンケアにかかったお金を管理し、無駄な購入を減らします。', `<button class="btn btn-primary" data-action="new-my">${icon('plus')}購入を登録</button>`);
-  html += `<div class="card nav-bar" style="margin-bottom:16px">
-    <button class="btn btn-ghost btn-sm" data-action="spend-prev">← 前月</button><strong>${fmtMonth(mk)}</strong>
-    <button class="btn btn-ghost btn-sm" data-action="spend-next" ${mk >= cur ? 'disabled' : ''}>翌月 →</button></div>`;
-  if (!allPurchases().length) {
-    return html + `<div class="card">${emptyBox('wallet', '購入記録がまだありません', 'Myアイテムを登録するときに購入価格を入力するか、詳細画面の「購入記録」から追加すると、ここに集計されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録する</button>')}</div>`;
-  }
-  html += `<div class="grid g3">
-    <div class="card"><div class="small muted">${fmtMonth(mk)}の支出</div><div class="big-stat" style="margin-top:4px">${yen(total)}</div><div class="small" style="margin-top:4px">${list.length}件の購入</div></div>
-    <div class="card"><div class="small muted">前月との比較</div><div class="big-stat" style="margin-top:4px">${total - prevTotal >= 0 ? '+' : '−'}${yen(Math.abs(total - prevTotal))}</div>
-      <div class="small muted" style="margin-top:4px">前月 ${yen(prevTotal)}${avg5.length ? `／過去5か月平均 ${yen(avg(avg5))}（支出があった月のみ）` : ''}</div></div>
-    <div class="card"><div class="small muted">月の予算</div>
-      ${budget > 0 ? `<div class="big-stat" style="margin-top:4px">${yen(budget)}</div><div class="progress ${total > budget ? 'over' : ''}"><i style="width:${Math.min(100, total / budget * 100).toFixed(1)}%"></i></div><div class="small" style="margin-top:6px;${total > budget ? 'color:var(--danger)' : ''}">${total > budget ? `${yen(total - budget)} 超過` : `残り ${yen(budget - total)}`}</div>`
-        : `<p class="small muted" style="margin-top:8px">予算を設定すると、使いすぎに気づきやすくなります。</p><a class="btn btn-soft btn-sm" style="margin-top:8px" href="#/settings">予算を設定</a>`}</div>
-  </div>
-  <div class="card mt"><div class="card-h"><h2>月ごとの購入額（6か月）</h2></div>
-    ${chartSlot('spend', w => barChart(w, {labels:months.map(m => Number(m.slice(5)) + '月'), values:vals, highlight:5, fmt:v => yen(v), short:v => v >= 10000 ? (v/10000).toFixed(1) + '万' : Math.round(v).toLocaleString(), label:'月ごとの購入額'}))}</div>
-  <div class="grid g2 mt">
-    <div class="card"><div class="card-h"><h2>カテゴリ別（${Number(mk.slice(5))}月）</h2></div>
-      ${catRows.length ? catRows.map(([c, v]) => `<div class="hbar"><span>${esc(c)}</span><span class="bar"><i style="width:${(v / catMax * 100).toFixed(1)}%"></i></span><span class="v">${yen(v)}</span></div>`).join('') : '<p class="small muted">この月の購入はありません。</p>'}</div>
-    <div class="card"><div class="card-h"><h2>商品別の支出（${Number(mk.slice(5))}月）</h2></div>
-      ${list.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>商品</th><th>購入日</th><th class="r">金額</th></tr></thead><tbody>${list.map(x => `<tr><td><a href="#/my/${encodeURIComponent(x.productId)}" style="color:inherit">${esc(x.name)}</a><div class="small muted">${esc(x.brand)}</div></td><td class="small">${fmtShort(x.date)}</td><td class="r">${yen(x.price)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">この月の購入はありません。</p>'}</div>
-  </div>`;
-  const cost = state.myProducts.filter(p => p.purchases.length).map(p => {
-    const sum = p.purchases.reduce((a,b) => a + b.price, 0), days = p.status === STOCK ? null : Math.max(1, diffDays(p.startDate, productEnd(p)) + 1);
-    return {p, sum, days, perDay:days ? sum / days : null};
-  }).sort((a,b) => b.sum - a.sum);
-  html += `<div class="card mt"><div class="card-h"><h2>商品ごとの累計支出と使用日数</h2></div>
-    <div class="table-wrap"><table class="table"><thead><tr><th>商品</th><th class="r">累計支出</th><th class="r">使用日数</th><th class="r">1日あたり</th></tr></thead><tbody>
-    ${cost.map(c => `<tr><td>${esc(c.p.name)}<div>${statusChip(c.p.status)}</div></td><td class="r">${yen(c.sum)}</td><td class="r">${c.days ? c.days + '日' : '未使用'}</td><td class="r">${c.perDay != null ? yen(c.perDay) : '—'}</td></tr>`).join('')}
-    </tbody></table></div>
-    <p class="small muted" style="margin-top:10px">1日あたり＝累計支出 ÷ 使用開始日から今日（または使用終了日）までの日数。使い切ったかどうかは考慮していない目安です。</p></div>`;
-  return html;
-}
 
 /* =========================================================
    画面：買う前チェック
    ========================================================= */
-function viewCheck(catId) {
-  const target = catId ? getCat(catId) : null;
-  if (target && !ui._checkFrom) { ui.checkCat = target.category; ui.checkPurpose = target.purposes[0] || ''; }
-  ui._checkFrom = catId || '';
-  const t = todayStr(), mk = monthKey(t);
-  let html = (target ? `<a class="back" href="#/product/${encodeURIComponent(target.id)}">← 商品詳細</a>` : '') +
-    pageHead('買う前チェック', '新しく買う前に、手持ちの化粧品・過去の記録・予算を確認します。') +
-    `<div class="notice green">このチェックは購入をすすめるものではありません。手持ちの商品で足りるかどうかを考えるための材料です。</div>
-    <div class="card"><div class="form-grid two">
-      <div class="field"><label class="lbl" for="chk-cat">買おうとしているもののカテゴリ</label><select class="select" id="chk-cat" data-ui="checkCat"><option value="">選んでください</option>${CATEGORIES.map(c => `<option ${ui.checkCat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-      <div class="field"><label class="lbl" for="chk-purpose">使用目的<span class="opt">任意</span></label><select class="select" id="chk-purpose" data-ui="checkPurpose"><option value="">指定しない</option>${PURPOSES.map(c => `<option ${ui.checkPurpose === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-    </div>${target ? `<p class="small muted" style="margin-top:10px">対象：${esc(target.name)}</p>` : ''}</div>`;
-  if (!ui.checkCat) return html + `<div class="card">${emptyBox('check', 'カテゴリを選んでください', 'カテゴリを選ぶと、同じ種類の手持ちの商品や過去の記録が表示されます。')}</div>`;
-  const sameCat = state.myProducts.filter(p => p.category === ui.checkCat);
-  const activeSame = sameCat.filter(p => p.status === '使用中' || p.status === '一時停止');
-  const stockSame = sameCat.filter(p => p.status === STOCK);
-  const pastSame = sameCat.filter(p => p.status === '使用終了');
-  const purposeSame = ui.checkPurpose ? state.myProducts.filter(p => p.status === '使用中' && p.purposes.includes(ui.checkPurpose) && p.category !== ui.checkCat) : [];
-  const li = p => `<li><a href="#/my/${encodeURIComponent(p.id)}">${esc(p.name)}</a> ${statusChip(p.status)}${p.memo ? `<div class="small muted">${esc(truncate(p.memo, 60))}</div>` : ''}</li>`;
-  html += `<div class="grid g2 mt">
-    <div class="card"><div class="card-h"><h2>手持ちの「${esc(ui.checkCat)}」</h2></div>
-      ${activeSame.length || stockSame.length ? `<ul class="points">${activeSame.concat(stockSame).map(li).join('')}</ul>
-        ${stockSame.length ? `<div class="alert-card info" style="margin-top:10px"><b>ストックがあります</b>未開封の「${esc(ui.checkCat)}」が${stockSame.length}件あります。</div>` : ''}
-        ${activeSame.length ? `<div class="alert-card info" style="margin-top:10px"><b>使用中の商品があります</b>今の商品の置き換えなのか、追加なのかを考えてみてください。</div>` : ''}`
-      : '<p class="small muted">使用中・ストックの同じカテゴリの商品はありません。</p>'}
-      ${purposeSame.length ? `<div class="divider"></div><p class="small" style="margin-bottom:6px">「${esc(ui.checkPurpose)}」が目的の、ほかのカテゴリの使用中商品：</p><ul class="points">${purposeSame.map(li).join('')}</ul>` : ''}
-    </div>
-    <div class="card"><div class="card-h"><h2>過去に使った「${esc(ui.checkCat)}」</h2></div>
-      ${pastSame.length ? pastSame.map(p => { const st = periodStats(p.startDate, productEnd(p)); return `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><a href="#/my/${encodeURIComponent(p.id)}" style="font-weight:600">${esc(p.name)}</a>
-        <div class="small muted">${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}／使用期間中の肌の調子 ${st.n >= 3 ? f1(st.cond) + `（${st.n}件）` : '記録不足'}</div>${p.memo ? `<div class="small">${esc(truncate(p.memo, 80))}</div>` : ''}</div>`; }).join('')
-        + '<p class="small muted" style="margin-top:8px">過去の使用感メモは、同じような商品を買い直すかどうかの参考になります。肌の調子の数値は商品の効果を示すものではありません。</p>'
-      : '<p class="small muted">過去の記録はありません。</p>'}</div>
-  </div>`;
-  const budget = state.settings.monthlyBudget, mTotal = monthTotal(mk);
-  const price = target && target.price ? target.price : 0;
-  let best = null;
-  if (target) { const el = target.offers.filter(o => o.kind === 'online' && offerIssues(o, target).length === 0 && offerTotal(o) != null); best = el.sort((a,b) => offerTotal(a) - offerTotal(b))[0]; }
-  html += `<div class="card"><div class="card-h"><h2>予算と価格</h2></div><dl class="kv">
-    <dt>今月の支出</dt><dd>${yen(mTotal)}${budget ? `（予算 ${yen(budget)}・残り ${yen(Math.max(0, budget - mTotal))}）` : '（予算未設定）'}</dd>
-    ${target ? `<dt>この商品の価格</dt><dd>${price ? yen(price) : '未確認'}${price && budget ? `　→ 購入後の残り ${budget - mTotal - price >= 0 ? yen(budget - mTotal - price) : yen(mTotal + price - budget) + ' 超過'}` : ''}</dd>
-      <dt>単価</dt><dd>${esc(perUnitText(target.price, target.volume) || '内容量または価格が未確認')}</dd>
-      <dt>確認済みの最安</dt><dd>${best ? `${yen(offerTotal(best))}（${esc(best.shop)}・送料込み）` : '未確認'} <a href="#/prices/${encodeURIComponent(target.id)}">価格比較へ</a></dd>` : ''}
-  </dl></div>
-  <div class="card"><div class="card-h"><h2>考えるための質問</h2></div><ul class="points">
-    <li>今使っている商品は、いつごろ使い切る予定ですか？</li>
-    <li>今の商品の<b>置き換え</b>ですか、それとも<b>追加</b>ですか？ 追加の場合、スキンケアの手間とお金が増えます。</li>
-    <li>何を目的に買いますか？ その目的は、手持ちの商品で足りていませんか？</li>
-    <li>新しい商品は1つずつ試すと、肌の記録を見比べやすくなります。</li>
-    <li>気になる肌の症状が続いている場合は、商品を増やす前に皮膚科医に相談することも選択肢です。</li>
-  </ul></div>`;
-  return html;
-}
 
 /* =========================================================
    アカウント・有料プラン（Supabase でログイン、Stripe で決済）
@@ -13113,7 +12092,6 @@ function settingsEmbedHtml(kind) {
 }
 // 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
 function refreshAccPanel(k) { const r = parseRoute(); if (r.name === 'account' && r.id === k && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render(); }
-function refreshAccPanelOld(k) { const pn = document.getElementById('acc-panel-' + k); if (pn && !pn.hidden) pn.innerHTML = ACC_SECTIONS[k].body(); const sec = document.getElementById('acc-sec-' + k); if (sec) { const sm = sec.querySelector('.acc-toggle small'); if (sm) sm.innerHTML = ACC_SECTIONS[k].d(); } }
 // ---------- 研究への協力（任意）：肌質ごとに「どの成分を使って、肌がどう変わったか」を統計にする ----------
 // 送るのは、肌質・年代と「成分ごとの肌の変化の平均」だけ。日付・メモ・写真・商品名・メールアドレス・位置は送らない
 const RESEARCH_MIN_LOGS = 14;
@@ -13354,7 +12332,6 @@ const actions = {
   'rt-reset': k => { delete rtSettings().order[k]; save(); hapticSaved(); render(); },
   'rt-step': n => { ui.rtStep = Math.max(0, (ui.rtStep || 0) + Number(n)); render(); window.scrollTo({top:0, behavior:'smooth'}); },
   'ing-c': k => { ui.ingC = k; render(); },
-  'combo-tab': k => { ui.comboTab = k; hapticTick(); render(); },
   'cc-clear': k => { ui[k === 'a' ? 'ccA' : 'ccB'] = ''; if (k === 'a') { ui.ccA = ui.ccB || ''; ui.ccB = ''; } render(); setTimeout(() => { const i = document.getElementById('cc-' + (k === 'a' && ui.ccA ? 'b' : k)); if (i) i.focus(); }, 30); },
   'cc-pick': v => { ui.ccB = v; render(); setTimeout(() => { const c = document.querySelector('.cc-pick'); if (c) c.scrollIntoView({block:'start', behavior:'smooth'}); }, 30); },
   'cc-lv': v => { ui.ccLv = ui.ccLv === Number(v) ? 0 : Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
@@ -13377,29 +12354,14 @@ const actions = {
     state.skinLogs = state.skinLogs.filter(x => x.id !== id);
     if (save()) { toast('記録を削除しました'); render(); }
   },
-  'new-life': v => { const t = v === 'free' ? null : getLife(todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLifeForm(t.id); } else openLifeForm(); },
-  'edit-life': id => openLifeForm(id),
   'life-part': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'life-edit': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'life-day': v => { const [date, part] = String(v).split('|'); const l = getLife(date); openLifeForm(l ? l.id : null, part, date); },
-  'meal-edit': () => { const L = getLife(todayStr()); closeModal(); openLifeForm(L ? L.id : null, 'meal'); },
-  'delete-life': async id => {
-    const l = state.lifeLogs.find(x => x.id === id); if (!l) return;
-    if (!await confirmDialog(`${fmtDate(l.date)}の食事・睡眠の記録を削除しますか？`)) return;
-    state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
-    if (save()) { toast('削除しました'); render(); }
-  },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); swScrollTop(); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
   'edit-my': id => openMyForm(id),
-  'end-my': async id => {
-    const p = getMy(id); if (!p) return;
-    if (!await confirmDialog(`「${p.name}」を今日（${fmtMD(todayStr())}）で使用終了にしますか？\n過去の商品として記録が残ります。日付は「編集」で変更できます。`, {ok:'使用終了にする', danger:false})) return;
-    p.status = '使用終了'; p.endDate = todayStr() < p.startDate ? p.startDate : todayStr();
-    if (save()) { toast('使用終了にしました'); render(); }
-  },
   'ng-open': (id, el) => { if (parseRoute().name === 'my' && getMy(id) && getMy(id).ng) { location.hash = '#/trouble'; return; } openNgForm(id, el && el.dataset.date); },
   'my-menu': () => myMenuOpen(),
   'ng-save': id => {
@@ -13418,14 +12380,6 @@ const actions = {
     if (save()) { toast('削除しました'); location.hash = '#/my'; }
   },
   'compare-with': id => { ui.cmpA = id; ui.cmpB = ''; location.hash = '#/compare'; },
-  'add-purchase': id => openPurchaseForm(id),
-  'delete-purchase': async v => {
-    const [pid, xid] = split2(v); const p = getMy(pid); if (!p) return;
-    const x = p.purchases.find(y => y.id === xid); if (!x) return;
-    if (!await confirmDialog(`${fmtDate(x.date)}の購入記録（${yen(x.price)}）を削除しますか？`)) return;
-    p.purchases = p.purchases.filter(y => y.id !== xid);
-    if (save()) { toast('購入記録を削除しました'); render(); }
-  },
   'new-cat': () => openCatForm(),
   'edit-cat': id => openCatForm(id),
   'delete-cat': async id => {
@@ -13435,33 +12389,6 @@ const actions = {
     state.myProducts.forEach(m => { if (m.catalogId === id) { if (!m.ingredients) m.ingredients = p.ingredients; m.catalogId = ''; } });
     state.catalog = state.catalog.filter(x => x.id !== id);
     if (save()) { toast('商品を削除しました'); location.hash = '#/my'; }
-  },
-  'price-search': id => priceSearch(id),
-  'price-set-jan': async v => {
-    const [pid, idx] = split2(v); const p = getCat(pid); const st = ui.priceRes[pid];
-    const x = p && st && st.items[Number(idx)]; if (!x || !isValidJan(x.jan || '')) return;
-    const other = state.catalog.find(c => c !== p && c.jan === x.jan);
-    if (other) { toast(`このJANコードは「${other.name}」に登録されています`, 'error'); return; }
-    if (!await confirmDialog(`「${x.name.slice(0, 60)}」と同じ商品として、JANコード ${x.jan} を登録しますか？\n内容量・セット内容が同じかを確認してから登録してください。`, {ok:'登録する', danger:false, title:'JANコードの登録'})) return;
-    p.jan = x.jan;
-    if (save()) { toast('JANコードを登録しました。同じ商品だけを探し直します'); priceSearch(pid); }
-  },
-  'add-price-hit': v => {
-    const [pid, idx] = split2(v); const p = getCat(pid); const st = ui.priceRes[pid];
-    const x = p && st && st.items[Number(idx)]; if (!x) return;
-    const o = normOffer({id:uid(), kind:'online', shop:`${x.shop || x.site}（${x.site}）`, url:safeUrl(x.url), price:x.price,
-      shipping:x.shipping === 'included' ? 0 : null, volume:p.volume, same:false, checkedAt:todayStr(), memo:x.name.slice(0, 100)});
-    p.offers.push(o);
-    if (save()) { toast('追加しました。送料と、同じ商品かどうかを確認してください'); render(); openOfferForm(pid, o.id, true); }
-  },
-  'new-offer': v => { const [pid, kind] = split2(v); openOfferForm(pid, kind, false); },
-  'edit-offer': v => { const [pid, oid] = split2(v); openOfferForm(pid, oid, true); },
-  'delete-offer': async v => {
-    const [pid, oid] = split2(v); const p = getCat(pid); if (!p) return;
-    const o = p.offers.find(x => x.id === oid); if (!o) return;
-    if (!await confirmDialog(`「${o.shop}」の情報を削除しますか？`)) return;
-    p.offers = p.offers.filter(x => x.id !== oid);
-    if (save()) { toast('削除しました'); render(); }
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
   'go-back': () => goBack('#/home'),
@@ -13492,12 +12419,9 @@ const actions = {
   'reco-cap-save': () => { const f = document.getElementById('f_recoCap'), v = Math.round(Number(f && f.value) || 0); if (v < 300 || v > 100000) { toast('300〜100,000円の間で入力してください'); return; } dismissModal(); recoSetCap(v); },
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
   'reco-add': id => recoAdd(id),
-  'a2hs-guide': () => { hapticTick(); openA2hsGuide(); },
-  'a2hs-done': () => { state.settings.a2hsDone = true; save(); dismissModal(); hapticSaved(); render(); },
   'shop-to-my': () => { const x = ui.shopItem; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); },
   'start-hide': () => { state.settings.startHidden = true; save(); render(); toast('「はじめにやること」を閉じました'); },
   'sw-auth': () => swAuth(),
-  'care-done': k => careDone(k),
   'google-login': () => googleLogin(),
   'photo-compare': () => openPhotoCompare(),
   'wx-setup': () => openWxSetup(),
@@ -13506,10 +12430,8 @@ const actions = {
   'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); wxFetch(true, true); const b = document.getElementById('top-wx'); if (b) b.innerHTML = '<span class="twx-load">現在地を確認中…</span>'; toast('位置情報の確認が出たら「許可」を押してください'); },
   'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
   'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
-  'cart-toggle': id => cartToggle(id),
   'reco-view': id => { const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (x) prodOpenFrom(x, g.items); },
   'net-view': i => { const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (x) prodOpenFrom(x, ui.net.items); },
-  'flt-sheet': () => openFilterSheet(),
   'research-on': async () => {
     const ad = document.getElementById('f_adult');
     if (state.settings.ageBand === '17歳以下') { toast('研究への協力は、18歳以上の方だけにお願いしています。', 'error'); return; }
@@ -13523,7 +12445,6 @@ const actions = {
     refreshAccPanel('settings'); render();
   },
   'flt-done': () => { closeModal(); render(); },
-  'flt-clear': k => { if (k === 'ing') ui.ing = false; else if (k === 'sort') ui.sort = 'std'; else ui[k] = ''; render(); },
   'add-sheet': kind => openAddSheet(kind),
   'setup': () => openSetupWizard(),
   'setup-later': () => swSave(false),
@@ -13562,8 +12483,6 @@ const actions = {
     setTimeout(tick, 900);
   },
   'theme': v => { applyTheme(v); const y = scrollY; render(); scrollTo(0, y); },
-  'map-layer': v => { ui.mapLayer = v; const y = scrollY; render(); scrollTo(0, y); },
-  'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
   'use-geo': async () => {
     ui.geoHelp = '';
     if (!window.isSecureContext) { ui.geoHelp = 'insecure'; render(); return; }
@@ -13588,21 +12507,9 @@ const actions = {
       render();
     }, {enableHighAccuracy:false, timeout:15000, maximumAge:60000});
   },
-  'store-search': () => storeSearchByName(),
-  'store-pick': i => { const c = ui.storeCands[Number(i)]; if (c && !ui.storeBusy) storeSearchAt(c, true); },
-  'store-add': i => openStoreAddForm(Number(i)),
-  'clear-geo': () => { ui.geo = null; if (ui.storeRes && ui.storeRes.center && ui.storeRes.center.label === '現在地') ui.storeRes = null; render(); },
   'acct-retry': () => { acct.status = 'idle'; initCloud(); },
   'support-open': () => openSupport(),
   'auth-open': v => { acct.msg = ''; openAuth(v === 'signup' ? 'signup' : 'login').then(ok => { if (!ok) return; if (parseRoute().name !== 'home') location.hash = '#/home'; else render(); }); }, // ログインしたらホームへ
-  'acct-mode': v => { acct.mode = v === 'signup' ? 'signup' : 'login'; acct.msg = ''; render(); },
-  'acct-forgot': async () => {
-    const el = $('#f_email'), email = el ? el.value.trim() : '';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('先にメールアドレスを入力してください', 'error'); if (el) el.focus(); return; }
-    if (!await confirmDialog(`${email} に、パスワードを再設定するためのメールを送りますか？`, {ok:'送る', danger:false, title:'パスワードの再設定'})) return;
-    try { const {error} = await acct.client.auth.resetPasswordForEmail(email, {redirectTo:appUrl()}); if (error) throw error; acct.msg = 'パスワード再設定のメールを送りました。メール内のリンクを押すと、新しいパスワードを設定できます。'; render(); }
-    catch (e) { toast(authErrMsg(e), 'error'); }
-  },
   'acc-profile': () => openProfile(),
   'perm-geo': () => {
     ui.permGeoBusy = true; permRefresh(); actions['wx-geo']();
@@ -13649,10 +12556,6 @@ const actions = {
     try { await photoDeleteAll(); try { const sub = pushSupported() ? await pushSub() : null; if (sub) { await callPush('unsubscribe', {endpoint:sub.endpoint}); await sub.unsubscribe(); } } catch (e) { /* 何もしない */ } await callBilling('delete_account'); try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; toast('アカウントを削除しました'); }
     catch (e) { toast(e.message, 'error'); }
     acct.busy = false; render();
-  },
-  'sg-save': () => {
-    state.settings.concerns = $$('input[name="sg-concern"]:checked').map(i => i.value);
-    if (save()) { toast(state.settings.concerns.length ? '肌悩みを保存しました' : '肌悩みの設定を外しました'); render(); }
   },
   'visit-range': v => { ui.visitRange = Number(v) || 30; render(); },
   'visit-photos': (id, el) => { ui.visitPhotos = el.checked; render(); },
@@ -13715,22 +12618,9 @@ const actions = {
     const w = document.querySelector(`.mrow-w[data-mid="${CSS.escape(id)}"]`);
     if (w) { w.style.transition = 'opacity .2s, max-height .25s'; w.style.maxHeight = w.offsetHeight + 'px'; requestAnimationFrame(() => { w.style.opacity = '0'; w.style.maxHeight = '0px'; }); setTimeout(render, 260); } else render();
   },
-  'my-toggle': id => {
-    const p = getMy(id); if (!p) return;
-    if (p.status === '使用中') p.status = '一時停止'; else { p.status = '使用中'; p.endDate = ''; }
-    save(); hapticSaved();
-    // 画面全体を作り直さずに、そのスイッチだけ切り替える（並びやスクロールの位置を変えない）
-    const b = document.querySelector(`.m-sw[data-id="${CSS.escape(id)}"]`), on = p.status === '使用中';
-    if (!b) { render(); return; }
-    b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); b.querySelector('span').textContent = on ? '使用中' : '停止中';
-    b.setAttribute('aria-label', `${p.name}を${on ? '停止中にする' : '使用中にする'}`);
-    const w = b.closest('.mrow-w'); if (w) w.classList.toggle('off', !on);
-  },
   'chart-range': v => { if (Number(v) === 90 && locked()) { toast('90日間のグラフは' + PREMIUM_NAME + 'の機能です'); return; } ui.chartRange = Number(v); render(); },
   'report-prev': () => { ui.reportOffset--; render(); },
   'report-next': () => { if (ui.reportOffset < 0) { ui.reportOffset++; render(); } },
-  'spend-prev': () => { ui.spendMonth = shiftMonth(ui.spendMonth, -1); render(); },
-  'spend-next': () => { if (ui.spendMonth < monthKey(todayStr())) { ui.spendMonth = shiftMonth(ui.spendMonth, 1); render(); } },
   'open-menu': () => toggleDrawer(),
   'export-csv': () => {
     const q = v => { const x = String(v == null ? '' : v); return /[",\n\r]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
@@ -13800,11 +12690,6 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(l => !l.demo);
     state.myProducts = state.myProducts.filter(p => !p.demo);
     if (save()) { toast('デモデータを削除しました'); render(); }
-  },
-  'reset-samples': async () => {
-    if (!await confirmDialog('サンプル商品（8件）を初期状態に戻しますか？\nサンプル商品に追加した価格・店舗の情報も初期状態に戻ります。ご自身で追加した商品はそのまま残ります。', {ok:'初期状態に戻す', danger:false})) return;
-    state.catalog = state.catalog.filter(p => !p.isSample).concat(sampleCatalog());
-    if (save()) { toast('サンプル商品を初期状態に戻しました'); render(); }
   },
   'delete-all': async () => {
     if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・Myアイテム・支出・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
@@ -14255,9 +13140,9 @@ function render() {
   if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; }
   if (r.name === 'suggest') { location.replace('#/settings'); return; }
   if (r.name === 'check' || r.name === 'spending') { location.replace('#/account'); return; } // 支出・予算の機能はなくした // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
-  const views = {home:viewHome, shop:viewShop, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
+  const views = {home:viewHome, shop:viewShop, product:() => viewProduct(r.id),
     ingredients:() => viewIngredients(r.id), care:() => viewCare(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo, trouble:viewTrouble,
-    log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
+    log:viewLog, charts:viewCharts, report:viewReport, settings:viewSettings, account:viewAccount, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), visit:viewVisit};
   const alias = {trouble:'my', care:'home', account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'account', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
