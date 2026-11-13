@@ -11895,8 +11895,11 @@ function personalAnalysis() {
   if (L7.length >= 3 && P7.length >= 3) [['acne', 'acne', 0.5], ['redness', 'red', 0.5], ['dry', 'dry', 0.5], ['oily', 'oil', 0.5]].forEach(([k, n, th]) => { const df = mean(L7, n) - mean(P7, n); trend[k] = df >= th ? 'worse' : df <= -th ? 'better' : 'same'; if (trend[k] === 'worse') add(k, 0.8, '先週より悪くなっている'); });
   if (sc.redness && sc.sensitive) { sc.redness += sc.sensitive * 0.5; why.redness = (why.redness || []).concat(why.sensitive || []); delete sc.sensitive; } // 赤みと敏感は同じケアなので1つにまとめる
   const ranked = Object.entries(sc).filter(([k, v]) => v >= 1 && concernOf(k)).sort((a, b) => b[1] - a[1]);
-  const others = ranked.slice(3, 7).map(([k]) => ({k, name:concernOf(k).s}));
-  const top = ranked.slice(0, 3).map(([k, v]) => ({k, v, name:concernOf(k).s, why:[...new Set(why[k] || [])].slice(0, 4), trend:trend[k] || ''}));
+  // 自分で選んだ悩みは、記録にあまり出ていなくても上位に入れる（2つまで）。残りを記録・診断から
+  const chosen = ranked.filter(([k]) => ck.includes(k) || (k === 'redness' && ck.includes('sensitive'))).slice(0, 2), rest0 = ranked.filter(x => !chosen.includes(x));
+  const ranked2 = chosen.concat(rest0.slice(0, 3 - chosen.length)).sort((a, b) => b[1] - a[1]).concat(rest0.slice(3 - chosen.length));
+  const others = ranked2.slice(3, 7).map(([k]) => ({k, name:concernOf(k).s}));
+  const top = ranked2.slice(0, 3).map(([k, v]) => ({k, v, name:concernOf(k).s, why:[...new Set(why[k] || [])].slice(0, 4), trend:trend[k] || ''}));
   // ② 悩みごとのケア・成分（持っている物に入っていれば、それを続ける。併用注意はおすすめしない）
   const owned = new Map(); inUse.forEach(x => (x.ings || []).forEach(e => { if (!owned.has(e.k)) owned.set(e.k, x); }));
   const pool = comboPool(), pickedTags = [];
