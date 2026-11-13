@@ -3052,6 +3052,8 @@ const ICONS = {
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   bottle:'<path d="M9.5 2h5v4l2.5 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9l2.5-3z"/><path d="M7 13h10"/>',
   note:'<path d="M5 3h10l4 4v14H5z"/><path d="M9 12h6M9 16h6M9 8h3"/>',
+  run:'<circle cx="14.8" cy="4.3" r="2"/><path d="M6.5 10.2 9.8 8h3.6l2.4 3.2 3 .6"/><path d="M13.2 8.2 10.6 13.6l3.6 2.6-1 4.8"/><path d="M10.6 13.6 8 17.4l-3.6-.6"/>',
+  meal:'<path d="M6.5 3v5.5a2.2 2.2 0 0 0 4.4 0V3M8.7 3v18"/><path d="M17.5 21V3c-2.2 1.4-3.3 4-3.3 7.2 0 1.7.9 2.7 3.3 2.7"/>',
   bodyskin:'<circle cx="9" cy="6.2" r="2.7"/><path d="M3.8 20.5v-3.2a5.2 5.2 0 0 1 10.4 0v3.2"/><path d="M18.5 8.8c1.5 1.9 2.6 3.3 2.6 4.8a2.6 2.6 0 0 1-5.2 0c0-1.5 1.1-2.9 2.6-4.8z"/>',
   drop:'<path d="M12 3.5c3.2 4 6 7.2 6 10.6a6 6 0 0 1-12 0c0-3.4 2.8-6.6 6-10.6z"/>',
   chart:'<path d="M4 20V4M4 20h16"/><path d="m7 15 4-5 3 3 5-6"/>',
@@ -4158,7 +4160,7 @@ function lifeSumHtml(lf, date) {
   const mealRadar = `<button type="button" class="ls-radar" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|meal' : 'meal'}" aria-label="栄養のバランスを見る">${nutRadarSvg(ft, 210, true)}<span class="ls-rnote"><i class="ls-rkey"></i>緑の点線が1日の目安（100%）</span></button>`;
   // 記録一覧（date あり）では見出しを出さない
   return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
-    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
+    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'run', '運動', eMain, eSub, eCls)}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
 }
 function openLifeGoal() {
   const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
@@ -4227,7 +4229,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero hero-home"><div class="hero-wx" id="top-wx">${wxTopInner()}</div>
-    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div>${streakLine(map, t)}</section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('run')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('meal')}食事</button></div>${streakLine(map, t)}</section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
@@ -10553,7 +10555,7 @@ function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
   const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
-  const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'chart', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'note', '食事', '食事']];
+  const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'run', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'meal', '食事', '食事']];
   let AP = {ai:null, pts:[]}; try { AP = advicePts(); } catch (e) { /* 何もしない */ }
   const ptOf = a => AP.pts.find(x => x && x.area === a) || AP.pts[ADVICE_AREAS.indexOf(a)];
   const w = D.w, wxLine = w ? `湿度${Math.round(w.hum)}%・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${w.uv == null ? '－' : Math.round(w.uv)}` : '';
