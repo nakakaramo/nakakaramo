@@ -2303,7 +2303,7 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* 今日の記録：調子のラベルは拡大ボタンと同じ高さ（上の段）。下の段は 左＝ニキビ〜皮脂、右＝3D（同じ高さ） */
 .t3-card:has(.t3-old){padding-top:52px}
 .t3-card .t3-old .t3-tags{position:absolute;top:16px;left:20px;margin:0} /* 大きさは「記録一覧」の調子と同じ */
-.t3-card .t3-grid:has(.t3-old){grid-template-columns:minmax(0,.88fr) minmax(0,1.44fr);column-gap:10px;align-items:stretch}
+.t3-card .t3-grid:has(.t3-old){grid-template-columns:minmax(0,.92fr) minmax(0,1.38fr);column-gap:12px;align-items:stretch}
 .t3-card .t3-old{justify-content:space-between;gap:0;padding-top:var(--t3-top,0px)}
 .t3-card .t3-old .t3-acne{margin:0;line-height:1;font-size:12.5px}
 .t3-card .t3-old .t3-acne b{font-size:22px;margin:0 2px 0 5px}
@@ -2359,11 +2359,12 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .cm-prog{height:6px;border-radius:6px;background:var(--surface2);overflow:hidden;margin:10px 0 4px}.cm-prog span{display:block;height:100%;background:var(--green);border-radius:6px}
 .cm-diag{margin-top:12px}
 .cm-list{list-style:none;margin:0 0 14px;padding:0;position:relative}
-.cm-step{position:relative;display:flex;gap:12px;padding:0 0 12px}
-.cm-step::before{content:"";position:absolute;left:17px;top:40px;bottom:2px;width:2px;background:var(--line);border-radius:2px}
+.cm-step{position:relative;display:block;padding:0 0 12px}
+.cm-step::before{content:none}
 .cm-step:last-child::before{display:none}
-.cm-n{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid var(--green);background:var(--surface);color:var(--green-d);font:inherit;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:12px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.cm-n{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid var(--green);background:var(--surface);color:var(--green-d);font:inherit;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:0;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .cm-n svg{width:18px;height:18px}
+.cm-hd{display:flex;align-items:center;gap:11px}.cm-hd-t{min-width:0;flex:1}.cm-hd .cm-ph{margin-bottom:1px}
 .cm-step.done .cm-n{background:var(--green);color:#fff}
 .cm-b{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
 .cm-step.done .cm-b{opacity:.62}
@@ -2384,15 +2385,8 @@ html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-them
 .cm-ing>div{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
 .cm-c{font-size:12px;font-weight:600;line-height:1.3;padding:4px 9px;border-radius:999px}
 .cm-c.good{background:#EEF6F0;color:var(--green-d)}
-button.cm-c.bad{box-shadow:inset 0 0 0 1px #F2CFC4}.cm-c{white-space:nowrap}
+button.cm-c.bad{box-shadow:inset 0 0 0 1px #F2CFC4}.cm-c{max-width:100%;text-align:left}
 .av-note{display:inline-block;margin:0 0 10px;font-size:12px;font-weight:700;color:#7A5A12;background:#FBF3E2;border-radius:999px;padding:3px 10px}
-.cm-flow{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin:0 0 14px}
-.cm-fl-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px}
-.cm-fl{display:inline-flex;align-items:center;gap:5px;border:0;background:var(--surface2,#F6F3EE);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
-.cm-fl b{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center}.cm-fl b svg{width:12px;height:12px}
-.cm-fl.done{opacity:.6}
-.cm-fl-ar{font-style:normal;color:var(--muted);font-size:14px;line-height:1}
-.cm-fl-note{margin:8px 2px 0;font-size:11.5px;line-height:1.6;color:var(--muted)}
 .cm-ph{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--green-d);margin-bottom:3px}
 .cm-ph i{font-style:normal;font-weight:700;letter-spacing:0;font-size:10.5px;border-radius:999px;padding:1px 7px;background:#EEF6F0}
 .cm-ph.p1 i{background:#E7F0F7;color:#2F5F86}.cm-ph.p2 i{background:#EEF6F0;color:var(--green-d)}.cm-ph.p3 i{background:#F3EDF8;color:#6A4A8A}.cm-ph.p4 i{background:#FBF3E2;color:#7A5A12}.cm-ph.p5 i{background:#FDF1EC;color:#B04A32}.cm-ph.p6 i{background:#FBF3E2;color:#7A5A12}
@@ -5566,7 +5560,7 @@ function avoidCtx() {
 }
 // [当てはまる言葉, どんなもの？, なぜ控えたい？（今の肌に合わせて足す）, 代わりに]
 const AVOID_WHY = [
-  [/重ねづけ|同じ夜/, '', c => 'どちらも角層に働きかける成分なので、同じ夜に重ねると刺激が強くなりすぎて、赤み・皮むけ・ヒリヒリが出やすくなります。', '使う日を分けて、交互に使います。'],
+  [/重ねづけ|同じ夜|併用/, '', c => 'どちらも角層に働きかける成分なので、同じ夜に重ねると刺激が強くなりすぎて、赤み・皮むけ・ヒリヒリが出やすくなります。', '使う日を分けて、交互に使います。'],
   [/熱いお湯|お湯での洗顔/, '38℃以上のお湯で顔を洗うこと。', c => '熱いお湯は、汚れと一緒に肌のうるおいを守る皮脂やセラミドまで流してしまい、洗ったあとに乾燥しやすくなります。' + (c.dry ? '今は乾燥しやすい肌なので、特に気をつけたいところです。' : ''), '32〜34℃くらいの、さわって少しぬるいと感じるお湯で洗います。'],
   [/こする|つぶす|触る/, '', c => /つぶす|触る/.test(c.w) ? 'ニキビを触ったりつぶしたりすると、手の雑菌が入って炎症が強くなったり、跡（色素沈着・くぼみ）が残りやすくなります。' : 'こすると摩擦で角層が傷つき、赤み・くすみ・シミ（色素沈着）の原因になります。' + (c.sens ? '今は肌が敏感になっているので、特にやさしく扱いたいときです。' : ''), c => /つぶす|触る/.test(c.w) ? '触らずに、ニキビ用の塗り薬や成分でケアします。気になるときは皮膚科へ。' : '泡や指の腹でやさしく洗い、タオルは押し当てて水分をとります。'],
   [/スクラブ/, '細かい粒で肌をこすって汚れや角質を落とすタイプの洗顔料・パック。', c => '粒で角層を削るので、肌を守るバリアが弱くなり、赤み・乾燥・ニキビの悪化につながりやすいです。' + (c.rx ? '皮膚科の塗り薬を使っている間は、刺激が重なるので特に控えます。' : c.sens || c.calm ? '今は肌が敏感になっているので、刺激を減らしたいときです。' : ''), '毛穴の汚れが気になるときは、酵素洗顔を週1〜2回にします。'],
@@ -5596,7 +5590,6 @@ function openAvoidSheet(word) {
     ${e ? `<a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : ''}
     <p class="small muted" style="margin-top:8px">今の肌の状態（肌質診断・最近の肌の記録・使っている薬）から出しています。皮膚科で言われていることがあれば、そちらを優先してください。</p></div>`});
 }
-document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-cmgo]'); if (!b) return; const pane = b.closest('.home-pane') || document, el = pane.querySelector('#cm-s' + b.dataset.cmgo) || document.getElementById('cm-s' + b.dataset.cmgo); if (el) { hapticTick(); const y = el.getBoundingClientRect().top + window.scrollY - 70; window.scrollTo({top:Math.max(0, y), behavior:'smooth'}); el.classList.remove('cm-flash'); void el.offsetWidth; el.classList.add('cm-flash'); } });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-avoidsheet]'); if (!b) return; hapticTick(); openAvoidSheet(b.dataset.avoidsheet); });
 // 洗顔料は「成分」ではなく商品の種類なので、洗顔料の中から探す
 const WASH_KIND = [
@@ -8737,7 +8730,7 @@ function rtPlan(slot) {
     const restNote = rest.length ? T(`今日は「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4);
     const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? 'レチノール' : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
-    const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの同じ夜の重ねづけ']).slice(0, 3);
+    const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの併用']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
       today:uniq([restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
     spotSteps(); rxSteps('moist');
@@ -8767,8 +8760,7 @@ function rtPaneHtml(slot) {
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
-    <button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button>
-    <div class="cm-b"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b>
+    <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : s.type ? `<span class="cm-p cm-p0">おすすめ：${esc(s.type)}</span>` : ''}
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
@@ -8776,8 +8768,9 @@ function rtPaneHtml(slot) {
       ${s.good.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${gChips(s)}</div></div>` : ''}
       ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
+  // 前の手順で出した成分・控えたいものは、あとの手順ではくり返さない
+  { const sg = new Set(), sa = new Set(), key = v => String(v).split(/[（）()・\s]+/).filter(Boolean).sort().join('|'); P.steps.forEach(st => { st.good = st.good.filter(v => !sg.has(key(v)) && sg.add(key(v))); st.avoid = st.avoid.filter(v => !sa.has(key(v)) && sa.add(key(v))); }); }
   let h = '';
-  if (P.steps.length) h += `<div class="cm-flow" aria-label="今日の${slot === 'am' ? '朝' : '夜'}のケアの順番"><div class="cm-fl-row">${P.steps.map((st, i) => `${i ? '<i class="cm-fl-ar" aria-hidden="true">›</i>' : ''}<button type="button" class="cm-fl ${done(st) ? 'done' : ''}" data-cmgo="${i}"><b>${done(st) ? icon('check') : i + 1}</b>${esc(shortName(st))}</button>`).join('')}</div><p class="cm-fl-note no-ph">上から順に、前の物がなじんでから次へ。水っぽい物から油っぽい物へ重ねていきます。</p></div>`;
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
@@ -13838,7 +13831,7 @@ function render() {
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:50, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { face3dSaveView(); FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
