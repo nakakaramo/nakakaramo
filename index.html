@@ -174,7 +174,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:20px;height:20px}
 .bn-item{font-weight:600}
-.bn-item span{font-size:11px;font-weight:600;letter-spacing:0;line-height:1.25} /* 上のタブ（今日の記録・おすすめケア…）と同じ文字の感じにそろえる */
+.bn-item span{font-size:10px;font-weight:400;letter-spacing:0;line-height:1.25} /* 上のタブ（今日の記録・おすすめケア…）と同じ文字の感じにそろえる */
 .bn-item.active{color:#E8781E} /* 選んでいる項目はオレンジ（光・太さ・大きさの変化はなし） */
 .bn-item svg,.bn-item span{transition:transform .2s ease}
 .bn-item.active svg{transform:none}
@@ -3052,6 +3052,7 @@ const ICONS = {
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   bottle:'<path d="M9.5 2h5v4l2.5 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9l2.5-3z"/><path d="M7 13h10"/>',
   note:'<path d="M5 3h10l4 4v14H5z"/><path d="M9 12h6M9 16h6M9 8h3"/>',
+  bodyskin:'<circle cx="9" cy="6.2" r="2.7"/><path d="M3.8 20.5v-3.2a5.2 5.2 0 0 1 10.4 0v3.2"/><path d="M18.5 8.8c1.5 1.9 2.6 3.3 2.6 4.8a2.6 2.6 0 0 1-5.2 0c0-1.5 1.1-2.9 2.6-4.8z"/>',
   drop:'<path d="M12 3.5c3.2 4 6 7.2 6 10.6a6 6 0 0 1-12 0c0-3.4 2.8-6.6 6-10.6z"/>',
   chart:'<path d="M4 20V4M4 20h16"/><path d="m7 15 4-5 3 3 5-6"/>',
   calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -8563,7 +8564,6 @@ function rtPlan(slot) {
 function rtPaneHtml(slot) {
   let P; try { P = rtPlan(slot); } catch (e) { console.error(e); return `<div class="card">${emptyBox('note', '表示中にエラーが起きました', 'ページを読み込み直してください。')}</div>`; }
   const lg = rtLog()[slot], done = s => !!lg['cm:' + s.k];
-  const min = Math.max(1, Math.round(P.steps.reduce((a, s) => a + (STEP_MIN[s.k.split(':')[0]] || (s.k === 'moist' ? 0.6 : 0.5)), 0)));
   const nDone = P.steps.filter(done).length;
   const chips = (L, cls) => L.map(x => `<span class="cm-c ${cls}">${esc(x)}</span>`).join('');
   const pname = x => esc((x.p.brand ? x.p.brand + ' ' : '') + x.p.name);
@@ -8576,13 +8576,11 @@ function rtPaneHtml(slot) {
       ${s.good.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${chips(s.good, 'good')}</div></div>` : ''}
       ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid, 'bad')}</div></div>` : ''}
     </div></li>`;
-  let h = `<div class="card cm-sum"><div class="cm-sum-t"><b>${slot === 'am' ? '朝' : '夜'}のケア</b><span>${P.steps.length}工程・約${min}分</span></div>
-    <p class="cm-meta">${P.d ? `${esc(typeLabel(P.d))}` : '肌質：まだ診断していません'}${P.lead.length ? `<br>${esc(P.lead[0])}` : ''}</p>
-    ${nDone ? `<div class="cm-prog"><span style="width:${(nDone / P.steps.length * 100).toFixed(1)}%"></span></div><small class="muted">${nDone} / ${P.steps.length} できました</small>` : ''}
-    ${!P.d ? `<button type="button" class="btn btn-primary btn-sm cm-diag" data-action="setup">${icon('spark')}肌質診断をする（1〜2分）</button>` : ''}</div>`;
+  let h = '';
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
+  if (!P.d) h += `<div class="card cm-hint"><p class="small no-ph">肌質診断に答えると、あなたの肌質に合わせて順番と成分を組み立てます。</p><button type="button" class="btn btn-primary btn-sm" data-action="setup">${icon('spark')}肌質診断をする（1〜2分）</button></div>`;
   if (!P.hasProd) h += `<div class="card cm-hint"><p class="small no-ph">使っている化粧品を「Myアイテム」に登録すると、それぞれの順番に商品名が入ります。</p><a class="link small" href="#/my">Myアイテムを開く →</a></div>`;
   h += `<p class="small muted rt-foot no-ph">肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てた目安です。皮膚科の塗り薬は、医師の指示を優先してください。</p>`;
   return h;
@@ -12295,7 +12293,7 @@ const ACC_SECTIONS = {
     body:() => `<div class="mb-card" id="acc-money">${moneyCardHtml()}</div>`},
   plan: {icon:'user', t:'プラン・アカウント', d:() => acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み',
     body:() => embedView(() => viewPlan({}))},
-  body: {icon:'user', t:'からだと肌', d:() => '身長・体重、肌質・性別・年代・肌悩み', body:() => settingsEmbedHtml('body')},
+  body: {icon:'bodyskin', t:'からだと肌', d:() => '身長・体重、肌質・性別・年代・肌悩み', body:() => settingsEmbedHtml('body')},
   settings: {icon:'gear', t:'設定', d:() => 'お知らせ、画面の表示、アプリとして使う', body:() => settingsEmbedHtml('settings')},
   privacy: {icon:'shield', t:'プライバシー', d:() => 'クラウド保存、研究への協力、データの管理', body:() => settingsEmbedHtml('privacy')}
 };
