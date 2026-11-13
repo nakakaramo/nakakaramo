@@ -1172,7 +1172,7 @@ a.used-tile{color:inherit;text-decoration:none}
 @keyframes brGrow{from{transform:scaleY(0)}to{transform:none}}
 .btn,.bn-item,.ls-main,.acc-row,.ac-item,.tab{transition:transform .15s ease,background-color .2s ease,color .2s ease}
 .btn:active,.ls-main:active,.acc-row:active,.tab:active{transform:scale(.97)}
-.bn-item:active svg{transform:scale(.88)}
+.bn-item svg,.bn-item span,.bn-item:active svg,.bn-item.active svg{transform:none!important;transition:none!important;animation:none!important} /* 押しても記号が動かない（作り直しでずれて見えないように） */
 .bn-item.active svg{animation:none}
 @keyframes navPop{0%{transform:scale(.85)}60%{transform:scale(1.28) translateY(-2px)}100%{transform:scale(1.18) translateY(-1px)}}
 @media (prefers-reduced-motion:reduce){#main.pg-in,.fade-once,.kt,.rv,.rv.in,.rv.in *,.chart.play *,.bn-item.active svg{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
@@ -1612,7 +1612,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .au-in{width:100%;height:54px;border-radius:10px;border:1.5px solid var(--line2);background:var(--surface);color:var(--ink);font-size:17px;padding:0 14px;outline:none}
 .au-in:focus{border-color:var(--green-d)}
 .au-pw{position:relative}.au-pw .au-in{padding-right:54px}
-.au-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}.au-eye.on{color:var(--green-d)}
+.au-eye{position:absolute;right:4px;top:50%;margin-top:-23px;transform:none!important;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}.au-eye.on{color:var(--green-d)}
 .au-hint{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
 .au-go{display:flex;align-items:center;justify-content:center;width:100%;height:54px;margin-top:22px;border:0;border-radius:999px;background:var(--green-d);color:#fff;font:inherit;font-size:16.5px;font-weight:700;cursor:pointer}
 .au-go:disabled{opacity:.6}
