@@ -2370,6 +2370,9 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .cm-p{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--green-d);text-decoration:none;line-height:1.45}
 .cm-p svg{width:15px;height:15px;flex:none}.cm-p span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cm-p0{color:var(--ink2);font-weight:500}
+.cm-per{display:inline-flex;align-items:center;gap:4px;margin-top:7px;font-size:11.5px;font-weight:700;color:#7A5A12;background:#FBF3E2;border-radius:999px;padding:3px 9px}.cm-per svg{width:13px;height:13px}
+.cm-today.rx{background:#FBF3E2}.cm-today.rx i{color:#7A5A12}
+html[data-theme="dark"] .cm-per,html[data-theme="dark"] .cm-today.rx{background:rgba(200,160,60,.14)}
 .cm-how{margin:7px 0 0;font-size:13px;line-height:1.7;color:var(--ink2)}
 .cm-today{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:#EEF6F0;font-size:12.5px;line-height:1.65;color:var(--ink)}
 .cm-today i{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;color:var(--green-d);background:#fff;border-radius:999px;padding:1px 7px;margin-right:6px;vertical-align:1px}
@@ -4410,7 +4413,7 @@ function rxPick(name) {
   // 登録画面は出さずに、そのまま登録する（使用開始日＝今日、朝・夜／毎日、使用目的は薬の効能どおり）
   if (state.myProducts.some(x => x.catalogId === id && x.status === '使用中')) { closeModal(); toast('この薬はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:id, name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', purposes:rxPurposes(d[1], d[2]), ingredients:d[2],
-    timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
+    timing:rxDefaultTiming(d[1], d[2]), frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
   if (save()) { closeModal(); hapticSaved(); toast(`「${d[1]}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); const nid = state.myProducts[state.myProducts.length - 1].id; setTimeout(() => comboAfterAdd(nid), 450); }
 }
 // ランキングに入れないもの：セット・まとめ売り（単体の商品だけで比べる）、スキンケアと関係ない商品
@@ -8501,6 +8504,72 @@ function careHomeCard() {
   return `<a class="card rt-hc" href="#/care/routine"><div class="card-h"><h2>あなた専用のスキンケア</h2><span class="chip green">${esc(typeLabel(d))}</span></div>
     <div class="rt-hc-row"><span>${icon('sun')}朝 ${cnt('am')}</span><span>${icon('moon')}夜 ${cnt('pm')}</span>${miss ? `<span class="chip warn">足りないケア ${miss}</span>` : ''}</div><span class="link small">朝・夜のケアを見る →</span></a>`;
 }
+// ===== 皮膚科の塗り薬：いつ・どの順番で・どう塗るか（添付文書の用法と、皮膚科の一般的な指導にもとづく）=====
+// slot：pm＝夜だけ（就寝前など）／both＝朝と夜（1日2回など）／once＝1日1回で時間の決まりなし（夜にまとめる）
+// role：wash＝洗顔のかわり／moist＝保湿のところ／drug＝保湿のあとに患部へ／cover＝いちばん最後にふたをする
+const RX_PLAN = [
+  {re:/アダパレン.*過酸化ベンゾイル|エピデュオ/, slot:'pm', role:'drug', per:'1日1回・夜（洗顔のあと、寝る前）',
+    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします（顔全体で人さし指の先から第一関節くらいの量）。目・口・小鼻のわきは避けます。',
+    note:['使い始めの2〜4週間は、乾燥・赤み・ヒリヒリが出やすい時期です。保湿をしっかりすると軽くなります', '髪・枕カバー・タオル・衣類の色が抜けることがあります', '赤く腫れる・強いかゆみが出たら、使うのをやめて皮膚科に相談します'],
+    avoid:['レチノール', 'ピーリング（AHA・BHA）', 'スクラブ'], sun:true},
+  {re:/アダパレン|ディフェリン/, slot:'pm', role:'drug', per:'1日1回・夜（洗顔のあと、寝る前）',
+    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします（顔全体で人さし指の先から第一関節くらいの量）。目・口・小鼻のわきは避けます。',
+    note:['使い始めの2〜4週間は、乾燥・赤み・ヒリヒリが出やすい時期です。保湿をしっかりすると軽くなります', '妊娠中・妊娠の可能性があるときは使えません'],
+    avoid:['レチノール', 'ピーリング（AHA・BHA）', 'スクラブ'], sun:true},
+  {re:/ウォッシュ/, slot:'pm', role:'wash', per:'1日1回（洗顔のかわり）',
+    how:'顔をぬらしてから適量を手にとり、泡立てて患部になじませ、すぐにぬるま湯でよく洗い流します。',
+    note:['タオルや衣類の色が抜けることがあります', '赤く腫れる・強いかゆみが出たら、使うのをやめて皮膚科に相談します'], avoid:['スクラブ']},
+  {re:/クリンダマイシン.*過酸化ベンゾイル|デュアック/, slot:'pm', role:'drug', per:'1日1回・夜（洗顔のあと）',
+    how:'洗顔して保湿をしたあと、ニキビのある範囲に薄くのばします。',
+    note:['髪・枕カバー・タオル・衣類の色が抜けることがあります', '赤く腫れる・強いかゆみが出たら、使うのをやめて皮膚科に相談します'], avoid:['ピーリング（AHA・BHA）', 'スクラブ']},
+  {re:/過酸化ベンゾイル|ベピオ/, slot:'pm', role:'drug', per:'1日1回・夜（洗顔のあと）',
+    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします。目・口のまわりは避けます。',
+    note:['髪・枕カバー・タオル・衣類の色が抜けることがあるので、夜に塗ったら白いタオル・枕カバーがおすすめです', '使い始めは乾燥・赤みが出やすいので、保湿をしっかりします', '赤く腫れる・強いかゆみが出たら、使うのをやめて皮膚科に相談します'],
+    avoid:['ピーリング（AHA・BHA）', 'スクラブ']},
+  {re:/クリンダマイシン|ナジフロキサシン|ダラシン|アクアチム/, slot:'both', role:'drug', per:'1日2回・朝と夜（洗顔のあと）',
+    how:'洗顔して保湿をしたあと、赤いニキビの部分に塗ります。', note:['よくなっても自己判断で長く続けず、使う期間は医師の指示に合わせます（薬が効きにくい菌を増やさないため）']},
+  {re:/オゼノキサシン|ゼビアックス/, slot:'once', role:'drug', per:'1日1回（夜にまとめると続けやすい）',
+    how:'洗顔して保湿をしたあと、赤いニキビの部分に塗ります。', note:['使う期間は医師の指示に合わせます（薬が効きにくい菌を増やさないため）']},
+  {re:/タクロリムス|プロトピック/, slot:'both', role:'drug', per:'1日1〜2回（医師の指示どおり）',
+    how:'保湿剤を先に塗ってから、赤み・かゆみのある部分に薄く塗ります。',
+    note:['塗り始めの数日は、ほてり・ヒリヒリ感が出ることがありますが、多くは続けるうちにおさまります', '塗った部分は、強い日光に長く当たらないようにします', 'お酒を飲むと顔が赤くなりやすくなります'], sun:true},
+  {re:/デルゴシチニブ|コレクチム|ジファミラスト|モイゼルト/, slot:'both', role:'drug', per:'1日2回・朝と夜',
+    how:'保湿剤を先に塗ってから、赤み・かゆみのある部分に薄く塗ります。', note:['よくなってきたら、塗る回数や期間は医師と相談して決めます']},
+  {re:/タピナロフ|ブイタマー/, slot:'once', role:'drug', per:'1日1回（夜にまとめると続けやすい）',
+    how:'保湿剤を先に塗ってから、症状のある部分に薄く塗ります。', note:['毛穴のまわりに赤いブツブツが出ることがあります。気になるときは皮膚科に相談します']},
+  {re:/ボンアルファ|ドボベット/, slot:'once', role:'drug', per:'1日1回（医師の指示どおり）', how:'症状のある部分にだけ薄く塗ります。', note:['顔に使うかどうかは医師の指示に従います']},
+  {re:/カルシポトリオール|マキサカルシトール|ドボネックス|オキサロール/, slot:'both', role:'drug', per:'1日2回・朝と夜', how:'症状のある部分にだけ薄く塗ります。', note:['顔に使うかどうかは医師の指示に従います']},
+  {re:/メトロニダゾール|ロゼックス/, slot:'both', role:'drug', per:'1日2回・朝と夜（洗顔のあと）',
+    how:'洗顔して保湿をしたあと、赤みのある範囲全体に薄くのばします。目・口のまわりは避けます。', note:['日差し・熱いお湯・アルコール・辛い物は赤みを強めやすいので控えめに']},
+  {re:/ヘパリン類似物質|ヒルドイド/, slot:'both', role:'moist', per:'1日1〜数回（朝と夜）',
+    how:'化粧水のあと、顔全体にやさしく広げます（顔全体で人さし指の先から第一関節くらいの量）。これで保湿が足りれば、乳液は省いてもかまいません。', note:[]},
+  {re:/尿素|ケラチナミン|ウレパール|パスタロン/, slot:'both', role:'moist', per:'1日1〜数回（朝と夜）',
+    how:'乾燥・ガサガサした部分に薄く塗ります。', note:['顔・赤みのある所・傷にはしみやすいので、しみるときは皮膚科に相談します']},
+  {re:/ビタミンA油|ザーネ/, slot:'both', role:'moist', per:'1日2〜3回（朝と夜）', how:'乾燥した部分に薄く塗ります。', note:[]},
+  {re:/白色ワセリン|プロペト/, slot:'both', role:'cover', per:'朝と夜（いちばん最後）',
+    how:'最後に、乾燥する所や薬を塗った所に、ごく薄くのばしてふたをします。朝はべたつくなら、乾燥する所だけで十分です。', note:[]},
+  {re:/酸化亜鉛|亜鉛華/, slot:'both', role:'cover', per:'1日1〜数回（いちばん最後）', how:'赤み・ただれのある部分に、最後に薄くのせます。', note:[]},
+  {re:/ジメチルイソプロピルアズレン|アズノール/, slot:'both', role:'moist', per:'1日数回（朝と夜）', how:'赤み・肌あれのある部分に薄く塗ります。', note:[]},
+  {re:/ゲンタマイシン|フシジン|テトラサイクリン|ゲンタシン|アクロマイシン/, slot:'both', role:'drug', per:'1日1〜数回（医師の指示どおり）', how:'傷・化膿した部分に塗ります。', note:['使う期間は医師の指示に合わせます']},
+  {re:/ケトコナゾール|ニゾラール/, slot:'both', role:'drug', per:'1日1〜2回（医師の指示どおり）', how:'赤み・フケのような皮むけがある部分に塗ります。', note:[]},
+  {re:/ルリコナゾール|テルビナフィン|ラノコナゾール|ビホナゾール|ルリコン|ラミシール|アスタット|マイコスポール/, slot:'once', role:'drug', per:'1日1回（夜・お風呂のあとがおすすめ）', how:'症状のある所より少し広めに塗ります。', note:['よくなったように見えても、医師に言われた期間は続けます']},
+  {re:/ジフェンヒドラミン|クロタミトン|レスタミン|オイラックス/, slot:'both', role:'drug', per:'1日数回（かゆいとき）', how:'かゆい部分に塗ります。', note:[]},
+  {re:/ビダラビン|アシクロビル|アラセナ|ゾビラックス/, slot:'both', role:'drug', per:'1日数回（医師の指示どおり）', how:'できている所に塗ります。塗ったあとは手を洗います。', note:['ピリピリする段階から早めに塗るほど効きやすいです']},
+  {re:/スルファジアジン|ゲーベン/, slot:'once', role:'drug', per:'1日1回（医師の指示どおり）', how:'傷の部分に、医師に言われた方法で塗ります。', note:[]},
+  {re:/ソフピロニウム|オキシブチニン|エクロック|アポハイド/, slot:'none', role:'drug', per:'わき・手のひら用', how:'顔には使いません。', note:[]},
+  {re:/ステロイド|クロベタゾール|ベタメタゾン|ジフルプレドナート|モメタゾン|ジフルコルトロン|フルオシノニド|デキサメタゾン|デプロドン|ヒドロコルチゾン|プレドニゾロン|アルクロメタゾン|トリアムシノロン|吉草酸|酪酸/, slot:'both', role:'drug', steroid:true, per:'1日1〜2回（医師の指示どおり）',
+    how:'保湿剤を先に塗ってから、赤み・かゆみのある部分だけに薄く塗ります（人さし指の先から第一関節までの量で、手のひら2枚分の広さが目安）。',
+    note:['顔は薬が吸収されやすい場所です。塗る期間・回数は医師の指示を守り、自己判断で長く続けたり、急にやめたりしません'], avoid:['レチノール', 'ピーリング（AHA・BHA）', 'スクラブ']},
+];
+function rxPlanOf(x) {
+  const t = `${x.p.name} ${x.p.ingredients || ''} ${x.rk || ''}`;
+  const r = RX_PLAN.find(o => o.re.test(t)) || {slot:'both', role:'drug', per:'医師の指示どおり', how:'医師・薬剤師に言われた量・塗り方を守ります。', note:[]};
+  // 自分で「朝」「夜」「必要なときだけ」にした薬は、それに合わせる（医師の指示を優先）
+  const tm = x.p.timing, slots = tm === '朝' ? ['am'] : tm === '夜' ? ['pm'] : tm === '必要なときだけ' ? [] : r.slot === 'both' ? ['am', 'pm'] : r.slot === 'none' ? [] : ['pm'];
+  return Object.assign({}, r, {x, slots, avoid:r.avoid || []});
+}
+// 薬を登録したときの「使う時間」の初期値
+function rxDefaultTiming(name, ing) { const r = RX_PLAN.find(o => o.re.test(`${name} ${ing || ''} ${rxKindOf(name)}`)); return !r ? '朝・夜' : r.slot === 'both' ? '朝・夜' : r.slot === 'none' ? '必要なときだけ' : '夜'; }
 // ===== ケア管理：朝と夜のスキンケアの順番（肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てる）=====
 const RT_TABS = [{k:'am'}, {k:'pm'}];
 function rtPlan(slot) {
@@ -8522,7 +8591,9 @@ function rtPlan(slot) {
   let R = null; try { R = routineDesign('normal'); } catch (e) { R = null; }
   const today = altDay(), live = L => (L || []).filter(s => s.x && !s.missing && (!s.day || s.day === today));
   const here = R ? live(slot === 'am' ? R.am : R.pm) : [], all = R ? live(R.am).concat(live(R.pm)) : [];
-  const prodOf = (kinds, any) => { let L = here.filter(s => kinds.includes(s.kind)); if (!L.length && any) L = all.filter(s => kinds.includes(s.kind)); const seen = new Set(); return L.map(s => s.x).filter(x => !seen.has(x.p.id) && seen.add(x.p.id)); };
+  // ほかの時間の商品を借りるときも、その時間に使える物だけ（「夜」にした物・夜向きの成分が入った物は朝に出さない）
+  const fitSlot = x => (slot === 'am' ? /朝/ : /夜/).test(x.p.timing || '朝・夜') && !(slot === 'am' && x.nightOnly);
+  const prodOf = (kinds, any) => { let L = here.filter(s => kinds.includes(s.kind)); if (!L.length && any) L = all.filter(s => kinds.includes(s.kind) && fitSlot(s.x)); const seen = new Set(); return L.map(s => s.x).filter(x => !seen.has(x.p.id) && seen.add(x.p.id)); };
   const steps = [], add = (k, o) => steps.push(Object.assign({k, prods:[], good:[], avoid:[], today:[], type:''}, o));
   const T = (t, src) => ({t, src});
   const uniq = L => [...new Set(L.filter(Boolean))];
@@ -8537,7 +8608,15 @@ function rtPlan(slot) {
     return {name:heavy ? '保湿（乳液＋クリーム）' : oilT && !dryT ? '保湿（乳液・ジェル）' : '保湿（乳液）', prods:prodOf(['emulsion', 'cream', 'allinone'], true), how:heavy ? '乳液を顔全体にのばしたあと、乾きやすい頬・口元にクリームを薄く重ねて、手のひらで包みます。' : '薄くのばし、手のひらで包んでなじませます。',
       good:uniq([dryT || lowHum ? 'セラミド' : '', dryT ? 'スクワラン' : '', oilT ? 'ナイアシンアミド' : '', sensT ? 'パンテノール' : '', !dryT && !oilT ? 'ヒアルロン酸' : '']).slice(0, 3),
       avoid:uniq([oilT || acneT ? '油分の多い重いクリーム' : '', sensT ? '香料' : '']), today:ex || []}; };
-  const rxSteps = () => here.filter(s => ['spot', 'rx', 'rxmoist'].includes(s.kind)).forEach(s => add(s.kind + ':' + s.x.p.id, {name:STEP_LABEL[s.kind], prods:[s.x], fixed:true, how:s.kind === 'spot' ? '気になるところだけに、少量をのせます。' : '医師・薬剤師に言われた量・塗り方・順番を守ります。'}));
+  // 皮膚科の塗り薬：薬ごとに、朝・夜・順番を決める
+  const RXP = R ? R.A.infos.filter(x => x.rx && x.step !== 'oral').map(rxPlanOf) : [];
+  const rxOn = RXP.filter(r => r.slots.includes(slot));
+  const rxHard = RXP.some(r => r.slots.length && (r.avoid.includes('レチノール') || r.steroid)); // レチノイド・過酸化ベンゾイル・ステロイドを使っている間は、刺激の強い化粧品を休む
+  const rxAvoid = uniq(RXP.filter(r => r.slots.length).flatMap(r => r.avoid));
+  const rxStep = r => add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗顔（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
+    today:r.note.map(t => T(t, '薬')), avoid:r.avoid});
+  const spotSteps = () => here.filter(s => s.kind === 'spot').forEach(s => add('spot:' + s.x.p.id, {name:STEP_LABEL.spot, prods:[s.x], how:'気になるところだけに、少量をのせます。'}));
+  const rxSteps = role => rxOn.filter(r => r.role === role).forEach(rxStep);
   const calmItem = D && D.items.find(x => /をお休み$/.test(x.title));
   if (slot === 'am') {
     const water = !hot && (m.oil || 0) < 3 && (dryT || sensT || lowHum || cold || (m.dry || 0) >= 3) && !(oilT && !dryT);
@@ -8545,16 +8624,19 @@ function rtPlan(slot) {
     if (water) add('water', {name:'ぬるま湯で洗う', how:'32℃くらいのぬるま湯を手ですくって、顔にやさしくかけます。タオルは押し当てて水分をとります。', avoid:['熱いお湯', 'ゴシゴシこする'], today:why.slice(0, 2)});
     else add('wash', Object.assign(washO(), {today:uniq([hot ? T('暑くて、汗と皮脂が出やすい日です', '天気') : null, (m.oil || 0) >= 3 ? T('最近の記録でテカリが強めです', '肌') : null])}));
     add('toner', tonerO(lowHum ? [T('空気が乾いている日は、2回に分けて重ねづけすると、うるおいが続きます', '天気')] : []));
-    const sp = prodOf(['serum']);
+    // 赤み・肌あれが強い日や、皮膚科の薬を使っている間は、刺激の強い成分（act1以上）の美容液を休む
+    const sp0 = prodOf(['serum']), rest = calm || rxHard ? sp0.filter(x => (x.ings || []).some(e => e.act >= 1)) : [], sp = sp0.filter(x => !rest.includes(x));
+    const restNote = rest.length ? T(`今日は「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     let sg = uniq([markT && !calm ? 'ビタミンC誘導体' : '', acneT || oilT || poreT ? 'ナイアシンアミド' : '', calm || sensT ? 'パンテノール' : '', calm ? 'ツボクサエキス（CICA）' : '']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。', good:sg, avoid:uniq([sensT ? '高濃度のビタミンC（純粋ビタミンC）' : '']),
-      today:calm ? [T((() => { const st = sp.filter(x => ['vitc', 'retinoid', 'aha', 'bha', 'pha'].some(g => x.groups && x.groups.has(g))); return st.length ? `赤み・肌あれがある日なので、今日は「${truncate(st[0].p.name, 16)}」はお休みして、しずめる成分にします` : '赤み・肌あれがある日は、刺激の出やすい美容液は休んで、しずめる成分にします'; })(), '肌')] : []});
-    rxSteps();
+      today:restNote ? [restNote] : calm ? [T('赤み・肌あれがある日は、刺激の少ない美容液にして、しずめる成分を選びます', '肌')] : []});
+    spotSteps(); rxSteps('moist');
     add('moist', moistO('am', uniq([lowHum || cold ? T('乾燥する日は、頬・口元にクリームを少し重ねます', '天気') : null, hot ? T('暑い日は少なめでOK（保湿をやめると、かえって皮脂が増えることがあります）', '天気') : null])));
+    rxSteps('drug'); rxSteps('cover');
     const spf = uv == null ? 'SPF30・PA+++くらい' : uv >= 6 ? 'SPF50・PA++++' : uv >= 3 ? 'SPF30以上・PA+++' : 'SPF15〜30・PA++';
     add('sunscreen', {name:'日焼け止め', type:spf, prods:prodOf(['sunscreen'], true), how:'顔全体にパール2粒分くらいを、2回に分けてムラなく塗ります。',
       gl:'選び方', good:uniq([spf, sensT ? '紫外線吸収剤不使用（ノンケミカル）' : '', acneT ? 'ノンコメドジェニックテスト済み' : '']), avoid:uniq([sensT ? '香料' : '']),
-      today:uniq([uv != null ? T(uv >= 6 ? '紫外線が強い日です。外にいるときは2〜3時間ごとに塗り直します' : uv >= 3 ? '紫外線がやや強い日です。くもりでも塗ります' : '紫外線は弱めですが、短い外出でも塗っておくと安心です', '天気') : null, markT || (m.dull || 0) >= 3 || ff.inflamed ? T('ニキビ跡・くすみは紫外線で濃くなりやすいので、毎日続けます', '肌') : null])});
+      today:uniq([RXP.some(r => r.sun && r.slots.length) ? T('塗り薬を使っている間は肌が紫外線に弱くなりやすいので、毎朝欠かさず塗ります', '薬') : null, uv != null ? T(uv >= 6 ? '紫外線が強い日です。外にいるときは2〜3時間ごとに塗り直します' : uv >= 3 ? '紫外線がやや強い日です。くもりでも塗ります' : '紫外線は弱めですが、短い外出でも塗っておくと安心です', '天気') : null, markT || (m.dull || 0) >= 3 || ff.inflamed ? T('ニキビ跡・くすみは紫外線で濃くなりやすいので、毎日続けます', '肌') : null])});
   } else {
     const mk = ans.makeup || '', sun = prodOf(['sunscreen'], true)[0];
     const sunOff = mk === 'sunonly' && sun && R && R.A.infos.some(x => x.p.id === sun.p.id && x.soapOff);
@@ -8566,18 +8648,26 @@ function rtPlan(slot) {
         good:[], avoid:uniq(['コットンで強くこする', sensT ? '香料' : '']), today:mk === 'sunonly' ? [T('日焼け止めだけの日も、落としきれないと毛穴づまりの原因になります', '肌')] : []});
     }
     const noDouble = cl && R && R.A.infos.some(x => x.p.id === cl.p.id && x.noDoubleWash);
-    if (!noDouble) add('wash', Object.assign(washO(), {today:hot ? [T('汗をかいた日は、皮脂と汗をきちんと落とします', '天気')] : []}));
+    const rxWash = rxOn.filter(r => r.role === 'wash');
+    if (rxWash.length) rxSteps('wash');
+    else if (!noDouble) add('wash', Object.assign(washO(), {today:hot ? [T('汗をかいた日は、皮脂と汗をきちんと落とします', '天気')] : []}));
     add('toner', tonerO(lowHum ? [T('空気が乾いている日は、重ねづけでたっぷり補います', '天気')] : []));
-    const sp = prodOf(['serum']);
-    const retOk = !calm && !(dryT && lowHum && (m.dry || 0) >= 4);
+    // 赤み・肌あれが強い日や、皮膚科の薬を使っている間は、刺激の強い成分（act1以上）の美容液を休む
+    const sp0 = prodOf(['serum']), rest = calm || rxHard ? sp0.filter(x => (x.ings || []).some(e => e.act >= 1)) : [], sp = sp0.filter(x => !rest.includes(x));
+    const restNote = rest.length ? T(`今日は「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
+    const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4);
     const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? 'レチノール' : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
-    const sa = uniq([calm ? 'レチノール' : '', calm ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの同じ夜の重ねづけ']).slice(0, 3);
+    const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの同じ夜の重ねづけ']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
-      today:uniq([calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
-    rxSteps();
+      today:uniq([restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
+    spotSteps(); rxSteps('moist');
     add('moist', moistO('pm', uniq([lowHum ? T('空気が乾いている日は、最後にクリームでふたをして、寝ている間の乾燥を防ぎます', '天気') : null, calm ? T('肌を休ませる日は、うるおいを守るのが一番です', '肌') : null])));
+    rxSteps('drug'); rxSteps('cover');
   }
+  // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
+  steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
+  if (RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').length >= 2) tips.push('塗り薬が2つ以上あるときは、それぞれ医師に言われた場所に塗ります。同じ場所に重ねるときは、前の薬がなじむまで数分あけてから次を塗ります。');
   if (slot === 'pm' && (m.acne || 0) > 0) tips.push('ニキビは触らない・つぶさない。枕カバーやタオルはこまめに替えましょう。');
   if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
   const lead = uniq([w ? `今日の天気　湿度${hum == null ? '－' : hum + '%'}・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${uv == null ? '－' : uv}` : '']);
@@ -8596,8 +8686,9 @@ function rtPaneHtml(slot) {
     <button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button>
     <div class="cm-b"><b class="cm-t">${esc(s.name)}</b>
       ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : s.type ? `<span class="cm-p cm-p0">おすすめ：${esc(s.type)}</span>` : ''}
+      ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
-      ${s.today.map(x => `<p class="cm-today no-ph"><i>${x.src === '天気' ? '天気から' : '肌の記録から'}</i>${esc(x.t)}</p>`).join('')}
+      ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${esc(x.t)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${gChips(s)}</div></div>` : ''}
       ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid, 'bad')}</div></div>` : ''}
     </div></li>`;
