@@ -2303,7 +2303,7 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* 今日の記録：調子のラベルは拡大ボタンと同じ高さ（上の段）。下の段は 左＝ニキビ〜皮脂、右＝3D（同じ高さ） */
 .t3-card:has(.t3-old){padding-top:52px}
 .t3-card .t3-old .t3-tags{position:absolute;top:16px;left:20px;margin:0} /* 大きさは「記録一覧」の調子と同じ */
-.t3-card .t3-grid:has(.t3-old){grid-template-columns:minmax(0,.92fr) minmax(0,1.38fr);column-gap:12px;align-items:stretch}
+.t3-card .t3-grid:has(.t3-old){grid-template-columns:minmax(0,.88fr) minmax(0,1.44fr);column-gap:10px;align-items:stretch}
 .t3-card .t3-old{justify-content:space-between;gap:0;padding-top:var(--t3-top,0px)}
 .t3-card .t3-old .t3-acne{margin:0;line-height:1;font-size:12.5px}
 .t3-card .t3-old .t3-acne b{font-size:22px;margin:0 2px 0 5px}
@@ -2384,6 +2384,21 @@ html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-them
 .cm-ing>div{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
 .cm-c{font-size:12px;font-weight:600;line-height:1.3;padding:4px 9px;border-radius:999px}
 .cm-c.good{background:#EEF6F0;color:var(--green-d)}
+button.cm-c.bad{box-shadow:inset 0 0 0 1px #F2CFC4}.cm-c{white-space:nowrap}
+.av-note{display:inline-block;margin:0 0 10px;font-size:12px;font-weight:700;color:#7A5A12;background:#FBF3E2;border-radius:999px;padding:3px 10px}
+.cm-flow{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin:0 0 14px}
+.cm-fl-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px}
+.cm-fl{display:inline-flex;align-items:center;gap:5px;border:0;background:var(--surface2,#F6F3EE);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.cm-fl b{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center}.cm-fl b svg{width:12px;height:12px}
+.cm-fl.done{opacity:.6}
+.cm-fl-ar{font-style:normal;color:var(--muted);font-size:14px;line-height:1}
+.cm-fl-note{margin:8px 2px 0;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.cm-ph{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--green-d);margin-bottom:3px}
+.cm-ph i{font-style:normal;font-weight:700;letter-spacing:0;font-size:10.5px;border-radius:999px;padding:1px 7px;background:#EEF6F0}
+.cm-ph.p1 i{background:#E7F0F7;color:#2F5F86}.cm-ph.p2 i{background:#EEF6F0;color:var(--green-d)}.cm-ph.p3 i{background:#F3EDF8;color:#6A4A8A}.cm-ph.p4 i{background:#FBF3E2;color:#7A5A12}.cm-ph.p5 i{background:#FDF1EC;color:#B04A32}.cm-ph.p6 i{background:#FBF3E2;color:#7A5A12}
+html[data-theme="dark"] .cm-ph i{background:var(--surface2)!important;color:var(--ink)!important}
+@keyframes cmFlash{0%{box-shadow:0 0 0 0 rgba(90,150,110,.0)}30%{box-shadow:0 0 0 3px rgba(90,150,110,.45)}100%{box-shadow:0 0 0 0 rgba(90,150,110,0)}}
+.cm-step.cm-flash .cm-b{animation:cmFlash 1.1s ease}
 button.cm-c{border:0;font:inherit;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:3px;box-shadow:inset 0 0 0 1px #CFE3D4}button.cm-c i{font-style:normal;opacity:.7}.cm-c.bad{background:#FDF1EC;color:#B04A32}
 html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-theme="dark"] .cm-c.bad{background:rgba(217,105,75,.14)}
 .cm-tips p{margin:0;font-size:13px;line-height:1.7}.cm-tips p+p{margin-top:6px}
@@ -5460,32 +5475,40 @@ function hasAvoid(text, ks) {
   return ks.some(k => { let i = t.indexOf(k); while (i >= 0) { const after = t.slice(i + k.length, i + k.length + 4); if (!/^(ふり|free|無添加|不使用|ぜろ|0|無配合|なし|おふ|off)/i.test(after) && !/(無|のん|non)$/i.test(t.slice(Math.max(0, i - 3), i))) return true; /* fnorm でカタカナはひらがなになっている */ i = t.indexOf(k, i + 1); } return false; });
 }
 async function openIngSheet(word) {
-  const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), e = ingEntryOf(word);
-  const isSun = /日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen');
+  const washQ = /^洗顔｜/.test(word), wraw = String(word).replace(/^洗顔｜/, '');
+  const w1 = wraw.replace(/（.*?）|\(.*?\)/g, '').trim();
+  const wk = washQ || (/洗顔|洗浄成分/.test(w1) && !/後|運動|回数|しすぎ/.test(w1)) ? washKindOf(wraw) : null; // 洗顔料のおすすめは、洗顔料の中から探す
+  const w0 = wk ? (washQ || !/洗顔/.test(w1) ? wk[1] + '系の洗顔料' : w1).replace(/^アミノ酸系の洗顔料$/, 'アミノ酸系洗顔料').replace(/^(サリチル酸|酵素|クレイ)系の洗顔料$/, '$1洗顔') : w1, e = wk ? null : ingEntryOf(word);
+  const isSun = !wk && (/日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen'));
+  const useNote = (String(wraw).match(/[（(](.*?)[）)]/) || [])[1] || '';
   setTimeout(() => { MODAL_REOPEN = () => openIngSheet(word); }, 0); // 商品を開いて戻ってきたら、このランキングを開き直す
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
-    ${isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
+    ${useNote && /回|朝|夜|だけ|毎/.test(useNote) ? `<p class="av-note">${esc(useNote)}</p>` : ''}
+    ${wk ? `<div class="ing-dl"><div class="ing-b"><b>どんな洗顔料？</b><p>${esc(wk[4])}</p></div><div class="ing-b warn"><b>気をつけること</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <div id="ing-partner"></div>
-    <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.concat([]).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
-  const keys = ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)) && shopSingle(x, w0); };
+    <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
+    <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
+  const WASH_N = /洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|パウダー|wash/i, WASH_NG = /ボディ|シャンプー|ハンド|食器|洗濯|ヘア|メイク落とし|クレンジング(オイル|バーム|ジェル|ミルク|ウォーター)|拭き取り|詰め?替/i;
+  const keys = wk ? [] : ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []);
+  const hit = wk ? x => { const n = cleanShopName(x.name) || x.name; return WASH_N.test(n) && !WASH_NG.test(n) && wk[3].test(n + ' ' + (x.caption || '') + ' ' + (x.ingredients || '')) && shopSingle(x, w0); }
+    : x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)) && shopSingle(x, w0); };
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
   partnersLoad().then(P => {
     const box = document.getElementById('ing-partner'); if (!box) return;
-    const av = ingAvoidKeys(), got = P.filter(x => { const t = fnorm(((x.ingredients || '') + ' ' + x.name).replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
+    const av = ingAvoidKeys(), got = P.filter(x => { if (wk) return /洗顔/.test(x.category || '') && wk[3].test(x.ingredients || '') && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); const t = fnorm(((x.ingredients || '') + ' ' + x.name).replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
     // 全成分がわかっている商品を先に。同じ条件の中では日ごとに順番を入れ替える（いつも同じ商品だけにならないように）
     const day = Number(todayStr().replace(/-/g, '')) || 0, rk = x => (x.partial ? 1000 : 0) + ((P.indexOf(x) * 7919 + day) % 997);
     got.sort((a, b) => rk(a) - rk(b)); got.splice(4);
     if (!got.length) return;
     box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
-      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。全成分（または、ブランドが公表している主な成分）に「${esc(w0)}」が入っている商品を出しています。買う前に、お店のページで全成分を確かめてください。</p>`;
+      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。${wk ? `全成分に${esc(wk[1])}系の成分が入っている洗顔料を出しています。` : `全成分（または、ブランドが公表している主な成分）に「${esc(w0)}」が入っている商品を出しています。`}買う前に、お店のページで全成分を確かめてください。</p>`;
     box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); sheetGo('#/shop'); };
   });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
   // 種類ごとにも探して、たくさん集める（すべて・化粧水・美容液・クリーム・その他で分けて見られる）
   const list = [], alias = e && (e.aliases || [])[0] && (e.aliases || [])[0] !== w0 ? e.aliases[0] : '';
-  const qs = isSun ? ['日焼け止め', '日焼け止め ジェル', '日焼け止め クリーム', '日焼け止め ミルク', '日焼け止め スプレー', '日焼け止め スティック', '日焼け止め パウダー'].concat(w0 !== '日焼け止め' ? [w0] : [])
+  const qs = wk ? wk[2] : isSun ? ['日焼け止め', '日焼け止め ジェル', '日焼け止め クリーム', '日焼け止め ミルク', '日焼け止め スプレー', '日焼け止め スティック', '日焼け止め パウダー'].concat(w0 !== '日焼け止め' ? [w0] : [])
     : [w0, w0 + ' 美容液', w0 + ' クリーム', w0 + ' 化粧水', alias].filter(Boolean);
   const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'popular'})));
   res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.filter(hit).forEach(x => { if (!list.some(y => sameProduct({name:y.name}, {name:x.name}))) list.push(Object.assign({}, x, {rank:0})); }); });
@@ -5502,14 +5525,14 @@ async function openIngSheet(word) {
   const kindOf = x => { const n = tidyName(x.name); if (isSun) return sunKind(n); return /美容液|セラム|エッセンス|アンプル/i.test(n) ? 'serum' : /化粧水|ローション|トナー/i.test(n) && !/ボディ/.test(n) ? 'lotion' : /クリーム|バーム/.test(n) && !/ハンド|ボディ|日焼け|UV/i.test(n) ? 'cream' : 'other'; };
   list.forEach(x => { x.kind = kindOf(x); });
   // 日焼け止め・洗顔など、成分ではなく「商品の種類」そのもののときは、化粧水・美容液…に分けない
-  const isType = /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
+  const isType = !!wk || /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
   const KINDS = isSun ? [['all', 'すべて'], ['gel', 'ジェル'], ['cream', 'クリーム'], ['milk', 'ミルク'], ['spray', 'スプレー'], ['stick', 'スティック'], ['powder', 'パウダー'], ['other', 'その他']] : isType ? [['all', 'すべて']] : [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
   let cur = 'all', shown = 5;
   // 押したときにチカチカしないように：ボタンの列・商品の行は1回だけ作って、あとは並べ替え・出し入れだけする
-  const amzQ = encodeURIComponent(w0);
+  const amzQ = encodeURIComponent(wk ? wk[2][0] : w0);
   b.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
     + `<div class="irk-list"></div><button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1" hidden></button>`
-    + [['rakuten', '楽天市場', '#BF0000', rakutenIngUrl(w0, isSun)], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&i=beauty&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
+    + [['rakuten', '楽天市場', '#BF0000', rakutenIngUrl(wk ? wk[2][0] : w0, isSun)], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&i=beauty&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
   const listBox = b.querySelector('.irk-list'), moreBtn = b.querySelector('.ing-more');
   if (none) { listBox.innerHTML = '<p class="small muted">アプリの中では人気商品を見つけられませんでした。下のボタンから楽天市場で探せます。</p>'; const kk = b.querySelector('.ing-kinds'); if (kk) kk.remove(); }
   const rowHtml = x => `<button type="button" class="pop-item ir" data-ingpick="${list.indexOf(x)}"><span class="pop-r ir-n"></span>${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${isSun ? uvChip(x.name) : ''}${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`;
@@ -5533,6 +5556,56 @@ async function openIngSheet(word) {
     ui.shopItem = Object.assign({}, x, {fromIng:w0 + (cur !== 'all' ? `（${kl}）` : ''), ingRank:Number(t.dataset.ingpos)}); sheetGo('#/shop');
   };
 }
+// 控えたい成分・こと：押すと「なぜ控えたいのか」を出す（商品は出さない）
+function avoidCtx() {
+  const d = diagNow(), main = d ? d.main : '';
+  let D = null; try { D = careTodayData(); } catch (e) { D = null; }
+  const m = (D && D.m) || {};
+  let rx = false, rxRet = false; try { const R = routineDesign('normal'); const L = R ? R.A.infos.filter(x => x.rx && x.step !== 'oral').map(rxPlanOf).filter(r => r.slots.length) : []; rx = L.length > 0; rxRet = L.some(r => r.avoid.includes('レチノール') || r.steroid); } catch (e) { /* 何もしない */ }
+  return {sens:!!(d && d.sensitive) || (m.red || 0) >= 3, dry:['dry', 'innerdry'].includes(main) || (m.dry || 0) >= 3, oily:['oily', 'combo'].includes(main) || (m.oil || 0) >= 3, acne:(m.acne || 0) > 0, calm:!!(D && D.calm), rx, rxRet};
+}
+// [当てはまる言葉, どんなもの？, なぜ控えたい？（今の肌に合わせて足す）, 代わりに]
+const AVOID_WHY = [
+  [/重ねづけ|同じ夜/, '', c => 'どちらも角層に働きかける成分なので、同じ夜に重ねると刺激が強くなりすぎて、赤み・皮むけ・ヒリヒリが出やすくなります。', '使う日を分けて、交互に使います。'],
+  [/熱いお湯|お湯での洗顔/, '38℃以上のお湯で顔を洗うこと。', c => '熱いお湯は、汚れと一緒に肌のうるおいを守る皮脂やセラミドまで流してしまい、洗ったあとに乾燥しやすくなります。' + (c.dry ? '今は乾燥しやすい肌なので、特に気をつけたいところです。' : ''), '32〜34℃くらいの、さわって少しぬるいと感じるお湯で洗います。'],
+  [/こする|つぶす|触る/, '', c => /つぶす|触る/.test(c.w) ? 'ニキビを触ったりつぶしたりすると、手の雑菌が入って炎症が強くなったり、跡（色素沈着・くぼみ）が残りやすくなります。' : 'こすると摩擦で角層が傷つき、赤み・くすみ・シミ（色素沈着）の原因になります。' + (c.sens ? '今は肌が敏感になっているので、特にやさしく扱いたいときです。' : ''), c => /つぶす|触る/.test(c.w) ? '触らずに、ニキビ用の塗り薬や成分でケアします。気になるときは皮膚科へ。' : '泡や指の腹でやさしく洗い、タオルは押し当てて水分をとります。'],
+  [/スクラブ/, '細かい粒で肌をこすって汚れや角質を落とすタイプの洗顔料・パック。', c => '粒で角層を削るので、肌を守るバリアが弱くなり、赤み・乾燥・ニキビの悪化につながりやすいです。' + (c.rx ? '皮膚科の塗り薬を使っている間は、刺激が重なるので特に控えます。' : c.sens || c.calm ? '今は肌が敏感になっているので、刺激を減らしたいときです。' : ''), '毛穴の汚れが気になるときは、酵素洗顔を週1〜2回にします。'],
+  [/ピーリング|AHA|BHA|グリコール酸|サリチル酸/, 'グリコール酸（AHA）・サリチル酸（BHA）など、古い角質をはがれやすくする成分。', c => (c.rx ? '皮膚科の塗り薬（アダパレン・過酸化ベンゾイルなど）も角層に働くので、重ねると刺激が強くなりすぎます。' : c.calm || c.sens ? '赤み・肌あれがある間は、角質をはがす働きがそのまま刺激になり、悪化しやすくなります。' : '使いすぎると、肌を守る角層まで薄くなって、乾燥・赤みが出やすくなります。'), c => c.rx || c.calm || c.sens ? '落ち着くまではお休みして、パンテノール・セラミドなどの守る成分を使います。' : '使うなら週1〜2回まで。使った日は保湿をしっかりします。'],
+  [/レチノ|レチナール|ビタミンA/, 'レチノールなどのビタミンAの仲間。ハリやニキビ跡のケアに使われる成分。', c => c.rx ? '皮膚科の塗り薬（アダパレンなど）と働きが重なり、刺激が強くなりすぎて赤み・皮むけが出やすくなります。' : c.calm || c.sens ? '赤み・肌あれがある間は刺激になりやすく、肌の回復を遅らせることがあります。落ち着くまでお休みします。' : '使い始めは赤み・皮むけ・乾燥が出ることがあります。少量から慣らしていきます。', c => c.rx || c.calm || c.sens ? 'パンテノール・セラミド・ツボクサエキスなど、しずめて守る成分にします。' : '夜だけ、少量から使い、朝は日焼け止めを欠かさずに。'],
+  [/純粋ビタミンC|高濃度のビタミンC/, '酸性の強いピュアなビタミンC（アスコルビン酸）を多く入れた美容液。', c => '酸性が強く、敏感な肌ではピリピリ・赤みが出やすいです。', 'ビタミンC誘導体（リン酸アスコルビルMgなど）を選ぶと、刺激が少なくなります。'],
+  [/エタノール|アルコール/, '化粧品をさっぱりさせたり、成分を溶かしたりするために入るアルコール。', c => '蒸発するときに肌の水分も一緒に奪いやすく、' + (c.dry ? '乾燥しやすい今の肌では、つっぱりや乾燥が強くなりやすいです。' : c.sens || c.calm ? '赤み・肌あれがあると、しみたりヒリついたりしやすいです。' : '乾燥肌・敏感肌ではヒリつきの原因になります。') + '全成分の前のほうに書かれている物ほど多く入っています。', '「アルコールフリー」「エタノール不使用」と書かれた物を選びます。'],
+  [/香料|精油|フレグランス/, '香りをつけるための成分（植物の精油も含みます）。', c => '香りの成分は、かぶれ（接触皮膚炎）や肌あれの原因になりやすい成分のひとつです。' + (c.sens || c.calm ? '今は赤み・肌あれがあるので、特に避けたほうが安心です。' : ''), '「無香料」と書かれた物を選びます。'],
+  [/メントール|清涼/, 'スーッとした使い心地を出す清涼成分。', c => '冷たく感じる刺激なので、敏感な肌ではほてり・ヒリつきにつながることがあります。', '清涼成分の入っていない、やさしい洗顔料にします。'],
+  [/オイル|クリーム|油分/, '油分の多いオイルや、こっくり重いクリーム。', c => '油分が多いと毛穴がつまりやすく、' + (c.acne ? 'ニキビが増えたり治りにくくなったりします。' : 'テカリやニキビにつながることがあります。'), '乳液やジェルなど軽い物にします。「ノンコメドジェニックテスト済み」も目安になります。'],
+  [/洗浄力の強い|洗いすぎ/, '汚れを落とす力がとても強い洗顔料や、1日に何度も洗うこと。', c => '皮脂を取りすぎると、肌が乾いて、かえって皮脂が増えることがあります。', '洗顔は朝晩1回ずつ。アミノ酸系のやさしい洗顔料にします。'],
+  [/紫外線|日焼け/, '日焼け止めを塗らずに日差しを浴びること。', c => '紫外線はメラニンを増やすので、ニキビ跡やくすみ・シミが濃くなったり、治りにくくなったりします。', '毎朝、日焼け止めを塗り、外に長くいる日は2〜3時間ごとに塗り直します。'],
+  [/ハイドロキノン/, '', c => '刺激が強く、赤み・かぶれが出ることがある成分です。', '使うときは、皮膚科で相談してからにします。'],
+];
+function openAvoidSheet(word) {
+  const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), note = (String(word).match(/[（(](.*?)[）)]/) || [])[1] || '';
+  const c = Object.assign(avoidCtx(), {w:w0}), e = ingEntryOf(w0), hit = AVOID_WHY.find(([re]) => re.test(word));
+  const fn = v => typeof v === 'function' ? v(c) : v;
+  const what = hit && hit[1] ? hit[1] : e ? e.feature : '';
+  const why = hit ? fn(hit[2]) : e && e.caution ? e.caution : '今の肌の状態では、刺激や負担になりやすいため控えたほうが安心です。';
+  const alt = hit ? fn(hit[3]) : '';
+  openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet av-sheet">
+    ${note ? `<p class="av-note">${esc(note)}</p>` : ''}
+    <div class="ing-dl">${what ? `<div class="ing-b"><b>どんなもの？</b><p>${esc(what)}</p></div>` : ''}
+    <div class="ing-b warn"><b>なぜ控えたほうがいい？</b><p>${esc(why)}</p></div>
+    ${alt ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(alt)}</p></div>` : ''}</div>
+    ${e ? `<a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : ''}
+    <p class="small muted" style="margin-top:8px">今の肌の状態（肌質診断・最近の肌の記録・使っている薬）から出しています。皮膚科で言われていることがあれば、そちらを優先してください。</p></div>`});
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-cmgo]'); if (!b) return; const pane = b.closest('.home-pane') || document, el = pane.querySelector('#cm-s' + b.dataset.cmgo) || document.getElementById('cm-s' + b.dataset.cmgo); if (el) { hapticTick(); const y = el.getBoundingClientRect().top + window.scrollY - 70; window.scrollTo({top:Math.max(0, y), behavior:'smooth'}); el.classList.remove('cm-flash'); void el.offsetWidth; el.classList.add('cm-flash'); } });
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-avoidsheet]'); if (!b) return; hapticTick(); openAvoidSheet(b.dataset.avoidsheet); });
+// 洗顔料は「成分」ではなく商品の種類なので、洗顔料の中から探す
+const WASH_KIND = [
+  [/サリチル|BHA/, 'サリチル酸', ['サリチル酸 洗顔', 'サリチル酸 洗顔フォーム', '薬用 洗顔 サリチル酸'], /サリチル/, 'ニキビ用・薬用の洗顔料に多い成分で、毛穴につまった皮脂や古い角質をやわらかくして落としやすくします。乾燥しやすい人は、毎日でなく夜だけにします。'],
+  [/酵素/, '酵素', ['酵素洗顔', '酵素洗顔パウダー'], /酵素|パパイン|プロテアーゼ/, 'たんぱく質を分解する酵素で、毛穴の角栓や古い角質をやさしく落とします。毎日ではなく週1〜2回が目安です。'],
+  [/クレイ|泥|炭/, 'クレイ', ['クレイ 洗顔', '泥 洗顔'], /クレイ|泥|カオリン|ベントナイト|炭/, '泥（クレイ）や炭が皮脂や毛穴の汚れを吸着します。乾燥しやすい人は使いすぎないようにします。'],
+  [/./, 'アミノ酸', ['アミノ酸 洗顔', 'アミノ酸 洗顔フォーム', 'アミノ酸系 洗顔料 弱酸性'], /アミノ酸|ココイル|グルタミン|ラウロイル(メチル)?(アラニン|タウリン)/, 'ココイルグルタミン酸Naなど、アミノ酸からできた洗浄成分。肌と同じ弱酸性で、汚れは落としながら、うるおいを守る皮脂やセラミドを取りすぎないのが特長です。乾燥肌・敏感肌にも向いています。'],
+];
+function washKindOf(w) { return WASH_KIND.find(([re]) => re.test(w)); }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet][data-avoid]'); if (b) { try { ING_AVOID_CTX = JSON.parse(b.dataset.avoid) || []; } catch (er) { ING_AVOID_CTX = []; } } }, true); // ケア管理から開くときは、その手順の「控えたい」を使う
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet]'); if (!b) return; hapticTick(); openIngSheet(b.dataset.ingsheet); });
 document.addEventListener('click', e => {
@@ -8684,22 +8757,27 @@ function rtPaneHtml(slot) {
   let P; try { P = rtPlan(slot); } catch (e) { console.error(e); return `<div class="card">${emptyBox('note', '表示中にエラーが起きました', 'ページを読み込み直してください。')}</div>`; }
   const lg = rtLog()[slot], done = s => !!lg['cm:' + s.k];
   const nDone = P.steps.filter(done).length;
-  const chips = (L, cls) => L.map(x => `<span class="cm-c ${cls}">${esc(x)}</span>`).join('');
-  // おすすめ成分は、押すと成分の説明と人気の商品が出る（おすすめケアと同じ）。控えたいものが入った商品は省く
-  const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', e = !sun && ingEntryOf(x), ok = sun || (e && !(s.k === 'wash' && e.key === 'aminoacid'));
-    return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(x)}<i>›</i></button>` : `<span class="cm-c good">${esc(x)}</span>`; }).join('');
+  // 控えたいものは、押すと「なぜ控えたいのか」が出る。（ ）の補足は押したあとの画面に出して、ボタンは1行に収める
+  const chips = L => L.map(x => `<button type="button" class="cm-c bad cm-ing-b" data-avoidsheet="${esc(x)}">${esc(chipText(x))}<i>›</i></button>`).join('');
+  // おすすめ成分は、押すと成分の説明と人気の商品が出る（おすすめケアと同じ）。控えたいものが入った商品は省く。洗顔は洗顔料の中から出す
+  const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', wash = s.k === 'wash', e = !sun && !wash && ingEntryOf(x), ok = sun || wash || e;
+    return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : wash ? '洗顔｜' + x : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(chipText(x))}<i>›</i></button>` : `<span class="cm-c good">${esc(chipText(x))}</span>`; }).join('');
   const pname = x => esc((x.p.brand ? x.p.brand + ' ' : '') + x.p.name);
-  const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}">
+  // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
+  const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
+  const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
+  const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button>
-    <div class="cm-b"><b class="cm-t">${esc(s.name)}</b>
+    <div class="cm-b"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b>
       ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : s.type ? `<span class="cm-p cm-p0">おすすめ：${esc(s.type)}</span>` : ''}
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
       ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${esc(x.t)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${gChips(s)}</div></div>` : ''}
-      ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid, 'bad')}</div></div>` : ''}
+      ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
   let h = '';
+  if (P.steps.length) h += `<div class="cm-flow" aria-label="今日の${slot === 'am' ? '朝' : '夜'}のケアの順番"><div class="cm-fl-row">${P.steps.map((st, i) => `${i ? '<i class="cm-fl-ar" aria-hidden="true">›</i>' : ''}<button type="button" class="cm-fl ${done(st) ? 'done' : ''}" data-cmgo="${i}"><b>${done(st) ? icon('check') : i + 1}</b>${esc(shortName(st))}</button>`).join('')}</div><p class="cm-fl-note no-ph">上から順に、前の物がなじんでから次へ。水っぽい物から油っぽい物へ重ねていきます。</p></div>`;
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
@@ -10871,6 +10949,8 @@ function adviceLocal(d) {
 }
 // おすすめ・控えたいもののラベル（角度ごと）
 const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい成分'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
+// 成分のボタンに出す言葉：（ ）の補足は外して1行に収める（補足は押したあとの画面に出す）
+function chipText(v) { const t = String(v || '').replace(/\s*[（(].*?[）)]\s*/g, '').trim(); return t || String(v || ''); }
 // AIの答えに混ざった説明文・重複を取り除いて、短い言葉だけにする
 function advClean(arr, max = 16) {
   const seen = new Set(), out = [];
@@ -10887,8 +10967,8 @@ function advChips(x) {
   const skin = x.area === 'スキンケア';
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
-  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
-    + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
+  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
+    + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => skin ? `<button type="button" class="adv-c bad adv-ing" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
@@ -13758,7 +13838,7 @@ function render() {
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:50, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { face3dSaveView(); FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
