@@ -9485,13 +9485,11 @@ function logShownNums(l) {
 }
 function logDayDetailHtml(list, i) {
   const l = list[i]; if (!l) return '';
-  const photo = safeImg(l.photo);
-  const used = l.usedProducts.map(id => getMy(id)).filter(Boolean);
+  const used = l.usedProducts.map(id => getMy(id)).filter(Boolean); // 写真は「肌写真」タブで見るので、ここには出さない
   const n = logShownNums(l);
   // 見やすいように、内容ごとに見出しをつけて区切る
   const sec = (t, h) => `<section class="ld-sec"><h3 class="ld-sec-h">${t}</h3>${h}</section>`;
   return `    ${used.length ? sec('使った物', `<div class="used-grid home-used ld-used">${used.map(myTileHtml).join('')}</div>`) : ''}
-    ${photo ? sec('肌の写真', `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">`) : ''}
     ${l.memo ? sec('メモ', `<div class="log-memo">${esc(l.memo)}</div>`) : ''}
     ${sec('生活', `<div class="ld-life">${lifeSumHtml(lifeMap()[l.date], l.date)}</div>`)}
     <div class="ld-actions"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-log" data-id="${esc(l.id)}">削除</button></div>`;
