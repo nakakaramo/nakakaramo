@@ -2154,6 +2154,8 @@ img{image-rendering:auto}
 .nt-opts{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .nt-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
 .nt-line .select{width:auto;min-width:110px}
+.nt-line>span{white-space:nowrap}
+#notify-card .nt-time{flex:0 0 auto;width:132px!important;max-width:132px;min-width:0;padding-left:10px;padding-right:10px;font-variant-numeric:tabular-nums;text-align:center}
 
 /* はじめの設定 */
 .pm-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -12514,12 +12516,12 @@ function notifySoon() {
   }, 3000);
 }
 function notifyCardHtml() {
-  const c = notifyCfg(), busy = ui.notifyBusy, times = []; if (busy) c.on = true; /* 押したらすぐオンの見た目にする（許可の確認が終わるまで待たない） */ for (let h = 6; h <= 23; h++) ['00', '30'].forEach(m => times.push(`${String(h).padStart(2, '0')}:${m}`));
+  const c = notifyCfg(), busy = ui.notifyBusy; if (busy) c.on = true; /* 押したらすぐオンの見た目にする（許可の確認が終わるまで待たない） */
   let body;
   if (!acct.user) body = `<p class="small muted" style="margin:0 0 10px">記録のお知らせと、使用期限が近い化粧品のお知らせを受け取れます。使うにはログイン（無料）が必要です。</p><a class="btn btn-soft btn-sm" href="#/account/me">ログインする</a>`;
   else body = `<label class="nt-row"><span><b>お知らせを受け取る</b><small>${busy ? '設定しています…' : DEV.ios && !isStandalone() ? 'iPhoneでは、ホーム画面に追加したアプリで使えます' : 'この端末に通知が届きます'}</small></span><input type="checkbox" switch class="nt-sw" data-action="notify-toggle" ${c.on ? 'checked' : ''}></label>
     <div class="nt-opts" ${c.on ? '' : 'hidden'}>
-      <div class="nt-line"><span>記録のお知らせ</span><select class="select" id="f_notify_time" aria-label="お知らせの時刻">${times.map(t => `<option ${t === c.time ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="nt-line"><span>記録のお知らせ</span><input type="time" class="input nt-time" id="f_notify_time" step="60" value="${esc(c.time)}" aria-label="お知らせの時刻（何時何分）"></div>
       <p class="small muted" style="margin:4px 0 10px">その日まだ肌を記録していないときだけ届きます。</p>
       <label class="check"><input type="checkbox" id="f_notify_exp" ${c.expiry ? 'checked' : ''}>使用期限が近い化粧品をお知らせ（7日前）</label>
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="notify-test">テストのお知らせを送る</button></div>`;
@@ -12582,7 +12584,9 @@ async function permSheet(force) {
 function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); }
 document.addEventListener('change', e => {
   if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp') return;
-  const c = notifyCfg(); if (e.target.id === 'f_notify_time') c.time = e.target.value; else c.expiry = e.target.checked;
+  const c = notifyCfg();
+  if (e.target.id === 'f_notify_time') { const v = String(e.target.value || '').slice(0, 5); if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) { e.target.value = c.time; return; } if (v === c.time) return; c.time = v; toast(`${Number(v.slice(0, 2))}時${v.slice(3)}分にお知らせします`); }
+  else c.expiry = e.target.checked;
   state.settings.notify = c; save(); notifySoon();
 });
 function syncAsk(row) {
