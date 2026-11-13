@@ -863,6 +863,24 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
 .photo-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .photo-pick .input{flex:1 1 180px}
+.fscan{position:fixed;inset:0;z-index:200;background:#0B0C0B;color:#fff;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 20px calc(18px + env(safe-area-inset-bottom));overflow:hidden}
+.fs-top{align-self:stretch;display:flex;justify-content:flex-end}
+.fs-x{background:none;border:0;color:#fff;font:inherit;font-size:15px;padding:8px 4px;cursor:pointer}
+.fs-stage{position:relative;width:min(78vw,330px);aspect-ratio:1;margin:min(8vh,60px) 0 22px}
+.fs-circle{position:absolute;inset:9%;border-radius:50%;overflow:hidden;background:#222;transform:translateZ(0)}
+.fs-circle video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.fs-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.fs-flash.go{animation:fsFlash .45s ease-out}
+@keyframes fsFlash{0%{opacity:.75}100%{opacity:0}}
+.fs-ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.fs-ring line{stroke:rgba(255,255,255,.28);stroke-width:3.2;stroke-linecap:round;transition:stroke .25s}
+.fs-ring line.half{stroke:rgba(92,190,128,.55)}.fs-ring line.on{stroke:#5CBE80}
+.fs-msg{margin:0;font-size:19px;font-weight:700;text-align:center;line-height:1.45;min-height:1.45em}
+.fs-sub{margin:6px 0 0;font-size:13px;color:rgba(255,255,255,.7);text-align:center;line-height:1.6;min-height:1.6em;max-width:320px}
+.fs-steps{display:flex;gap:8px;margin-top:22px}
+.fs-steps span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75)}
+.fs-steps i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.35)}
+.fs-steps span.ok{background:rgba(92,190,128,.2);color:#fff}.fs-steps span.ok i{background:#5CBE80}
+.fs-alt{margin-top:auto;background:none;border:0;color:rgba(255,255,255,.75);font:inherit;font-size:13px;text-decoration:underline;padding:10px;cursor:pointer}
 .gcam{position:fixed;inset:0;z-index:200;background:#000;display:flex;flex-direction:column}
 .gcam-view{position:relative;flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .gcam-view video,.gcam-ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -9112,6 +9130,112 @@ function photoDayCardHtml(list) { // list：写真のある記録（古い順）
     <div class="ld-actions" style="justify-content:center">${list.length >= 2 ? `<button class="btn btn-soft btn-sm" data-action="photo-compare">${icon('compare')}2枚を比べる</button>` : ''}<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button></div></div>`;
 }
 // ===== ガイド付きで撮る：顔の枠と、前回の写真をうすく重ねて、毎回同じ位置で撮れるようにする（写真は外に送らない） =====
+// ===== 顔を回して撮る（iPhoneの顔認証の登録のように）：顔の形の点をスマホの中で読み取り、正面・右頬・左頬の3枚を自動で撮る =====
+// 顔の形を読む部品（Google MediaPipe）は、初めて使うときだけ読み込む（顔の映像はスマホの外に送らない）
+const FM_VER = '0.10.14';
+let FM_P = null;
+function faceMeshLoad() {
+  if (window.__fmStub) return Promise.resolve(window.__fmStub); // テスト用
+  if (FM_P) return FM_P;
+  FM_P = (async () => {
+    const base = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${FM_VER}`;
+    const V = await import(`${base}/vision_bundle.mjs`);
+    const files = await V.FilesetResolver.forVisionTasks(`${base}/wasm`);
+    const mk = delegate => V.FaceLandmarker.createFromOptions(files, {baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate}, runningMode:'VIDEO', numFaces:1});
+    try { return await mk('GPU'); } catch (e) { return await mk('CPU'); }
+  })();
+  FM_P.catch(() => { FM_P = null; }); // 失敗したら、次はもう一度読み込みなおす
+  return FM_P;
+}
+async function openFaceScan(done, o = {}) {
+  const fallback = () => openGuideCam(url => done({photo:url, ai:null, url}), {w:1024, fallback:o.fallback});
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fallback(); return; }
+  const TICKS = 60, ring = Array.from({length:TICKS}, (_, i) => { const a = i / TICKS * Math.PI * 2; return `<line data-i="${i}" x1="${(150 + Math.cos(a) * 128).toFixed(1)}" y1="${(150 + Math.sin(a) * 128).toFixed(1)}" x2="${(150 + Math.cos(a) * 142).toFixed(1)}" y2="${(150 + Math.sin(a) * 142).toFixed(1)}"/>`; }).join('');
+  const root = document.createElement('div'); root.className = 'fscan';
+  root.innerHTML = `<div class="fs-top"><button type="button" class="fs-x" data-f="close">やめる</button></div>
+    <div class="fs-stage"><div class="fs-circle"><video playsinline autoplay muted></video><div class="fs-flash"></div></div><svg class="fs-ring" viewBox="0 0 300 300" aria-hidden="true">${ring}</svg></div>
+    <p class="fs-msg" aria-live="polite">準備しています…</p><p class="fs-sub">はじめてのときは、顔の形を読む部品の読み込みに少し時間がかかります</p>
+    <div class="fs-steps">${[['f', '正面'], ['r', '右の頬'], ['l', '左の頬']].map(([k, l]) => `<span data-s="${k}"><i></i>${l}</span>`).join('')}</div>
+    <button type="button" class="fs-alt" data-f="alt">うまくいかないときは、ふつうに撮る</button>`;
+  document.body.appendChild(root); lockScroll();
+  const video = root.querySelector('video'), msgEl = root.querySelector('.fs-msg'), subEl = root.querySelector('.fs-sub'), lines = [...root.querySelectorAll('.fs-ring line')];
+  let stream = null, closed = false, raf = 0, fm = null;
+  const stop = () => { closed = true; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; };
+  const close = () => { if (!root.isConnected) return; stop(); root.remove(); unlockScroll(); };
+  const say = (t, sub) => { if (msgEl.textContent !== t) msgEl.textContent = t; if (sub != null && subEl.textContent !== sub) subEl.textContent = sub; };
+  root.addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; if (b.dataset.f === 'close') close(); if (b.dataset.f === 'alt') { close(); fallback(); } });
+  // カメラ（許可がまだのときは、ここでiPhoneが許可を聞く）と、顔の形を読む部品を同時に準備する
+  const loadP = faceMeshLoad();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false});
+    if (closed) { stop(); return; }
+    video.setAttribute('playsinline', ''); video.muted = true; video.srcObject = stream;
+    await new Promise((res, rej) => { if (video.readyState >= 1) return res(); video.onloadedmetadata = res; setTimeout(() => rej(new Error('t')), 8000); });
+    await video.play().catch(() => {});
+  } catch (e) { close(); fallback(); return; } // 許可されていない・開けないときは、今までの撮り方（ふつうのカメラも選べる）へ
+  try { fm = await Promise.race([loadP, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 25000))]); }
+  catch (e) { if (closed) return; close(); toast('顔の形を読む部品を読み込めませんでした。ふつうの撮り方に切り替えます'); fallback(); return; }
+  if (closed) return;
+  // ---- 撮る順番：正面 → 本人の右頬（顔を左へ）→ 本人の左頬（顔を右へ）----
+  const shots = {}, order = ['f', 'r', 'l'];
+  const want = () => order.find(k => !shots[k]);
+  const lit = new Set();
+  let still = 0, lastN = null, lastT = 0, briT = 0, bri = 128, p0 = null;
+  const bc = document.createElement('canvas'); bc.width = 48; bc.height = 48; const bx = bc.getContext('2d', {willReadFrequently:true});
+  const snap = (bb, mirror, maxW) => { // 顔のまわりを切り出す
+    const vw = video.videoWidth, vh = video.videoHeight, cx = (bb.x0 + bb.x1) / 2 * vw, cy = (bb.y0 + bb.y1) / 2 * vh, fw = (bb.x1 - bb.x0) * vw;
+    let w = fw * 1.7, h = w * 4 / 3; w = Math.min(w, vw, vh * 3 / 4); h = w * 4 / 3;
+    const sx = Math.max(0, Math.min(vw - w, cx - w / 2)), sy = Math.max(0, Math.min(vh - h, cy - h * 0.48));
+    const W = Math.min(maxW, Math.round(w)), H = Math.round(W * 4 / 3), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d'); if (mirror) { c.translate(W, 0); c.scale(-1, 1); } c.drawImage(video, sx, sy, w, h, 0, 0, W, H);
+    return cv.toDataURL('image/jpeg', 0.85);
+  };
+  const light = (dx, dy, n) => { // 顔を向けた方向の目盛りを光らせる（画面は鏡写しなので、左右を合わせる）
+    if (Math.hypot(dx, dy) < 0.05) return;
+    const a = Math.atan2(dy, dx), c = Math.round((a < 0 ? a + Math.PI * 2 : a) / (Math.PI * 2) * TICKS);
+    for (let k = -n; k <= n; k++) { const i = ((c + k) % TICKS + TICKS) % TICKS; if (!lit.has(i)) { lit.add(i); lines[i].classList.add('on'); } }
+  };
+  let curPitch = 0;
+  const take = (k, bb) => {
+    shots[k] = {ai:snap(bb, false, 1024)}; if (k === 'f') { shots.f.photo = snap(bb, true, 800); p0 = curPitch; }
+    hapticTick(); const fl = root.querySelector('.fs-flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+    const st = root.querySelector(`.fs-steps [data-s="${k}"]`); if (st) st.classList.add('ok');
+    if (k === 'f') lines.forEach((l, i) => { if (i % 2 === 0) { lit.add(i); l.classList.add('half'); } });
+    still = 0;
+    if (!want()) {
+      lines.forEach(l => l.classList.add('on')); say('撮影できました', ''); stop();
+      setTimeout(() => { if (!root.isConnected) return; close(); done({photo:shots.f.photo, ai:[shots.f.ai, shots.r.ai, shots.l.ai]}); }, 650);
+    }
+  };
+  const loop = () => {
+    if (closed) return;
+    raf = requestAnimationFrame(loop);
+    const now = performance.now(); if (now - lastT < 45) return; lastT = now; // 1秒に20回くらい
+    if (!video.videoWidth) return;
+    let r; try { r = fm.detectForVideo(video, now); } catch (e) { return; }
+    const L = r && r.faceLandmarks && r.faceLandmarks[0];
+    if (!L) { still = 0; say('顔を円の中に入れてください'); return; }
+    let x0 = 1, x1 = 0, y0 = 1, y1 = 0; L.forEach(p => { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y; });
+    const bb = {x0, x1, y0, y1}, fw = (x1 - x0) * video.videoWidth / Math.min(video.videoWidth, video.videoHeight);
+    const nose = L[1], a = L[234], b = L[454], mid = (a.x + b.x) / 2, span = Math.abs(b.x - a.x) || 1;
+    const yaw = (nose.x - mid) / span; // ＋：顔を本人の左へ（右頬が見える）、－：顔を本人の右へ（左頬が見える）
+    const eyeY = (L[33].y + L[263].y) / 2, mouthY = (L[13].y + L[14].y) / 2, pitch = (nose.y - (eyeY + mouthY) / 2) / ((y1 - y0) || 1);
+    // 明るさ（顔のまわり）：ときどきだけ測る
+    if (now - briT > 400) { briT = now; try { bx.drawImage(video, x0 * video.videoWidth, y0 * video.videoHeight, (x1 - x0) * video.videoWidth, (y1 - y0) * video.videoHeight, 0, 0, 48, 48); const d = bx.getImageData(0, 0, 48, 48).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114; bri = s / (d.length / 4); } catch (e) { /* 何もしない */ } }
+    const mv = lastN ? Math.hypot(nose.x - lastN.x, nose.y - lastN.y) : 1; lastN = {x:nose.x, y:nose.y};
+    still = mv < 0.012 ? still + 1 : 0;
+    curPitch = pitch; if (p0 != null) light(-yaw * 2.2, (pitch - p0) * 4, 2);
+    const k = want(); if (!k) return;
+    if (fw < 0.34) { still = 0; say('もう少し近づいてください'); return; }
+    if (fw > 0.9) { still = 0; say('少し離れてください'); return; }
+    if (bri < 60) { say('もう少し明るい所で撮ってください', '顔に正面から光が当たる所がおすすめです'); return; }
+    if (k === 'f') { say(Math.abs(yaw) < 0.07 ? 'そのまま止まってください' : '正面を向いてください', '円の中で、顔をまっすぐに'); if (Math.abs(yaw) < 0.07 && still >= 5) take('f', bb); return; }
+    if (k === 'r') { const ok = yaw > 0.2; say(ok ? 'そのまま止まってください' : 'ゆっくり顔を左に向けてください', '右の頬がカメラに見えるように'); if (ok && still >= 4) take('r', bb); return; }
+    if (k === 'l') { const ok = yaw < -0.2; say(ok ? 'そのまま止まってください' : '次は、ゆっくり顔を右に向けてください', '左の頬がカメラに見えるように'); if (ok && still >= 4) take('l', bb); }
+  };
+  say('正面を向いてください', '円の中で、顔をまっすぐに');
+  loop();
+}
 async function openGuideCam(done, o = {}) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { if (o.fallback) o.fallback(); else toast('この端末ではアプリ内のカメラが使えません。「ファイルを選択」から撮ってください', 'error'); return; }
   const prev = photoList().slice(-1)[0], root = document.createElement('div');
@@ -9585,9 +9709,15 @@ function openLogForm(id) {
     const box = $('#faceai-info', form); if (!file || !box) return;
     let img; try { img = await readImage(file, 1024, 0.82); } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; return; }
     pendingPhoto = await readImage(file, 800, 0.8).catch(() => img); renderPhoto();
-    box.innerHTML = skelHtml(3, {dots:true, label:'顔の写真を読み取り中', note:'肌の状態を読み取っています（10秒ほどかかります）'});
+    faceAiRun(img);
+  };
+  // 顔を回して撮った3枚（正面・右頬・左頬）をまとめて読む。保存する写真は正面の1枚
+  const faceAiShots = res => { pendingPhoto = res.photo; renderPhoto(); faceAiRun(res.ai[0], res.ai); };
+  const faceAiRun = async (img, images) => {
+    const box = $('#faceai-info', form); if (!box) return;
+    box.innerHTML = skelHtml(3, {dots:true, label:'顔の写真を読み取り中', note:images ? '3方向の写真から肌の状態を読み取っています（10〜20秒ほどかかります）' : '肌の状態を読み取っています（10秒ほどかかります）'});
     try {
-      const r = (await callVision('skin', img)).result || {};
+      const r = (await callVision('skin', img, images ? {images} : null)).result || {};
       if (!r.face) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">顔の肌をうまく読み取れませんでした。${esc(r.note || '明るい場所で、顔の正面がはっきり写るように撮り直してください。')}</div>`; return; }
       aiApply(r);
       const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
@@ -9597,11 +9727,13 @@ function openLogForm(id) {
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
   // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
-  const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openGuideCam(async url => {
+  const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openFaceScan(async res => {
+    if (res.ai) { faceAiShots(res); setTimeout(() => { const el = $('#faceai-info', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80); return; }
+    const url = res.url;
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
     else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
-  }, {w:isPremium() ? 1024 : 640, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
+  }, {fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (isPremium()) { faceAi(f); return; }
@@ -11770,7 +11902,7 @@ async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
   // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
-  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' || mode === 'official' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : mode === 'meal' ? {mode, image, fast:true} : {mode, image}});
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' || mode === 'official' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : mode === 'meal' ? {mode, image, fast:true} : mode === 'skin' && payload && payload.images ? {mode, image, images:payload.images} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
