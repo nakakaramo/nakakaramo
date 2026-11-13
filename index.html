@@ -7237,7 +7237,7 @@ async function wxFetch(force, ask) {
       if (!moved && !force && !nowStale && state.wxFetched === t && state.weather[t]) { WX_BUSY = false; save(); return; }
     }
     // 今いる場所が取れなかったけれど、前に取った場所がある：その場所で続ける（日付が変わったあとなど。エラーの画面は出さない）
-    if (!g && state.settings.wxLoc && !state.settings.wxLoc.ip) { state.wxGeoAt = t; if (ask) toast('今いる場所をうまく取れなかったので、前回の場所の天気を出しています'); }
+    if (!g && state.settings.wxLoc && !state.settings.wxLoc.ip && !(ask && WX_GEO_ERR === 1)) { state.wxGeoAt = t; if (ask) toast('今いる場所をうまく取れなかったので、前回の場所の天気を出しています'); }
     if (!g && (!state.settings.wxLoc || (state.settings.wxLoc.ip && Date.now() - (state.settings.wxLoc.at || 0) > 6 * 3600 * 1000))) { // 位置情報が使えないとき：おおよその場所で続ける（エラーの画面は出さない）
       const ip = await ipLocate();
       if (ip) { const first = !state.settings.wxLoc; state.settings.wxLoc = ip; state.wxGeoAt = t; if (ip.place) state.settings.wxPlace = ip.place;
@@ -7366,7 +7366,7 @@ function openGeoHelp() {
   const ios = DEV.ios, denied = WX_GEO_ERR === 1, standalone = isStandalone();
   const steps = !denied ? ['電波のよい場所で、もう一度「現在地を使う」を押してください', 'iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」が「オン」になっているか確かめてください']
     : ios ? (standalone
-      ? ['iPhoneの「設定」→「アプリ」→「Safari」→「位置情報」を「許可」にする（「確認」だと、日付が変わるたびに使えなくなることがあります）', 'iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」を開く', '「位置情報サービス」が「オン」になっているか確かめる', '下の一覧の「SafariのWebサイト」を押して「このAppの使用中」にする（「次回確認」だと、毎回使えなくなることがあります）', 'ナカカラモを閉じて開き直し、「現在地を使う」を押して「許可」を押す']
+      ? ['iPhoneの「設定」→「アプリ」→「Safari」→「位置情報」を「許可」にする', '同じ画面のいちばん下に「nakakaramo.com」が出ていたら、「拒否」になっていないか確かめる（「拒否」なら「編集」で消すか「許可」にする。前に一度「許可しない」を押すと、ここに残って毎回使えなくなります）', 'iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」が「オン」、下の一覧の「SafariのWebサイト」が「このAppの使用中」になっているか確かめる', 'ナカカラモを上にはらって完全に閉じてから開き直し、「現在地を使う」を押す。確認が出たら「許可」を押す']
       : ['iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→ 下の一覧の「SafariのWebサイト」を「このAppの使用中」にする（「なし」だと使えません）', 'iPhoneの「設定」→「アプリ」→「Safari」→ 下の方の「Webサイトの設定」の「位置情報」を「許可」にする（「確認」だと、日付が変わるたびに使えなくなることがあります）', 'Safariのアドレスバーの左のマークを押し、「Webサイトの設定」→「位置情報」を「許可」にする', 'Safariでこのページを再読み込みしてから、「現在地を使う」→「許可」を押す'])
     : ['アドレスバーの左のマーク（鍵など）を押す', '「位置情報」を「許可」にする', 'ページを開き直して、「現在地を使う」を押す'];
   openModal({title:'現在地を使えませんでした', dismissable:true, body:`<p class="small" style="margin:0 0 10px">${denied ? '位置情報が「許可しない」になっています。次の手順で許可すると使えます。' : '現在地をうまく取れませんでした。'}</p>
@@ -12484,7 +12484,14 @@ function notifyInfo() {
   return {last_log:last, exps};
 }
 async function pushSub() { const reg = await navigator.serviceWorker.ready; return reg.pushManager.getSubscription(); }
-async function notifySend(c) { const sub = await pushSub(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, expiry_on:c.expiry}, notifyInfo())); return true; }
+// 送り先がなくなっていたら（iPhoneが送り先を作り直したときなど）、許可済みなら作り直す
+async function pushSubEnsure() {
+  let sub = await pushSub(); if (sub) return sub;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return null;
+  try { const reg = await navigator.serviceWorker.ready, {key} = await callPush('key'); sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64u(key)}); } catch (e) { return null; }
+  return sub;
+}
+async function notifySend(c) { const sub = await pushSubEnsure(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, expiry_on:c.expiry}, notifyInfo())); return true; }
 async function notifyEnable(opt) {
   if (!acct.user) { toast('先にログイン（無料）してください', 'error'); return; }
   if (!pushSupported() || (DEV.ios && !isStandalone())) { openModal({title:'お知らせを使うには', body:`<p style="margin:0">iPhoneでは、ナカカラモを<b>ホーム画面に追加</b>して、そこから開いたときにお知らせを使えます。</p><ol class="points small"><li>Safariで下の共有ボタン（□に↑）を押す</li><li>「ホーム画面に追加」を押す</li><li>ホーム画面のナカカラモから開いて、もう一度オンにする</li></ol>`, footer:'<button type="button" class="btn btn-primary" data-action="close-modal">OK</button>'}); return; }
@@ -12585,9 +12592,17 @@ function refreshNotifyCard() { const b = document.getElementById('notify-card');
 document.addEventListener('change', e => {
   if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp') return;
   const c = notifyCfg();
-  if (e.target.id === 'f_notify_time') { const v = String(e.target.value || '').slice(0, 5); if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) { e.target.value = c.time; return; } if (v === c.time) return; c.time = v; toast(`${Number(v.slice(0, 2))}時${v.slice(3)}分にお知らせします`); }
+  if (e.target.id === 'f_notify_time') { const v = String(e.target.value || '').slice(0, 5); if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) { e.target.value = c.time; return; } if (v === c.time) return; c.time = v; }
   else c.expiry = e.target.checked;
-  state.settings.notify = c; save(); notifySoon();
+  state.settings.notify = c; save(); clearTimeout(notifyT);
+  // すぐにサーバーへ伝えて、届いたかどうかを知らせる（伝わっていないのに「設定した」と思わないように）
+  (async () => {
+    try {
+      if (!(await notifySend(c))) { toast('お知らせの登録が切れていました。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください', 'error'); return; }
+      try { localStorage.setItem('nk_notify_sig', phHash(JSON.stringify([c, notifyInfo(), todayStr()]))); } catch (err) { /* 何もしない */ }
+      toast(e.target.id === 'f_notify_time' ? `${Number(c.time.slice(0, 2))}時${c.time.slice(3)}分にお知らせします` : '設定しました');
+    } catch (err) { toast(err.message || 'お知らせの設定ができませんでした', 'error'); }
+  })();
 });
 function syncAsk(row) {
   ui.syncRow = row;
@@ -12632,7 +12647,7 @@ async function initCloud() {
     const {data} = await acct.client.auth.getSession();
     acct.user = data && data.session ? data.session.user : null;
     acct.status = 'ready';
-    if (acct.user) syncPull(true);
+    if (acct.user) { syncPull(true); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 4000); } // 開いたときに、お知らせの時刻・最後に記録した日をサーバーと合わせる
     await refreshSub();
   } catch (e) { acct.status = 'error'; rerenderAcct(); }
 }
