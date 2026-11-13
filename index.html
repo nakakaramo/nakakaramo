@@ -7043,7 +7043,10 @@ function wxGeo(ask) {
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
     // GPSも使って正確に取る（約100mに丸めて保存）。30分以内に取った位置はそのまま使う
-    const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 1000) / 1000, lon:Math.round(p.coords.longitude * 1000) / 1000}); }, e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); }, {enableHighAccuracy:true, timeout:20000, maximumAge:30 * 60 * 1000});
+    // まずWi-Fi・電波からの速い位置（天気には十分な精度）。取れないとき（夜に部屋の中でGPSがつかめない・時間切れ）だけ、GPSでもう一度
+    const ok = p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 1000) / 1000, lon:Math.round(p.coords.longitude * 1000) / 1000}); };
+    const ng = e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); };
+    const go = () => navigator.geolocation.getCurrentPosition(ok, e => { if (e && e.code === 1) return ng(e); navigator.geolocation.getCurrentPosition(ok, ng, {enableHighAccuracy:true, timeout:20000, maximumAge:6 * 3600 * 1000}); }, {enableHighAccuracy:false, timeout:12000, maximumAge:30 * 60 * 1000});
     if (ask) return go();
     // まだGPSの場所がない（おおよその場所だけ）ときは、許可の状態の答えにかかわらず、iPhoneに直接聞く
     // （iPhoneの設定で許可に変えても、アプリに返ってくる状態が古いままのことがあるため。拒否されていれば、iPhoneはすぐに「だめ」と返すだけで何も出ない）
@@ -7112,6 +7115,8 @@ async function wxFetch(force, ask) {
       if (moved || !state.settings.wxPlace) wxPlaceName(g);
       if (!moved && !force && !nowStale && state.wxFetched === t && state.weather[t]) { WX_BUSY = false; save(); return; }
     }
+    // 今いる場所が取れなかったけれど、前に取った場所がある：その場所で続ける（日付が変わったあとなど。エラーの画面は出さない）
+    if (!g && state.settings.wxLoc && !state.settings.wxLoc.ip) { state.wxGeoAt = t; if (ask) toast('今いる場所をうまく取れなかったので、前回の場所の天気を出しています'); }
     if (!g && (!state.settings.wxLoc || (state.settings.wxLoc.ip && Date.now() - (state.settings.wxLoc.at || 0) > 6 * 3600 * 1000))) { // 位置情報が使えないとき：おおよその場所で続ける（エラーの画面は出さない）
       const ip = await ipLocate();
       if (ip) { const first = !state.settings.wxLoc; state.settings.wxLoc = ip; state.wxGeoAt = t; if (ip.place) state.settings.wxPlace = ip.place;
