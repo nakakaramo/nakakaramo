@@ -1437,6 +1437,7 @@ details.fold[open] summary{margin-bottom:10px}
 /* 下から出てくるときに、シートの下にすき間（暗い色）が見えないように、シートの色を下へのばしておく */
 .modal::after{content:"";position:absolute;left:0;right:0;top:100%;height:120px;background:var(--surface);pointer-events:none}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-backdrop.m-now,.modal-backdrop.m-now .modal{animation:none!important} /* 戻ってきて開き直すときは、動かさずにそのまま出す */
 /* 閉じるときは、後ろの暗い色だけを薄くする（シート自体はフェードさせず、下にすべらせるだけ） */
 .modal-backdrop.closing{background:transparent!important;transition:background-color .17s ease}
 @keyframes bgIn{from{background-color:transparent}}
@@ -3695,8 +3696,10 @@ function toast(msg, type='') {
 function toastFade(el, ms) {
   return setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 380); }, ms);
 }
+// シートから別の画面へ移って、なぞって（または「戻る」で）戻ってきたときに、同じシートを開き直すための記録
+let MODAL_REOPEN = null, MODAL_FROM = '', SHEET_RET = null;
 function openModal({title, body, footer='', size='', dismissable=false}) {
-  const root = $('#modal-root');
+  const root = $('#modal-root'); MODAL_REOPEN = null; MODAL_FROM = location.hash;
   root.innerHTML = `<div class="modal-backdrop" ${dismissable ? 'data-action="close-modal-bg"' : ''}>
     <div class="modal ${size}" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="sheet-grab" aria-hidden="true"><i></i></div>
@@ -3801,10 +3804,10 @@ new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requ
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
 function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); document.body.style.top = ''; window.scrollTo(0, y); }
-function closeModal() { const r = $('#modal-root');
-  // 閉じるときも、下にすっと消える（中身はすぐ消して、見た目だけ少し残す）
+function closeModal(now) { const r = $('#modal-root');
+  // 閉じるときも、下にすっと消える（中身はすぐ消して、見た目だけ少し残す）。別の画面へ移るときは、すぐ消す（新しい画面の上に残って見えないように）
   const m0 = r.querySelector('.modal-backdrop');
-  if (m0 && !document.getElementById('modal-ghost') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+  if (m0 && !now && !document.getElementById('modal-ghost') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
     const g = document.createElement('div'); g.id = 'modal-ghost'; g.setAttribute('aria-hidden', 'true'); g.appendChild(m0.cloneNode(true));
     g.querySelectorAll('canvas,video').forEach(x => x.remove()); document.body.appendChild(g); setTimeout(() => g.remove(), 240);
   }
@@ -5459,9 +5462,10 @@ function hasAvoid(text, ks) {
 async function openIngSheet(word) {
   const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), e = ingEntryOf(word);
   const isSun = /日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen');
+  setTimeout(() => { MODAL_REOPEN = () => openIngSheet(word); }, 0); // 商品を開いて戻ってきたら、このランキングを開き直す
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
     ${isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
-      <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
+      <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <div id="ing-partner"></div>
     <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
     <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.concat([]).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
@@ -5473,7 +5477,7 @@ async function openIngSheet(word) {
     if (!got.length) return;
     box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
       <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。全成分に「${esc(w0)}」が入っている商品を出しています。</p>`;
-    box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); closeModal(); location.hash = '#/shop'; };
+    box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); sheetGo('#/shop'); };
   });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
   // 種類ごとにも探して、たくさん集める（すべて・化粧水・美容液・クリーム・その他で分けて見られる）
@@ -5523,7 +5527,7 @@ async function openIngSheet(word) {
     if (ev.target.closest('[data-ingmore]')) { shown += 10; paint(); return; }
     const t = ev.target.closest('[data-ingpick]'); if (!t) return; const x = list[Number(t.dataset.ingpick)]; if (!x) return;
     const kl = (KINDS.find(z => z[0] === cur) || [])[1];
-    ui.shopItem = Object.assign({}, x, {fromIng:w0 + (cur !== 'all' ? `（${kl}）` : ''), ingRank:Number(t.dataset.ingpos)}); closeModal(); location.hash = '#/shop';
+    ui.shopItem = Object.assign({}, x, {fromIng:w0 + (cur !== 'all' ? `（${kl}）` : ''), ingRank:Number(t.dataset.ingpos)}); sheetGo('#/shop');
   };
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet][data-avoid]'); if (b) { try { ING_AVOID_CTX = JSON.parse(b.dataset.avoid) || []; } catch (er) { ING_AVOID_CTX = []; } } }, true); // ケア管理から開くときは、その手順の「控えたい」を使う
@@ -12880,7 +12884,7 @@ const actions = {
   'cc-clear': k => { ui[k === 'a' ? 'ccA' : 'ccB'] = ''; if (k === 'a') { ui.ccA = ui.ccB || ''; ui.ccB = ''; } render(); setTimeout(() => { const i = document.getElementById('cc-' + (k === 'a' && ui.ccA ? 'b' : k)); if (i) i.focus(); }, 30); },
   'cc-pick': v => { ui.ccB = v; render(); setTimeout(() => { const c = document.querySelector('.cc-pick'); if (c) c.scrollIntoView({block:'start', behavior:'smooth'}); }, 30); },
   'cc-lv': v => { ui.ccLv = ui.ccLv === Number(v) ? 0 : Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
-  'care-go': () => { closeModal(); location.hash = '#/care/routine'; },
+  'care-go': () => { closeModal(true); location.hash = '#/care/routine'; },
   'care-ai': () => careAiRun(),
   'close-modal': () => dismissModal(),
   'close-modal-bg': (id, el, e) => { if (e.target === el) dismissModal(); },
@@ -13786,7 +13790,18 @@ document.addEventListener('click', e => {
   const a = e.target.closest('a.back[data-back]'); if (!a) return;
   e.preventDefault(); goBack(a.getAttribute('href'));
 });
-window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
+function sheetGo(hash) { if (MODAL_REOPEN) SHEET_RET = {from:MODAL_FROM, y:lockedY != null ? lockedY : window.scrollY, reopen:MODAL_REOPEN, at:Date.now()}; closeModal(true); location.hash = hash; }
+window.addEventListener('hashchange', () => {
+  const viaBar = Date.now() - NAV_SRC.bar < 1500;
+  if ($('#modal-root').innerHTML) { if (MODAL_REOPEN && MODAL_FROM && MODAL_FROM !== location.hash) SHEET_RET = {from:MODAL_FROM, y:lockedY != null ? lockedY : window.scrollY, reopen:MODAL_REOPEN, at:Date.now()}; closeModal(true); } // シートの中のリンクで移ったとき
+  render();
+  // 戻ってきたら、シートを開き直す（下のバーで移ったとき・時間がたったときは開かない）
+  if (SHEET_RET && (viaBar || Date.now() - SHEET_RET.at > 30 * 60000)) SHEET_RET = null;
+  if (SHEET_RET && location.hash === SHEET_RET.from) {
+    const s = SHEET_RET; SHEET_RET = null;
+    requestAnimationFrame(() => { window.scrollTo(0, s.y); requestAnimationFrame(() => { if (location.hash !== s.from || $('#modal-root').innerHTML) return; s.reopen(); const bd = document.querySelector('#modal-root .modal-backdrop'); if (bd) bd.classList.add('m-now'); }); });
+  }
+});
 // 下に引っぱって更新（ページのいちばん上で下へ引っぱって離すと読み込み直す）
 // ---------- 下に引っぱって更新（Pull-to-Refresh）----------
 // 引っぱって離すと、データを読み直して今の画面を描き直す（ページは移動しない）
