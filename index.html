@@ -1327,7 +1327,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
 .ir-t{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pop-item.ir.ir-pr{grid-template-columns:64px minmax(0,1fr) 12px;border-color:#CFE0D3;background:#F7FBF8}.ir-brand{font-size:11px;color:var(--muted);font-weight:600}
+.pop-item.ir.ir-pr{grid-template-columns:64px minmax(0,1fr) 12px;border-color:#CFE0D3;background:#F7FBF8}.ir-brand{font-size:11px;color:var(--muted);font-weight:600}.ir-note{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
 .ing-h .pr-tag{vertical-align:2px}
 .ir-t em{font-style:normal;font-size:16px;font-weight:800;color:var(--ink)}
 .ing-amz.main{background:#BF0000;border-color:#BF0000;color:#fff}.ing-amz.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}
@@ -5473,10 +5473,13 @@ async function openIngSheet(word) {
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
   partnersLoad().then(P => {
     const box = document.getElementById('ing-partner'); if (!box) return;
-    const av = ingAvoidKeys(), got = P.filter(x => { const t = fnorm((x.ingredients || '') + ' ' + x.name); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); }).slice(0, 4);
+    const av = ingAvoidKeys(), got = P.filter(x => { const t = fnorm((x.ingredients || '') + ' ' + x.name); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
+    // 全成分がわかっている商品を先に。同じ条件の中では日ごとに順番を入れ替える（いつも同じ商品だけにならないように）
+    const day = Number(todayStr().replace(/-/g, '')) || 0, rk = x => (x.partial ? 1000 : 0) + ((P.indexOf(x) * 7919 + day) % 997);
+    got.sort((a, b) => rk(a) - rk(b)); got.splice(4);
     if (!got.length) return;
-    box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
-      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。全成分に「${esc(w0)}」が入っている商品を出しています。</p>`;
+    box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
+      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。全成分（または、ブランドが公表している主な成分）に「${esc(w0)}」が入っている商品を出しています。買う前に、お店のページで全成分を確かめてください。</p>`;
     box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); sheetGo('#/shop'); };
   });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
