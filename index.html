@@ -2538,6 +2538,11 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .t3-card .t3-s2 .t3-ms{flex:1;justify-content:space-between;gap:6px;padding-top:10px}
 .t3-card .t3-fc{justify-content:flex-start}
 .t3-card .t3-under{margin-bottom:0}
+
+/* 今日の記録（元の並び）：調子のラベル → ニキビ → 赤み・乾燥・皮脂 */
+.t3-card .t3-old{gap:10px;justify-content:center}
+.t3-card .t3-old .t3-tags{margin-bottom:2px}
+.t3-card .t3-old .t3-tags span{font-size:13px;padding:3px 12px}
 </style>
 </head>
 <body>
@@ -4409,11 +4414,11 @@ function viewHome() {
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
   const condChip = L ? `<div class="t3-tags t3-under"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div>` : ''; // 「良い」などは3Dの顔の下に
-  const side = L ? `<div class="t3-side t3-s2"><div class="t3-ac"><span>ニキビ</span><b>${L.acneCount}<small>個</small></b></div>
-      <div class="t3-ms">${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m2"><span class="t3-ml">${lab}<b>${v}<small>/5</small></b></span><span class="t3-bar"><i style="width:${v / 5 * 100}%"></i></span></div>`; }).join('')}</div></div>`
+  const side = L ? `<div class="t3-side t3-old">${condChip.replace('t3-tags t3-under', 't3-tags')}<p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
+      ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side t3-empty"><p class="t3-none">まだ記録されていません。</p></div>`;
   const todayCard = `<div class="card t3-card"><button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button>
-      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>${condChip}</div></div>
+      <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div></div>
       ${lifeLine}</div>`;
   const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
@@ -11505,7 +11510,6 @@ async function drawFace3d(opts) {
     yaw:pv ? pv.yaw : 0, pitch:pv ? pv.pitch : 0.05, phase:pv && pv.auto ? pv.phase : 0, auto:opts.auto !== false && (firstTime || !!(pv && pv.auto)), dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null, viewKey:vk, born:performance.now()};
   if (pv && pv.z && !opts.full) { cam.position.z = pv.z; }
   opts.ready(st);
-  if (opts.canvas === 'face3d-home') { st.alignTop = () => t3AlignTop(st, cv); st.alignTop(); } // ホーム：左の数字を、頭のてっぺんの高さにそろえる
   if (pv && !opts.full) { st.yaw = pv.yaw; st.pitch = pv.pitch; st.dirty = true; } // ready() が向きを変えても、前の向きに戻す
   if (pv && pv.auto) delete pv.auto;
   const l = document.getElementById(opts.load); if (l) l.hidden = true;
