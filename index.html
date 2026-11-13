@@ -2311,6 +2311,12 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .streak svg{width:15px;height:15px;color:var(--green-d);flex:none}
 .streak b{font-size:15px;font-weight:700;color:var(--green-d);margin-right:1px}
 .streak small{font-size:11.5px;color:var(--muted);margin-left:4px}
+
+/* 献立：パターンは同じ場所に重ねて置き、選んだものだけ見せる。写真は最初から表示（フェードしない） */
+.mn-plans{display:grid}
+.mn-plan{grid-area:1/1;visibility:hidden;min-width:0}
+.mn-plan.on{visibility:visible}
+.mn-img,.mn-img.shown{opacity:1!important;transition:none!important;animation:none!important}
 </style>
 </head>
 <body>
@@ -10475,7 +10481,7 @@ function menuHtml() {
   // 家で作る（和食・洋食）はAIの献立、コンビニ（セブン・ローソン・ファミマ）は保存してある商品の一覧から、すぐに組み合わせる
   if (res) res = Object.assign({}, res, {meals:res.meals.map(m => Object.assign({}, m, {plans:m.plans.filter(pl => !pl.store).slice(0, 2).map((pl, i) => Object.assign({}, pl, {label:['和食', '洋食'][i]})).concat(storePlans(m.meal, d))}))});
   const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
-    return `<div class="mn-meal"><b class="mn-h">${m.when === '明日' ? '明日の' : ''}${esc(({朝:'朝食', 昼:'昼食', 夜:'夕食'})[m.meal] || m.meal)}</b>${pickRow(m, mi, k)}${plan(m.plans[k])}</div>`; }).join('')
+    return `<div class="mn-meal" data-mi="${mi}"><b class="mn-h">${m.when === '明日' ? '明日の' : ''}${esc(({朝:'朝食', 昼:'昼食', 夜:'夕食'})[m.meal] || m.meal)}</b>${pickRow(m, mi, k)}<div class="mn-plans">${m.plans.map((pl, i) => `<div class="mn-plan ${i === k ? 'on' : ''}" ${i === k ? '' : 'aria-hidden="true"'}>${plan(pl)}</div>`).join('')}</div></div>`; }).join('') // パターンは全部重ねて置き、見えるものだけ切り替える（写真を作り直さないので、チカチカ・高さのずれが出ない）
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
   const cvNote = res && res.storeNote && !res.meals.some(m => m.plans.some(pl => pl.store)) ? `<p class="mn-src">コンビニ（セブン・ローソン・ファミマ）の商品は、今回は調べられませんでした（${esc(res.storeNote)}）。「別の献立にする」でもう一度調べます。</p>` : '';
   return head + body + cvNote + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
@@ -10525,7 +10531,9 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-mpick]'); if (!b) return;
   const [mi, i] = b.dataset.mpick.split(':').map(Number); if (ui.menuPick[mi] === i) return; ui.menuPick[mi] = i; hapticTick();
-  const box = document.getElementById('menu-box'); if (box) patchHtml(box, menuHtml());
+  const meal = b.closest('.mn-meal'); if (!meal) return;
+  meal.querySelectorAll('.mn-pb').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
+  meal.querySelectorAll('.mn-plan').forEach((x, j) => { const on = j === i; x.classList.toggle('on', on); if (on) x.removeAttribute('aria-hidden'); else x.setAttribute('aria-hidden', 'true'); });
 });
 // 中身を作り直すとき、変わっていない部分（写真など）はそのまま残す（写真がチカチカしないように）
 const phNorm = h => h.replace(/\u200B/g, '').replace(/ ?jp-ph/g, '').replace(/ class=""/g, '');
