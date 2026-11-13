@@ -2317,6 +2317,14 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .mn-plan{grid-area:1/1;visibility:hidden;min-width:0}
 .mn-plan.on{visibility:visible}
 .mn-img,.mn-img.shown{opacity:1!important;transition:none!important;animation:none!important}
+
+/* 今日のおすすめケア：肌・睡眠・食事・運動に分ける */
+.ct2-sec{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.ct2-sh{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 4px;font-size:15px;font-weight:600}
+.ct2-sh svg{width:18px;height:18px;color:var(--green-d);flex:none}
+.ct2-sh small{flex-basis:100%;font-size:12px;font-weight:400;color:var(--muted);margin-left:24px}
+.ct2-sec .ct2-i:first-of-type{border-top:0}
+.ct2-none{margin:4px 0 0 24px;font-size:13px;color:var(--muted);line-height:1.6}
 </style>
 </head>
 <body>
@@ -2989,6 +2997,7 @@ const ICONS = {
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   bottle:'<path d="M9.5 2h5v4l2.5 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9l2.5-3z"/><path d="M7 13h10"/>',
   note:'<path d="M5 3h10l4 4v14H5z"/><path d="M9 12h6M9 16h6M9 8h3"/>',
+  drop:'<path d="M12 3.5c3.2 4 6 7.2 6 10.6a6 6 0 0 1-12 0c0-3.4 2.8-6.6 6-10.6z"/>',
   chart:'<path d="M4 20V4M4 20h16"/><path d="m7 15 4-5 3 3 5-6"/>',
   calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1.2"/>',
@@ -9929,7 +9938,7 @@ function face3dEars(T, group, mat) {
 function face3dPrep() {
   const m = FACE3D.mesh; if (m._prep) return m._prep;
   const v = m.v, n = m.r.length, lin = c => Math.pow(c, 2.2);
-  const skin = [0.93, 0.76, 0.65], eye = [0.76, 0.6, 0.53], lip = [0.80, 0.47, 0.45];
+  const skin = [0.93, 0.76, 0.65], eye = [0.85, 0.68, 0.6], lip = [0.80, 0.47, 0.45];
   const base = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     const x = v[i * 3], y = v[i * 3 + 1], z = v[i * 3 + 2], ax = Math.abs(x);
@@ -10012,7 +10021,7 @@ const FACE3D_SKIN_MAIN = `
   // 閉じた目：まつげの線、まぶたのしわの影、目の下のうすい影
   float ex = (ax - 4.15) / 1.7;
   if (abs(ex) < 1.15 && p.z > 1.0) {
-    float ly = 2.25 - 0.28 * (1.0 - ex * ex) + 0.12 * ex;
+    float ly = 2.86 - 0.24 * (1.0 - ex * ex) + 0.06 * ex; // 顔の形にあるまぶたの合わせ目に、まつげの線を重ねる
     float dl = p.y - ly;
     float span = 1.0 - smoothstep(0.78, 1.02, abs(ex));
     float lash = (1.0 - smoothstep(0.03, 0.12, abs(dl + 0.02))) * span;
@@ -10250,7 +10259,11 @@ function careTodayData() {
   if (hasEx && ex.activeDays && (acne || oil >= 3)) add('生活', '運動で汗をかいたら、すぐ洗顔と保湿', [`1週間で${ex.activeDays}日・${ex.totalMin}分の運動`, '汗や皮脂をそのままにすると、ニキビができやすくなります'], ['運動', '肌']);
   else if (hasEx && ex.activeDays < 2 && (short || dull)) add('生活', '10分の散歩をする', [`運動した日は${ex.activeDays}日`, short ? '体を動かすと寝つきが良くなります' : '血のめぐりが良くなり、顔色が明るく見えます', uvMid ? '日中なら日焼け止めを' : ''], ['運動', short ? '睡眠' : '肌', uvMid ? '天気' : '']);
   else if (!hasEx) add('生活', '運動を記録する', ['運動した日を入れると、肌との関係も合わせて提案できます'], ['運動']);
-  items.forEach(x => { x.src = [...new Set(x.src.filter(Boolean))]; });
+  // 問題がないときも、続けるとよいことを1つずつ出す
+  if (hasSleep && !short && !late) add('生活', `今の睡眠（平均${sl.avgHours}時間）を続ける`, ['寝る時刻と長さが足りています', '肌は寝ている間に回復します'], ['睡眠']);
+  if (hasMeal && !items.some(x => x.src.includes('食事'))) add('生活', '毎食、野菜とたんぱく質（卵・魚・大豆）を1品ずつ', ['今の食事に大きな問題は見つかりませんでした', '続けることで肌の材料がそろいます'], ['食事']);
+  if (hasEx && !items.some(x => x.src.includes('運動'))) add('生活', ex.activeDays >= 2 ? '週2日以上の運動を続ける' : '10分の散歩を1回入れる', [`1週間で${ex.activeDays}日・${ex.totalMin}分の運動`, '血のめぐりが良くなり、顔色も明るく見えます', uvMid ? '日中は日焼け止めを' : ''], ['運動']);
+  items.forEach(x => { x.src = [...new Set(x.src.filter(Boolean))]; x.cat = x.when !== '生活' ? '肌' : ['睡眠', '食事', '運動'].find(c => x.src[0] === c) || ['睡眠', '食事', '運動'].find(c => x.src.includes(c)) || '肌'; });
   // ひとことのまとめ
   const why = [lowHum ? `空気が乾燥（${wxs}）` : '', uvHi ? `紫外線が強い（UV${Math.round(w.uv)}）` : '', short ? `睡眠不足（${sl.avgHours}時間）` : '', dry >= 3 ? '肌の乾燥' : '', inflamed ? '赤いニキビ' : (acne ? 'ニキビ' : ''), red >= 3 ? '赤み' : '', oil >= 3 ? 'テカリ' : ''].filter(Boolean).slice(0, 3);
   const lead = !hasSkin && !w ? '肌の記録と天気がそろうと、今日に合わせたケアを出せます。' : why.length ? `今日は${why.join('・')}が重なっています。${calm ? '刺激を減らして、守りのケアを優先しましょう。' : dry >= 3 || lowHum ? 'うるおいを守るケアを中心にしましょう。' : acne ? 'ニキビを増やさないケアを続けましょう。' : '基本のケアを続けましょう。'}` : '大きな問題は見つかりません。基本のケアを続けましょう。';
@@ -10263,22 +10276,25 @@ function careTodayData() {
     ['食事', hasMeal ? [ml.avgProtein != null ? `たんぱく質${Math.round(ml.avgProtein)}g/日` : '', ml.snackDays ? `間食${ml.snackDays}日` : '', ml.avgVeg != null ? `野菜${ml.avgVeg}g/日` : ''].filter(Boolean).join('・') || `${ml.days}日分` : '記録なし', !hasMeal],
     ['運動', hasEx ? `${ex.activeDays}日・合計${ex.totalMin}分` : '記録なし', !hasEx]
   ];
-  return {lead, inputs, items, calm};
+  return {lead, inputs, items, calm, w};
 }
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
-  const itemH = x => `<div class="ct2-i"><span class="ct2-w">${x.when === '朝' ? icon('sun') : x.when === '夜' ? icon('moon') : icon('spark')}${x.when}</span><b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.length ? `<div class="ct2-src">${x.src.map(s => `<span>${esc(s)}</span>`).join('')}</div>` : ''}</div>`;
-  // まず大事な3つ（朝・夜・生活から1つずつ。記録を入れるお願いは後ろ）。残りは「ほかのケア」に
-  const real = D.items.filter(x => !/を記録する$/.test(x.title)), ask = D.items.filter(x => /を記録する$/.test(x.title));
-  const top = []; ['朝', '夜', '生活'].forEach(k => { const x = real.find(y => y.when === k && !top.includes(y)); if (x) top.push(x); });
-  real.forEach(x => { if (top.length < 3 && !top.includes(x)) top.push(x); });
-  const rest = real.filter(x => !top.includes(x));
+  // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
+  const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
+  const CATS = [['肌', 'drop', '肌のケア'], ['睡眠', 'moon', '睡眠'], ['食事', 'note', '食事'], ['運動', 'chart', '運動']];
+  const w = D.w, wxLine = w ? `湿度${Math.round(w.hum)}%・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${w.uv == null ? '－' : Math.round(w.uv)}` : '';
+  const sec = ([c, ic, label]) => {
+    const L = D.items.filter(x => x.cat === c), real = L.filter(x => !/を記録する$/.test(x.title)), ask = L.filter(x => /を記録する$/.test(x.title));
+    const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
+    const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
+    const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
+      : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : '<p class="ct2-none">今日は特にありません。</p>';
+    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}</section>`;
+  };
   return `<div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
     <p class="ct2-lead no-ph">${esc(D.lead)}</p>
-    <div class="ct2-in">${D.inputs.map(([k, v, none]) => `<div class="ct2-r"><span>${k}</span><span class="${none ? 'muted' : ''}">${esc(v)}</span></div>`).join('')}</div>
-    <h3 class="ct2-h3">まずはこの${top.length}つ</h3>${top.map(itemH).join('')}
-    ${rest.length ? `<details class="ct2-more"><summary>ほかのケア（${rest.length}）</summary>${rest.map(itemH).join('')}</details>` : ''}
-    ${ask.length ? `<p class="ct2-ask small muted no-ph">${esc(ask.map(x => x.title.replace('を記録する', '')).join('・'))}も記録すると、もっと合わせて提案できます。</p>` : ''}</div>`;
+    ${CATS.map(sec).join('')}</div>`;
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
 const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
