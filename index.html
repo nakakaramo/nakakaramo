@@ -3214,7 +3214,75 @@ const CONCERN_KEYS = ['acne', 'acnemark', 'redness', 'dry', 'pore', 'spot', 'agi
 // アカウントのアイコン（絵文字と背景の色）
 const AVATAR_EMOJI = ['🌿', '🌸', '🍀', '🌙', '☀️', '🍑', '🐱', '🐶', '🐰', '🐻', '🦊', '🐼', '🍵', '💧', '⭐', '🌈'];
 const AVATAR_COLORS = ['#E3EFE6', '#FBE6E1', '#FFF1CC', '#E2ECF8', '#EFE5F6', '#F1ECE4'];
-const safeImg = src => (typeof src === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(src)) ? src : null;
+// ---------- 写真の保存場所 ----------
+// 写真は大きいので、ふつうの保存場所（約5MB）に全部入れると、写真が増えたときに記録が保存できなくなる。
+// そこで写真だけは端末の別の保存場所（IndexedDB：容量が大きい）に入れ、ふつうの保存場所には目印（idb:○○）だけを書く。
+// 起動したら目印を写真に戻す（PHOTO_READY）。別の保存場所が使えない端末では、今までどおりそのまま保存する。
+const PH_DB = {db:null, ok:false, ready:false, stored:new Set(), mem:new Map(), hashOf:new Map(), pend:new Set(), t:0};
+const PH_MIN = 8000; // これより小さい画像（アイコンなど）はそのまま保存する
+const isPhMark = v => typeof v === 'string' && /^idb:[a-z0-9]+$/.test(v);
+const safeImg = src => {
+  if (isPhMark(src)) return PH_DB.mem.get(src.slice(4)) || (PH_DB.ready ? null : src); // まだ読み込み中のときは目印のまま（消さない）
+  return (typeof src === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(src)) ? src : null;
+};
+// 記録の中の目印を、読み込んである写真に戻す（読み込み済みのものだけ）
+function phUnmark(o, drop) {
+  const walk = x => { if (!x || typeof x !== 'object') return; for (const k of Object.keys(x)) { const v = x[k];
+    if (isPhMark(v)) { const d = PH_DB.mem.get(v.slice(4)); if (d) x[k] = d; else if (drop) x[k] = null; }
+    else if (v && typeof v === 'object') walk(v); } };
+  walk(o); return o;
+}
+// 保存用の文字にする：写真は別の保存場所に入れ終わったものだけ目印にする（入れ終わる前はそのまま書く＝消えない）
+function stateJSON() {
+  return JSON.stringify(state, (k, v) => {
+    if (!PH_DB.ok || typeof v !== 'string' || v.length < PH_MIN || !v.startsWith('data:image/')) return v;
+    let h = PH_DB.hashOf.get(v); if (!h) { h = phHash(v); PH_DB.hashOf.set(v, h); PH_DB.mem.set(h, v); }
+    if (PH_DB.stored.has(h)) return 'idb:' + h;
+    phPut(h, v); return v;
+  });
+}
+function phPut(h, v) {
+  if (PH_DB.pend.has(h) || !PH_DB.db) return; PH_DB.pend.add(h);
+  try {
+    const tx = PH_DB.db.transaction('p', 'readwrite'); tx.objectStore('p').put(v, h);
+    tx.oncomplete = () => { PH_DB.pend.delete(h); PH_DB.stored.add(h); clearTimeout(PH_DB.t); PH_DB.t = setTimeout(() => { try { localStorage.setItem(STORE_KEY, stateJSON()); } catch (e) { /* 何もしない */ } }, 400); };
+    tx.onerror = tx.onabort = () => { PH_DB.pend.delete(h); };
+  } catch (e) { PH_DB.pend.delete(h); }
+}
+// 写真を全部、別の保存場所に入れ終わるまで待つ（バックアップから戻すときなど、写真が一度にたくさん入るとき用）
+async function phStoreAll() {
+  if (!PH_DB.ok) return;
+  const list = [];
+  const walk = x => { if (!x || typeof x !== 'object') return; for (const k of Object.keys(x)) { const v = x[k]; if (typeof v === 'string') { if (v.length >= PH_MIN && v.startsWith('data:image/')) list.push(v); } else if (v && typeof v === 'object') walk(v); } };
+  walk(state);
+  for (const v of list) {
+    let h = PH_DB.hashOf.get(v); if (!h) { h = phHash(v); PH_DB.hashOf.set(v, h); PH_DB.mem.set(h, v); }
+    if (PH_DB.stored.has(h)) continue;
+    await new Promise(res => { try { const tx = PH_DB.db.transaction('p', 'readwrite'); tx.objectStore('p').put(v, h); tx.oncomplete = () => { PH_DB.stored.add(h); res(); }; tx.onerror = tx.onabort = () => res(); } catch (e) { res(); } });
+  }
+}
+function phOpen() {
+  return new Promise(res => {
+    try {
+      if (!window.indexedDB) return res(false);
+      const rq = indexedDB.open('nakakaramo_photos', 1);
+      rq.onupgradeneeded = () => { try { rq.result.createObjectStore('p'); } catch (e) { /* 何もしない */ } };
+      rq.onsuccess = () => { PH_DB.db = rq.result; res(true); };
+      rq.onerror = rq.onblocked = () => res(false);
+      setTimeout(() => res(false), 4000);
+    } catch (e) { res(false); }
+  });
+}
+function phReadAll() {
+  return new Promise(res => {
+    const out = [];
+    try {
+      const rq = PH_DB.db.transaction('p', 'readonly').objectStore('p').openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c) { out.push([String(c.key), c.value]); c.continue(); } else res(out); };
+      rq.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
 const safeUrl = u => (typeof u === 'string' && /^https?:\/\/[^\s<>"']+$/i.test(u.trim())) ? u.trim() : '';
 const toHalf = s => String(s||'').replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/　/g, ' ');
 const strArr = (a, allowed) => Array.isArray(a) ? a.filter(x => typeof x === 'string' && (!allowed || allowed.includes(x))) : [];
@@ -3498,7 +3566,7 @@ function load() {
   try { raw = localStorage.getItem(STORE_KEY); }
   catch (e) { storageOK = false; loadWarning = 'このブラウザではデータを保存できません（プライベートブラウズ等）。再読み込みすると内容が消えます。'; return normalize(freshState()); }
   if (!raw) return normalize(freshState()); // はじめて開いたときも、すべての項目をそろえる
-  try { return normalize(JSON.parse(raw)); }
+  try { return phUnmark(normalize(JSON.parse(raw))); }
   catch (e) {
     try { localStorage.setItem(STORE_KEY + '_broken_backup', raw); } catch (_) {}
     loadWarning = '保存データを読み込めなかったため、初期状態で起動しました。元のデータは別名で退避しています。';
@@ -3508,7 +3576,7 @@ function load() {
 function save() {
   if (!storageOK) return false;
   state.savedAt = Date.now();
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); widgetSoon(); setTimeout(syncSoon, 0); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 0); return true; }
+  try { localStorage.setItem(STORE_KEY, stateJSON()); widgetSoon(); setTimeout(syncSoon, 0); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 0); return true; }
   catch (e) { toast('保存できませんでした。容量が不足している可能性があります（写真を減らしてください）。', 'error'); return false; }
 }
 // ---------- ウィジェット（スマホのホーム画面に置く小さな表示）用のデータ ----------
@@ -3539,6 +3607,27 @@ function widgetSync() {
 }
 let state = load();
 if (storageOK) save(); // 第1版のデータを新しい形式で保存し直す
+// 写真を別の保存場所から読み込んで、目印を写真に戻す（前から端末にある写真は、ここで別の保存場所へ移す）
+const PHOTO_READY = (async () => {
+  try {
+    if (!storageOK || !(await phOpen())) return;
+    const all = await phReadAll(); if (!all) { PH_DB.db = null; return; }
+    all.forEach(([k, v]) => { if (typeof v === 'string') { PH_DB.mem.set(k, v); PH_DB.hashOf.set(v, k); PH_DB.stored.add(k); } });
+    PH_DB.ok = true;
+    let had = false; const chk = JSON.stringify(state); if (/"idb:[a-z0-9]+"/.test(chk)) had = true;
+    phUnmark(state, true); PH_DB.ready = true;
+    save(); // 写真が入ったまま保存されていれば、ここで別の保存場所へ移る
+    if (had && !$('#modal-root').innerHTML) render();
+    // 使われなくなった写真を消す（今の保存内容に目印がないもの）
+    setTimeout(() => { try {
+      const raw = localStorage.getItem(STORE_KEY) || '', used = new Set((raw.match(/"idb:[a-z0-9]+"/g) || []).map(x => x.slice(5, -1)));
+      const walk = x => { if (!x || typeof x !== 'object') return; for (const k of Object.keys(x)) { const v = x[k]; if (typeof v === 'string') { const h = v.length >= PH_MIN && PH_DB.hashOf.get(v); if (h) used.add(h); } else if (v && typeof v === 'object') walk(v); } };
+      walk(state); if (PH_DB.pend.size) return;
+      [...PH_DB.stored].forEach(k => { if (used.has(k)) return; PH_DB.db.transaction('p', 'readwrite').objectStore('p').delete(k); PH_DB.stored.delete(k); PH_DB.mem.delete(k); });
+    } catch (e) { /* 何もしない */ } }, 5000);
+  } catch (e) { /* 何もしない */ }
+  finally { PH_DB.ready = true; }
+})();
 
 /* ---------- データ取得 ---------- */
 const getCat = id => state.catalog.find(p => p.id === id);
@@ -7234,6 +7323,18 @@ function wxFit() {
   b.style.fontSize = f.toFixed(2) + 'px'; b.style.width = T + 'px'; // 下のボタンと同じ横幅（両はしをそろえる）
 }
 window.addEventListener('resize', () => { clearTimeout(wxFit.t); wxFit.t = setTimeout(wxFit, 120); });
+// 開いたまま日付が変わったとき（夜に開いて朝に戻ってきたときなど）：画面を新しい日に描き直す
+// 入力中・シートを開いている間は描き直さない（書いている内容が消えないように）。閉じたあとに描き直す
+let SHOWN_DAY = todayStr();
+function dayCheck() {
+  const t = todayStr(); if (t === SHOWN_DAY) return;
+  const ae = document.activeElement, typing = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+  if ($('#modal-root').innerHTML || typing || document.querySelector('.au-ov, .pm-ov')) return;
+  SHOWN_DAY = t; render();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') dayCheck(); });
+window.addEventListener('pageshow', dayCheck); window.addEventListener('focus', dayCheck);
+setInterval(dayCheck, 60000);
 // アプリに戻ってきたとき・開いたままのときも、30分おきに今の湿度・UVを取り直す
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.settings.wxPref) { if (state.settings.wxPref === '現在地' && state.settings.wxLoc && state.settings.wxLoc.ip) { WX_GEO_TS = 0; WX_GEO_ERR = 0; } wxFetch(false); } }); // 設定アプリで位置情報を許可して戻ってきたら、すぐに正確な場所へ切り替える
 // ホーム画面に追加したアプリは、Safariとは保存場所が別なので、最初は湿度・気温の設定が空になる。
@@ -8085,7 +8186,13 @@ function rxComboItem(name, kind, ingText, v) {
   return {v:v || 'rx:' + name, label:name, sub:`${/サプリ/.test(kind) ? 'サプリメント' : oral ? '飲み薬' : '塗り薬'}（${kind}）・${ingText}`, tags, keys:ms.map(e => e.k), act:moist ? 0 : Math.max(1, ...ms.map(e => e.act)), rx:!moist && !/サプリ/.test(kind), oral, ings:ms, moist};
 }
 // 今の肌の状態（直近7日の記録）：赤み・乾燥・皮脂・ニキビ・ヒリヒリ・肌あれ
+let SSN_C = null; // 同じ描画の中で何度も呼ばれるので、記録が変わるまで結果を使い回す
 function skinStateNow() {
+  const key = todayStr() + '|' + state.savedAt + '|' + state.skinLogs.length;
+  if (SSN_C && SSN_C.key === key) return JSON.parse(JSON.stringify(SSN_C.v));
+  const v = skinStateNow0(); SSN_C = {key, v:JSON.parse(JSON.stringify(v))}; return v;
+}
+function skinStateNow0() {
   const t = todayStr(), logs = state.skinLogs.filter(l => l.date <= t && l.date >= addDays(t, -6));
   const st = {n:logs.length, red:false, dry:false, oil:false, acne:false, sting:false, barrier:false, pore:false, words:[]};
   if (!logs.length) return st;
@@ -12263,6 +12370,7 @@ const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lif
 function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncPush, 2500); }
 async function syncPush() {
   if (!syncOn()) return;
+  await PHOTO_READY; // 写真を読み込み終わってから送る（読み込み前に送ると、写真の目印が抜けるため）
   if (SYNC.busy) { SYNC.pending = true; return; }
   SYNC.busy = true; SYNC.err = '';
   try {
@@ -12278,6 +12386,7 @@ async function syncPush() {
 // 起動・ログインのとき：クラウドのほうが新しければ、この端末のデータを置き換える（写真は残す）
 async function syncPull(ask) {
   if (!syncOn()) return;
+  await PHOTO_READY;
   try {
     const {data, error} = await acct.client.from('user_data').select('data, updated_at').eq('user_id', acct.user.id).maybeSingle();
     if (error) throw error;
@@ -12293,7 +12402,7 @@ async function syncPull(ask) {
 function syncApply(row) {
   const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace;
   state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
+  try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
   SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
   setTimeout(() => photoRestore(row.data && row.data.photoRefs), 300); // この端末にない写真も読み込む
 }
@@ -13761,7 +13870,7 @@ const actions = {
         try { d = JSON.parse(fr.result); if (!d || typeof d !== 'object' || !Array.isArray(d.skinLogs)) throw new Error(); }
         catch (e) { toast('ナカカラモのバックアップファイルではないようです', 'error'); return; }
         if (!await confirmDialog('現在のデータをすべて置き換えて、バックアップから復元しますか？', {ok:'復元する', danger:false})) return;
-        const old = state; state = normalize(d);
+        const old = state; state = normalize(d); await PHOTO_READY; await phStoreAll();
         if (save()) { toast('復元しました'); render(); } else state = old;
       };
       fr.readAsText(file);
@@ -14221,6 +14330,7 @@ document.addEventListener('click', e => {
   openPremiumSheet(a.dataset.psheet || (a.dataset.premium || a.dataset.mcam ? '食事の写真の読み取り' : ''));
 }, true);
 function render() {
+  try { SHOWN_DAY = todayStr(); } catch (e) { /* 何もしない */ }
   applyHelpPref();
   const r = parseRoute();
   if (r.name === 'new') { // ウィジェット・ショートカットから：記録の画面を直接開く
@@ -14300,7 +14410,7 @@ function render() {
 // ほかのタブ・ウィンドウで記録を変えたとき、この画面にも反映する（古い内容で上書きしないため）
 window.addEventListener('storage', e => {
   if (e.key !== STORE_KEY || !e.newValue) return;
-  try { state = normalize(JSON.parse(e.newValue)); } catch (err) { return; }
+  try { state = phUnmark(normalize(JSON.parse(e.newValue))); } catch (err) { return; }
   if (!$('#modal-root').innerHTML) render();
   toast('別のタブでの変更を反映しました');
 });
