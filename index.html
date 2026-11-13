@@ -6855,6 +6855,9 @@ function wxGeo(ask) {
     // GPSも使って正確に取る（約100mに丸めて保存）。30分以内に取った位置はそのまま使う
     const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 1000) / 1000, lon:Math.round(p.coords.longitude * 1000) / 1000}); }, e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); }, {enableHighAccuracy:true, timeout:20000, maximumAge:30 * 60 * 1000});
     if (ask) return go();
+    // まだGPSの場所がない（おおよその場所だけ）ときは、許可の状態の答えにかかわらず、iPhoneに直接聞く
+    // （iPhoneの設定で許可に変えても、アプリに返ってくる状態が古いままのことがあるため。拒否されていれば、iPhoneはすぐに「だめ」と返すだけで何も出ない）
+    if (!state.settings.wxLoc || state.settings.wxLoc.ip) { if (WX_GEO_ERR === 1 && Date.now() - WX_GEO_TS < 5 * 60 * 1000) return res(null); return go(); }
     // ホーム画面に追加したアプリ（iPhone）は、許可の状態を正しく返さないことがあるので、まだ位置がないときは聞いてみる（iPhoneが許可の通知を出す）
     const pwaAsk = isStandalone() && !state.settings.wxLoc;
     if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' || (pwaAsk && st.state !== 'denied') ? go() : res(null)).catch(() => pwaAsk ? go() : res(null)); else pwaAsk ? go() : res(null);
@@ -7002,7 +7005,7 @@ function wxFit() {
 }
 window.addEventListener('resize', () => { clearTimeout(wxFit.t); wxFit.t = setTimeout(wxFit, 120); });
 // アプリに戻ってきたとき・開いたままのときも、30分おきに今の湿度・UVを取り直す
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.settings.wxPref) wxFetch(false); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.settings.wxPref) { if (state.settings.wxPref === '現在地' && state.settings.wxLoc && state.settings.wxLoc.ip) { WX_GEO_TS = 0; WX_GEO_ERR = 0; } wxFetch(false); } }); // 設定アプリで位置情報を許可して戻ってきたら、すぐに正確な場所へ切り替える
 // ホーム画面に追加したアプリは、Safariとは保存場所が別なので、最初は湿度・気温の設定が空になる。
 // そのときは「現在地」で始めて、iPhoneの位置情報の許可を1回だけ聞く（許可すれば、そのまま湿度・気温が出る）
 setTimeout(() => {
@@ -7042,6 +7045,7 @@ function openGeoHelp() {
 }
 function openWxSetup() {
   openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）と地名の確認（BigDataCloud）に送るのは、約100mに丸めた緯度・経度だけです。位置情報が「許可しない」のときは、ネット回線からわかるおおよその場所（市区町村くらい）を使います。いまの気温・湿度は、近くの気象庁アメダスの観測値を使います（出典：気象庁ホームページ。こちらの位置は送りません）。</p>${WX_NOW && WX_NOW.src === 'amedas' && WX_NOW.station ? `<p class="small muted" style="margin:-4px 0 10px">いまの観測所：${esc(WX_NOW.station)}</p>` : ''}
+    ${state.settings.wxPref === '現在地' && state.settings.wxLoc && state.settings.wxLoc.ip ? `<div class="notice" style="margin:0 0 10px">いまは、ネット回線からわかる<b>おおよその場所</b>${state.settings.wxPlace ? `（${esc(state.settings.wxPlace)}）` : ''}の天気です。<button type="button" class="btn btn-soft btn-sm" style="margin-top:8px" data-action="wx-geo-retry">${icon('pin')}正確な場所（GPS）を使う</button></div>` : ''}
     <select class="select" id="f_wxPref"><option value="">使わない</option><option ${state.settings.wxPref === '現在地' ? 'selected' : ''}>現在地</option>${PREFS.map(p => `<option ${state.settings.wxPref === p[0] ? 'selected' : ''}>${p[0]}</option>`).join('')}</select>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">やめる</button><button type="button" class="btn btn-primary" data-action="wx-save">決定</button>`});
 }
