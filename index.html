@@ -2330,6 +2330,14 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .ct2-adv .adv-h{font-size:14px;font-weight:600;margin:0 0 6px}
 
 .twx-n .twx-r{font-size:.62em;font-weight:500;color:var(--muted);margin-left:.25em}
+
+/* アカウントの一番上：ログイン前は「アイコン＋ログイン」だけ（同じ高さ）。ログイン後は名前の右に「編集」（枠なし） */
+.acc-me.acc-login{display:flex;align-items:center;gap:12px;padding:16px 18px;width:100%;text-align:left;font:inherit;color:inherit}
+.acc-me.acc-login .am-t b{font-size:16px;color:var(--ink)}
+.acc-me .am-go{font-style:normal;color:var(--muted);font-size:18px;flex:none}
+.acc-me .am-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.acc-me .am-row b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-me .am-row .am-edit{flex:none;align-self:auto;margin:0;padding:0!important;border:0!important;border-radius:0;background:none;font-size:13.5px;font-weight:500;color:var(--green-d)}
 </style>
 </head>
 <body>
@@ -6936,15 +6944,19 @@ async function wxFetch(force, ask) {
   // ① 気象庁アメダス（いま実際に測った値）と ② Open-Meteo（気象庁のモデルの予報・過去の日ごとの値・紫外線）を同時に読む
   const omBase = `https://api.open-meteo.com/v1/forecast?latitude=${pf[1]}&longitude=${pf[2]}&timezone=Asia%2FTokyo`;
   const omJson = (u, ms) => amdFetch(u, ms || 10000).then(r => r.ok ? r.json() : null).catch(() => null);
-  const [amd, omJ, omB] = await Promise.all([
+  const [amd, omJ, omB, aq] = await Promise.all([
     amedasNow(pf[1], pf[2]),
     omJson(`${omBase}&models=jma_seamless&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,relative_humidity_2m_min&current=temperature_2m,relative_humidity_2m&past_days=31&forecast_days=1`), // 日本の気象庁の細かい（5km）予報
-    omJson(`${omBase}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,relative_humidity_2m_min,uv_index_max&current=temperature_2m,relative_humidity_2m,uv_index&past_days=31&forecast_days=1`) // 紫外線（と、①が取れないときの予備）
+    omJson(`${omBase}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,relative_humidity_2m_min,uv_index_max&current=temperature_2m,relative_humidity_2m,uv_index&past_days=31&forecast_days=1`), // 紫外線（と、①が取れないときの予備）
+    omJson(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${pf[1]}&longitude=${pf[2]}&current=uv_index&hourly=uv_index&past_days=31&forecast_days=1&timezone=Asia%2FTokyo`) // 紫外線の予備（上の天気サービスにつながらない回線でも、こちらはつながることが多い）
   ]);
+  // 紫外線：1時間ごとの値から、日ごとの最大を出す
+  const aqDay = {}; if (aq && aq.hourly && Array.isArray(aq.hourly.time)) aq.hourly.time.forEach((tt, i) => { const u = aq.hourly.uv_index[i]; if (u == null) return; const d = tt.slice(0, 10); aqDay[d] = Math.max(aqDay[d] || 0, Number(u)); });
   let any = false;
   const put = j => { const d = j && j.daily; if (!d || !Array.isArray(d.time)) return; d.time.forEach((day, i) => { const v = {tmax:d.temperature_2m_max && d.temperature_2m_max[i], tmin:d.temperature_2m_min && d.temperature_2m_min[i], hum:d.relative_humidity_2m_mean && d.relative_humidity_2m_mean[i], hmin:d.relative_humidity_2m_min && d.relative_humidity_2m_min[i]};
     if (v.tmax == null || v.hum == null) return; const o = state.weather[day] || {}; Object.entries(v).forEach(([k, x]) => { if (x != null) o[k] = Math.round(Number(x) * 10) / 10; }); state.weather[day] = o; any = true; }); };
   put(omB); put(omJ); // 気象庁のモデルの値を優先（あとから入れたほうが残る）
+  Object.entries(aqDay).forEach(([day, u]) => { if (state.weather[day]) state.weather[day].uv = Math.round(u * 10) / 10; });
   if (omB && omB.daily && omB.daily.time) omB.daily.time.forEach((day, i) => { const u = omB.daily.uv_index_max && omB.daily.uv_index_max[i]; if (u != null && state.weather[day]) state.weather[day].uv = Math.round(Number(u) * 10) / 10; });
   // 今日の最高・最低は、予報と「今日これまでに測った値」の両方を見て決める（実際より低い・高いまま、にならないように）
   if (amd) {
@@ -6953,13 +6965,14 @@ async function wxFetch(force, ask) {
     if (amd.tmin != null) o.tmin = o.tmin != null ? Math.min(o.tmin, amd.tmin) : amd.tmin;
     if (amd.temp != null) { if (o.tmax == null || o.tmax < amd.temp) o.tmax = amd.temp; if (o.tmin == null || o.tmin > amd.temp) o.tmin = amd.temp; } // 予報が取れないときも、いまの気温から出す
     if (o.hum == null && amd.hum != null) o.hum = amd.hum;
+    if (o.uv == null && aqDay[t2] != null) o.uv = Math.round(aqDay[t2] * 10) / 10;
     if (o.tmax != null && o.hum != null) { state.weather[t2] = o; any = true; }
   }
   const cB = omB && omB.current, cJ = omJ && omJ.current;
   const nowHum = amd && amd.hum != null ? amd.hum : cJ && cJ.relative_humidity_2m != null ? cJ.relative_humidity_2m : cB && cB.relative_humidity_2m;
   const nowTemp = amd && amd.temp != null ? amd.temp : cJ && cJ.temperature_2m != null ? cJ.temperature_2m : cB && cB.temperature_2m;
   if (nowHum != null) {
-    WX_NOW = {hum:Number(nowHum), uv:cB && cB.uv_index != null ? Number(cB.uv_index) : null, temp:nowTemp == null ? null : Number(nowTemp), ts:Date.now(), key:wxKey(), src:amd && amd.hum != null ? 'amedas' : 'model', station:amd ? (amd.hStation || amd.tStation) : '', obsAt:amd ? amd.at : ''};
+    WX_NOW = {hum:Number(nowHum), uv:cB && cB.uv_index != null ? Number(cB.uv_index) : aq && aq.current && aq.current.uv_index != null ? Number(aq.current.uv_index) : null, temp:nowTemp == null ? null : Number(nowTemp), ts:Date.now(), key:wxKey(), src:amd && amd.hum != null ? 'amedas' : 'model', station:amd ? (amd.hStation || amd.tStation) : '', obsAt:amd ? amd.at : ''};
     try { localStorage.setItem('nk_wxnow', JSON.stringify(WX_NOW)); } catch (e) { /* 保存できなくても表示はできる */ }
   }
   if (any) {
@@ -11984,6 +11997,7 @@ ${row('Resend（Resend, Inc.）', 'メールアドレス、送るメールの内
 ${row('Google（Googleログイン）', 'Googleアカウントのメールアドレス・名前（Googleの画面で同意した場合）', '「Googleでログイン」を使ったときの本人確認')}
 ${row('Open-Meteo', '湿度・気温を表示する場所の座標（都道府県を選んだ場合はその代表地点）', 'ホームに今日の湿度・気温・紫外線を表示するため。ホームを開いたとき')}
 ${row('BigDataCloud', '約100mに丸めた緯度・経度（地名を出すため）。位置情報が許可されていないときは、位置は送らず、通信元（ネット回線）からおおよその市区町村を調べます', '天気を出す場所の名前と、位置情報が使えないときのおおよその場所を知るため。ホームを開いたとき')}
+${row('Open-Meteo（大気の情報）', '天気と同じ座標', '紫外線（UV）を表示するため。天気サービスにつながらない回線でも出せるようにする予備。ホームを開いたとき')}
 ${row('気象庁（アメダス）', 'なし（全国の最新の観測値を読み込むだけで、位置は送りません）', 'いまの気温・湿度を、近くの観測所で実際に測った値で表示するため。ホームを開いたとき')}
 ${row('Google（Google AdSense）', 'Cookie等の識別子、IPアドレス、閲覧したページ、ブラウザの情報', '広告の配信と、広告の効果の測定。無料プランで広告が表示される画面を開いたとき（下の「5-2」）')}
 ${row('Stripe（Stripe, Inc.）', '支払いに必要な情報（カード情報はStripeに直接入力）', '有料プランの決済・解約。申し込み・管理画面を開いたときだけ')}
@@ -12126,8 +12140,9 @@ function avatarHtml(size) {
 }
 function accMeHtml() {
   const nm = state.settings.nickname;
+  if (!acct.user) return `<button type="button" class="card acc-me acc-link acc-login" data-action="acc-login">${avatarHtml(52)}<span class="am-t"><b>ログイン</b></span><i class="am-go" aria-hidden="true">›</i></button>`; // ログインしていないとき：アイコンと「ログイン」だけ
   return `<a class="card acc-me" href="#/account/me">${avatarHtml(52)}
-    <span class="am-t"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><small>${acct.user ? (isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン') : 'ログインしていません'}</small></span><span class="am-edit">編集</span></a>`;
+    <span class="am-t"><span class="am-row"><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '名前を設定'}</b><span class="am-edit">編集</span></span><small>${isPremium() ? esc(PREMIUM_NAME) + 'プラン' : '無料プラン'}</small></span></a>`;
 }
 // アカウント情報（一番上のプロフィールを押すと開く）：アイコン・名前・プランとログイン
 function viewAccountMe() {
@@ -12638,6 +12653,7 @@ const actions = {
   },
   'acct-retry': () => { acct.status = 'idle'; initCloud(); },
   'support-open': () => openSupport(),
+  'acc-login': () => { acct.msg = ''; openAuth('login').then(ok => { if (ok) render(); }); },
   'auth-open': v => { acct.msg = ''; openAuth(v === 'signup' ? 'signup' : 'login').then(ok => { if (!ok) return; if (parseRoute().name !== 'home') location.hash = '#/home'; else render(); }); }, // ログインしたらホームへ
   'acc-profile': () => openProfile(),
   'perm-geo': () => {
