@@ -2405,7 +2405,7 @@ html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A
 .pc-cn{font-size:16px;margin-right:6px}
 .pc-tr{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--surface2);color:var(--muted);vertical-align:2px}.pc-tr.up{background:#FDF1EC;color:#B04A32}.pc-tr.down{background:#EEF6F0;color:var(--green-d)}
 .pc-blk{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}.pc-blk>small{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}.pc-blk p{margin:0;font-size:14px;line-height:1.7}
-.pc-ings{display:flex;flex-wrap:wrap;gap:6px}.pc-ph{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pc-ph figure{margin:0}.pc-ph img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--surface2)}.pc-ph figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}.pc-own{margin:6px 0 0}
+.pc-ings{display:flex;flex-wrap:wrap;gap:6px}.pc-h3{font-size:14px;margin:0 0 6px}.pc-st{width:100%;border:0;background:none;font:inherit;text-align:left;cursor:pointer;align-items:center}.pc-st>i{margin-left:auto;font-style:normal;color:var(--muted)}.pc-ph{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pc-ph figure{margin:0}.pc-ph img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--surface2)}.pc-ph figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}.pc-own{margin:6px 0 0}
 .pc-items{padding:4px 0}.pc-it{display:flex;gap:10px;align-items:flex-start;padding:10px 16px;color:var(--ink);text-decoration:none;border-top:1px solid var(--line)}.pc-it:first-child{border-top:0}.pc-it b{display:block;font-size:14px}.pc-it small{display:block;font-size:12.5px;color:var(--muted);line-height:1.55}
 .pc-v{flex:none;font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;margin-top:2px}.pc-v.keep{background:#EEF6F0;color:var(--green-d)}.pc-v.review{background:#FDF1EC;color:#B04A32}.pc-v.cut{background:#FBF3E2;color:#7A5A12}
 .pc-ln{padding:8px 0;border-top:1px solid var(--line)}.pc-ln:first-of-type{border-top:0}.pc-ln b{font-size:13.5px}.pc-ln p{margin:2px 0 0;font-size:13.5px;line-height:1.65}.pc-ln.st b{color:var(--green-d)}
@@ -11821,7 +11821,7 @@ function pcLinks(map, lm, from, to, metric) {
   const val = d => metric.f(map[d]);
   const cmp = (key, label, inA, aL, bL, need) => {
     const A = dates.filter(d => inA(d) === true), B = dates.filter(d => inA(d) === false);
-    if (A.length < 3 || B.length < 3) { out.push({key, label, enough:false, need:Math.max(0, 3 - A.length) + Math.max(0, 3 - B.length), hint:need}); return; }
+    if (A.length < 3 || B.length < 3) { out.push({key, label, enough:false, need:Math.max(0, 3 - A.length) + Math.max(0, 3 - B.length), hint:need, same:A.length >= 5 && B.length === 0 ? aL : B.length >= 5 && A.length === 0 ? bL : ''}); return; }
     const a = avg(A.map(val)), b = avg(B.map(val)), diff = a - b;
     out.push({key, label, enough:true, a, b, nA:A.length, nB:B.length, aL, bL, diff, strong:Math.abs(diff) >= metric.th});
   };
@@ -11829,6 +11829,12 @@ function pcLinks(map, lm, from, to, metric) {
   cmp('sleep', '睡眠', sl, '6時間未満の日', '6時間以上の日', '睡眠を記録');
   const ex = d => { const l = lm[d]; return l && l.exRecorded ? exTotal(l) >= 20 : null; };
   cmp('exercise', '運動', ex, '20分以上運動した日', 'それ以外の日', '運動を記録');
+  // 生理周期・ストレス（肌の記録の「影響しそうなこと」）
+  if (state.skinLogs.some(l => (l.factors || []).some(f => /生理/.test(f))) || state.settings.gender === '女性') {
+    cmp('cycle', '生理前', d => { const l = map[d]; return l ? (l.factors || []).includes('生理前') : null; }, '生理前の日', 'それ以外の日', '肌の記録で「生理前」を選ぶ');
+    cmp('cycle2', '生理中', d => { const l = map[d]; return l ? (l.factors || []).includes('生理中') : null; }, '生理中の日', 'それ以外の日', '肌の記録で「生理中」を選ぶ');
+  }
+  if (state.skinLogs.some(l => (l.factors || []).includes('ストレス'))) cmp('stress', 'ストレス', d => { const l = map[d]; return l ? (l.factors || []).includes('ストレス') : null; }, 'ストレスがあった日', 'なかった日', '');
   // 食事は、肌に出るまで少し時間がかかることがあるので、前の日の食事と比べる
   ['揚げ物・脂っこいもの', '甘い飲み物', 'アルコール', '夜遅い食事', '乳製品'].forEach(tag => {
     const f = d => { const l = lm[addDays(d, -1)]; return l ? (l.tags || []).includes(tag) : null; };
@@ -11888,7 +11894,9 @@ function personalAnalysis() {
   const trend = {};
   if (L7.length >= 3 && P7.length >= 3) [['acne', 'acne', 0.5], ['redness', 'red', 0.5], ['dry', 'dry', 0.5], ['oily', 'oil', 0.5]].forEach(([k, n, th]) => { const df = mean(L7, n) - mean(P7, n); trend[k] = df >= th ? 'worse' : df <= -th ? 'better' : 'same'; if (trend[k] === 'worse') add(k, 0.8, '先週より悪くなっている'); });
   if (sc.redness && sc.sensitive) { sc.redness += sc.sensitive * 0.5; why.redness = (why.redness || []).concat(why.sensitive || []); delete sc.sensitive; } // 赤みと敏感は同じケアなので1つにまとめる
-  const top = Object.entries(sc).filter(([k, v]) => v >= 1 && concernOf(k)).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => ({k, v, name:concernOf(k).s, why:[...new Set(why[k] || [])].slice(0, 4), trend:trend[k] || ''}));
+  const ranked = Object.entries(sc).filter(([k, v]) => v >= 1 && concernOf(k)).sort((a, b) => b[1] - a[1]);
+  const others = ranked.slice(3, 7).map(([k]) => ({k, name:concernOf(k).s}));
+  const top = ranked.slice(0, 3).map(([k, v]) => ({k, v, name:concernOf(k).s, why:[...new Set(why[k] || [])].slice(0, 4), trend:trend[k] || ''}));
   // ② 悩みごとのケア・成分（持っている物に入っていれば、それを続ける。併用注意はおすすめしない）
   const owned = new Map(); inUse.forEach(x => (x.ings || []).forEach(e => { if (!owned.has(e.k)) owned.set(e.k, x); }));
   const pool = comboPool(), pickedTags = [];
@@ -11950,10 +11958,19 @@ function personalAnalysis() {
   else if (exRec >= 3 && exDays < 2) week.push('運動は週2〜3回、20〜30分歩くことから（汗をかいたら早めに洗顔・保湿）');
   if (top[0] && week.length < 3 && top[0].nut) week.push(`食事：${top[0].nut}`);
   if (top[1] && week.length < 3) week.push(`${top[1].name}：${top[1].care[0] || ''}`);
+  const cyc = links.find(x => x.key === 'cycle' && x.enough && x.strong && x.diff < 0);
+  if (cyc) week.splice(Math.min(2, week.length), 0, '生理前は肌がゆらぎやすい傾向があります。その時期は新しい物を試さず、保湿を多めにして、刺激の強いケアはお休みします');
   const stage = !d && !L28.length ? 'none' : L28.length < 3 ? 'start' : long ? 'long' : L7.length >= 4 ? 'week' : 'daily';
   if (ph.length < 2) ask.push({t:'記録のときに顔の写真も残すと、写真で見る変化も比べられます', act:'new-log', b:'写真つきで記録'});
   if (missing.length) week.splice(1, 0, `${missing[0].n}が登録されていません。使っていなければ、プチプラの物で十分なので毎日使いましょう`);
-  return {d, top, items, links, changes, life, long, ask, week:week.slice(0, 3), stage, ctx, n7:L7.length, n28:L28.length, metric, photos, missing};
+  others.forEach(o => { o.care = (pcCareFor(o.k, ctx)[0] || ''); });
+  // はじめの基本セット：商品をまだ登録していない人に、肌質に合わせた「まずはこれだけ」を出す（どれもプチプラで十分）
+  const starter = !inUse.length ? [
+    {n:'洗顔料', d:'アミノ酸系のやさしい洗顔料', q:'洗顔｜アミノ酸系洗浄成分'},
+    {n:'保湿', d:ctx.dry ? 'セラミド入りの乳液かクリーム' : ctx.oil ? 'ナイアシンアミド入りの軽い乳液・ジェル' : 'セラミド・ヒアルロン酸入りの乳液', q:ctx.dry ? 'セラミド' : ctx.oil ? 'ナイアシンアミド' : 'セラミド'},
+    {n:'日焼け止め', d:ctx.sens ? '紫外線吸収剤不使用（ノンケミカル）のもの' : ctx.oil ? 'さらっとしたジェル・ミルクタイプ' : 'SPF30・PA+++くらいの毎日使いやすいもの', q:'日焼け止め'}
+  ].concat(top[0] && top[0].ings.length && !ctx.sens ? [{n:'美容液（あれば）', d:`${top[0].name}に：${top[0].ings[0].ja}入り`, q:top[0].ings[0].ja}] : []) : [];
+  return {d, top, others, starter, items, links, changes, life, long, ask, week:week.slice(0, 3), stage, ctx, n7:L7.length, n28:L28.length, metric, photos, missing};
 }
 function viewMycare() {
   const A = personalAnalysis(), f = v => f1(Math.abs(v));
@@ -11975,7 +11992,9 @@ function viewMycare() {
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
       ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は、もう持っている物に入っています。新しく買わなくて大丈夫です。</p>' : '<p class="small muted pc-own">新しく買うなら、まずはプチプラの物からで十分です。</p>'}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
-  else if (A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みが見つかっていません。今のケアを続けながら、記録を続けてください。</p></div>`;
+  if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
+  if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みが見つかっていません。今のケアを続けながら、記録を続けてください。</p></div>`;
+  if (A.starter && A.starter.length) h += `<h2 class="pc-sec">まずはこれだけ（はじめの基本セット）</h2><div class="card pc-items">${A.starter.map(x => `<button type="button" class="pc-it pc-st" data-ingsheet="${esc(x.q)}"><span class="pc-v keep">${esc(x.n)}</span><span><b>${esc(x.d)}</b><small>押すと、人気の商品が見られます</small></span><i>›</i></button>`).join('')}<p class="small muted" style="margin:6px 16px 10px">高い物でなくて大丈夫です。プチプラの物から始めて、合う物が見つかったらMyアイテムに登録してください。</p></div>`;
   if (A.items.length) {
     const V = {keep:['続ける', 'keep'], review:['見直す', 'review'], cut:['減らせる', 'cut']};
     h += `<h2 class="pc-sec">使っている物</h2><div class="card pc-items">${(A.missing || []).map(x => `<div class="pc-it"><span class="pc-v cut">足りない</span><span><b>${esc(x.n)}</b><small>登録されていません。${esc(x.why)}。使っていなければ、プチプラの物で十分です</small></span></div>`).join('')}${['review', 'cut', 'keep'].flatMap(v => A.items.filter(i => i.v === v)).map(i => `<a class="pc-it" href="#/my/${encodeURIComponent(i.x.p.id)}"><span class="pc-v ${V[i.v][1]}">${V[i.v][0]}</span><span><b>${esc(truncate(i.x.p.name, 22))}</b><small>${esc(i.note)}</small></span></a>`).join('')}</div>`;
@@ -11990,7 +12009,7 @@ function viewMycare() {
   const ok = A.links.filter(x => x.enough), lack = A.links.filter(x => !x.enough && x.key.indexOf('food:') !== 0);
   if (A.stage !== 'none') h += `<h2 class="pc-sec">生活と肌の関係</h2><div class="card"><p class="small muted" style="margin:0 0 8px">${esc(A.metric.l)}で比べています（直近60日）。同じ時期に起きたことでも、それが原因とは限りません。</p>
     ${ok.length ? ok.map(x => { const better = x.diff > 0; return `<div class="pc-ln ${x.strong ? 'st' : ''}"><b>${esc(x.label)}</b><p>${x.strong ? `${esc(x.aL)}は、${esc(x.bL)}より${esc(A.metric.l)}が${better ? '良い' : '悪い'}傾向です（${x.nA}日と${x.nB}日の比較）。関係があるかもしれません。` : `${esc(x.aL)}と${esc(x.bL)}で、大きな差は見られません（${x.nA}日と${x.nB}日）。`}</p></div>`; }).join('') : ''}
-    ${lack.length ? `<p class="small muted" style="margin-top:8px">${lack.map(x => `${esc(x.label)}は、比べるための記録がまだ足りません（あと${x.need}日ほど）`).join('。')}。</p>` : ''}</div>`;
+    ${lack.length ? `<p class="small muted" style="margin-top:8px">${lack.map(x => x.same ? `${esc(x.label)}は、いつも「${esc(x.same)}」なので、比べられません` : `${esc(x.label)}は、比べるための記録がまだ足りません（あと${x.need}日ほど）`).join('。')}。</p>` : ''}</div>`;
   const ch = A.changes.filter(c => c.enough);
   if (A.changes.length) h += `<h2 class="pc-sec">使い始めた物の前後</h2><div class="card">${ch.length ? ch.map(c => `<div class="pc-ln"><b>${esc(truncate(c.p.name, 22))}</b><p>使い始める前の2週間と、使って1〜3週間で、${esc(A.metric.l)}は${Math.abs(c.diff) < A.metric.th / 2 ? '大きく変わっていません' : c.diff > 0 ? '良くなっています' : '悪くなっています'}。${c.others.length ? `同じ時期に「${esc(truncate(c.others[0].name, 14))}」も使い始めているので、どちらの影響かは分かりません。` : ''}</p></div>`).join('') : ''}${A.changes.some(c => !c.enough) ? `<p class="small muted">${A.changes.filter(c => !c.enough).map(c => esc(truncate(c.p.name, 16))).join('・')}は、前後の記録が足りないので、まだ比べられません。</p>` : ''}</div>`;
   h += `<p class="small muted" style="margin:14px 4px 0">記録をもとにした目安で、医学的な診断ではありません。治療中の病気・処方薬については、皮膚科の指示を優先してください。赤み・痛み・かゆみが強いとき、長く続くときは皮膚科で相談してください。</p>`;
