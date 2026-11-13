@@ -139,7 +139,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 body{margin:0;font-family:var(--font);background:transparent;color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
 #main{overflow-wrap:anywhere;word-break:normal}
 #main .card{min-width:0}
-body.no-scroll{position:fixed;left:0;right:0;overflow:hidden;width:100%}
+html:has(body.no-scroll),body.no-scroll{overflow:hidden}.modal-backdrop{overscroll-behavior:contain}
 a{color:var(--green-d)}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:.02em}
 p{margin:0}
@@ -2387,7 +2387,7 @@ html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-them
 .cm-c.good{background:#EEF6F0;color:var(--green-d)}
 button.cm-c.own{background:#E7F0F7;color:#2F5F86;box-shadow:inset 0 0 0 1px #C9DCEA;gap:4px}button.cm-c.own svg{width:13px;height:13px;flex:none}
 html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A9C9E6;box-shadow:inset 0 0 0 1px rgba(120,170,220,.35)}
-.own-ic{display:flex;align-items:center;justify-content:center;color:var(--muted)}.own-ic svg{width:22px;height:22px}.own-tm{font-style:normal;font-size:11.5px;color:var(--muted)}
+.pop-item.ir.own-it{background:var(--surface);border-color:var(--line)}.own-ic{display:flex!important;align-items:center;justify-content:center;color:var(--muted);background:var(--surface2)}.own-ic svg{width:22px;height:22px}.own-tm{font-size:11.5px;color:var(--muted);font-weight:600}
 .cl-rec{font-weight:700;color:var(--green-d)}
 button.cm-c.bad{box-shadow:inset 0 0 0 1px #F2CFC4}.cm-c{max-width:100%;text-align:left}
 .av-note{display:inline-block;margin:0 0 10px;font-size:12px;font-weight:700;color:#7A5A12;background:#FBF3E2;border-radius:999px;padding:3px 10px}
@@ -3815,8 +3815,9 @@ let hapSegQueued = false;
 new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requestAnimationFrame(() => { hapSegQueued = false; hapticizeSegs(); hapticizeTargets(); }); }).observe(document.documentElement, {childList:true, subtree:true});
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
-function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
-function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); document.body.style.top = ''; window.scrollTo(0, y); }
+// シートを開いている間は、下の画面を動かさない（体の位置を固定して戻す方法だと、閉じたときに一瞬いちばん上が見えてチカチカするので、スクロールだけ止める）
+function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.classList.add('no-scroll'); }
+function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }
 function closeModal(now) { const r = $('#modal-root');
   // 閉じるときも、下にすっと消える（中身はすぐ消して、見た目だけ少し残す）。別の画面へ移るときは、すぐ消す（新しい画面の上に残って見えないように）
   const m0 = r.querySelector('.modal-backdrop');
@@ -5611,7 +5612,7 @@ function openOwnedSheet(name, pids) {
   setTimeout(() => { MODAL_REOPEN = () => openOwnedSheet(name, pids); }, 0);
   openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet">
     <p class="small muted" style="margin:0 0 10px">${L.some(p => isRxP(p)) ? '登録している皮膚科の薬です。' : L.some(p => truncate(p.name, 16) === name) ? 'Myアイテムに登録している商品です。' : 'Myアイテムに登録している、この成分が入った商品です。'}</p>
-    <div class="irk-list">${L.map(p => `<button type="button" class="pop-item ir own-it" data-ownpick="${esc(p.id)}">${p.image ? extImgHtml(p.image, 'pop-img ir-img') : `<span class="pop-img ir-img own-ic">${icon('bottle')}</span>`}<span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b>${p.timing ? `<em class="own-tm">${esc(p.timing)}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('') || '<p class="small muted">商品が見つかりませんでした。</p>'}</div>
+    <div class="irk-list">${L.map(p => `<button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}">${p.image ? extImgHtml(p.image, 'pop-img ir-img') : `<span class="pop-img ir-img own-ic">${icon('bottle')}</span>`}<span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b>${p.timing ? `<small class="own-tm">使う時間：${esc(p.timing)}</small>` : ''}</span><i class="ing-go">›</i></button>`).join('') || '<p class="small muted">商品が見つかりませんでした。</p>'}</div>
     ${e && !L.some(p => isRxP(p)) ? `<div class="ing-dl" style="margin-top:12px"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div></div>` : ''}</div>`});
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
 }
@@ -8692,7 +8693,9 @@ function rtPlan(slot) {
   const here = R ? live(slot === 'am' ? R.am : R.pm) : [], all = R ? live(R.am).concat(live(R.pm)) : [];
   // ほかの時間の商品を借りるときも、その時間に使える物だけ（「夜」にした物・夜向きの成分が入った物は朝に出さない）
   const fitSlot = x => (slot === 'am' ? /朝/ : /夜/).test(x.p.timing || '朝・夜') && !(slot === 'am' && x.nightOnly);
-  const prodOf = (kinds, any) => { let L = here.filter(s => kinds.includes(s.kind)); if (!L.length && any) L = all.filter(s => kinds.includes(s.kind) && fitSlot(s.x)); const seen = new Set(); return L.map(s => s.x).filter(x => !seen.has(x.p.id) && seen.add(x.p.id)); };
+  // 美容液いがいは、登録している物の中から（スキンケア設計で選ばれていない物も）候補にして、あとで今日の肌・天気でしぼる
+  const prodOf = (kinds, any) => { if (R && !kinds.includes('serum')) { const C = R.A.infos.filter(x => kinds.includes(x.step) && !x.rx && !(R.paused || []).includes(x) && fitSlot(x)); if (C.length) return C; }
+    let L = here.filter(s => kinds.includes(s.kind)); if (!L.length && any) L = all.filter(s => kinds.includes(s.kind) && fitSlot(s.x)); const seen = new Set(); return L.map(s => s.x).filter(x => !seen.has(x.p.id) && seen.add(x.p.id)); };
   const steps = [], add = (k, o) => steps.push(Object.assign({k, prods:[], good:[], avoid:[], today:[], type:''}, o));
   const T = (t, src) => ({t, src});
   const uniq = L => [...new Set(L.filter(Boolean))];
@@ -8762,6 +8765,33 @@ function rtPlan(slot) {
     spotSteps(); rxSteps('moist');
     add('moist', moistO('pm', uniq([lowHum ? T('空気が乾いている日は、最後にクリームでふたをして、寝ている間の乾燥を防ぎます', '天気') : null, calm ? T('肌を休ませる日は、うるおいを守るのが一番です', '肌') : null])));
     rxSteps('drug'); rxSteps('cover');
+  }
+  // 登録しているから全部使う、ではなく、今日の肌の状態・天気（紫外線・暑さ）から、今日使う物をしぼる
+  {
+    const need = new Set([(dryT || lowHum || cold) && 'dry', (oilT || hot) && 'oily', (oilT || poreT) && 'pore', sensT && 'sensitive', sensT && 'redness', acneT && 'acne', markT && 'acnemark', markT && 'spot', markT && 'dull', ageT && 'aging', poreT && 'rough'].filter(Boolean));
+    const strongX = x => (x.ings || []).some(e => e.act >= 1);
+    const fitX = x => (x.ings || []).reduce((a, e) => a + (e.cs || []).filter(k => need.has(k)).length, 0) - ((sensT || calm) && strongX(x) ? 3 : 0);
+    const photoX = x => !!x.nightOnly || (x.ings || []).some(e => e.time === '夜');
+    const spfX = x => Math.max(0, ...((String(x.p.name || '') + ' ' + String(x.p.memo || '')).match(/SPF\s*(\d+)/gi) || []).map(v => Number(v.replace(/\D/g, ''))));
+    const kindX = x => x.step || '';
+    const nm = x => '「' + truncate(x.p.name, 16) + '」';
+    const restN = (st, L, why, src) => { if (L.length) st.today.push(T(`今日は${L.map(nm).join('')}はお休みします（${why}）`, src || '肌')); };
+    const best = (L, sc) => L.slice().sort((a, b) => sc(b) - sc(a));
+    steps.forEach(st => { if (st.fixed || !st.prods.length) return; let L = st.prods.slice();
+      if (st.k === 'serum') {
+        if (slot === 'am' && uv != null && uv >= 3) { const ph = L.filter(photoX); L = L.filter(x => !ph.includes(x)); restN(st, ph, '紫外線が強めの日なので、夜に回します', '天気'); }
+        const sg = best(L.filter(strongX), fitX); if (sg.length > 1) { const off = sg.slice(1); L = L.filter(x => !off.includes(x)); restN(st, off, '刺激の強い美容液は1回に1つまで'); }
+        if (L.length > 2) { const off = best(L, fitX).slice(2); L = L.filter(x => !off.includes(x)); restN(st, off, '今日の肌に合う2つにしぼります'); }
+      } else if (st.k === 'moist') {
+        const heavy = /クリーム/.test(st.name), cr = L.filter(x => kindX(x) === 'cream'), lt = L.filter(x => kindX(x) !== 'cream');
+        if (!heavy && cr.length && lt.length) { L = lt; restN(st, cr, hot ? '暑くて汗をかきやすい日なので、軽い保湿にします' : oilT ? 'テカリやすい肌なので、軽い保湿にします' : '今日は乳液だけで十分うるおいます', hot ? '天気' : '肌'); }
+        ['emulsion', 'cream', 'allinone'].forEach(k => { const g = L.filter(x => kindX(x) === k); if (g.length > 1) { const off = best(g, fitX).slice(1); L = L.filter(x => !off.includes(x)); restN(st, off, '同じ種類は1つで十分です'); } });
+      } else if (L.length > 1) {
+        const sc = st.k === 'sunscreen' ? (uv != null && uv >= 6 ? spfX : uv != null && uv < 3 ? x => -spfX(x) : fitX) : fitX;
+        const keep = best(L, sc)[0], off = L.filter(x => x !== keep); L = [keep];
+        restN(st, off, st.k === 'sunscreen' ? (uv != null && uv >= 6 ? '紫外線が強い日なので、SPFの高い物にします' : '今日の紫外線ならこれで十分です') : '今日の肌に合う1つにしぼります', st.k === 'sunscreen' ? '天気' : '肌');
+      }
+      st.prods = L; });
   }
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
