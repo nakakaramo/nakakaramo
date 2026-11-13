@@ -2385,6 +2385,9 @@ html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-them
 .cm-ing>div{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
 .cm-c{font-size:12px;font-weight:600;line-height:1.3;padding:4px 9px;border-radius:999px}
 .cm-c.good{background:#EEF6F0;color:var(--green-d)}
+button.cm-c.own{background:#E7F0F7;color:#2F5F86;box-shadow:inset 0 0 0 1px #C9DCEA;gap:4px}button.cm-c.own svg{width:13px;height:13px;flex:none}
+html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A9C9E6;box-shadow:inset 0 0 0 1px rgba(120,170,220,.35)}
+.own-ic{display:flex;align-items:center;justify-content:center;color:var(--muted)}.own-ic svg{width:22px;height:22px}.own-tm{font-style:normal;font-size:11.5px;color:var(--muted)}
 .cl-rec{font-weight:700;color:var(--green-d)}
 button.cm-c.bad{box-shadow:inset 0 0 0 1px #F2CFC4}.cm-c{max-width:100%;text-align:left}
 .av-note{display:inline-block;margin:0 0 10px;font-size:12px;font-weight:700;color:#7A5A12;background:#FBF3E2;border-radius:999px;padding:3px 10px}
@@ -5602,6 +5605,17 @@ function openAvoidSheet(word) {
     ${e ? `<a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : ''}
     <p class="small muted" style="margin-top:8px">今の肌の状態（肌質診断・最近の肌の記録・使っている薬）から出しています。皮膚科で言われていることがあれば、そちらを優先してください。</p></div>`});
 }
+// 登録済みの成分：押すと、その成分が入っている登録済みの商品を出す
+function openOwnedSheet(name, pids) {
+  const L = pids.map(id => state.myProducts.find(p => p.id === id)).filter(Boolean), e = ingEntryOf(name);
+  setTimeout(() => { MODAL_REOPEN = () => openOwnedSheet(name, pids); }, 0);
+  openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet">
+    <p class="small muted" style="margin:0 0 10px">${L.some(p => isRxP(p)) ? '登録している皮膚科の薬です。' : L.some(p => truncate(p.name, 16) === name) ? 'Myアイテムに登録している商品です。' : 'Myアイテムに登録している、この成分が入った商品です。'}</p>
+    <div class="irk-list">${L.map(p => `<button type="button" class="pop-item ir own-it" data-ownpick="${esc(p.id)}">${p.image ? extImgHtml(p.image, 'pop-img ir-img') : `<span class="pop-img ir-img own-ic">${icon('bottle')}</span>`}<span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b>${p.timing ? `<em class="own-tm">${esc(p.timing)}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('') || '<p class="small muted">商品が見つかりませんでした。</p>'}</div>
+    ${e && !L.some(p => isRxP(p)) ? `<div class="ing-dl" style="margin-top:12px"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div></div>` : ''}</div>`});
+  document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-owned]'); if (!b) return; hapticTick(); openOwnedSheet(b.dataset.owned, (b.dataset.pids || '').split(',').filter(Boolean)); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-avoidsheet]'); if (!b) return; hapticTick(); openAvoidSheet(b.dataset.avoidsheet); });
 // 洗顔料は「成分」ではなく商品の種類なので、洗顔料の中から探す
 const WASH_KIND = [
@@ -8767,21 +8781,29 @@ function rtPaneHtml(slot) {
   // おすすめ成分は、押すと成分の説明と人気の商品が出る（おすすめケアと同じ）。控えたいものが入った商品は省く。洗顔は洗顔料の中から出す
   const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', wash = s.k === 'wash', cl = s.k === 'cleanse', e = !sun && !wash && !cl && ingEntryOf(x), ok = sun || wash || cl || e;
     return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : wash ? '洗顔｜' + x : cl ? 'クレンジング｜' + x : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(chipText(x))}<i>›</i></button>` : `<span class="cm-c good">${esc(chipText(x))}</span>`; }).join('');
-  const pname = x => esc((x.p.brand ? x.p.brand + ' ' : '') + x.p.name);
+  const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}</button>`).join('');
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
-      ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : ''}
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
       ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${esc(x.t)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
-      ${s.good.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${gChips(s)}</div></div>` : ''}
+      ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
       ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
+  // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
+  const nk = v => normIng(chipText(v));
+  P.steps.forEach(st => { const m = new Map();
+    st.prods.forEach(x => { if (st.fixed) { const n = truncate(x.p.name, 18); m.set(n, (m.get(n) || []).concat(x.p.id)); return; }
+      (x.ings || []).filter(e => (e.cs || []).length && !/^(グリセリン|濃グリセリン|BG|水|エタノール|香料)$/.test(chipText(e.ja))).slice(0, 4).forEach(e => { const n = chipText(e.ja); m.set(n, (m.get(n) || []).concat(x.p.id)); });
+      if (![...m.values()].some(L => L.includes(x.p.id))) { const n = truncate(x.p.name, 16); m.set(n, (m.get(n) || []).concat(x.p.id)); } }); // 目立つ成分がない商品は、商品名で出す
+    st.own = [...m].map(([name, pids]) => ({name, pids:[...new Set(pids)], drug:!!st.fixed}));
+    const ok = st.own.map(o => nk(o.name)); st.good = st.good.filter(v => { const k = nk(v); return !ok.some(o => o && k && (o === k || o.includes(k) || k.includes(o))); }); }); // 持っている成分と同じおすすめは出さない
   // 前の手順で出した成分・控えたいものは、あとの手順ではくり返さない
-  { const sg = new Set(), sa = new Set(), key = v => String(v).split(/[（）()・\s]+/).filter(Boolean).sort().join('|'); P.steps.forEach(st => { st.good = st.good.filter(v => !sg.has(key(v)) && sg.add(key(v))); st.avoid = st.avoid.filter(v => !sa.has(key(v)) && sa.add(key(v))); }); }
+  { const sg = new Set(), sa = new Set(), key = v => String(v).split(/[（）()・\s]+/).filter(Boolean).sort().join('|');
+    P.steps.forEach(st => st.own.forEach(o => sg.add(key(o.name)))); P.steps.forEach(st => { st.good = st.good.filter(v => !sg.has(key(v)) && sg.add(key(v))); st.avoid = st.avoid.filter(v => !sa.has(key(v)) && sa.add(key(v))); }); }
   let h = '';
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
