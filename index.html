@@ -2385,6 +2385,7 @@ html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-them
 .cm-ing>div{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
 .cm-c{font-size:12px;font-weight:600;line-height:1.3;padding:4px 9px;border-radius:999px}
 .cm-c.good{background:#EEF6F0;color:var(--green-d)}
+.cl-rec{font-weight:700;color:var(--green-d)}
 button.cm-c.bad{box-shadow:inset 0 0 0 1px #F2CFC4}.cm-c{max-width:100%;text-align:left}
 .av-note{display:inline-block;margin:0 0 10px;font-size:12px;font-weight:700;color:#7A5A12;background:#FBF3E2;border-radius:999px;padding:3px 10px}
 .cm-ph{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--green-d);margin-bottom:3px}
@@ -5451,6 +5452,11 @@ const SUN_INFO = [ // 中身はアプリが書いた文（利用者の入力で�
   ['選び方', '<span class="nw">毎日の通勤・買い物なら</span><span class="nw">SPF20〜30・PA++〜+++、</span><span class="nw">外で長く過ごす日や海・山では</span><span class="nw">SPF50・PA++++が</span>目安です。'],
   ['種類の違い', '<span class="sun-k">' + [['ジェル', '軽くのびがよい'], ['クリーム', 'しっとりして保湿しやすい'], ['ミルク', '汗や水に強いものが多い'], ['スプレー', '髪や背中にも塗り直しやすい'], ['スティック', '手を汚さず塗り直せる'], ['パウダー', 'メイクの上から塗り直せる']].map(([a, b]) => `<i>${a}</i><span>${b}</span>`).join('') + '</span>'],
   ['気をつけること', '少なめに塗ると効果が下がるので、決められた量をムラなく塗り、汗をかいたら2〜3時間ごとに塗り直しましょう。肌に合わないときは「紫外線吸収剤フリー（ノンケミカル）」を選ぶ方法もあります。', 'warn']];
+// クレンジングは種類で落とす力がちがうので、強い順に並べて出す
+const CL_INFO = rec => [
+  ['種類の違い（落とす力が強い順）', '<span class="sun-k">' + [['オイル', 'いちばん強い。濃いメイク・ウォータープルーフ向け'], ['バーム', 'オイルに近い強さで、肌あたりがやわらか'], ['ジェル', '中くらい。オイルフリーはまつエクにも'], ['クリーム', '中くらい。うるおいを残しやすい'], ['ミルク', 'やさしい。薄いメイク・乾燥肌向け'], ['ウォーター', 'いちばん軽い。日焼け止めだけの日に']].map(([a, b]) => `<i>${a}</i><span>${b}</span>`).join('') + '</span>'],
+  ['選び方', (rec ? `今のあなたには<span class="cl-rec">${esc(rec)}</span>が合っています。` : '') + 'メイクの濃さに合わせて、落とせるいちばんやさしい種類を選ぶと、肌の負担が少なくなります。'],
+  ['気をつけること', '乾いた手と顔で使い、こすらずなじませます。オイル・バームは少量の水で白くにごらせてから流すと、すすぎ残しが減ります。', 'warn']];
 // 楽天で探すボタン：美容・コスメのジャンル（日焼け止めは「日焼け止め・UVケア」）の中だけを、レビューの多い順（s=5）で開く。服・傘・サプリなどは出さない
 const rakutenIngUrl = (w, sun) => 'https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(sun ? '日焼け止め' : w) + '/' + (sun ? '216492' : '100939') + '/?s=5&nitem=' + encodeURIComponent(sun ? 'サプリ 飲む ハイドロキノン' : 'サプリ 飲む');
 let ING_AVOID_CTX = [];
@@ -5469,40 +5475,42 @@ function hasAvoid(text, ks) {
   return ks.some(k => { let i = t.indexOf(k); while (i >= 0) { const after = t.slice(i + k.length, i + k.length + 4); if (!/^(ふり|free|無添加|不使用|ぜろ|0|無配合|なし|おふ|off)/i.test(after) && !/(無|のん|non)$/i.test(t.slice(Math.max(0, i - 3), i))) return true; /* fnorm でカタカナはひらがなになっている */ i = t.indexOf(k, i + 1); } return false; });
 }
 async function openIngSheet(word) {
-  const washQ = /^洗顔｜/.test(word), wraw = String(word).replace(/^洗顔｜/, '');
+  const clQ = /^クレンジング｜/.test(word), washQ = /^洗顔｜/.test(word), wraw = String(word).replace(/^(洗顔|クレンジング)｜/, '');
   const w1 = wraw.replace(/（.*?）|\(.*?\)/g, '').trim();
-  const wk = washQ || (/洗顔|洗浄成分/.test(w1) && !/後|運動|回数|しすぎ/.test(w1)) ? washKindOf(wraw) : null; // 洗顔料のおすすめは、洗顔料の中から探す
-  const w0 = wk ? (washQ || !/洗顔/.test(w1) ? wk[1] + '系の洗顔料' : w1).replace(/^アミノ酸系の洗顔料$/, 'アミノ酸系洗顔料').replace(/^(サリチル酸|酵素|クレイ)系の洗顔料$/, '$1洗顔') : w1, e = wk ? null : ingEntryOf(word);
-  const isSun = !wk && (/日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen'));
+  const isCl = clQ || /^(クレンジング|メイク落とし)$/.test(w1);
+  const wk = isCl ? null : washQ || (/洗顔|洗浄成分/.test(w1) && !/後|運動|回数|しすぎ/.test(w1)) ? washKindOf(wraw) : null; // 洗顔料のおすすめは、洗顔料の中から探す
+  const w0 = isCl ? 'クレンジング' : wk ? (washQ || !/洗顔/.test(w1) ? wk[1] + '系の洗顔料' : w1).replace(/^アミノ酸系の洗顔料$/, 'アミノ酸系洗顔料').replace(/^(サリチル酸|酵素|クレイ)系の洗顔料$/, '$1洗顔') : w1, e = wk || isCl ? null : ingEntryOf(word);
+  const isSun = !wk && !isCl && (/日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen'));
   const useNote = (String(wraw).match(/[（(](.*?)[）)]/) || [])[1] || '';
   setTimeout(() => { MODAL_REOPEN = () => openIngSheet(word); }, 0); // 商品を開いて戻ってきたら、このランキングを開き直す
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
     ${useNote && /回|朝|夜|だけ|毎/.test(useNote) ? `<p class="av-note">${esc(useNote)}</p>` : ''}
-    ${wk ? `<div class="ing-dl"><div class="ing-b"><b>どんな洗顔料？</b><p>${esc(wk[4])}</p></div><div class="ing-b warn"><b>気をつけること</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
+    ${isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>どんな洗顔料？</b><p>${esc(wk[4])}</p></div><div class="ing-b warn"><b>気をつけること</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <div id="ing-partner"></div>
-    <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
+    <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
     <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
   const WASH_N = /洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|パウダー|wash/i, WASH_NG = /ボディ|シャンプー|ハンド|食器|洗濯|ヘア|メイク落とし|クレンジング(オイル|バーム|ジェル|ミルク|ウォーター)|拭き取り|詰め?替/i;
   const keys = wk ? [] : ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []);
-  const hit = wk ? x => { const n = cleanShopName(x.name) || x.name; return WASH_N.test(n) && !WASH_NG.test(n) && wk[3].test(n + ' ' + (x.caption || '') + ' ' + (x.ingredients || '')) && shopSingle(x, w0); }
+  const hit = isCl ? x => { const n = cleanShopName(x.name) || x.name; return /クレンジング|メイク落とし|cleansing/i.test(n) && !/ボディ|シャンプー|頭皮|ヘア|スカルプ|洗顔フォーム|詰め?替/i.test(n) && shopSingle(x, w0); }
+    : wk ? x => { const n = cleanShopName(x.name) || x.name; return WASH_N.test(n) && !WASH_NG.test(n) && wk[3].test(n + ' ' + (x.caption || '') + ' ' + (x.ingredients || '')) && shopSingle(x, w0); }
     : x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)) && shopSingle(x, w0); };
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
   partnersLoad().then(P => {
     const box = document.getElementById('ing-partner'); if (!box) return;
-    const av = ingAvoidKeys(), got = P.filter(x => { if (wk) return /洗顔/.test(x.category || '') && wk[3].test(x.ingredients || '') && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); const t = fnorm(((x.ingredients || '') + ' ' + x.name).replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
+    const av = ingAvoidKeys(), got = P.filter(x => { if (isCl) return /クレンジング|メイク落とし/.test(x.category + x.name) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); if (wk) return /洗顔/.test(x.category || '') && wk[3].test(x.ingredients || '') && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); const t = fnorm(((x.ingredients || '') + ' ' + x.name).replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
     // 全成分がわかっている商品を先に。同じ条件の中では日ごとに順番を入れ替える（いつも同じ商品だけにならないように）
     const day = Number(todayStr().replace(/-/g, '')) || 0, rk = x => (x.partial ? 1000 : 0) + ((P.indexOf(x) * 7919 + day) % 997);
     got.sort((a, b) => rk(a) - rk(b)); got.splice(4);
     if (!got.length) return;
     box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
-      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。${wk ? `全成分に${esc(wk[1])}系の成分が入っている洗顔料を出しています。` : `全成分（または、ブランドが公表している主な成分）に「${esc(w0)}」が入っている商品を出しています。`}買う前に、お店のページで全成分を確かめてください。</p>`;
+      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。${isCl ? '提携ブランドのクレンジングを出しています。' : wk ? `全成分に${esc(wk[1])}系の成分が入っている洗顔料を出しています。` : `全成分（または、ブランドが公表している主な成分）に「${esc(w0)}」が入っている商品を出しています。`}買う前に、お店のページで全成分を確かめてください。</p>`;
     box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); sheetGo('#/shop'); };
   });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
   // 種類ごとにも探して、たくさん集める（すべて・化粧水・美容液・クリーム・その他で分けて見られる）
   const list = [], alias = e && (e.aliases || [])[0] && (e.aliases || [])[0] !== w0 ? e.aliases[0] : '';
-  const qs = wk ? wk[2] : isSun ? ['日焼け止め', '日焼け止め ジェル', '日焼け止め クリーム', '日焼け止め ミルク', '日焼け止め スプレー', '日焼け止め スティック', '日焼け止め パウダー'].concat(w0 !== '日焼け止め' ? [w0] : [])
+  const qs = isCl ? ['クレンジング', 'クレンジングオイル', 'クレンジングバーム', 'クレンジングジェル', 'クレンジングクリーム', 'クレンジングミルク', 'クレンジングウォーター'] : wk ? wk[2] : isSun ? ['日焼け止め', '日焼け止め ジェル', '日焼け止め クリーム', '日焼け止め ミルク', '日焼け止め スプレー', '日焼け止め スティック', '日焼け止め パウダー'].concat(w0 !== '日焼け止め' ? [w0] : [])
     : [w0, w0 + ' 美容液', w0 + ' クリーム', w0 + ' 化粧水', alias].filter(Boolean);
   const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'popular'})));
   res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.filter(hit).forEach(x => { if (!list.some(y => sameProduct({name:y.name}, {name:x.name}))) list.push(Object.assign({}, x, {rank:0})); }); });
@@ -5516,12 +5524,16 @@ async function openIngSheet(word) {
   const b = document.getElementById('ing-pop'); if (!b) return;
   const none = !list.length;
   const sunKind = n => /スティック|stick/i.test(n) ? 'stick' : /スプレー|ミスト|spray/i.test(n) ? 'spray' : /パウダー|powder/i.test(n) ? 'powder' : /ジェル|gel|エッセンス|ウォータリー/i.test(n) ? 'gel' : /ミルク|乳液|milk/i.test(n) ? 'milk' : /クリーム|cream/i.test(n) ? 'cream' : 'other';
-  const kindOf = x => { const n = tidyName(x.name); if (isSun) return sunKind(n); return /美容液|セラム|エッセンス|アンプル/i.test(n) ? 'serum' : /化粧水|ローション|トナー/i.test(n) && !/ボディ/.test(n) ? 'lotion' : /クリーム|バーム/.test(n) && !/ハンド|ボディ|日焼け|UV/i.test(n) ? 'cream' : 'other'; };
+  const CLK = {オイル:'oil', バーム:'balm', ジェル:'gel', クリーム:'cream', ミルク:'milk', ウォーター:'water', ローション:'water', リキッド:'water'};
+  const clKind = n => { const m = String(n).match(/クレンジング\s*(オイル|バーム|ジェル|クリーム|ミルク|ウォーター|ローション|リキッド)|(オイル|バーム|ジェル|クリーム|ミルク|ウォーター)\s*クレンジング/); return m ? CLK[m[1] || m[2]] : clKind0(n); };
+  const clKind0 = n => /オイル|oil/i.test(n) ? 'oil' : /バーム|balm/i.test(n) ? 'balm' : /ジェル|gel/i.test(n) ? 'gel' : /クリーム|cream/i.test(n) ? 'cream' : /ミルク|milk|乳液/i.test(n) ? 'milk' : /ウォーター|ローション|リキッド|水|water/i.test(n) ? 'water' : 'other';
+  const kindOf = x => { const n = tidyName(x.name); if (isSun) return sunKind(n); if (isCl) return clKind(n); return /美容液|セラム|エッセンス|アンプル/i.test(n) ? 'serum' : /化粧水|ローション|トナー/i.test(n) && !/ボディ/.test(n) ? 'lotion' : /クリーム|バーム/.test(n) && !/ハンド|ボディ|日焼け|UV/i.test(n) ? 'cream' : 'other'; };
   list.forEach(x => { x.kind = kindOf(x); });
   // 日焼け止め・洗顔など、成分ではなく「商品の種類」そのもののときは、化粧水・美容液…に分けない
-  const isType = !!wk || /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
-  const KINDS = isSun ? [['all', 'すべて'], ['gel', 'ジェル'], ['cream', 'クリーム'], ['milk', 'ミルク'], ['spray', 'スプレー'], ['stick', 'スティック'], ['powder', 'パウダー'], ['other', 'その他']] : isType ? [['all', 'すべて']] : [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
+  const isType = !!wk || isCl || /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
+  const KINDS = isCl ? [['all', 'すべて'], ['oil', 'オイル'], ['balm', 'バーム'], ['gel', 'ジェル'], ['cream', 'クリーム'], ['milk', 'ミルク'], ['water', 'ウォーター'], ['other', 'その他']] : isSun ? [['all', 'すべて'], ['gel', 'ジェル'], ['cream', 'クリーム'], ['milk', 'ミルク'], ['spray', 'スプレー'], ['stick', 'スティック'], ['powder', 'パウダー'], ['other', 'その他']] : isType ? [['all', 'すべて']] : [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
   let cur = 'all', shown = 5;
+  if (isCl && clQ) { const k0 = clKind(wraw.split(/[・（(]/)[0]); if (k0 !== 'other' && list.some(x => x.kind === k0)) cur = k0; } // ケア管理のおすすめの種類から開く
   // 押したときにチカチカしないように：ボタンの列・商品の行は1回だけ作って、あとは並べ替え・出し入れだけする
   const amzQ = encodeURIComponent(wk ? wk[2][0] : w0);
   b.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
@@ -8718,7 +8730,7 @@ function rtPlan(slot) {
       const type = mk === 'full' ? (dryT || sensT ? 'クリーム・バーム' : 'オイル・バーム') : acneT || oilT ? 'ジェル（オイルフリー）' : 'ミルク・ジェル';
       const emul = cl && R && R.A.infos.some(x => x.p.id === cl.p.id && (x.ctype === 'oil' || x.ctype === 'balm'));
       add('cleanse', {name:'クレンジング', type, prods:clP, how:'乾いた手と顔に適量をとり、こすらずにくるくるなじませます。' + (emul ? '最後に少量の水を足して白くにごらせて（乳化）から、ぬるま湯で流します。' : 'ぬるま湯でしっかり流します。'),
-        good:[], avoid:uniq(['コットンで強くこする', sensT ? '香料' : '']), today:mk === 'sunonly' ? [T('日焼け止めだけの日も、落としきれないと毛穴づまりの原因になります', '肌')] : []});
+        gl:'選び方', good:[type], avoid:uniq(['コットンで強くこする', sensT ? '香料' : '']), today:mk === 'sunonly' ? [T('日焼け止めだけの日も、落としきれないと毛穴づまりの原因になります', '肌')] : []});
     }
     const noDouble = cl && R && R.A.infos.some(x => x.p.id === cl.p.id && x.noDoubleWash);
     const rxWash = rxOn.filter(r => r.role === 'wash');
@@ -8753,15 +8765,15 @@ function rtPaneHtml(slot) {
   // 控えたいものは、押すと「なぜ控えたいのか」が出る。（ ）の補足は押したあとの画面に出して、ボタンは1行に収める
   const chips = L => L.map(x => `<button type="button" class="cm-c bad cm-ing-b" data-avoidsheet="${esc(x)}">${esc(chipText(x))}<i>›</i></button>`).join('');
   // おすすめ成分は、押すと成分の説明と人気の商品が出る（おすすめケアと同じ）。控えたいものが入った商品は省く。洗顔は洗顔料の中から出す
-  const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', wash = s.k === 'wash', e = !sun && !wash && ingEntryOf(x), ok = sun || wash || e;
-    return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : wash ? '洗顔｜' + x : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(chipText(x))}<i>›</i></button>` : `<span class="cm-c good">${esc(chipText(x))}</span>`; }).join('');
+  const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', wash = s.k === 'wash', cl = s.k === 'cleanse', e = !sun && !wash && !cl && ingEntryOf(x), ok = sun || wash || cl || e;
+    return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : wash ? '洗顔｜' + x : cl ? 'クレンジング｜' + x : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(chipText(x))}<i>›</i></button>` : `<span class="cm-c good">${esc(chipText(x))}</span>`; }).join('');
   const pname = x => esc((x.p.brand ? x.p.brand + ' ' : '') + x.p.name);
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
-      ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : s.type ? `<span class="cm-p cm-p0">おすすめ：${esc(s.type)}</span>` : ''}
+      ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : ''}
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
       ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${esc(x.t)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
@@ -10876,7 +10888,7 @@ function careTodayHtml() {
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
     // 肌の朝・夜のケアの順番は「ケア管理」にまとめた（ここでは重ねて出さない）
-    if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span></h3>${chips}<a class="ct2-go" href="#/routine">${icon('sun')}<span>朝・夜のケアの順番は「ケア管理」へ</span><i aria-hidden="true">›</i></a></section>`;
+    if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span></h3>${chips}</section>`;
     const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
       : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : chips ? '' : '<p class="ct2-none">今日は特にありません。</p>';
     return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}</section>`;
