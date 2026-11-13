@@ -10075,13 +10075,14 @@ function openLogForm(id) {
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
   // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
-  const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openFaceScan(async res => {
+  // 顔を回して3方向から撮る方法は手間なのでやめて、顔の枠に合わせて1枚撮るだけにする
+  const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openGuideCam(url => (async res => {
     if (res.ai) { faceAiShots(res); setTimeout(() => { const el = $('#faceai-info', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80); return; }
     const url = res.url;
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
     else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
-  }, {fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
+  })({photo:url, ai:null, url}), {w:1024, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (isPremium()) { faceAi(f); return; }
