@@ -10824,7 +10824,7 @@ function face3dEars(T, group, mat) {
 function face3dPrep() {
   const m = FACE3D.mesh; if (m._prep) return m._prep;
   const v = m.v, n = m.r.length, lin = c => Math.pow(c, 2.2);
-  const skin = [0.94, 0.81, 0.71], eye = [0.74, 0.60, 0.53], lip = [0.83, 0.55, 0.52];
+  const skin = [0.93, 0.76, 0.65], eye = [0.76, 0.6, 0.53], lip = [0.80, 0.47, 0.45];
   const base = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     const x = v[i * 3], y = v[i * 3 + 1], z = v[i * 3 + 2], ax = Math.abs(x);
@@ -10835,6 +10835,13 @@ function face3dPrep() {
     base[i * 3] = lin(c[0]); base[i * 3 + 1] = lin(c[1]); base[i * 3 + 2] = lin(c[2]);
   }
   const nb = []; const R2 = 1.6 * 1.6;
+  // くぼみ（目のくぼみ・小鼻・口の横・耳のうしろ）を少し暗くして、立体感を出す
+  { const g = new FACE3D.three.BufferGeometry(); g.setAttribute('position', new FACE3D.three.Float32BufferAttribute(v, 3)); g.setIndex(m.f); g.computeVertexNormals(); const nr = g.attributes.normal.array; g.dispose();
+    const RR = 1.3 * 1.3;
+    for (let i = 0; i < n; i++) { let acc = 0, cnt = 0; const xi = v[i * 3], yi = v[i * 3 + 1], zi = v[i * 3 + 2];
+      for (let j = 0; j < n; j++) { const dx = v[j * 3] - xi, dy = v[j * 3 + 1] - yi, dz = v[j * 3 + 2] - zi, d2 = dx * dx + dy * dy + dz * dz; if (d2 > RR || d2 < 1e-6) continue; acc += (dx * nr[i * 3] + dy * nr[i * 3 + 1] + dz * nr[i * 3 + 2]) / Math.sqrt(d2); cnt++; }
+      const cav = cnt ? Math.max(0, acc / cnt) : 0, k = 1 - Math.min(0.28, cav * 0.9);
+      base[i * 3] *= k; base[i * 3 + 1] *= k * 0.985; base[i * 3 + 2] *= k * 0.98; } }
   for (let i = 0; i < n; i++) {
     const list = [];
     for (let j = 0; j < n; j++) { const dx = v[i * 3] - v[j * 3], dy = v[i * 3 + 1] - v[j * 3 + 1], dz = v[i * 3 + 2] - v[j * 3 + 2]; if (dx * dx + dy * dy + dz * dz < R2) list.push(j); }
@@ -10860,6 +10867,70 @@ function face3dColors(geo, counts, max, types, sel) {
     col[i * 3] = o[0]; col[i * 3 + 1] = o[1]; col[i * 3 + 2] = o[2];
   }
   geo.attributes.color.needsUpdate = true;
+}
+
+// ===== 3Dの顔をリアルにする：肌のきめ・血色・眉・まつげ・まぶたの影を、画面の細かさのまま描く（顔の形のデータは変えない） =====
+const FACE3D_SKIN_GLSL = `
+varying vec3 vSkP;
+varying vec3 vSkN;
+float skH(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float skN(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(skH(i), skH(i + vec3(1.0, 0.0, 0.0)), f.x), mix(skH(i + vec3(0.0, 1.0, 0.0)), skH(i + vec3(1.0, 1.0, 0.0)), f.x), f.y),
+             mix(mix(skH(i + vec3(0.0, 0.0, 1.0)), skH(i + vec3(1.0, 0.0, 1.0)), f.x), mix(skH(i + vec3(0.0, 1.0, 1.0)), skH(i + vec3(1.0, 1.0, 1.0)), f.x), f.y), f.z); }
+`;
+const FACE3D_SKIN_MAIN = `
+{
+  vec3 p = vSkP; float ax = abs(p.x);
+  float front = smoothstep(0.8, 3.2, p.z) * smoothstep(0.0, 0.35, vSkN.z);
+  // 肌のきめ（ごく細かいむら）
+  float n1 = skN(p * 5.0), n2 = skN(p * 16.0 + 3.1);
+  diffuseColor.rgb *= 1.0 + (n1 - 0.5) * 0.045 + (n2 - 0.5) * 0.03;
+  // 血色：頬・鼻先・あごに、ほんのり赤み。額はわずかに明るく
+  float ck = exp(-pow((ax - 4.4) / 1.9, 2.0) - pow((p.y + 0.6) / 1.7, 2.0)) * front;
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.02, 0.86, 0.84), ck * 0.5);
+  float nt = exp(-pow(p.x / 1.1, 2.0) - pow((p.y + 0.9) / 1.0, 2.0)) * smoothstep(5.5, 7.0, p.z);
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.0, 0.88, 0.86), nt * 0.45);
+  float jw = smoothstep(-6.5, -9.5, p.y) * front;
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.97, 0.9, 0.88), jw * 0.35);
+  // 眉：内側は太く、外へ向かって細く。毛の流れのような細かいむら
+  float bt = (ax - 1.35) / 5.0;
+  if (bt > -0.1 && bt < 1.1 && p.z > 1.0) {
+    float tc = clamp(bt, 0.0, 1.0);
+    float cy = 4.35 + 0.55 * sin(tc * 2.3) - 0.25 * tc * tc;
+    float th = mix(0.5, 0.2, smoothstep(0.05, 1.0, tc));
+    float d = abs(p.y - cy + 0.08 * (1.0 - tc)) / th;
+    float hair = 0.78 + 0.22 * skN(vec3(p.x * 5.0 + p.y * 2.0, p.y * 9.0, 2.0));
+    float m = (1.0 - smoothstep(0.35, 1.0, d)) * smoothstep(-0.1, 0.12, bt) * (1.0 - smoothstep(0.8, 1.06, bt)) * hair * front;
+    m *= mix(0.75, 1.0, smoothstep(0.0, 0.35, tc)); // 眉頭は少しうすく
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.09, 0.06, 0.045), m * 0.82);
+  }
+  // 閉じた目：まつげの線、まぶたのしわの影、目の下のうすい影
+  float ex = (ax - 4.15) / 1.7;
+  if (abs(ex) < 1.15 && p.z > 1.0) {
+    float ly = 2.25 - 0.28 * (1.0 - ex * ex) + 0.12 * ex;
+    float dl = p.y - ly;
+    float span = 1.0 - smoothstep(0.78, 1.02, abs(ex));
+    float lash = (1.0 - smoothstep(0.03, 0.12, abs(dl + 0.02))) * span;
+    lash += (1.0 - smoothstep(0.0, 0.22, -dl)) * step(dl, 0.0) * span * 0.35 * (0.6 + 0.4 * skN(vec3(p.x * 20.0, 1.0, 1.0)));
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.05, 0.035, 0.03), clamp(lash, 0.0, 1.0) * 0.85 * front);
+    float cr = exp(-pow((dl - 0.62) / 0.16, 2.0)) * (1.0 - smoothstep(0.55, 0.95, abs(ex)));
+    diffuseColor.rgb *= 1.0 - cr * 0.16 * front;
+    float lid = exp(-pow((dl - 0.3) / 0.3, 2.0)) * span;
+    diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.93, 0.85, 0.86), lid * 0.35 * front);
+    float ud = exp(-pow((dl + 0.55) / 0.35, 2.0)) * (1.0 - smoothstep(0.4, 0.95, abs(ex)));
+    diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.9, 0.84, 0.88), ud * 0.4 * front);
+  }
+}
+`;
+// 肌の光：光の当たらない側がほんのり赤く透ける感じ（皮ふの下で光が散る）を足す
+function face3dSkinPatch(sh, plain) {
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSkP;\nvarying vec3 vSkN;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSkP = position;\nvSkN = normal;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + FACE3D_SKIN_GLSL)
+    .replace('#include <color_fragment>', '#include <color_fragment>\n' + (plain ? '' : FACE3D_SKIN_MAIN))
+    .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+      { float fr = 1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
+        reflectedLight.indirectDiffuse += diffuseColor.rgb * vec3(0.20, 0.07, 0.05) * (0.35 + 0.65 * fr); }`);
 }
 // 範囲選択で入れた状態の色を、顔の頂点の色として塗り、まわりと混ぜてふんわりしたグラデーションにする
 function face3dZoneVertexPaint(st) {
@@ -11493,24 +11564,27 @@ async function drawFace3d(opts) {
   try { renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true}); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = 'この端末では3D表示を使えません。'; return; }
   const W = cv.clientWidth || 300, H = cv.clientHeight || 300;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3)); renderer.setSize(W, H, false); // iPhoneの画面の細かさ（3倍）のまま描く
-  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; // 白く飛ばず、写真のような明るさの出方
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(28, W / H, 1, 200);
   cam.position.set(0, 0.6, opts.camZ || 60);
-  scene.add(new T.HemisphereLight(0xfff6ee, 0x6b5a50, 0.75));
-  const key = new T.DirectionalLight(0xffffff, 0.75); key.position.set(-12, 14, 22); scene.add(key);
-  const fill = new T.DirectionalLight(0xffe8d8, 0.35); fill.position.set(16, -4, 14); scene.add(fill);
+  scene.add(new T.HemisphereLight(0xfff4ea, 0x5e4a42, 0.55));
+  { const rim = new T.DirectionalLight(0xffe2d0, 0.35); rim.position.set(0, 10, -24); scene.add(rim); } // うしろからの光：輪郭がふんわり明るくなり、立体に見える
+  const key = new T.DirectionalLight(0xfff8f0, 1.0); key.position.set(-12, 14, 22); scene.add(key);
+  const fill = new T.DirectionalLight(0xffe8d8, 0.3); fill.position.set(16, -4, 14); scene.add(fill);
   const geo = new T.BufferGeometry();
   geo.setAttribute('position', new T.Float32BufferAttribute(m.v, 3));
   geo.setAttribute('color', new T.Float32BufferAttribute(new Float32Array(m.r.length * 3), 3));
   geo.setIndex(m.f); geo.computeVertexNormals();
-  const mat = new T.MeshStandardMaterial({vertexColors:true, roughness:0.68, metalness:0, side:T.DoubleSide});
+  const mat = new T.MeshPhysicalMaterial({vertexColors:true, roughness:0.58, metalness:0, clearcoat:0.12, clearcoatRoughness:0.55, side:T.DoubleSide}); // うすい皮脂のつや
   // 肌の記録の画面：顔にうすい格子を入れ、押した部位をマス目でくっきり仕切って光らせる
   let gridInfo = null;
   if (opts.grid) gridInfo = face3dGrid(T, m, mat, opts.gridLines !== false);
+  { const prev = mat.onBeforeCompile; mat.onBeforeCompile = (sh, rd) => { if (prev) prev(sh, rd); face3dSkinPatch(sh); }; } // リアルな肌（眉・まつげ・血色）を先に塗り、その上に記録の色を重ねる
   const face = new T.Mesh(geo, mat), group = new T.Group();
   group.add(face);
   // 首（頭の後ろは顔の形のデータに含めてある。マネキンのような胸像にして、立体だとわかりやすくする）
-  const headMat = new T.MeshStandardMaterial({color:new T.Color(0.94, 0.81, 0.71).convertSRGBToLinear(), roughness:0.75, metalness:0});
+  const headMat = new T.MeshPhysicalMaterial({color:new T.Color(0.91, 0.74, 0.63).convertSRGBToLinear(), roughness:0.62, metalness:0, clearcoat:0.08, clearcoatRoughness:0.6});
+  headMat.onBeforeCompile = sh => face3dSkinPatch(sh, true); // 首と耳も、顔と同じ肌の光り方に（眉などは描かない）
   const neck = new T.Mesh(new T.CylinderGeometry(3.6, 4.4, 9, 40), headMat); neck.position.set(0, -11.0, -4.6); group.add(neck);
   // 耳（左右）
   face3dEars(T, group, headMat);
