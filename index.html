@@ -9695,7 +9695,7 @@ async function openFaceScan(done, o = {}) {
 }
 async function openGuideCam(done, o = {}) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { if (o.fallback) o.fallback(); else toast('この端末ではアプリ内のカメラが使えません。「ファイルを選択」から撮ってください', 'error'); return; }
-  const prev = photoList().slice(-1)[0], root = document.createElement('div');
+  const prev = o.noGhost ? null : photoList().slice(-1)[0], root = document.createElement('div'); // 記録を編集するときは、前回の写真を重ねない
   root.className = 'gcam'; root.innerHTML = `<div class="gcam-view"><video playsinline autoplay muted></video>${prev ? `<img class="gcam-ghost" src="${safeImg(prev.photo)}" alt="">` : ''}
     <svg class="gcam-guide" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><mask id="gm"><rect width="300" height="400" fill="#fff"/><ellipse cx="150" cy="185" rx="78" ry="105" fill="#000"/></mask></defs><rect width="300" height="400" fill="rgba(0,0,0,.35)" mask="url(#gm)"/><ellipse cx="150" cy="185" rx="78" ry="105" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 5"/></svg>
     <p class="gcam-msg">顔を枠に合わせてください${prev ? `<br><small>うすく見えているのは前回（${esc(fmtMD(prev.date))}）の写真です</small>` : ''}</p></div>
@@ -10135,7 +10135,7 @@ function openLogForm(id) {
   };
   renderPhoto();
   form._setPhoto = url => { pendingPhoto = url; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
-  $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url)); };
+  $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url), {noGhost:!!ex}); };
   $('#f_photo').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     try { pendingPhoto = await readImage(file, 800, 0.8); renderPhoto(); }
@@ -10198,7 +10198,7 @@ function openLogForm(id) {
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
     else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
-  })({photo:url, ai:null, url}), {w:1024, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
+  })({photo:url, ai:null, url}), {w:1024, noGhost:!!ex, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (isPremium()) { faceAi(f); return; }
