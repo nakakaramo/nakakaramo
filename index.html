@@ -7012,9 +7012,11 @@ function viewTrouble() {
   html += common + '</div>';
   const bad = ngBadDays().slice(0, 12);
   html += `<div class="card"><div class="card-h"><h2>肌が荒れた日</h2></div><p class="small muted" style="margin:0 0 6px">肌の記録から、調子が悪かった日を出しています。その日に使ったものと、使い始めて2週間以内のものです。</p>`;
-  html += bad.length ? bad.map(({l, why}) => { const sus = ngSuspects(l.date, l);
+  const badS = bad.map(x => Object.assign(x, {sus:ngSuspects(x.l.date, x.l)})), noUse = badS.filter(x => !x.sus.length); // 使った化粧品がない日は、1行にまとめる（同じ文が並ばないように）
+  html += bad.length ? badS.filter(x => x.sus.length).map(({l, why, sus}) => {
       return `<div class="ng-day"><div class="ng-dh"><b>${fmtDate(l.date)}</b><span>${esc(why.join('・'))}</span></div>
-        ${sus.length ? sus.map(x => `<div class="ng-sus"><span class="ng-sn"><b>${esc(truncate(x.p.name, 28))}</b><small>${[x.used ? 'この日に使った' : '', x.fresh ? `${diffDays(x.p.startDate, l.date) + 1}日目` : ''].filter(Boolean).join('・')}</small></span>${x.p.ng ? '<span class="chip warn">記録ずみ</span>' : `<button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(x.p.id)}" data-date="${l.date}">合わなかった</button>`}</div>`).join('') : '<p class="small muted" style="margin:4px 0 0">この日に使った化粧品は記録されていません。</p>'}</div>`; }).join('')
+        ${sus.map(x => `<div class="ng-sus"><span class="ng-sn"><b>${esc(truncate(x.p.name, 28))}</b><small>${[x.used ? 'この日に使った' : '', x.fresh ? `${diffDays(x.p.startDate, l.date) + 1}日目` : ''].filter(Boolean).join('・')}</small></span>${x.p.ng ? '<span class="chip warn">記録ずみ</span>' : `<button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(x.p.id)}" data-date="${l.date}">合わなかった</button>`}</div>`).join('')}</div>`; }).join('')
+      + (noUse.length ? `<div class="ng-day"><div class="ng-dh"><b>ほかに${noUse.length}日</b><span>${noUse.slice(0, 4).map(x => fmtShort(x.l.date)).join('・')}${noUse.length > 4 ? '…' : ''}</span></div><p class="small muted" style="margin:4px 0 0">使った化粧品が記録されていない日です。肌の記録で「使ったアイテム」を選ぶと、ここに出ます。</p></div>` : '')
     : `<p class="small muted" style="margin:0">肌が荒れた日はまだありません。毎日の肌の記録から、自動で出します。</p>`;
   html += '</div><div class="notice cb-note">ここに出ている化粧品が原因とは限りません。かゆみや腫れが強いとき、続くときは、使うのをやめて皮膚科に相談してください。</div>';
   return html;
