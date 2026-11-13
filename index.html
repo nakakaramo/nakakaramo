@@ -170,6 +170,7 @@ button{font-family:inherit}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
+html.no-press a:active,html.no-press button:active,html.no-press label:active,html.no-press .btn:active,html.no-press .tab:active,html.no-press [data-action]:active,html.no-press .seg-opt span:active,html.no-press .used-tile:active,html.no-press .mrow:active,html.no-press .pcard:active,html.no-press .sc-opt:active,html.no-press .ls-main:active,html.no-press .acc-row:active,html.no-press .mb-col:active,html.no-press .icon-btn:active,html.no-press .ac-item:active{transform:none!important;opacity:1!important;transition:none!important}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:20px;height:20px}
@@ -9697,9 +9698,14 @@ document.addEventListener('change', e => { const ip = e.target; if (e.isTrusted 
   // 指を離したら、すぐにこちらでリンクを押す（iPhoneが押したことに気づかず反応しない、を防ぐ。下のバーの感度もよくなる）
   let held = null, sx = 0, sy = 0, moved = false;
   const restore = () => { const a = held; if (a) { a.setAttribute('href', a.dataset.hrefHold); delete a.dataset.hrefHold; held = null; } return a; };
+  // 指を離した瞬間に「押した見た目」を消す：iPhoneは画面を移るときの見た目を写して、左からなぞって戻ったときに見せるので、
+  // 押したままの形が写ると、戻ったときにボタンが「押して戻る」ように動いて見える
+  const R0 = document.documentElement;
+  document.addEventListener('touchstart', () => { R0.classList.remove('no-press'); }, {passive:true, capture:true});
+  document.addEventListener('touchend', e => { const t = e.target.closest && e.target.closest('a, button, [data-action], label, .tab'); if (t) { R0.classList.add('no-press'); void R0.offsetWidth; } }, {passive:true, capture:true});
   document.addEventListener('touchstart', e => { restore(); const a = e.target.closest && e.target.closest('a[href]'); if (!a || e.touches.length !== 1) return; held = a; sx = e.touches[0].clientX; sy = e.touches[0].clientY; moved = false; a.dataset.hrefHold = a.getAttribute('href'); a.removeAttribute('href'); }, {passive:true, capture:true});
   document.addEventListener('touchmove', e => { if (held && (Math.abs(e.touches[0].clientX - sx) > 12 || Math.abs(e.touches[0].clientY - sy) > 12)) moved = true; }, {passive:true, capture:true});
-  document.addEventListener('touchend', e => { const a = restore(); if (!a || moved || window.__hSwipe) return; if (e.cancelable) e.preventDefault(); a.click(); }, {passive:false, capture:true});
+  document.addEventListener('touchend', e => { const a = restore(); if (!a || moved || window.__hSwipe) return; if (e.cancelable) e.preventDefault(); R0.classList.add('no-press'); void R0.offsetWidth; requestAnimationFrame(() => a.click()); }, {passive:false, capture:true});
   document.addEventListener('touchcancel', restore, {passive:true, capture:true});
 })();
 function openLogForm(id) {
