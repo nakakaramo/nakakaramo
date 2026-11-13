@@ -2405,7 +2405,7 @@ html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A
 .pc-cn{font-size:16px;margin-right:6px}
 .pc-tr{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--surface2);color:var(--muted);vertical-align:2px}.pc-tr.up{background:#FDF1EC;color:#B04A32}.pc-tr.down{background:#EEF6F0;color:var(--green-d)}
 .pc-blk{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}.pc-blk>small{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}.pc-blk p{margin:0;font-size:14px;line-height:1.7}
-.pc-ings{display:flex;flex-wrap:wrap;gap:6px}.pc-own{margin:6px 0 0}
+.pc-ings{display:flex;flex-wrap:wrap;gap:6px}.pc-ph{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pc-ph figure{margin:0}.pc-ph img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--surface2)}.pc-ph figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}.pc-own{margin:6px 0 0}
 .pc-items{padding:4px 0}.pc-it{display:flex;gap:10px;align-items:flex-start;padding:10px 16px;color:var(--ink);text-decoration:none;border-top:1px solid var(--line)}.pc-it:first-child{border-top:0}.pc-it b{display:block;font-size:14px}.pc-it small{display:block;font-size:12.5px;color:var(--muted);line-height:1.55}
 .pc-v{flex:none;font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;margin-top:2px}.pc-v.keep{background:#EEF6F0;color:var(--green-d)}.pc-v.review{background:#FDF1EC;color:#B04A32}.pc-v.cut{background:#FBF3E2;color:#7A5A12}
 .pc-ln{padding:8px 0;border-top:1px solid var(--line)}.pc-ln:first-of-type{border-top:0}.pc-ln b{font-size:13.5px}.pc-ln p{margin:2px 0 0;font-size:13.5px;line-height:1.65}.pc-ln.st b{color:var(--green-d)}
@@ -3434,7 +3434,9 @@ function normalize(d) {
     cellMarks:(() => { const o = {}; if (l.cellMarks && typeof l.cellMarks === 'object') Object.entries(l.cellMarks).forEach(([k, m]) => { if (!/^\d{1,3},\d{1,3}$/.test(k) || !m || typeof m !== 'object') return; const v = {}; AREA_CONCERNS.forEach(c => { const n = Math.round(Number(m[c])); if (n >= 1 && n <= 5) v[c] = n; }); if (m['ニキビ']) v['ニキビ'] = clamp(Math.round(Number(m['ニキビ'])) || 1, 1, ACNE_KINDS.length); if (Object.keys(v).length) o[k] = v; }); return o; })(),
     areaNotes:(() => { const o = {}; if (l.areaNotes && typeof l.areaNotes === 'object') AREAS.forEach(a => { const v = strArr(l.areaNotes[a.id], AREA_CONCERNS); if (v.length) o[a.id] = v; }); return o; })(),
     areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts).filter(id => out.myProducts.some(p => p.id === id)), usageRecorded:!!l.usageRecorded,
-    memo:String(l.memo||''), photo:safeImg(l.photo), demo:!!l.demo
+    memo:String(l.memo||''), photo:safeImg(l.photo), demo:!!l.demo,
+    aiPhoto:(() => { const a = l.aiPhoto; if (!a || typeof a !== 'object') return null; // 写真の読み取り結果（分析で使う）
+      return {acne:clamp(Math.round(num(a.acne)), 0, 99), zones:(Array.isArray(a.zones) ? a.zones : []).filter(z => z && AREA_CONCERNS.includes(z.c)).slice(0, 40).map(z => ({z:String(z.z || '').slice(0, 8), c:z.c, l:clamp(Math.round(num(z.l, 1)), 1, 5)})), note:String(a.note || '').slice(0, 80), shots:a.shots === 3 ? 3 : 1}; })()
   })) : [];
   out.lifeLogs = Array.isArray(d.lifeLogs) ? d.lifeLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
     id:String(l.id), date:l.date, bed:isValidHM(l.bed) ? l.bed : '', wake:isValidHM(l.wake) ? l.wake : '',
@@ -10046,6 +10048,7 @@ function openLogForm(id) {
     condAuto(); // 肌の調子：最初の1か月（28日分）は自分で選んでもらい、その選び方を学習してから自動で選ぶ
     $('#modal-root').dataset.dirty = '1'; fpSync();
   };
+  let aiLast = null;
   const faceAi = async file => {
     const box = $('#faceai-info', form); if (!file || !box) return;
     let img; try { img = await readImage(file, 1024, 0.82); } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; return; }
@@ -10062,6 +10065,7 @@ function openLogForm(id) {
       if (!r.face) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">顔の肌をうまく読み取れませんでした。${esc(r.note || '明るい場所で、顔の正面がはっきり写るように撮り直してください。')}</div>`; return; }
       aiApply(r);
       const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
+      aiLast = {acne:n, zones:(r.zones || []).map(x => ({z:x.zone, c:x.concern, l:x.level})), note:r.note || '', shots:images ? 3 : 1}; // 記録と一緒に保存して、「あなたの肌の分析」で使う
       box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>写真から今日の記録を入れました</b>${r.note ? `<br>${esc(r.note)}` : ''}<br><span class="small">ニキビ ${n}個${(r.zones || []).length ? '・' + [...new Set(r.zones.map(x => x.concern))].join('・') : ''}</span>
         <p class="small muted" style="margin:6px 0 0">${esc(AI_NOTE)}光の当たり方で見え方が変わります。違うところは顔を押して直してから「記録する」を押してください。</p></div>`;
 
@@ -10106,7 +10110,7 @@ function openLogForm(id) {
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
       factors:$$('input[name="factors"]:checked', form).map(i => i.value),
       areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed,
-      memo:fe.memo.value.trim(), photo:(pendingPhoto && saveChk && saveChk.checked ? pendingPhoto : photo) || null};
+      memo:fe.memo.value.trim(), photo:(pendingPhoto && saveChk && saveChk.checked ? pendingPhoto : photo) || null, aiPhoto:aiLast || (ex && ex.aiPhoto) || null};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); }
     else state.skinLogs.push(Object.assign({id:uid(), demo:false}, data));
@@ -10942,6 +10946,7 @@ function adviceInput() {
   const sleepNeedH = r1((state.settings.sleepNeed || 420) / 60);
   return {
     profile:{skinType:state.settings.skinType || null, sensitive:!!state.settings.sensitive, concerns:state.settings.concerns, sleepNeedHours:sleepNeedH},
+    analysis:(() => { try { const A = personalAnalysis(); return {priorityConcerns:A.top.map(c => ({name:c.name, reasons:c.why, trend:c.trend})), weekFocus:A.week, itemsToReview:A.items.filter(i => i.v !== 'keep').map(i => ({name:i.x.p.name, why:i.note})), lifeLinks:A.links.filter(x => x.enough && x.strong).map(x => ({label:x.label, better:x.diff > 0 ? x.aL : x.bL})), longTerm:A.long ? (A.long.better ? '良くなっている' : A.long.worse ? '悪くなっている' : '変わらず') : null}; } catch (e) { return null; } })(), // 「あなたの肌の分析」の結果も渡して、提案をそろえる
     weatherToday:(() => { const w = state.weather[t]; return w ? {humidity:w.hum, tempMin:w.tmin, tempMax:w.tmax, uvMax:w.uv} : null; })(), // 今日の天気（湿度・気温・UV）もケアの判断に使う
     skin:{days:logs.length, cond:r1(S.cond), condPrevWeek:r1(P.cond), acneTotal:S.acneTotal, acnePrevWeek:prev.length ? P.acneTotal : null, redness:r1(S.red), dryness:r1(S.dry), oil:r1(S.oil),
       acneByArea:Object.fromEntries(Object.entries(spots).map(([k, v]) => [areaName(k), v])), concernAreasDays:Object.fromEntries(Object.entries(flags).map(([k, v]) => [areaName(k), v])), otherConcerns:conc,
@@ -11852,10 +11857,20 @@ function personalAnalysis() {
     add('oily', m.oil >= 2.5 ? m.oil - 1.5 : 0, `皮脂 平均${f1(m.oil)}`);
     [['くすみ', 'dull'], ['ざらつき', 'rough'], ['毛穴の目立ち', 'pore'], ['肌あれ', 'sensitive'], ['ヒリヒリ感', 'sensitive'], ['かゆみ', 'sensitive'], ['つっぱり', 'dry']].forEach(([w, k]) => { const r = oc(base, w); if (r >= 0.3) add(k, 1 + r * 2, `「${w}」が記録の${Math.round(r * 100)}%`); });
   }
+  // 写真の読み取り（直近2週間）：顔の写真から見えた状態も、悩みの重さに入れる
+  const C2K = {'赤み':'redness', '乾燥':'dry', 'テカリ':'oily', 'くすみ':'dull', '毛穴の目立ち':'pore', '肌あれ':'sensitive', 'ざらつき':'rough'};
+  const aiL = logsInRange(addDays(t, -13), t).filter(l => l.aiPhoto);
+  if (aiL.length) { const mx = {}; aiL.forEach(l => l.aiPhoto.zones.forEach(z => { const k = C2K[z.c]; if (k) mx[k] = Math.max(mx[k] || 0, z.l); })); Object.entries(mx).forEach(([k, v]) => add(k, v >= 3 ? 1 : 0.5, '写真の読み取り'));
+    const an = avg(aiL.map(l => l.aiPhoto.acne)); if (an >= 1) add('acne', 0.6, '写真の読み取り'); }
+  // 写真で見る変化（いちばん古い写真と、いちばん新しい写真）
+  const ph = state.skinLogs.filter(l => l.photo && !l.demo && l.date >= addDays(t, -89)).sort((a, b) => a.date.localeCompare(b.date));
+  const photos = ph.length >= 2 ? (() => { const a = ph[0], b = ph[ph.length - 1], sum = l => l.aiPhoto ? {acne:l.aiPhoto.acne, lv:Object.fromEntries(Object.entries(l.aiPhoto.zones.reduce((o, z) => { o[z.c] = Math.max(o[z.c] || 0, z.l); return o; }, {})))} : {acne:Number(nums(l).acne) || 0, lv:{'赤み':Number(nums(l).red) || 0, '乾燥':Number(nums(l).dry) || 0, 'テカリ':Number(nums(l).oil) || 0}};
+    const A0 = sum(a), B0 = sum(b), diffs = [...new Set(Object.keys(A0.lv).concat(Object.keys(B0.lv)))].map(c => ({c, a:A0.lv[c] || 0, b:B0.lv[c] || 0})).filter(x => x.a !== x.b);
+    return {a, b, n:ph.length, acneA:A0.acne, acneB:B0.acne, diffs, days:diffDays(a.date, b.date)}; })() : {n:ph.length};
   // 悪くなっている悩みは少し上げる・良くなっている悩みはそのまま（下げすぎない）
   const trend = {};
   if (L7.length >= 3 && P7.length >= 3) [['acne', 'acne', 0.5], ['redness', 'red', 0.5], ['dry', 'dry', 0.5], ['oily', 'oil', 0.5]].forEach(([k, n, th]) => { const df = mean(L7, n) - mean(P7, n); trend[k] = df >= th ? 'worse' : df <= -th ? 'better' : 'same'; if (trend[k] === 'worse') add(k, 0.8, '先週より悪くなっている'); });
-  const top = Object.entries(sc).filter(([k, v]) => v >= 1 && concernOf(k)).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => ({k, v, name:concernOf(k).s, why:[...new Set(why[k] || [])].slice(0, 3), trend:trend[k] || ''}));
+  const top = Object.entries(sc).filter(([k, v]) => v >= 1 && concernOf(k)).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => ({k, v, name:concernOf(k).s, why:[...new Set(why[k] || [])].slice(0, 4), trend:trend[k] || ''}));
   // ② 悩みごとのケア・成分（持っている物に入っていれば、それを続ける。併用注意はおすすめしない）
   const owned = new Map(); inUse.forEach(x => (x.ings || []).forEach(e => { if (!owned.has(e.k)) owned.set(e.k, x); }));
   const pool = comboPool(), pickedTags = [];
@@ -11912,7 +11927,8 @@ function personalAnalysis() {
   if (top[0] && week.length < 3 && top[0].nut) week.push(`食事：${top[0].nut}`);
   if (top[1] && week.length < 3) week.push(`${top[1].name}：${top[1].care[0] || ''}`);
   const stage = !d && !L28.length ? 'none' : L28.length < 3 ? 'start' : long ? 'long' : L7.length >= 4 ? 'week' : 'daily';
-  return {d, top, items, links, changes, life, long, ask, week:week.slice(0, 3), stage, ctx, n7:L7.length, n28:L28.length, metric};
+  if (ph.length < 2) ask.push({t:'記録のときに顔の写真も残すと、写真で見る変化も比べられます', act:'new-log', b:'写真つきで記録'});
+  return {d, top, items, links, changes, life, long, ask, week:week.slice(0, 3), stage, ctx, n7:L7.length, n28:L28.length, metric, photos};
 }
 function viewMycare() {
   const A = personalAnalysis(), f = v => f1(Math.abs(v));
@@ -11926,6 +11942,10 @@ function viewMycare() {
     h += `<div class="card"><h2 class="pc-h">${icon('chart')}前の4週間と比べて</h2><p class="pc-lead ${good ? 'good' : bad ? 'bad' : ''}">${good ? `${esc(A.long.label)}が良くなっています。今のケアと生活を続けましょう` : bad ? `${esc(A.long.label)}が前より悪くなっています` : `${esc(A.long.label)}は大きく変わっていません`}</p>
       ${good ? '<p class="small">いま続けていること（使っている物・睡眠・食事）は変えすぎないのがコツです。新しい物を足すなら1つずつにします。</p>' : `<p class="small">原因は1つとは限りません。次を順に見直してみてください：</p><ul class="pc-ul small"><li>最近使い始めた物・やめた物（下の「使い始めた物の前後」）</li><li>睡眠・食事・運動の変化（下の「生活と肌の関係」）</li><li>季節・生理周期・体調・ストレス</li><li>${A.ctx.rx ? '皮膚科の薬を決められたとおりに使えているか' : '良くならない・悪くなる状態が続くときは皮膚科へ'}</li></ul>`}</div>`;
   }
+  if (A.photos && A.photos.a) { const P = A.photos;
+    h += `<h2 class="pc-sec">写真で見る変化</h2><div class="card"><div class="pc-ph"><figure><img src="${P.a.photo}" alt="${esc(fmtMD(P.a.date))}の写真"><figcaption>${esc(fmtMD(P.a.date))}</figcaption></figure><figure><img src="${P.b.photo}" alt="${esc(fmtMD(P.b.date))}の写真"><figcaption>${esc(fmtMD(P.b.date))}</figcaption></figure></div>
+      <ul class="pc-ul small" style="margin-top:8px"><li>ニキビ：${P.acneA}個 → ${P.acneB}個</li>${P.diffs.slice(0, 4).map(x => `<li>${esc(x.c)}：${x.a ? '強さ' + x.a : 'なし'} → ${x.b ? '強さ' + x.b : 'なし'}</li>`).join('')}</ul>
+      <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚の写真から、いちばん古い写真と新しい写真を並べています。光の当たり方でも見え方は変わります。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
       ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は、もう持っている物に入っています。新しく買わなくて大丈夫です。</p>' : '<p class="small muted pc-own">新しく買うなら、手ごろな価格の物で十分です。</p>'}</div>` : ''}
@@ -12078,7 +12098,7 @@ function viewReport() {
   const sleepW = lifeW.map(sleepMin).filter(v => v != null);
   const sleepP = lifeInRange(addDays(ws, -7), addDays(ws, -1)).map(sleepMin).filter(v => v != null);
 
-  let html = pageHead('週次レポート', '1週間分の記録をまとめます。') +
+  let html = pageHead('週次レポート', '1週間分の記録をまとめます。') + (ui.reportOffset === 0 ? mycareMiniHtml() : '') +
     `<div class="card rp-nav">
       <button class="btn btn-ghost btn-sm" data-action="report-prev" aria-label="前の週">‹ 前週</button>
       <div class="rp-range"><b>${fmtMD(ws)} 〜</b><b>${fmtMD(we)}</b>${ui.reportOffset === 0 ? '<span>今週</span>' : ''}</div>
