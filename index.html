@@ -5593,6 +5593,9 @@ const AVOID_WHY = [
 ];
 function openAvoidSheet(word) {
   const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), note = (String(word).match(/[（(](.*?)[）)]/) || [])[1] || '';
+  const cb = COMBO_NOTE.get(String(word));
+  if (cb) { openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet av-sheet"><p class="av-note">${esc(cb.who.name)}と併用注意</p><div class="ing-dl"><div class="ing-b warn"><b>なぜ今はおすすめしない？</b><p>${esc(cb.row.why)}</p></div>${cb.row.how ? `<div class="ing-b"><b>使いたいときは</b><p>${esc(cb.row.how)}</p></div>` : ''}</div>
+    <p class="small muted" style="margin-top:8px">今使っている「${esc(cb.who.name)}」と一緒に使うと注意が必要な組み合わせ（${esc(cb.row.t)}）なので、おすすめから外しています。${cb.who.rx ? '皮膚科で言われていることがあれば、そちらを優先してください。' : ''}</p></div>`}); return; }
   const c = Object.assign(avoidCtx(), {w:w0}), e = ingEntryOf(w0), hit = AVOID_WHY.find(([re]) => re.test(word));
   const fn = v => typeof v === 'function' ? v(c) : v;
   const what = hit && hit[1] ? hit[1] : e ? e.feature : '';
@@ -8672,6 +8675,30 @@ function rxPlanOf(x) {
 function rxDefaultTiming(name, ing) { const r = RX_PLAN.find(o => o.re.test(`${name} ${ing || ''} ${rxKindOf(name)}`)); return !r ? '朝・夜' : r.slot === 'both' ? '朝・夜' : r.slot === 'none' ? '必要なときだけ' : '夜'; }
 // ===== ケア管理：朝と夜のスキンケアの順番（肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てる）=====
 const RT_TABS = [{k:'am'}, {k:'pm'}];
+// ===== 併用注意：おすすめする成分が、使っている薬・化粧品と「一緒に使うと注意」にならないようにする =====
+function tagsOfWord(v) {
+  const t = chipText(v), ms = masterIngsOf(t), s = new Set(ms.flatMap(e => e.tags || []));
+  if (!s.size) { if (/AHA|グリコール酸|乳酸|マンデル酸|ピーリング/.test(t)) s.add('aha'); if (/BHA|サリチル酸|ピーリング/.test(t)) s.add('bha'); if (/レチノ/.test(t)) { s.add('otcretinoid'); s.add('retinoidAll'); } if (/アゼライン/.test(t)) s.add('azelaic'); if (/純粋ビタミンC|高濃度のビタミンC/.test(t)) s.add('vitc'); if (/ハイドロキノン/.test(t)) s.add('hq'); if (/酵素/.test(t)) s.add('enzyme'); if (/スクラブ/.test(t)) s.add('scrub'); if (/過酸化ベンゾイル/.test(t)) s.add('bpo'); }
+  const act = Math.max(0, ...ms.map(e => e.act || 0), s.has('aha') || s.has('bha') || s.has('otcretinoid') ? 2 : s.has('azelaic') ? 1 : 0);
+  return {tags:s, act};
+}
+// 今使っている物（皮膚科の薬はいつも、化粧品は刺激の出やすい物だけ）
+function comboPool(onlyIds) {
+  let R = null; try { R = routineDesign('normal'); } catch (e) { return []; }
+  if (!R) return [];
+  return R.A.infos.filter(x => !(R.paused || []).includes(x) && (x.rx || (onlyIds ? onlyIds.has(x.p.id) : (x.ings || []).some(e => e.act >= 1)))).map(x => { const tags = new Set((x.ings || []).flatMap(e => e.tags || [])); if (x.rx && x.step !== 'oral') tags.add('rxTopical'); return {id:x.p.id, name:truncate(x.p.name, 14), tags, rx:!!x.rx, oral:x.step === 'oral', act:Math.max(0, ...(x.ings || []).map(e => e.act || 0))}; });
+}
+function comboConflict(w, pool, selfId) {
+  const {tags:tg, act} = w && w.tags ? w : tagsOfWord(w);
+  for (const p of pool) { if (p.id === selfId) continue;
+    const row = COMBO_DB.filter(r => r.lv >= 2 && ((r.a.some(g => tg.has(g)) && r.b.some(g => p.tags.has(g))) || (r.b.some(g => tg.has(g)) && r.a.some(g => p.tags.has(g))))).sort((x, y) => y.lv - x.lv)[0];
+    if (row) return {row, who:p};
+    if (p.rx && !p.oral && act >= 1) return {row:{lv:2, t:'処方の塗り薬 × 刺激が出やすい成分', why:'皮膚科の塗り薬を使っている肌に、刺激の出やすい成分を重ねると、赤み・乾燥・ヒリヒリが強く出やすくなります。', how:'薬に慣れるまでは使わず、使いたいときは皮膚科で相談します。'}, who:p};
+  }
+  return null;
+}
+const COMBO_NOTE = new Map(); // 控えたい（併用注意）の言葉 → 理由
+function comboAvoidWord(g, c) { const w = `${chipText(g)}（${c.who.name}と併用注意）`; COMBO_NOTE.set(w, c); return w; }
 function rtPlan(slot) {
   const d = diagNow(), ans = diagAnswers(), main = d ? d.main : 'normal', sens = !!(d && d.sensitive);
   let D = null; try { D = careTodayData(); } catch (e) { D = null; }
@@ -8792,6 +8819,20 @@ function rtPlan(slot) {
         restN(st, off, st.k === 'sunscreen' ? (uv != null && uv >= 6 ? '紫外線が強い日なので、SPFの高い物にします' : '今日の紫外線ならこれで十分です') : '今日の肌に合う1つにしぼります', st.k === 'sunscreen' ? '天気' : '肌');
       }
       st.prods = L; });
+  }
+  // 併用注意：薬・化粧品どうし、おすすめ成分と使っている物が「一緒に使うと注意」にならないようにする
+  {
+    const used = new Set(steps.flatMap(st => st.prods.map(x => x.p.id)));
+    const pool = comboPool(used), keep = [];
+    // 使う化粧品どうし：薬と重なる物、刺激の強い物どうしは、片方をお休み
+    steps.forEach(st => { if (st.fixed) return; st.prods = st.prods.filter(x => { const info = {tags:new Set((x.ings || []).flatMap(e => e.tags || [])), act:Math.max(0, ...(x.ings || []).map(e => e.act || 0))};
+      const c = comboConflict(info, pool.filter(p => p.rx || keep.includes(p.id)), x.p.id);
+      if (c && !(info.act >= 1)) { st.today.push(T(`「${truncate(x.p.name, 16)}」は${c.who.name}と併用注意の成分が入っています。しみる・赤くなるときは、別の物に替えます`, c.who.rx ? '薬' : '成分')); keep.push(x.p.id); return true; } // 日焼け止め・保湿など欠かせない物は休まず、注意を出す
+      if (c) { st.today.push(T(`今日は「${truncate(x.p.name, 16)}」はお休みします（${c.who.name}と併用注意）`, c.who.rx ? '薬' : '成分')); { const i = pool.findIndex(p => p.id === x.p.id); if (i >= 0) pool.splice(i, 1); } return false; }
+      keep.push(x.p.id); return true; }); });
+    // おすすめ成分：使っている物と併用注意になる成分は、おすすめにせず「控えたい」へ
+    const gpool = []; // おすすめどうし（同じ時間に2つの刺激の強い成分をすすめない）
+    steps.forEach(st => { const out = []; st.good = st.good.filter(g => { if (st.k === 'sunscreen' || st.k === 'cleanse' || st.k === 'wash') return true; const c = comboConflict(g, pool.concat(gpool)); if (c) { out.push(comboAvoidWord(g, c)); return false; } const tw = tagsOfWord(g); if (tw.tags.size) gpool.push({id:'g:' + g, name:chipText(g), tags:tw.tags, rx:false, act:tw.act}); return true; }); st.avoid = st.avoid.filter(a => !out.some(o => chipText(o) === chipText(a))).concat(out); });
   }
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
@@ -11022,6 +11063,7 @@ function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
+  if (skin) { const pool = comboPool(); const out = []; for (let i = 0; i < g.length; i++) { const c = comboConflict(g[i], pool); if (c) { out.push(comboAvoidWord(g[i], c)); g.splice(i, 1); i--; continue; } const tw = tagsOfWord(g[i]); if (tw.tags.size) pool.push({id:'g:' + g[i], name:chipText(g[i]), tags:tw.tags, rx:false, act:tw.act}); } out.forEach(o => { if (!a.some(v => chipText(v) === chipText(o))) a.push(o); }); }
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
   return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
