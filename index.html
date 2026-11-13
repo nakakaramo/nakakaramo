@@ -171,6 +171,8 @@ button{font-family:inherit}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
 html.no-press a:active,html.no-press button:active,html.no-press label:active,html.no-press .btn:active,html.no-press .tab:active,html.no-press [data-action]:active,html.no-press .seg-opt span:active,html.no-press .used-tile:active,html.no-press .mrow:active,html.no-press .pcard:active,html.no-press .sc-opt:active,html.no-press .ls-main:active,html.no-press .acc-row:active,html.no-press .mb-col:active,html.no-press .icon-btn:active,html.no-press .ac-item:active{transform:none!important;opacity:1!important;transition:none!important}
+/* 指を離したあと、押して縮んだ形から元に戻る動き（0.15秒）をなくす。iPhoneは画面を移るときの見た目を写して、なぞって戻るときに見せるため、戻る途中の形が写ると「戻ったときにボタンが動く」ように見える */
+html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-action],html.no-press .acc-link,html.no-press .acc-row,html.no-press .tab,html.no-press .ls-main,html.no-press .mrow,html.no-press .pcard,html.no-press .used-tile{transition:none!important}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:20px;height:20px}
@@ -9584,7 +9586,7 @@ function photoDayCardHtml(list) { // list：写真のある記録（古い順）
       <div class="ld-info"><div class="ld-date"><b>${fmtMD(l.date)}</b></div><div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span></div></div>
       <button class="ld-arrow" data-action="photo-step" data-id="1" aria-label="次の写真" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5l7 7-7 7"/></svg></button>
     </div>
-    <div class="ld-actions" style="justify-content:center">${list.length >= 2 ? `<button class="btn btn-soft btn-sm" data-action="photo-compare">${icon('compare')}2枚を比べる</button>` : ''}<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button></div></div>`;
+    <div class="ld-actions" style="justify-content:center">${list.length >= 2 ? `<button class="btn btn-soft btn-sm" data-action="photo-compare">${icon('compare')}2枚を比べる</button>` : ''}<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button><button class="btn btn-danger-ghost btn-sm" data-action="photo-delete" data-id="${esc(l.id)}">写真を削除</button></div></div>`;
 }
 // ===== ガイド付きで撮る：顔の枠と、前回の写真をうすく重ねて、毎回同じ位置で撮れるようにする（写真は外に送らない） =====
 // ===== 顔を回して撮る（iPhoneの顔認証の登録のように）：顔の形の点をスマホの中で読み取り、正面・右頬・左頬の3枚を自動で撮る =====
@@ -9796,7 +9798,7 @@ function viewPhotos() {
   const withPhoto = logsDesc().filter(l => safeImg(l.photo));
   let html = `<div class="notice green">写真は任意です。ログインしていると、写真もあなただけが見られる場所に自動でバックアップされ、機種変更しても戻せます。写真がなくても、すべての機能を使えます。</div>`;
   if (withPhoto.length) html = photoDayCardHtml(withPhoto.slice().reverse()) + html;
-  if (!withPhoto.length) return html + `<div class="card">${emptyBox('note', '保存された写真はありません', '肌の記録で写真を選び、「ブラウザ内に保存する」にチェックすると、ここに一覧で表示されます。')}</div>`;
+  if (!withPhoto.length) return html + `<div class="card">${emptyBox('note', '保存された写真はありません', '肌の記録で写真を撮ると、ここに自動で保存されます。')}</div>`;
   if (withPhoto.length >= 2) {
     if (!withPhoto.some(l => l.id === ui.photoA)) ui.photoA = withPhoto[withPhoto.length - 1].id;
     if (!withPhoto.some(l => l.id === ui.photoB)) ui.photoB = withPhoto[0].id;
@@ -10126,7 +10128,7 @@ function openLogForm(id) {
   const renderPhoto = () => {
     const area = $('#photo-area'), pf = $('#photo-field', form); if (pf) pf.hidden = !(pendingPhoto || photo); // 「カメラで記録」で撮った写真があるときだけ出す
     if (pendingPhoto) {
-      area.innerHTML = `<div class="photo-prev"><img src="${pendingPhoto}" alt="選択した写真のプレビュー"><div><label class="check"><input type="checkbox" id="photo-save"> この写真を記録と一緒に<br>このブラウザ内に保存する</label><p class="hint">保存すると容量を使います（目安：1枚50〜150KB）</p><button type="button" class="btn btn-ghost btn-sm" id="photo-cancel">選択を取り消す</button></div></div>`;
+      area.innerHTML = `<div class="photo-prev"><img src="${pendingPhoto}" alt="選択した写真のプレビュー"><div><p class="small">記録と一緒に保存します</p><button type="button" class="btn btn-ghost btn-sm" id="photo-cancel">選択を取り消す</button></div></div>`;
       $('#photo-cancel').onclick = () => { pendingPhoto = null; $('#f_photo').value = ''; renderPhoto(); };
     } else if (photo) {
       area.innerHTML = `<div class="photo-prev"><img src="${photo}" alt="保存済みの写真"><div><p class="small">保存済みの写真</p><button type="button" class="btn btn-danger-ghost btn-sm" id="photo-remove">写真を削除</button></div></div>`;
@@ -10196,13 +10198,13 @@ function openLogForm(id) {
     if (res.ai) { faceAiShots(res); setTimeout(() => { const el = $('#faceai-info', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80); return; }
     const url = res.url;
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
-    else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
+    else { form._setPhoto(url); toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
   })({photo:url, ai:null, url}), {w:1024, noGhost:!!ex, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (isPremium()) { faceAi(f); return; }
-    try { form._setPhoto(await readImage(f, 800, 0.8)); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
+    try { form._setPhoto(await readImage(f, 800, 0.8)); toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
   $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => openPremiumSheet('カメラで肌を記録'); lk.onclickOld = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
     e.preventDefault();
@@ -10221,7 +10223,6 @@ function openLogForm(id) {
       return {id:sid, area:$('[name="sp_area"]', r).value, count:Number(cnt), type:$('[name="sp_type"]', r).value, size:$('[name="sp_size"]', r).value, status:$('[name="sp_status"]', r).value, onset};
     });
     if (!showErrors(form, errors)) return;
-    const saveChk = $('#photo-save');
     const used = $$('input[name="usedProducts"]:checked', form).map(i => i.value);
     const noneUsed = !!(fe.noneUsed && fe.noneUsed.checked);
     const data = {date, condition:Number(($('input[name="condition"]:checked', form) || {}).value) || 3, acneCount:Number(ac),
@@ -10230,7 +10231,7 @@ function openLogForm(id) {
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
       factors:$$('input[name="factors"]:checked', form).map(i => i.value),
       areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed,
-      memo:fe.memo.value.trim(), photo:(pendingPhoto && saveChk && saveChk.checked ? pendingPhoto : photo) || null, aiPhoto:aiLast || (ex && ex.aiPhoto) || null};
+      memo:fe.memo.value.trim(), photo:(pendingPhoto || photo) || null, aiPhoto:aiLast || (ex && ex.aiPhoto) || null};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); }
     else state.skinLogs.push(Object.assign({id:uid(), demo:false}, data));
@@ -13686,6 +13687,11 @@ const actions = {
   'life-goal': () => openLifeGoal(),
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
+  'photo-delete': async id => {
+    const l = getLog(id); if (!l || !l.photo) return;
+    if (!(await confirmDialog(`${fmtMD(l.date)}の写真を削除しますか？肌の記録（調子・ニキビなど）はそのまま残ります。`, {ok:'削除する', title:'写真の削除', danger:true}))) return;
+    l.photo = null; ui.photoMiss = ''; save(); render(); toast('写真を削除しました');
+  },
   'photo-step': v => { const l = photoList(); ui.photoMiss = ''; const i = clamp(photoDayIdx(l) + Number(v), 0, l.length - 1); ui.photoDay = l[i].date; render(); },
   'f3-full-close': () => closeFace3dFull(),
   'f3-step': v => { ui.f3Play = false; face3dShowWeek((ui.f3Week == null ? 7 : ui.f3Week) + Number(v)); },
