@@ -2326,14 +2326,18 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .ct2-none{margin:4px 0 0 24px;font-size:13px;color:var(--muted);line-height:1.6}
 
 /* おすすめケアの中の「今の肌に合う成分」 */
-.ct2-adv{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.ct2-adv{margin-top:4px}
+.ct2-adv .adv1-t{margin:4px 0 0;font-size:13.5px}
+.ct2 .adv-foot{padding-top:12px;border-top:1px solid var(--line);margin-top:14px}
 .ct2-adv .adv-h{font-size:14px;font-weight:600;margin:0 0 6px}
 
 .twx-n .twx-r{font-size:.62em;font-weight:500;color:var(--muted);margin-left:.25em}
 
 /* アカウントの一番上：ログイン前は「アイコン＋ログイン」だけ（同じ高さ）。ログイン後は名前の右に「編集」（枠なし） */
 .acc-me.acc-login{display:flex;align-items:center;gap:12px;padding:16px 18px;width:100%;text-align:left;font:inherit;color:inherit}
+.acc-me.acc-login .am-t{flex:1;text-align:center}
 .acc-me.acc-login .am-t b{font-size:16px;color:var(--ink)}
+.acc-me.acc-login .am-go{width:52px;text-align:right}
 .acc-me .am-go{font-style:normal;color:var(--muted);font-size:18px;flex:none}
 .acc-me .am-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .acc-me .am-row b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -4195,7 +4199,7 @@ function viewHome() {
   const todayCard = `<div class="card t3-card"><button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button>
       <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div></div>
       ${lifeLine}</div>`;
-  const ctH = careTodayHtml(`<div class="advice ct2-adv" id="advice-box">${adviceHtml()}</div>`); // 「今の肌に合う成分」は、おすすめケアの「肌のケア」の中へ
+  const ctH = careTodayHtml(); // 「今の肌に合う成分」は、おすすめケアの「肌のケア」の中へ
   const careCard = careHomeCard() + (ctH || `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div>`) + `<div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
@@ -10394,23 +10398,29 @@ function careTodayData() {
   ];
   return {lead, inputs, items, calm, w};
 }
-function careTodayHtml(adv) {
+function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
   const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
-  const CATS = [['肌', 'drop', '肌のケア'], ['睡眠', 'moon', '睡眠'], ['食事', 'note', '食事'], ['運動', 'chart', '運動']];
+  const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'chart', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'note', '食事', '食事']];
+  let AP = {ai:null, pts:[]}; try { AP = advicePts(); } catch (e) { /* 何もしない */ }
+  const ptOf = a => AP.pts.find(x => x && x.area === a) || AP.pts[ADVICE_AREAS.indexOf(a)];
   const w = D.w, wxLine = w ? `湿度${Math.round(w.hum)}%・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${w.uv == null ? '－' : Math.round(w.uv)}` : '';
-  const sec = ([c, ic, label]) => {
+  const sec = ([c, ic, label, area]) => {
+    const pt = ptOf(area);
+    let chips = '';
+    if (c === '肌' && adviceBusy) chips = `<div class="ct2-adv">${skelHtml(3, {dots:true, label:'分析中'})}</div>`;
+    else if (pt) { const ch = advChips(Object.assign({}, pt, {area})); if (ch) chips = `<div class="ct2-adv">${c === '肌' && pt.title ? `<b class="adv1-t">今の肌に合う成分：${esc(pt.title)}</b>` : ''}${ch}</div>`; }
     const L = D.items.filter(x => x.cat === c), real = L.filter(x => !/を記録する$/.test(x.title)), ask = L.filter(x => /を記録する$/.test(x.title));
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
     const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
-      : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : '<p class="ct2-none">今日は特にありません。</p>';
-    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${c === '肌' && adv ? adv : ''}</section>`;
+      : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : chips ? '' : '<p class="ct2-none">今日は特にありません。</p>';
+    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}</section>`;
   };
-  return `<div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
+  return `<div class="card ct2" id="care-today"><div class="card-h"><h2>今日のおすすめケア</h2></div>
     <p class="ct2-lead no-ph">${esc(D.lead)}</p>
-    ${CATS.map(sec).join('')}</div>`;
+    ${CATS.map(sec).join('')}<div class="advice"><div class="adv-foot">${adviceFoot(AP.ai)}</div></div></div>`;
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
 const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
@@ -10494,21 +10504,26 @@ function adviceSig(d) { const str = todayStr() + JSON.stringify(d); let h = 0; f
 let adviceBusy = false, adviceErr = '';
 // 使う人に見せるエラーの文：サーバーの設定の話などは出さず、どうすればいいかだけを書く
 function userErr(m, what) { m = String(m || ''); if (/ログイン/.test(m)) return 'ログインし直すと使えます（アカウント → プラン・アカウント）。'; if (/上限|回数|quota|429/i.test(m)) return `今日は${what}の回数の上限に達しました。明日また使えます。`; if (/network|fetch|Failed|通信|timeout|abort/i.test(m)) return `通信できませんでした。電波のよい場所で、もう一度お試しください。`; return `今は${what}ができませんでした。時間をおいて、もう一度お試しください。`; }
-function adviceHtml() {
+function advicePts() {
   const d = adviceInput(), c = adviceCache(), sig = adviceSig(d);
   const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length && c.res.points.every(x => x.area) ? c.res : null; // 4つの角度で出した結果だけ使う
   const local = adviceLocal(d);
   // AIが控えたいもの・おすすめを出さなかった角度は、記録から出した内容でうめる（必ず両方出す）
   const pts = ai ? ADVICE_AREAS.map((a, i) => { const p = ai.points.find(x => x.area === a); if (!p) return local[i]; return Object.assign({}, p, {good:(p.good || []).length ? p.good : local[i].good, avoid:(p.avoid || []).length ? p.avoid : local[i].avoid}); }) : local; // AIが出さなかった角度は、ルールの結果でうめる
+  return {ai, pts};
+}
+function adviceFoot(ai) {
   const prem = isPremium();
+  if (adviceBusy) return '<span class="small muted">記録を分析しています…</span>';
+  if (ai) return `<span class="small muted">直近7日の記録から分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
+  if (prem) return `<span class="small muted">${adviceErr ? esc(adviceErr) : '直近7日の記録から表示しています。'}</span><button class="btn btn-ghost btn-sm" data-action="advice-ai">くわしく分析する</button>`;
+  return `<span class="small muted">直近7日の記録から表示しています。プレミアムでは、記録をもっと詳しく分析します。</span><a class="link small" href="#/plan">プランを見る →</a>`;
+}
+function adviceHtml() {
+  const {ai, pts} = advicePts();
   const head = `<h3 class="adv-h">今の肌に合う成分</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
   const list = adviceBusy ? skelHtml(4, {dots:true, label:'分析中'}) : `<div class="adv1">${pts.slice(0, 1).map(x => `<b class="adv1-t">${esc(x.title)}</b>${advChips(Object.assign({}, x, {area:'スキンケア'}))}<span class="adv-text">${esc(x.text)}</span>`).join('')}</div>` /* 睡眠・食事・運動は上の「今日のおすすめケア」にまとめた */;
-  let foot;
-  if (adviceBusy) foot = '<span class="small muted">記録を分析しています…</span>';
-  else if (ai) foot = `<span class="small muted">直近7日の記録から分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
-  else if (prem) foot = `<span class="small muted">${adviceErr ? esc(adviceErr) : '直近7日の記録から表示しています。'}</span><button class="btn btn-ghost btn-sm" data-action="advice-ai">くわしく分析する</button>`;
-  else foot = `<span class="small muted">直近7日の記録から表示しています。プレミアムでは、記録をもっと詳しく分析します。</span><a class="link small" href="#/plan">プランを見る →</a>`;
-  return head + list + `<div class="adv-foot">${foot}</div>`;
+  return head + list + `<div class="adv-foot">${adviceFoot(ai)}</div>`;
 }
 // ---------- 献立の提案（プレミアム）：今日食べたものと肌の状態から、これからの食事の献立をAIが作る ----------
 const MENU_KEY = 'skinwise_menu';
@@ -10684,7 +10699,8 @@ function patchHtml(box, html) {
     else box.replaceChild(n, o);
   });
 }
-function refreshAdvice() { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); if (isPremium()) runAdvice(false); }
+function adviceRepaint() { const ct = document.getElementById('care-today'); if (ct) { const h = careTodayHtml(); if (h) { const t = document.createElement('div'); t.innerHTML = h; ct.replaceWith(t.firstElementChild); return; } } const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); }
+function refreshAdvice() { adviceRepaint(); if (isPremium()) runAdvice(false); }
 // プレミアムの人は、記録が変わったときだけ自動でAIに分析してもらう（同じ記録なら前の結果を使う）
 async function runAdvice(force) {
   if (adviceBusy || !isPremium()) return;
@@ -10693,7 +10709,7 @@ async function runAdvice(force) {
   if (!force && c && c.at && Date.now() - c.at < AI_AUTO_GAP) return; // 自動の分析は6時間に1回まで（記録を何度も直しても、AIの回数を使いすぎない）
   if (!d.skin.days && !d.sleep.days && !d.meal.days && !d.exercise.recordedDays) return;
   adviceBusy = true; adviceErr = '';
-  const box = () => { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); };
+  const box = () => adviceRepaint();
   box();
   try {
     const r = await callVision('advice', null, d);
