@@ -169,7 +169,7 @@ button{font-family:inherit}
 .topbar{min-height:calc(65px + env(safe-area-inset-top))} /* 上の帯の高さは、どの画面でも同じにする */
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:20px;height:20px}
@@ -2327,6 +2327,44 @@ a,img,button,label{-webkit-touch-callout:none!important}
 
 /* おすすめケアの中の「今の肌に合う成分」 */
 .ct2-adv{margin-top:4px}
+.ct2-go{display:flex;align-items:center;gap:8px;margin-top:10px;padding:11px 12px;border-radius:12px;background:var(--surface2);color:var(--ink);text-decoration:none;font-size:13.5px;font-weight:600}
+.ct2-go svg{width:17px;height:17px;color:var(--green-d);flex:none}.ct2-go span{flex:1}.ct2-go i{font-style:normal;color:var(--muted);font-size:17px}
+/* ケア管理 */
+.home-tabs.rt-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
+.rt-tabs .ht svg{width:17px;height:17px}
+.cm-sum{padding:16px 18px;margin-bottom:14px}
+.cm-sum-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.cm-sum-t b{font-size:17px;font-weight:700}
+.cm-sum-t span{font-size:12.5px;color:var(--muted);font-weight:500;white-space:nowrap}
+.cm-meta{margin:6px 0 0;font-size:12.5px;line-height:1.7;color:var(--muted)}
+.cm-prog{height:6px;border-radius:6px;background:var(--surface2);overflow:hidden;margin:10px 0 4px}.cm-prog span{display:block;height:100%;background:var(--green);border-radius:6px}
+.cm-diag{margin-top:12px}
+.cm-list{list-style:none;margin:0 0 14px;padding:0;position:relative}
+.cm-step{position:relative;display:flex;gap:12px;padding:0 0 12px}
+.cm-step::before{content:"";position:absolute;left:17px;top:40px;bottom:2px;width:2px;background:var(--line);border-radius:2px}
+.cm-step:last-child::before{display:none}
+.cm-n{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid var(--green);background:var(--surface);color:var(--green-d);font:inherit;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:12px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.cm-n svg{width:18px;height:18px}
+.cm-step.done .cm-n{background:var(--green);color:#fff}
+.cm-b{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
+.cm-step.done .cm-b{opacity:.62}
+.cm-t{display:block;font-size:15.5px;font-weight:700;line-height:1.4}
+.cm-p{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--green-d);text-decoration:none;line-height:1.45}
+.cm-p svg{width:15px;height:15px;flex:none}.cm-p span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-p0{color:var(--ink2);font-weight:500}
+.cm-how{margin:7px 0 0;font-size:13px;line-height:1.7;color:var(--ink2)}
+.cm-today{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:#EEF6F0;font-size:12.5px;line-height:1.65;color:var(--ink)}
+.cm-today i{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;color:var(--green-d);background:#fff;border-radius:999px;padding:1px 7px;margin-right:6px;vertical-align:1px}
+html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-theme="dark"] .cm-today i{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
+.cm-ing{margin-top:10px}
+.cm-ing small{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;margin:0 0 5px}
+.cm-ing small svg{width:13px;height:13px}.cm-ing small.g{color:var(--green-d)}.cm-ing small.b{color:#B04A32}
+.cm-ing>div{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+.cm-c{font-size:12px;font-weight:600;line-height:1.3;padding:4px 9px;border-radius:999px}
+.cm-c.good{background:#EEF6F0;color:var(--green-d)}.cm-c.bad{background:#FDF1EC;color:#B04A32}
+html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-theme="dark"] .cm-c.bad{background:rgba(217,105,75,.14)}
+.cm-tips p{margin:0;font-size:13px;line-height:1.7}.cm-tips p+p{margin-top:6px}
+.cm-hint p{margin:0 0 6px}
 .ct2-adv .adv1-t{margin:4px 0 0;font-size:13.5px}
 .ct2 .adv-foot{padding-top:12px;border-top:1px solid var(--line);margin-top:14px}
 .ct2-adv .adv-h{font-size:14px;font-weight:600;margin:0 0 6px}
@@ -3049,6 +3087,7 @@ const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const NAV = [
   {r:'home', label:'ホーム', icon:'home', g:''},
   {r:'log', label:'肌の記録', icon:'note', g:'記録'},
+  {r:'routine', label:'ケア管理', icon:'drop', g:'記録'},
   {r:'my', label:'Myアイテム', icon:'bottle', g:'記録'},
   {r:'charts', label:'肌の変化・比較', icon:'chart', g:'振り返り'},
   {r:'report', label:'週次レポート', icon:'calendar', g:'振り返り'},
@@ -3063,7 +3102,7 @@ const NAV = [
   {r:'plan', label:'プラン・アカウント', icon:'user', g:'アカウント'},
   {r:'settings', label:'設定・プライバシー', icon:'gear', g:'アカウント'}
 ];
-const BOTTOM_NAV = ['home','log','my','account']; // 商品検索は試作の段階ではなくした
+const BOTTOM_NAV = ['home','log','routine','my','account']; // 商品検索は試作の段階ではなくした
 const ACCOUNT_PAGES = ['plan', 'settings']; // 下のバーの「アカウント」にまとめる画面
 
 /* ---------- ユーティリティ ---------- */
@@ -3961,7 +4000,7 @@ function revealEl(el) {
   el.querySelectorAll('.chart').forEach(c => { c.classList.add('play'); setTimeout(() => c.classList.remove('play'), 2200); });
 }
 // 下のバーの画面（ホーム・肌の記録・Myアイテム・商品検索・アカウント）は、最初に開いたときだけ動かし、2回目からは動かさない
-const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'favorites', 'account'];
+const TAB_PAGES = ['home', 'log', 'routine', 'my', 'search', 'stores', 'favorites', 'account'];
 const motionSeen = new Set();
 function motionIn(route) {
   const main = document.getElementById('main'); if (!main) return;
@@ -4200,7 +4239,7 @@ function viewHome() {
       <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div></div>
       ${lifeLine}</div>`;
   const ctH = careTodayHtml(); // 「今の肌に合う成分」は、おすすめケアの「肌のケア」の中へ
-  const careCard = careHomeCard() + (ctH || `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div>`) + `<div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
+  const careCard = (ctH || `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div>`) + `<div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -8439,6 +8478,120 @@ function careHomeCard() {
   return `<a class="card rt-hc" href="#/care/routine"><div class="card-h"><h2>あなた専用のスキンケア</h2><span class="chip green">${esc(typeLabel(d))}</span></div>
     <div class="rt-hc-row"><span>${icon('sun')}朝 ${cnt('am')}</span><span>${icon('moon')}夜 ${cnt('pm')}</span>${miss ? `<span class="chip warn">足りないケア ${miss}</span>` : ''}</div><span class="link small">朝・夜のケアを見る →</span></a>`;
 }
+// ===== ケア管理：朝と夜のスキンケアの順番（肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てる）=====
+const RT_TABS = [{k:'am'}, {k:'pm'}];
+function rtPlan(slot) {
+  const d = diagNow(), ans = diagAnswers(), main = d ? d.main : 'normal', sens = !!(d && d.sensitive);
+  let D = null; try { D = careTodayData(); } catch (e) { D = null; }
+  const m = (D && D.m) || {}, w = D && D.w;
+  let ff = {keys:[]}; try { ff = faceFindings(7); } catch (e) { /* 何もしない */ }
+  const ck = new Set([...((d && d.priority) || []), ...concernKeysNow(), ...(ff.keys || []).slice(0, 3)]), has = k => ck.has(k);
+  const dryT = ['dry', 'innerdry'].includes(main) || has('dry') || (m.dry || 0) >= 3;
+  const oilT = ['oily', 'combo'].includes(main) || has('oily') || (m.oil || 0) >= 3;
+  const sensT = sens || has('sensitive') || has('redness') || (m.red || 0) >= 3;
+  const acneT = has('acne') || (m.acne || 0) > 0;
+  const markT = has('acnemark') || has('spot') || has('dull') || (m.dull || 0) >= 3;
+  const ageT = has('aging'), poreT = has('pore') || has('rough') || (m.rough || 0) >= 3;
+  const calm = !!(D && D.calm);
+  const hum = w && w.hum != null ? Math.round(w.hum) : null, uv = w && w.uv != null ? Math.round(w.uv) : null;
+  const lowHum = hum != null && hum < 50, hot = w && w.tmax >= 28, cold = w && w.tmax < 10;
+  // 使っている化粧品（スキンケア設計の結果から、その工程に合う物を入れる）
+  let R = null; try { R = routineDesign('normal'); } catch (e) { R = null; }
+  const today = altDay(), live = L => (L || []).filter(s => s.x && !s.missing && (!s.day || s.day === today));
+  const here = R ? live(slot === 'am' ? R.am : R.pm) : [], all = R ? live(R.am).concat(live(R.pm)) : [];
+  const prodOf = (kinds, any) => { let L = here.filter(s => kinds.includes(s.kind)); if (!L.length && any) L = all.filter(s => kinds.includes(s.kind)); const seen = new Set(); return L.map(s => s.x).filter(x => !seen.has(x.p.id) && seen.add(x.p.id)); };
+  const steps = [], add = (k, o) => steps.push(Object.assign({k, prods:[], good:[], avoid:[], today:[], type:''}, o));
+  const T = (t, src) => ({t, src});
+  const uniq = L => [...new Set(L.filter(Boolean))];
+  // --- 洗う ---
+  const washO = () => ({name:'洗顔', type:dryT || sensT ? 'アミノ酸系のやさしい洗顔料' : oilT ? '弱酸性で泡立ちのよい洗顔料' : 'やさしい洗顔料', prods:prodOf(['wash'], true),
+    how:'よく泡立てて、Tゾーン→頬→目元・口元の順に泡をころがすように洗い、ぬるま湯で20回ほどすすぎます。',
+    good:uniq(['アミノ酸系洗浄成分（ココイルグルタミン酸Naなど）', oilT && acneT && !sensT ? 'サリチル酸（BHA）配合' : '']), avoid:uniq(['スクラブ', sensT ? 'メントール' : '', '熱いお湯'])});
+  const tonerO = extra => ({name:'化粧水', type:dryT ? 'しっとりタイプ' : oilT ? 'さっぱりタイプ' : '', prods:prodOf(['toner'], true), how:'手のひらに500円玉くらい出し、顔全体を包むように押さえてなじませます。',
+    good:uniq([dryT || lowHum ? 'セラミド' : '', 'ヒアルロン酸', sensT ? 'パンテノール' : '', sensT || acneT ? 'グリチルリチン酸2K' : '', acneT || oilT ? 'ナイアシンアミド' : '', 'グリセリン']).slice(0, 4),
+    avoid:uniq([dryT || sensT ? 'エタノール（多く入った物）' : '', sensT ? '香料' : '']), today:extra || []});
+  const moistO = (s, ex) => { const heavy = s === 'pm' && (dryT || lowHum || cold || calm) || s === 'am' && dryT && (lowHum || cold);
+    return {name:heavy ? '保湿（乳液＋クリーム）' : oilT && !dryT ? '保湿（乳液・ジェル）' : '保湿（乳液）', prods:prodOf(['emulsion', 'cream', 'allinone'], true), how:heavy ? '乳液を顔全体にのばしたあと、乾きやすい頬・口元にクリームを薄く重ねて、手のひらで包みます。' : '薄くのばし、手のひらで包んでなじませます。',
+      good:uniq([dryT || lowHum ? 'セラミド' : '', dryT ? 'スクワラン' : '', oilT ? 'ナイアシンアミド' : '', sensT ? 'パンテノール' : '', !dryT && !oilT ? 'ヒアルロン酸' : '']).slice(0, 3),
+      avoid:uniq([oilT || acneT ? '油分の多い重いクリーム' : '', sensT ? '香料' : '']), today:ex || []}; };
+  const rxSteps = () => here.filter(s => ['spot', 'rx', 'rxmoist'].includes(s.kind)).forEach(s => add(s.kind + ':' + s.x.p.id, {name:STEP_LABEL[s.kind], prods:[s.x], fixed:true, how:s.kind === 'spot' ? '気になるところだけに、少量をのせます。' : '医師・薬剤師に言われた量・塗り方・順番を守ります。'}));
+  const calmItem = D && D.items.find(x => /をお休み$/.test(x.title));
+  if (slot === 'am') {
+    const water = !hot && (m.oil || 0) < 3 && (dryT || sensT || lowHum || cold || (m.dry || 0) >= 3) && !(oilT && !dryT);
+    const why = uniq([lowHum ? T(`湿度${hum}%で空気が乾いているので、洗いすぎを防ぎます`, '天気') : null, cold ? T(`最高気温${Math.round(w.tmax)}℃と寒く、肌のうるおいが逃げやすい日です`, '天気') : null, (m.dry || 0) >= 3 ? T(`最近の記録で乾燥が強め（${m.dry}）です`, '肌') : null, (m.red || 0) >= 3 ? T(`赤み・肌あれ（${m.red}）があるので、こすらずに`, '肌') : null]);
+    if (water) add('water', {name:'ぬるま湯で洗う', how:'32℃くらいのぬるま湯を手ですくって、顔にやさしくかけます。タオルは押し当てて水分をとります。', avoid:['熱いお湯', 'ゴシゴシこする'], today:why.slice(0, 2)});
+    else add('wash', Object.assign(washO(), {today:uniq([hot ? T(`最高気温${Math.round(w.tmax)}℃で汗と皮脂が出やすい日です`, '天気') : null, (m.oil || 0) >= 3 ? T(`最近の記録でテカリ（${m.oil}）が強めです`, '肌') : null])}));
+    add('toner', tonerO(lowHum ? [T(`湿度${hum}%：2回に分けて重ねづけすると、うるおいが続きます`, '天気')] : []));
+    const sp = prodOf(['serum']);
+    let sg = uniq([markT && !calm ? 'ビタミンC誘導体' : '', acneT || oilT || poreT ? 'ナイアシンアミド' : '', calm || sensT ? 'パンテノール' : '', calm ? 'ツボクサエキス（CICA）' : '']).slice(0, 3);
+    if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。', good:sg, avoid:uniq([sensT ? '高濃度のビタミンC（純粋ビタミンC）' : '']),
+      today:calm ? [T((() => { const st = sp.filter(x => ['vitc', 'retinoid', 'aha', 'bha', 'pha'].some(g => x.groups && x.groups.has(g))); return st.length ? `赤み・肌あれがある日なので、今日は「${truncate(st[0].p.name, 16)}」はお休みして、しずめる成分にします` : '赤み・肌あれがある日は、刺激の出やすい美容液は休んで、しずめる成分にします'; })(), '肌')] : []});
+    rxSteps();
+    add('moist', moistO('am', uniq([lowHum || cold ? T('乾燥する日：頬・口元にクリームを少し重ねます', '天気') : null, hot ? T('暑い日は少なめでOK（保湿をやめると、かえって皮脂が増えることがあります）', '天気') : null])));
+    const spf = uv == null ? 'SPF30・PA+++くらい' : uv >= 6 ? 'SPF50・PA++++' : uv >= 3 ? 'SPF30以上・PA+++' : 'SPF15〜30・PA++';
+    add('sunscreen', {name:'日焼け止め', type:spf, prods:prodOf(['sunscreen'], true), how:'顔全体にパール2粒分くらいを、2回に分けてムラなく塗ります。',
+      gl:'選び方', good:uniq([spf, sensT ? '紫外線吸収剤不使用（ノンケミカル）' : '', acneT ? 'ノンコメドジェニックテスト済み' : '']), avoid:uniq([sensT ? '香料' : '']),
+      today:uniq([uv != null ? T(uv >= 6 ? `UV${uv}（強い）：外にいるときは2〜3時間ごとに塗り直します` : uv >= 3 ? `UV${uv}（中くらい）：くもりでも塗ります` : `UV${uv}（弱い）：短い外出でも塗っておくと安心です`, '天気') : null, markT || (m.dull || 0) >= 3 || ff.inflamed ? T('ニキビ跡・くすみは紫外線で濃くなりやすいので、毎日続けます', '肌') : null])});
+  } else {
+    const mk = ans.makeup || '', sun = prodOf(['sunscreen'], true)[0];
+    const sunOff = mk === 'sunonly' && sun && R && R.A.infos.some(x => x.p.id === sun.p.id && x.soapOff);
+    const clP = prodOf(['cleanse'], true), cl = clP[0];
+    if (mk !== 'none' && !sunOff || clP.length) {
+      const type = mk === 'full' ? (dryT || sensT ? 'クリーム・バーム' : 'オイル・バーム') : acneT || oilT ? 'ジェル（オイルフリー）' : 'ミルク・ジェル';
+      const emul = cl && R && R.A.infos.some(x => x.p.id === cl.p.id && (x.ctype === 'oil' || x.ctype === 'balm'));
+      add('cleanse', {name:'クレンジング', type, prods:clP, how:'乾いた手と顔に適量をとり、こすらずにくるくるなじませます。' + (emul ? '最後に少量の水を足して白くにごらせて（乳化）から、ぬるま湯で流します。' : 'ぬるま湯でしっかり流します。'),
+        good:[], avoid:uniq(['コットンで強くこする', sensT ? '香料' : '']), today:mk === 'sunonly' ? [T('日焼け止めだけの日も、落としきれないと毛穴づまりの原因になります', '肌')] : []});
+    }
+    const noDouble = cl && R && R.A.infos.some(x => x.p.id === cl.p.id && x.noDoubleWash);
+    if (!noDouble) add('wash', Object.assign(washO(), {today:hot ? [T('汗をかいた日は、皮脂と汗をきちんと落とします', '天気')] : []}));
+    add('toner', tonerO(lowHum ? [T(`湿度${hum}%：重ねづけでたっぷり補います`, '天気')] : []));
+    const sp = prodOf(['serum']);
+    const retOk = !calm && !(dryT && lowHum && (m.dry || 0) >= 4);
+    const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? 'レチノール' : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
+    const sa = uniq([calm ? 'レチノール' : '', calm ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの同じ夜の重ねづけ']).slice(0, 3);
+    if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
+      today:uniq([calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + '（' + calmItem.why.split('。')[0] + '）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
+    rxSteps();
+    add('moist', moistO('pm', uniq([lowHum ? T(`湿度${hum}%：最後にクリームでふたをして、寝ている間の乾燥を防ぎます`, '天気') : null, calm ? T('肌を休ませる日は、うるおいを守るのが一番です', '肌') : null])));
+  }
+  const tips = [];
+  if (slot === 'pm' && (m.acne || 0) > 0) tips.push('ニキビは触らない・つぶさない。枕カバーやタオルはこまめに替えましょう。');
+  if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
+  const lead = uniq([w ? `今日の天気　湿度${hum == null ? '－' : hum + '%'}・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${uv == null ? '－' : uv}` : '']);
+  return {steps, d, w, tips, lead, calm, hasProd:all.length > 0, R};
+}
+function rtPaneHtml(slot) {
+  let P; try { P = rtPlan(slot); } catch (e) { console.error(e); return `<div class="card">${emptyBox('note', '表示中にエラーが起きました', 'ページを読み込み直してください。')}</div>`; }
+  const lg = rtLog()[slot], done = s => !!lg['cm:' + s.k];
+  const min = Math.max(1, Math.round(P.steps.reduce((a, s) => a + (STEP_MIN[s.k.split(':')[0]] || (s.k === 'moist' ? 0.6 : 0.5)), 0)));
+  const nDone = P.steps.filter(done).length;
+  const chips = (L, cls) => L.map(x => `<span class="cm-c ${cls}">${esc(x)}</span>`).join('');
+  const pname = x => esc((x.p.brand ? x.p.brand + ' ' : '') + x.p.name);
+  const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}">
+    <button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button>
+    <div class="cm-b"><b class="cm-t">${esc(s.name)}</b>
+      ${s.prods.length ? s.prods.map(x => `<a class="cm-p" href="#/my/${encodeURIComponent(x.p.id)}">${icon('bottle')}<span>${pname(x)}</span></a>`).join('') : s.type ? `<span class="cm-p cm-p0">おすすめ：${esc(s.type)}</span>` : ''}
+      <p class="cm-how no-ph">${esc(s.how)}</p>
+      ${s.today.map(x => `<p class="cm-today no-ph"><i>${x.src === '天気' ? '天気から' : '肌の記録から'}</i>${esc(x.t)}</p>`).join('')}
+      ${s.good.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${chips(s.good, 'good')}</div></div>` : ''}
+      ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid, 'bad')}</div></div>` : ''}
+    </div></li>`;
+  let h = `<div class="card cm-sum"><div class="cm-sum-t"><b>${slot === 'am' ? '朝' : '夜'}のケア</b><span>${P.steps.length}工程・約${min}分</span></div>
+    <p class="cm-meta">${P.d ? `${esc(typeLabel(P.d))}` : '肌質：まだ診断していません'}${P.lead.length ? `<br>${esc(P.lead[0])}` : ''}</p>
+    ${nDone ? `<div class="cm-prog"><span style="width:${(nDone / P.steps.length * 100).toFixed(1)}%"></span></div><small class="muted">${nDone} / ${P.steps.length} できました</small>` : ''}
+    ${!P.d ? `<button type="button" class="btn btn-primary btn-sm cm-diag" data-action="setup">${icon('spark')}肌質診断をする（1〜2分）</button>` : ''}</div>`;
+  h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
+  if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
+  if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
+  if (!P.hasProd) h += `<div class="card cm-hint"><p class="small no-ph">使っている化粧品を「Myアイテム」に登録すると、それぞれの順番に商品名が入ります。</p><a class="link small" href="#/my">Myアイテムを開く →</a></div>`;
+  h += `<p class="small muted rt-foot no-ph">肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てた目安です。皮膚科の塗り薬は、医師の指示を優先してください。</p>`;
+  return h;
+}
+function viewRoutine() {
+  const slot = ui.rtTab === 'am' || ui.rtTab === 'pm' ? ui.rtTab : (new Date().getHours() < 15 ? 'am' : 'pm'); ui.rtTab = slot;
+  const tabs = `<nav class="home-tabs rt-tabs" role="tablist" aria-label="朝と夜">${[['am', 'sun', '朝のケア'], ['pm', 'moon', '夜のケア']].map(([k, ic, l]) => `<button type="button" class="ht ${slot === k ? 'active' : ''}" role="tab" aria-selected="${slot === k}" data-action="rt-tab" data-id="${k}">${icon(ic)}<span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
+  return tabs + `<div class="home-pane">${rtPaneHtml(slot)}</div>`;
+}
 // 成分辞典：肌悩みで絞り込み・成分マスターの詳細
 function ingMasterDetail(e) {
   const inMy = state.myProducts.filter(p => p.status !== '使用終了' && masterIngsOf(ingsOfMy(p)).some(x => x.k === e.k));
@@ -10396,7 +10549,7 @@ function careTodayData() {
     ['食事', hasMeal ? [ml.avgProtein != null ? `たんぱく質${Math.round(ml.avgProtein)}g/日` : '', ml.snackDays ? `間食${ml.snackDays}日` : '', ml.avgVeg != null ? `野菜${ml.avgVeg}g/日` : ''].filter(Boolean).join('・') || `${ml.days}日分` : '記録なし', !hasMeal],
     ['運動', hasEx ? `${ex.activeDays}日・合計${ex.totalMin}分` : '記録なし', !hasEx]
   ];
-  return {lead, inputs, items, calm, w};
+  return {lead, inputs, items, calm, w, m:{dry, red, oil, dull, rough, acne, inflamed}};
 }
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
@@ -10410,10 +10563,12 @@ function careTodayHtml() {
     const pt = ptOf(area);
     let chips = '';
     if (c === '肌' && adviceBusy) chips = `<div class="ct2-adv">${skelHtml(3, {dots:true, label:'分析中'})}</div>`;
-    else if (pt) { const ch = advChips(Object.assign({}, pt, {area})); if (ch) chips = `<div class="ct2-adv">${c === '肌' && pt.title ? `<b class="adv1-t">今の肌に合う成分：${esc(pt.title)}</b>` : ''}${ch}</div>`; }
+    else if (pt) { const ch = advChips(Object.assign({}, pt, {area})); if (ch) chips = `<div class="ct2-adv">${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
     const L = D.items.filter(x => x.cat === c), real = L.filter(x => !/を記録する$/.test(x.title)), ask = L.filter(x => /を記録する$/.test(x.title));
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
+    // 肌の朝・夜のケアの順番は「ケア管理」にまとめた（ここでは重ねて出さない）
+    if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${chips}<a class="ct2-go" href="#/routine">${icon('sun')}<span>朝・夜のケアの順番は「ケア管理」へ</span><i aria-hidden="true">›</i></a></section>`;
     const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
       : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : chips ? '' : '<p class="ct2-none">今日は特にありません。</p>';
     return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}</section>`;
@@ -10731,7 +10886,7 @@ document.addEventListener('touchstart', () => {}, {passive:true});
 // 主な4ページ（ホーム・肌の記録・Myアイテム・アカウント）は、なぞっても戻らない（履歴の一番下に置く）。
 // その4ページから開いたページだけ、なぞると1つ前に戻る。
 // 履歴ごとに「深さ」d を覚える：主な4ページ＝0、そこから開いたページ＝1、2…
-const ROOT_R = ['home', 'log', 'my', 'account'];
+const ROOT_R = ['home', 'log', 'routine', 'my', 'account'];
 const isRootHash = h => { if (!h || h === '#' || h === '#/') return true; const m = /^#\/([a-z]+)\/?$/.exec(h); return !!(m && ROOT_R.includes(m[1])); };
 let NAV_D = 0, REWIND = null, NAV_PASS = false;
 try {
@@ -12766,6 +12921,8 @@ const actions = {
   },
   'clear-filter': () => { const sheet = !!document.getElementById('flt-done'); Object.assign(ui, {q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std'}); if (sheet) closeModal(); render(); if (sheet) openFilterSheet(); },
   'my-filter': v => { ui.myFilter = v; render(); },
+  'rt-tab': k => { if (ui.rtTab === k) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) ui.htSlide = k === 'pm' ? 1 : -1; ui.rtFrom = ui.rtTab; ui.rtTab = k; render(); swScrollTop(); },
+  'cm-check': v => { const [sl, k] = String(v).split('|'), lg = rtLog()[sl]; if (!lg) return; if (lg['cm:' + k]) delete lg['cm:' + k]; else lg['cm:' + k] = Date.now(); save(); render(); },
   'my-kind': v => {
     if (ui.myKind === v) return;
     const from = ui.myKind; ui.myKind = v; ui.myKindDir = 0; ui.myKindFrom = from; ui.mtFrom = from; ui.htSlide = v === 'rx' ? 1 : -1; // ホームの上のバーと同じ動き
@@ -13138,8 +13295,8 @@ function placeHomeTabInd() {
   const badgeDone = ui.htBadgeDone; ui.htBadgeDone = false;
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
   const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return Math.round(b.offsetLeft + b.offsetWidth / 2 - 24); };
-  const acc = nav.classList.contains('acc-tabs'), my = nav.classList.contains('my-tabs'), log = !acc && !my && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : my ? ui.myKind : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : my ? ui.mtFrom : log ? ui.ltFrom : ui.htFrom;
-  const to = at(cur), from = ui.indFromX != null ? ui.indFromX : prev ? at(prev) : to; ui.indFromX = null; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
+  const acc = nav.classList.contains('acc-tabs'), my = nav.classList.contains('my-tabs'), rt = nav.classList.contains('rt-tabs'), log = !acc && !my && !rt && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : my ? ui.myKind : rt ? ui.rtTab : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : my ? ui.mtFrom : rt ? ui.rtFrom : log ? ui.ltFrom : ui.htFrom;
+  const to = at(cur), from = ui.indFromX != null ? ui.indFromX : prev ? at(prev) : to; ui.indFromX = null; ui.htFrom = ''; ui.rtFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
   // 文字の色も、下の緑の棒と同じ速さで入れかえる（棒と文字の動きをそろえる）
@@ -13159,7 +13316,7 @@ function placeHomeTabInd() {
   // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
   const LOG_TABS = [{k:'list'}, {k:'recent'}, {k:'photos'}];
   const MY_TABS = [{k:'cos'}, {k:'rx'}];
-  const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : parseRoute().name === 'my' ? {tabs:MY_TABS, cur:ui.myKind, go:k => actions['my-kind'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
+  const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : parseRoute().name === 'routine' ? {tabs:RT_TABS, cur:ui.rtTab, go:k => actions['rt-tab'](k)} : parseRoute().name === 'my' ? {tabs:MY_TABS, cur:ui.myKind, go:k => actions['my-kind'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
   const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
   // 上のタブの印（下線）も、指の動きに合わせて一緒に動かす
   const indAt = k => { const nav = document.querySelector('.home-tabs'), b = nav && nav.querySelector(`.ht[data-id="${k}"]`); return b ? Math.round(b.offsetLeft + b.offsetWidth / 2 - 24) : null; };
@@ -13179,13 +13336,14 @@ function placeHomeTabInd() {
   // 隣のタブの中身も、横に並べて一緒に動かす（めくるように見せる）。押せない「見た目だけ」のコピー
   let ghosts = {};
   const tabHtml = k => {
-    const rn = parseRoute().name, save = {h:ui.homeTab, l:ui.logTab, m:ui.myKind, sl:ui.htSlide};
+    const rn = parseRoute().name, save = {h:ui.homeTab, l:ui.logTab, m:ui.myKind, r:ui.rtTab, sl:ui.htSlide};
     try {
       if (rn === 'log') { ui.logTab = k; return viewLog(); }
       if (rn === 'my') { ui.myKind = k; return viewMy(); }
+      if (rn === 'routine') { ui.rtTab = k; return viewRoutine(); }
       ui.homeTab = k; return viewHome();
     } catch (e) { return ''; }
-    finally { ui.homeTab = save.h; ui.logTab = save.l; ui.myKind = save.m; ui.htSlide = save.sl; }
+    finally { ui.homeTab = save.h; ui.logTab = save.l; ui.myKind = save.m; ui.rtTab = save.r; ui.htSlide = save.sl; }
   };
   const makeGhost = (k, side) => {
     const html = tabHtml(k); if (!html || !pane) return null;
@@ -13206,7 +13364,7 @@ function placeHomeTabInd() {
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
     if (pend) pend(); // 前の切り替えの動きの途中で触ったら、すぐに切り替えを終わらせて、続けて次のスワイプを受けつける（2回なぞらなくても動くように）
-    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'routine', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full,.au-ov,.pm-ov')) return;
     const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
@@ -13303,7 +13461,7 @@ function render() {
   if (r.name === 'check' || r.name === 'spending') { location.replace('#/account'); return; } // 支出・予算の機能はなくした // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, shop:viewShop, product:() => viewProduct(r.id),
     ingredients:() => viewIngredients(r.id), care:() => viewCare(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo, trouble:viewTrouble,
-    log:viewLog, charts:viewCharts, report:viewReport, settings:viewSettings, account:viewAccount, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), visit:viewVisit};
+    log:viewLog, routine:viewRoutine, charts:viewCharts, report:viewReport, settings:viewSettings, account:viewAccount, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), visit:viewVisit};
   const alias = {trouble:'my', care:'home', account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'account', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
@@ -13315,14 +13473,14 @@ function render() {
   try { html = (views[r.name] || viewHome)(); }
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
   // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
-  if (r.name !== 'home' && !(['log', 'my', 'search', 'stores', 'favorites', 'account'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
+  if (r.name !== 'home' && !(['log', 'routine', 'my', 'search', 'stores', 'favorites', 'account'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
   // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
   const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
-  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'肌の記録', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
@@ -13333,7 +13491,7 @@ function render() {
   navRestoreY = null;
   if (!state.settings.permAsked2 && state.settings.onboarded) setTimeout(() => permSheet(), 900); // 最初に開いたとき：位置情報・お知らせの許可
   if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
-  if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'log' || r.name === 'routine') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'care') rtDragInit();
   if (r.name === 'my' && !r.id) slideHomePane();
   if (r.name === 'my' && !r.id) placeHomeTabInd();
