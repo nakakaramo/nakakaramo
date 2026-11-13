@@ -5473,7 +5473,7 @@ async function openIngSheet(word) {
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
   partnersLoad().then(P => {
     const box = document.getElementById('ing-partner'); if (!box) return;
-    const av = ingAvoidKeys(), got = P.filter(x => { const t = fnorm((x.ingredients || '') + ' ' + x.name); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
+    const av = ingAvoidKeys(), got = P.filter(x => { const t = fnorm(((x.ingredients || '') + ' ' + x.name).replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
     // 全成分がわかっている商品を先に。同じ条件の中では日ごとに順番を入れ替える（いつも同じ商品だけにならないように）
     const day = Number(todayStr().replace(/-/g, '')) || 0, rk = x => (x.partial ? 1000 : 0) + ((P.indexOf(x) * 7919 + day) % 997);
     got.sort((a, b) => rk(a) - rk(b)); got.splice(4);
