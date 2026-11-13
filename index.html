@@ -5530,7 +5530,7 @@ async function openIngSheet(word) {
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <div id="ing-partner"></div>
     <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
+    <p class="small muted" style="margin-top:8px">売れている順に、手ごろな価格（プチプラ）の物を少し優先して並べています。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
   const WASH_N = /洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|パウダー|wash/i, WASH_NG = /ボディ|シャンプー|ハンド|食器|洗濯|ヘア|メイク落とし|クレンジング(オイル|バーム|ジェル|ミルク|ウォーター)|拭き取り|詰め?替/i;
   const keys = wk ? [] : ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []);
   const hit = isCl ? x => { const n = cleanShopName(x.name) || x.name; return /クレンジング|メイク落とし|cleansing/i.test(n) && !/ボディ|シャンプー|頭皮|ヘア|スカルプ|洗顔フォーム|詰め?替/i.test(n) && shopSingle(x, w0); }
@@ -5562,6 +5562,9 @@ async function openIngSheet(word) {
   { const av = ingAvoidKeys(); if (av.length) for (let k = list.length - 1; k >= 0; k--) if (hasAvoid((list[k].ingredients || '') + ' ' + list[k].name + ' ' + (list[k].caption || ''), av)) list.splice(k, 1); } // 控えたい成分が入った商品は省く
   for (let k = list.length - 1; k >= 0; k--) { const st = /yahoo/i.test(list[k].site || list[k].url || '') ? 'yahoo' : /amazon/i.test(list[k].url || '') ? 'amazon' : 'rakuten'; if (!affSite(st)) list.splice(k, 1); } // 今はアフィリエイトが使えるサイト（楽天）の商品だけ
   list.sort((a, b) => (a.sales ? 0 : 1) - (b.sales ? 0 : 1) || (a.sales || 0) - (b.sales || 0) || (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
+  // 値段：プチプラ（手ごろな物）を少し前に。少し高い物も、人気なら並べる（順位を少し下げるだけ）
+  { const pen = x => { const pr = Number(x.price) || 0; return !pr ? 0 : pr <= 2000 ? -1.5 : pr <= 3500 ? 0 : pr <= 6000 ? 1.5 : 3; };
+    const sc = new Map(list.map((x, i) => [x, i + pen(x)])); list.sort((a, b) => sc.get(a) - sc.get(b)); }
   const b = document.getElementById('ing-pop'); if (!b) return;
   const none = !list.length;
   const sunKind = n => /スティック|stick/i.test(n) ? 'stick' : /スプレー|ミスト|spray/i.test(n) ? 'spray' : /パウダー|powder/i.test(n) ? 'powder' : /ジェル|gel|エッセンス|ウォータリー/i.test(n) ? 'gel' : /ミルク|乳液|milk/i.test(n) ? 'milk' : /クリーム|cream/i.test(n) ? 'cream' : 'other';
@@ -10067,7 +10070,7 @@ function openLogForm(id) {
       const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
       aiLast = {acne:n, zones:(r.zones || []).map(x => ({z:x.zone, c:x.concern, l:x.level})), note:r.note || '', shots:images ? 3 : 1}; // 記録と一緒に保存して、「あなたの肌の分析」で使う
       box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>写真から今日の記録を入れました</b>${r.note ? `<br>${esc(r.note)}` : ''}<br><span class="small">ニキビ ${n}個${(r.zones || []).length ? '・' + [...new Set(r.zones.map(x => x.concern))].join('・') : ''}</span>
-        <p class="small muted" style="margin:6px 0 0">${esc(AI_NOTE)}光の当たり方で見え方が変わります。違うところは顔を押して直してから「記録する」を押してください。</p></div>`;
+        <p class="small muted" style="margin:6px 0 0">写真の読み取りは、そこまで正確ではありません。細かいところや、抜けているところは、顔を押して自分で直してから「記録する」を押してください。</p></div>`;
 
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
@@ -11860,11 +11863,12 @@ function personalAnalysis() {
   // 写真の読み取り（直近2週間）：顔の写真から見えた状態も、悩みの重さに入れる
   const C2K = {'赤み':'redness', '乾燥':'dry', 'テカリ':'oily', 'くすみ':'dull', '毛穴の目立ち':'pore', '肌あれ':'sensitive', 'ざらつき':'rough'};
   const aiL = logsInRange(addDays(t, -13), t).filter(l => l.aiPhoto);
-  if (aiL.length) { const mx = {}; aiL.forEach(l => l.aiPhoto.zones.forEach(z => { const k = C2K[z.c]; if (k) mx[k] = Math.max(mx[k] || 0, z.l); })); Object.entries(mx).forEach(([k, v]) => add(k, v >= 3 ? 1 : 0.5, '写真の読み取り'));
-    const an = avg(aiL.map(l => l.aiPhoto.acne)); if (an >= 1) add('acne', 0.6, '写真の読み取り'); }
+  const lvOf = l => { const o = {}; Object.values((logFaceData(l) || {}).marks || {}).forEach(mk => Object.entries(mk || {}).forEach(([c, v]) => { if (c !== 'ニキビ' && Number(v)) o[c] = Math.max(o[c] || 0, Number(v)); })); return o; }; // 写真で入れたあと、自分で直した最終の記録を使う
+  if (aiL.length) { const mx = {}; aiL.forEach(l => Object.entries(lvOf(l)).forEach(([c, v]) => { const k = C2K[c]; if (k) mx[k] = Math.max(mx[k] || 0, v); })); Object.entries(mx).forEach(([k, v]) => add(k, v >= 3 ? 1 : 0.5, '写真の読み取り'));
+    const an = avg(aiL.map(l => Number(nums(l).acne) || 0)); if (an >= 1) add('acne', 0.6, '写真の読み取り'); }
   // 写真で見る変化（いちばん古い写真と、いちばん新しい写真）
   const ph = state.skinLogs.filter(l => l.photo && !l.demo && l.date >= addDays(t, -89)).sort((a, b) => a.date.localeCompare(b.date));
-  const photos = ph.length >= 2 ? (() => { const a = ph[0], b = ph[ph.length - 1], sum = l => l.aiPhoto ? {acne:l.aiPhoto.acne, lv:Object.fromEntries(Object.entries(l.aiPhoto.zones.reduce((o, z) => { o[z.c] = Math.max(o[z.c] || 0, z.l); return o; }, {})))} : {acne:Number(nums(l).acne) || 0, lv:{'赤み':Number(nums(l).red) || 0, '乾燥':Number(nums(l).dry) || 0, 'テカリ':Number(nums(l).oil) || 0}};
+  const photos = ph.length >= 2 ? (() => { const a = ph[0], b = ph[ph.length - 1], sum = l => { const v = lvOf(l); return {acne:Number(nums(l).acne) || 0, lv:Object.keys(v).length ? v : {'赤み':Number(nums(l).red) || 0, '乾燥':Number(nums(l).dry) || 0, 'テカリ':Number(nums(l).oil) || 0}}; };
     const A0 = sum(a), B0 = sum(b), diffs = [...new Set(Object.keys(A0.lv).concat(Object.keys(B0.lv)))].map(c => ({c, a:A0.lv[c] || 0, b:B0.lv[c] || 0})).filter(x => x.a !== x.b);
     return {a, b, n:ph.length, acneA:A0.acne, acneB:B0.acne, diffs, days:diffDays(a.date, b.date)}; })() : {n:ph.length};
   // 悪くなっている悩みは少し上げる・良くなっている悩みはそのまま（下げすぎない）
@@ -11945,10 +11949,10 @@ function viewMycare() {
   if (A.photos && A.photos.a) { const P = A.photos;
     h += `<h2 class="pc-sec">写真で見る変化</h2><div class="card"><div class="pc-ph"><figure><img src="${P.a.photo}" alt="${esc(fmtMD(P.a.date))}の写真"><figcaption>${esc(fmtMD(P.a.date))}</figcaption></figure><figure><img src="${P.b.photo}" alt="${esc(fmtMD(P.b.date))}の写真"><figcaption>${esc(fmtMD(P.b.date))}</figcaption></figure></div>
       <ul class="pc-ul small" style="margin-top:8px"><li>ニキビ：${P.acneA}個 → ${P.acneB}個</li>${P.diffs.slice(0, 4).map(x => `<li>${esc(x.c)}：${x.a ? '強さ' + x.a : 'なし'} → ${x.b ? '強さ' + x.b : 'なし'}</li>`).join('')}</ul>
-      <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚の写真から、いちばん古い写真と新しい写真を並べています。光の当たり方でも見え方は変わります。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
+      <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚の写真から、いちばん古い写真と新しい写真を並べています。写真の読み取りはそこまで正確ではないので、数字は、写真のあとに自分で直した記録の内容です。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は、もう持っている物に入っています。新しく買わなくて大丈夫です。</p>' : '<p class="small muted pc-own">新しく買うなら、手ごろな価格の物で十分です。</p>'}</div>` : ''}
+      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は、もう持っている物に入っています。新しく買わなくて大丈夫です。</p>' : '<p class="small muted pc-own">新しく買うなら、まずはプチプラの物からで十分です。</p>'}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
   else if (A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みが見つかっていません。今のケアを続けながら、記録を続けてください。</p></div>`;
   if (A.items.length) {
