@@ -2280,12 +2280,11 @@ a,img,button,label{-webkit-touch-callout:none!important}
 /* 今日の記録（元の並び）：調子のラベル → ニキビ → 赤み・乾燥・皮脂 */
 .t3-card .t3-old{gap:10px;justify-content:center}
 .t3-card .t3-old .t3-tags{margin-bottom:2px}
-.t3-card .t3-old .t3-tags span{font-size:13px;padding:3px 12px}
 
 /* 今日の記録：調子のラベルは拡大ボタンと同じ高さ（上の段）。下の段は 左＝ニキビ〜皮脂、右＝3D（同じ高さ） */
 .t3-card:has(.t3-old){padding-top:52px}
-.t3-card .t3-old .t3-tags{position:absolute;top:14px;left:20px;margin:0}
-.t3-card .t3-grid:has(.t3-old){grid-template-columns:minmax(0,1.2fr) minmax(0,1.1fr);column-gap:12px;align-items:stretch}
+.t3-card .t3-old .t3-tags{position:absolute;top:16px;left:20px;margin:0} /* 大きさは「記録一覧」の調子と同じ */
+.t3-card .t3-grid:has(.t3-old){grid-template-columns:minmax(0,1.05fr) minmax(0,1.25fr);column-gap:12px;align-items:stretch}
 .t3-card .t3-old{justify-content:space-between;gap:0;padding-top:var(--t3-top,0px)}
 .t3-card .t3-old .t3-acne{margin:0;line-height:1;font-size:12.5px}
 .t3-card .t3-old .t3-acne b{font-size:22px;margin:0 2px 0 5px}
@@ -2325,6 +2324,10 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .ct2-sh small{flex-basis:100%;font-size:12px;font-weight:400;color:var(--muted);margin-left:24px}
 .ct2-sec .ct2-i:first-of-type{border-top:0}
 .ct2-none{margin:4px 0 0 24px;font-size:13px;color:var(--muted);line-height:1.6}
+
+/* おすすめケアの中の「今の肌に合う成分」 */
+.ct2-adv{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.ct2-adv .adv-h{font-size:14px;font-weight:600;margin:0 0 6px}
 </style>
 </head>
 <body>
@@ -4182,7 +4185,8 @@ function viewHome() {
   const todayCard = `<div class="card t3-card"><button class="f3-expand t3-zoom" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button>
       <div class="t3-grid">${side}<div class="t3-fc"><div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div></div>
       ${lifeLine}</div>`;
-  const careCard = careHomeCard() + careTodayHtml() + `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
+  const ctH = careTodayHtml(`<div class="advice ct2-adv" id="advice-box">${adviceHtml()}</div>`); // 「今の肌に合う成分」は、おすすめケアの「肌のケア」の中へ
+  const careCard = careHomeCard() + (ctH || `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div>`) + `<div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -9807,13 +9811,27 @@ function face3dCardHtml() {
     <p class="small" id="f3-diff" style="margin-top:8px;text-align:center">${diff.length ? `最初の記録の週と比べて：${diff.map(x => `${esc(x.n)} ${x.v > 0 ? '+' : ''}${x.v}`).join('／')}` : ''}</p>
     <p class="small muted" style="margin-top:4px">記録の集計で、肌の状態の診断ではありません。顔の形：MediaPipe（Google、Apache License 2.0）。</p></div>`;
 }
+// 目のまわりの段差（まぶたの合わせ目のくぼみ）をなめらかにして、静かに目を閉じた形にする
+function face3dSmoothEyes(m) {
+  if (m._eyeSm) return; m._eyeSm = true;
+  const v = m.v, n = v.length / 3, f = m.f, nb = Array.from({length:n}, () => new Set());
+  for (let t = 0; t < f.length; t += 3) { const a = f[t], b = f[t + 1], c = f[t + 2]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
+  const w = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = Math.abs(v[i * 3]), y = v[i * 3 + 1], z = v[i * 3 + 2]; if (z < 1) continue; const d = Math.pow((x - 4.15) / 2.1, 2) + Math.pow((y - 2.6) / 1.05, 2); w[i] = d >= 1 ? 0 : Math.pow(1 - d, 0.7); }
+  for (let it = 0; it < 14; it++) {
+    const nv = v.slice();
+    for (let i = 0; i < n; i++) { if (!w[i]) continue; let sx = 0, sy = 0, sz = 0, k = 0; nb[i].forEach(j => { sx += v[j * 3]; sy += v[j * 3 + 1]; sz += v[j * 3 + 2]; k++; }); if (!k) continue; const a = w[i] * 0.6;
+      nv[i * 3] += (sx / k - v[i * 3]) * a * 0.3; nv[i * 3 + 1] += (sy / k - v[i * 3 + 1]) * a * 0.3; nv[i * 3 + 2] += (sz / k - v[i * 3 + 2]) * a; }
+    for (let i = 0; i < v.length; i++) v[i] = nv[i];
+  }
+}
 function face3dLoad() {
   if (FACE3D.three && FACE3D.mesh) return Promise.resolve();
   if (FACE3D.loading) return FACE3D.loading;
   FACE3D.loading = Promise.all([
     window.THREE ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'),
     fetch('face3d.json?v=20261101').then(r => { if (!r.ok) throw new Error('face'); return r.json(); })
-  ]).then(([, m]) => { FACE3D.three = window.THREE; FACE3D.base = m; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
+  ]).then(([, m]) => { FACE3D.three = window.THREE; face3dSmoothEyes(m); FACE3D.base = m; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
   return FACE3D.loading;
 }
 // 性別に合わせた顔：女性は同じ顔の形のデータ（点の数・部位・マス目は同じ）を少し変形して作る
@@ -10278,7 +10296,7 @@ function careTodayData() {
   ];
   return {lead, inputs, items, calm, w};
 }
-function careTodayHtml() {
+function careTodayHtml(adv) {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
   const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
@@ -10290,7 +10308,7 @@ function careTodayHtml() {
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
     const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
       : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : '<p class="ct2-none">今日は特にありません。</p>';
-    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}</section>`;
+    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${c === '肌' && adv ? adv : ''}</section>`;
   };
   return `<div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
     <p class="ct2-lead no-ph">${esc(D.lead)}</p>
@@ -10385,7 +10403,7 @@ function adviceHtml() {
   // AIが控えたいもの・おすすめを出さなかった角度は、記録から出した内容でうめる（必ず両方出す）
   const pts = ai ? ADVICE_AREAS.map((a, i) => { const p = ai.points.find(x => x.area === a); if (!p) return local[i]; return Object.assign({}, p, {good:(p.good || []).length ? p.good : local[i].good, avoid:(p.avoid || []).length ? p.avoid : local[i].avoid}); }) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
-  const head = `<h3>今の肌に合う成分</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
+  const head = `<h3 class="adv-h">今の肌に合う成分</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
   const list = adviceBusy ? skelHtml(4, {dots:true, label:'分析中'}) : `<div class="adv1">${pts.slice(0, 1).map(x => `<b class="adv1-t">${esc(x.title)}</b>${advChips(Object.assign({}, x, {area:'スキンケア'}))}<span class="adv-text">${esc(x.text)}</span>`).join('')}</div>` /* 睡眠・食事・運動は上の「今日のおすすめケア」にまとめた */;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">記録を分析しています…</span>';
