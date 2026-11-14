@@ -105,8 +105,9 @@
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
 /* 画面の上を下に引っぱったとき、「ナカカラモ」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
 .topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:400px;background:inherit;pointer-events:none}
-/* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「ナカカラモ」の帯と同じ色にする */
-html,body{overscroll-behavior-y:none}
+/* いちばん下・勢いでいちばん上に着いたときは、iPhoneのふつうの跳ね返り（なめらか）をそのまま使う。
+   上で下に引っぱったときだけ、アプリの「引っぱって更新」が引き受ける（そのときは、ふつうの跳ね返りを止める） */
+html,body{overscroll-behavior-y:auto}
 #page{position:relative}
 #page{will-change:auto}
 .ptr{position:absolute;left:50%;bottom:calc(100% + 16px);width:30px;height:30px;margin-left:-15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-d);opacity:0;pointer-events:none;transform-origin:50% 50%}
@@ -14954,62 +14955,7 @@ function ptrRepaint() {
     if (phase === 'settling') phase = 'idle';
   }, {passive:true});
 })();
-// 一番下まで来たあとも、さらに上へ少し引っぱれる（ゴムのように伸びて、離すとなめらかに戻る）
-(function bottomBounce() {
-  const page = document.getElementById('page'); if (!page) return;
-  let y0 = null, on = false, d = 0, raf = 0;
-  const atBottom = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
-  // 上にくっついているタブのバー（今日の記録・おすすめケア…）は、ページといっしょに動かさない（iPhoneでバーだけずれて動くのを防ぐ）
-  let bar = null;
-  const setY = v => {
-    d = v; const on2 = Math.abs(v) > 0.25;
-    page.style.transform = on2 ? `translate3d(0,${(-v).toFixed(2)}px,0)` : '';
-    if (bar && v > 0) bar.forEach(el => { el.style.transform = on2 ? `translate3d(0,${v.toFixed(2)}px,0)` : ''; });
-    if (!on2) bar = null;
-  };
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
-  let x0 = 0;
-  window.addEventListener('touchstart', e => { cancelAnimationFrame(raf); if (e.touches.length !== 1 || blocked(e.target) || page.style.transform && !on || e.touches[0].clientX < 30) { y0 = null; return; } y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; on = false; }, {passive:true}); // 左の端から：前の画面に戻る動きに任せる
-  window.addEventListener('touchmove', e => {
-    if (y0 == null) return;
-    const dy = y0 - e.touches[0].clientY; // 上に動かした量
-    if (!on) { const ax = Math.abs(e.touches[0].clientX - x0); if (ax < 8 && Math.abs(dy) < 8) return; if (ax > Math.abs(dy)) { y0 = null; return; } if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY;
-      const tb = document.querySelector('.home-tabs'); bar = tb && tb.getBoundingClientRect().top <= 1 ? [tb] : null; return; } // 上の帯はいつも、タブのバーは上にくっついているときだけ、ページといっしょに動かさない // バーが上にくっついている（止まっている）ときだけ
-    if (dy <= 0) { setY(0); return; }
-    e.preventDefault(); setY(90 * (1 - Math.exp(-dy / 200)));
-  }, {passive:false});
-  const end = () => {
-    if (!on) { y0 = null; return; } on = false; y0 = null;
-    const from = d, t0 = performance.now();
-    const step = now => { const k = Math.min(1, (now - t0) / 420), e = 1 - Math.pow(1 - k, 4); setY(from * (1 - e)); if (k < 1) raf = requestAnimationFrame(step); else setY(0); };
-    raf = requestAnimationFrame(step);
-  };
-  window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
-  // 指を離したあとの勢いで、いちばん下（上）に着いたとき：ピタッと止めずに、iPhoneの標準アプリのように少し行きすぎて戻る
-  let touching = false, lastY = window.scrollY, lastT = performance.now(), vel = 0, flingRaf = 0;
-  window.addEventListener('touchstart', () => { touching = true; cancelAnimationFrame(flingRaf); }, {passive:true});
-  window.addEventListener('touchend', () => { touching = false; lastT = performance.now(); lastY = window.scrollY; }, {passive:true});
-  window.addEventListener('touchcancel', () => { touching = false; }, {passive:true});
-  const fling = dir => { // dir：1＝下に着いた、-1＝上に着いた
-    if (blocked() || on || window.__ptrOn || page.style.transform) return;
-    const amp = Math.min(56, Math.max(14, Math.abs(vel) * 22)) * dir, t0 = performance.now(), OUT = 150, BACK = 420;
-    if (dir > 0) { const tb = document.querySelector('.home-tabs'); bar = tb && tb.getBoundingClientRect().top <= 1 ? [tb] : null; } else bar = null;
-    const step = now => { const t = now - t0;
-      if (t < OUT) { const k = t / OUT; setY(amp * (1 - Math.pow(1 - k, 3))); }
-      else if (t < OUT + BACK) { const k = (t - OUT) / BACK; setY(amp * (1 - (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2))); }
-      else { setY(0); return; }
-      flingRaf = requestAnimationFrame(step); };
-    flingRaf = requestAnimationFrame(step);
-  };
-  window.addEventListener('scroll', () => {
-    const now = performance.now(), y = window.scrollY, dt = now - lastT;
-    if (dt > 0 && dt < 100) vel = vel * 0.4 + ((y - lastY) / dt) * 0.6; else vel = 0;
-    const prev = lastY; lastY = y; lastT = now;
-    if (touching || Math.abs(vel) < 0.5) return;
-    if (vel > 0 && atBottom() && prev < y) fling(1);
-    else if (vel < 0 && y <= 0 && prev > 0) fling(-1);
-  }, {passive:true});
-})();
+// （一番下の跳ね返りは、iPhoneのふつうの動きに任せる。自前の動きは不自然だったのでやめた）
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
 $('#top-menu').innerHTML = '<span class="hb" aria-hidden="true"><i></i><i></i><i></i></span>'; $('#top-menu').setAttribute('aria-expanded', 'false');
