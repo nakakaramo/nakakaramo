@@ -14849,7 +14849,8 @@ function render() {
     const back = Date.now() - NAV_SRC.back < 1500 || NAV_STACK[NAV_STACK.length - 1] === key;
     if (fromBar) NAV_STACK.length = 0; if (back) NAV_STACK.pop(); else NAV_STACK.push(prevRoute); if (NAV_STACK.length > 30) NAV_STACK.shift();
     const m = document.getElementById('main');
-    const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!prevRoute.split('/')[1]; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
+    const pid = prevRoute.split('/').slice(1).join('/'), deeper = !!(r.id && pid) && (r.id.startsWith(pid + '/') || pid.startsWith(r.id + '/')); // 設定→お知らせのように、もう1段深いページへ移るときは横にすべる
+    const sameScreen = prevRoute.split('/')[0] === r.name && (!!r.id) === !!pid && !deeper; // 一覧⇄詳しい画面は横にすべる。タブ（care/routine⇄care/ing など）は動かさない
     const dir = fromBar || sameScreen || histQuiet ? '' : back ? 'pg-pop' : 'pg-push';
     NAV_SRC.bar = 0; NAV_SRC.back = 0;
     if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); if (dir) { void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 600); } }
