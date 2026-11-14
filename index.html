@@ -3539,7 +3539,7 @@ function normalize(d) {
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
   out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
   out.settings.permAsked2 = !!ds.permAsked2; // 最初の「はじめの設定」（位置情報・お知らせ）を出したか
-  out.settings.notify = ds.notify && typeof ds.notify === 'object' ? {on:!!ds.notify.on, time:/^\d{2}:\d{2}$/.test(ds.notify.time || '') ? ds.notify.time : '21:00', expiry:ds.notify.expiry !== false} : null; // お知らせ（通知）
+  out.settings.notify = ds.notify && typeof ds.notify === 'object' ? {on:!!ds.notify.on, time:/^\d{2}:\d{2}$/.test(ds.notify.time || '') ? ds.notify.time : '21:00', expiry:ds.notify.expiry !== false, always:!!ds.notify.always} : null; // お知らせ（通知）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
@@ -12482,7 +12482,7 @@ async function photoDeleteAll() {
 
 // ===== お知らせ（通知）：ホーム画面に追加したアプリに、記録のお知らせと使用期限のお知らせを送る =====
 // 送るのはサーバーの関数「push」。決めた時刻に、その日まだ肌を記録していないときだけ「記録しましょう」を送る
-function notifyCfg() { const n = state.settings.notify || {}; return {on:!!n.on, time:/^\d{2}:\d{2}$/.test(n.time || '') ? n.time : '21:00', expiry:n.expiry !== false}; }
+function notifyCfg() { const n = state.settings.notify || {}; return {on:!!n.on, time:/^\d{2}:\d{2}$/.test(n.time || '') ? n.time : '21:00', expiry:n.expiry !== false, always:false}; }
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 function b64u(s) { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); }
 async function callPush(action, extra) {
@@ -12506,15 +12506,15 @@ async function pushSubEnsure() {
   try { const reg = await navigator.serviceWorker.ready, {key} = await callPush('key'); sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64u(key)}); } catch (e) { return null; }
   return sub;
 }
-async function notifySend(c) { const sub = await pushSubEnsure(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, expiry_on:c.expiry}, notifyInfo())); return true; }
+async function notifySend(c, reset) { const sub = await pushSubEnsure(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, remind_always:!!c.always, expiry_on:c.expiry, reset_remind:!!reset}, notifyInfo())); return true; }
 // お知らせが届くように、許可・送り先・サーバーへの登録をまとめて確かめて直す（ボタンを押したときに呼ぶ）
-async function notifyRepair() {
+async function notifyRepair(reset) {
   if (!acct.user) throw new Error('先にログイン（無料）してください');
   if (!pushSupported() || (DEV.ios && !isStandalone())) throw new Error('iPhoneでは、ホーム画面に追加したナカカラモから開いたときにお知らせを使えます');
   if (Notification.permission === 'default') await Notification.requestPermission();
   if (Notification.permission !== 'granted') throw new Error(DEV.ios ? 'お知らせが許可されていません。iPhoneの「設定」→「通知」→「ナカカラモ」で「通知を許可」をオンにしてください' : 'お知らせが許可されていません。ブラウザの設定で許可してください');
   const c = notifyCfg(); c.on = true; state.settings.notify = c; save();
-  if (!(await notifySend(c))) throw new Error('この端末のお知らせの登録ができませんでした。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください');
+  if (!(await notifySend(c, reset))) throw new Error('この端末のお知らせの登録ができませんでした。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください');
   try { localStorage.setItem('nk_notify_sig', phHash(JSON.stringify([c, notifyInfo(), todayStr()]))); } catch (e) { /* 何もしない */ }
   return c;
 }
@@ -12564,7 +12564,7 @@ function notifyCardHtml() {
   else body = `<label class="nt-row"><span><b>お知らせを受け取る</b><small>${busy ? '設定しています…' : DEV.ios && !isStandalone() ? 'iPhoneでは、ホーム画面に追加したアプリで使えます' : 'この端末に通知が届きます'}</small></span><input type="checkbox" switch class="nt-sw" data-action="notify-toggle" ${c.on ? 'checked' : ''}></label>
     <div class="nt-opts" ${c.on ? '' : 'hidden'}>
       <div class="nt-line"><span>記録のお知らせ</span><input type="time" class="input nt-time" id="f_notify_time" step="60" value="${esc(c.time)}" aria-label="お知らせの時刻（何時何分）"></div>
-      <p class="small muted" style="margin:4px 0 10px">その日まだ肌を記録していないときだけ届きます。</p>
+      <p class="small muted" style="margin:4px 0 10px">その日まだ肌を記録していないときだけ届きます（記録した日は届きません）。</p>
       <label class="check"><input type="checkbox" id="f_notify_exp" ${c.expiry ? 'checked' : ''}>使用期限が近い化粧品をお知らせ（7日前）</label>
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="notify-test">テストのお知らせを送る</button></div>`;
   return `<div class="card" id="notify-card"><div class="card-h"><h2>お知らせ</h2></div>${body}</div>`;
@@ -12625,15 +12625,16 @@ async function permSheet(force) {
 }
 function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); setTimeout(notifyHealth, 0); }
 document.addEventListener('change', e => {
-  if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp') return;
+  if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp' && e.target.id !== 'f_notify_always') return;
   const c = notifyCfg();
   if (e.target.id === 'f_notify_time') { const v = String(e.target.value || '').slice(0, 5); if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) { e.target.value = c.time; return; } if (v === c.time) return; c.time = v; }
+  else if (e.target.id === 'f_notify_always') { c.always = e.target.checked; const hint = e.target.closest('label').nextElementSibling; if (hint) hint.textContent = c.always ? '毎日、決めた時刻に届きます。' : 'その日まだ肌を記録していないときだけ届きます。'; }
   else c.expiry = e.target.checked;
   state.settings.notify = c; save(); clearTimeout(notifyT);
   // すぐにサーバーへ伝えて、届いたかどうかを知らせる（伝わっていないのに「設定した」と思わないように）
   (async () => {
     try {
-      await notifyRepair();
+      await notifyRepair(e.target.id !== 'f_notify_exp');
       toast(e.target.id === 'f_notify_time' ? `${Number(c.time.slice(0, 2))}時${c.time.slice(3)}分にお知らせします` : '設定しました');
     } catch (err) { toast(err.message || 'お知らせの設定ができませんでした', 'error'); }
   })();
