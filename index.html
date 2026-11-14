@@ -1309,7 +1309,10 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .rc-ing li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
 .rc-ing b{font-weight:600;color:var(--ink2,#444);white-space:nowrap}
 .rc-steps{margin:0;padding-left:1.3em;display:grid;gap:7px;font-size:14px;line-height:1.6}
-.mn-point{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.55}
+.mn-point{font-size:13px;color:var(--ink2);margin:10px 0 0;line-height:1.6;background:var(--green-p);border-radius:10px;padding:8px 12px}
+.mn-foot{list-style:none;margin:14px 0 0;padding:10px 0 0;border-top:1px solid var(--line);display:grid;gap:3px}
+.mn-foot li{position:relative;padding-left:12px;font-size:11.5px;line-height:1.55;color:var(--muted)}
+.mn-foot li::before{content:'';position:absolute;left:2px;top:.65em;width:4px;height:4px;border-radius:50%;background:var(--line2,#cfc8bd)}
 .advice .adv-text{display:block;font-size:13px;color:var(--muted);line-height:1.6}
 .adv-ing{border:0;font:inherit;font-size:12.5px;font-weight:600;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}.adv-ing i{font-style:normal;opacity:.6}
 .ing-b .nw{display:inline-block}.sun-k{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin-top:2px}.sun-k i{font-style:normal;font-weight:700;white-space:nowrap}.ing-dl{display:grid;gap:8px;margin:0 0 10px}.ing-b{background:var(--surface2,#F6F3EE);border-radius:12px;padding:10px 12px}.ing-b b{display:block;font-size:12px;color:var(--green-d);margin-bottom:2px}.ing-b.warn b{color:#B0662A}.ing-b p{margin:0;font-size:13.5px;line-height:1.7}
@@ -2453,6 +2456,10 @@ html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-the
 .cm-hint p{margin:0 0 6px}
 .ct2-adv .adv1-t{margin:4px 0 0;font-size:13.5px}
 .ct2 .adv-foot{padding-top:12px;border-top:1px solid var(--line);margin-top:14px}
+.ct2-c .ct2-sec{margin-top:0;padding-top:0;border-top:0}
+.ct2-c .ct2-sh{font-size:16px;margin-bottom:6px}
+.ct2-wrap{margin:16px 0}.ct2-wrap:first-child{margin-top:0}.ct2-wrap:last-child{margin-bottom:0}
+.ct2-wrap>.card+.card{margin-top:16px}
 .ct2-adv .adv-h{font-size:14px;font-weight:600;margin:0 0 6px}
 
 .twx-n .twx-r{font-size:.62em;font-weight:500;color:var(--muted);margin-left:.25em}
@@ -11285,9 +11292,10 @@ function careTodayHtml() {
       : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : chips ? '' : '<p class="ct2-none">今日は特にありません。</p>';
     return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}</section>`;
   };
-  return `<div class="card ct2" id="care-today"><div class="card-h"><h2>今日のおすすめケア</h2></div>
-    <p class="ct2-lead no-ph">${esc(D.lead)}</p>
-    ${CATS.map(sec).join('')}<div class="advice"><div class="adv-foot">${adviceFoot(AP.ai)}</div></div></div>`;
+  // 肌・運動・睡眠・食事は、それぞれ別のカードにして見やすくする
+  return `<div class="ct2-wrap" id="care-today"><div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
+    <p class="ct2-lead no-ph">${esc(D.lead)}</p><div class="advice"><div class="adv-foot">${adviceFoot(AP.ai)}</div></div></div>
+    ${CATS.map(c => `<div class="card ct2 ct2-c">${sec(c)}</div>`).join('')}</div>`;
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
 const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
@@ -11530,14 +11538,15 @@ function menuHtml() {
     return `<div class="mn-pick" role="tablist">${home.map(([pl, i]) => pb(pl, i, k, mi)).join('')}${cv.length ? `<i class="mn-sep" aria-hidden="true"></i>${cv.map(([pl, i]) => pb(pl, i, k, mi)).join('')}` : ''}</div>`; };
   // 家で作る献立は、料理名を押すと作り方が出る。コンビニの組み合わせは、調べた公式サイトを出す
   const plan = pl => pl.store && !pl.dishes.length ? `<p class="mn-src" style="margin:4px 0 0">${STORE.state === 'err' ? esc(STORE.err) : STORE.filling ? `${esc(pl.store)}の公式サイトで、体にいい商品を調べています（1〜3分ほど）${STORE.remaining ? `。残り${STORE.remaining}種類` : ''}…` : !acct.user ? 'ログインすると、コンビニの商品が出ます。' : `${esc(pl.store)}の商品が見つかりませんでした。${STORE.note ? `（${esc(STORE.note)}）` : ''}「別の献立にする」でもう一度調べます。`}</p>` : `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span class="mn-item">${x.image ? `<img class="mn-img" src="${esc(x.image)}" alt="" referrerpolicy="no-referrer" onerror="this.classList.add('bad')">` : ''}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)}</a>` : `<span>${esc(x.name)}</span>`}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
-    ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで確かめた商品です${STORE.checked ? `（${esc(fmtShort(STORE.checked))}確認）` : ''}。商品名を押すと公式の商品ページが開きます。地域・時期によって売っていないことがあります。</p>` : '<p class="mn-src">料理名を押すと、作り方が出ます。</p>'}`;
+    ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで確かめた商品です${STORE.checked ? `（${esc(fmtShort(STORE.checked))}確認）` : ''}。商品名を押すと公式の商品ページが開きます。地域・時期によって売っていないことがあります。</p>` : ''}`;
   // 家で作る（和食・洋食）はAIの献立、コンビニ（セブン・ローソン・ファミマ）は保存してある商品の一覧から、すぐに組み合わせる
   if (res) res = Object.assign({}, res, {meals:res.meals.map(m => Object.assign({}, m, {plans:m.plans.filter(pl => !pl.store).slice(0, 2).map((pl, i) => Object.assign({}, pl, {label:['和食', '洋食'][i]}))}))}); // コンビニの献立はやめた（朝・昼・夕の和食・洋食だけ）
   const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
     return `<div class="mn-meal" data-mi="${mi}"><b class="mn-h">${m.when === '明日' ? '明日の' : ''}${esc(({朝:'朝食', 昼:'昼食', 夜:'夕食'})[m.meal] || m.meal)}</b>${pickRow(m, mi, k)}<div class="mn-plans">${m.plans.map((pl, i) => `<div class="mn-plan ${i === k ? 'on' : ''}" ${i === k ? '' : 'aria-hidden="true"'}>${plan(pl)}</div>`).join('')}</div></div>`; }).join('') // パターンは全部重ねて置き、見えるものだけ切り替える（写真を作り直さないので、チカチカ・高さのずれが出ない）
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
   const cvNote = false ? `<p class="mn-src">コンビニ（セブン・ローソン・ファミマ）の商品は、今回は調べられませんでした（${esc(res.storeNote)}）。「別の献立にする」でもう一度調べます。</p>` : '';
-  return head + body + cvNote + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
+  // 下の説明は1つにまとめる
+  return head + body + cvNote + `<ul class="mn-foot">${res ? '<li>料理名を押すと、作り方が出ます。</li>' : ''}<li>${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}</li><li>カロリーなどの数字は出しません。</li></ul>`;
 }
 // 記録が変わったとき・食事の時間帯が変わったときだけ、自動で作り直す（同じなら前の献立を使う）
 const AI_AUTO_GAP = 6 * 3600 * 1000;
