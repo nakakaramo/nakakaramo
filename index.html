@@ -5778,7 +5778,7 @@ function openAvoidSheet(word) {
     <div class="ing-b warn"><b>なぜ控えたほうがいい？</b><p>${esc(why)}</p></div>
     ${alt ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(alt)}</p></div>` : ''}</div>
     ${e ? `<a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : ''}
-    <p class="small muted" style="margin-top:8px">今の肌の状態（肌質診断・最近の肌の記録・使っている薬）から出しています。皮膚科で言われていることがあれば、そちらを優先してください。</p></div>`});
+    <p class="small muted pg-foot" style="margin-top:8px">今の肌の状態（肌質診断・最近の肌の記録・使っている薬）から出しています。皮膚科で言われていることがあれば、そちらを優先してください。</p></div>`});
 }
 // 登録済みの成分：押すと、その成分が入っている登録済みの商品を出す
 function openOwnedSheet(name, pids) {
@@ -5965,10 +5965,10 @@ function viewProduct(id) {
       ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `<p class="na">${offVal(p, '')}</p>`}</div>
     ${known.length ? `<div class="card"><div class="card-h"><h2>成分の解説</h2><span class="chip">一般的な情報</span></div>
       ${known.map(k => ingCard(k.entry, k.items)).join('')}
-      <p class="small muted" style="margin-top:12px">成分が含まれていることは、効果を保証するものではありません。濃度・処方・使用頻度・個人差によって、感じ方は異なります。</p></div>` : ''}
+      <p class="small muted pg-foot" style="margin-top:12px">成分が含まれていることは、効果を保証するものではありません。濃度・処方・使用頻度・個人差によって、感じ方は異なります。</p></div>` : ''}
     ${activeCompareCard(p)}
     <div class="card"><div class="card-h"><h2>注意事項</h2></div><p class="prose">${offVal(p, p.caution)}</p>${comboNgHtml(p)}</div>
-    <p class="small muted" style="margin-top:16px">掲載情報は効果を保証するものではありません。肌に異常が出た場合は使用を中止し、皮膚科医に相談してください。</p>`;
+    <p class="small muted pg-foot" style="margin-top:16px">掲載情報は効果を保証するものではありません。肌に異常が出た場合は使用を中止し、皮膚科医に相談してください。</p>`;
 }
 /* 手持ちの化粧品と、役割（カテゴリ・目的・成分）が重なっていないかを並べる */
 function activeCompareCard(p) {
@@ -9190,7 +9190,7 @@ function ingMasterDetail(e) {
     ${row('朝・夜', `${esc(e.time)}：${esc(e.timeT)}`)}${row('区分', esc(e.reg))}
     ${row('INCI名・別名', esc(e.inci.join('、')))}
     ${row('参考文献・情報源', e.refs.map(r => CARE_REFS[r] ? `<a href="${CARE_REFS[r].u}" target="_blank" rel="noopener">${esc(CARE_REFS[r].t)}</a>` : '').join('<br>'))}
-    <p class="small muted">メーカーの宣伝表現ではなく、公的な基準・ガイドライン・研究にもとづく一般的な情報です。効果を保証するものではありません。${fmtDate(CARE_DB_UPDATED)}更新</p></div>
+    <p class="small muted pg-foot">メーカーの宣伝表現ではなく、公的な基準・ガイドライン・研究にもとづく一般的な情報です。効果を保証するものではありません。${fmtDate(CARE_DB_UPDATED)}更新</p></div>
     ${pairs.length ? `<div class="card"><div class="card-h"><h2>併用の注意（${pairs.length}件）</h2><a class="link small" href="#/combo">併用チェック →</a></div>${pairs.map(r => comboCardHtml(r)).join('')}</div>` : ''}
     <div class="card"><div class="card-h"><h2>この成分を含むMyアイテム</h2></div>${inMy.length ? inMy.map(p => `<p><a href="#/my/${encodeURIComponent(p.id)}">${esc(p.name)}</a></p>`).join('') : '<p class="small muted">ありません（全成分を登録した商品だけを調べています）</p>'}</div>`;
 }
@@ -10766,7 +10766,7 @@ function face3dCardHtml() {
     <div class="page-actions" style="justify-content:center;margin-top:8px"><button class="btn btn-soft btn-sm" data-action="f3-play">${icon('chart')}8週間の変化を再生</button></div>
     <div class="map-legend" style="justify-content:center"><span><i style="background:#EBC9AE"></i>記録なし</span><span><i style="background:#EDA38A"></i>やや多い</span><span><i style="background:#D15C47"></i>多い</span>${d.mode === 'spots' ? '<span><i style="background:#C0392B"></i>ニキビの印</span>' : ''}</div>
     <p class="small" id="f3-diff" style="margin-top:8px;text-align:center">${diff.length ? `最初の記録の週と比べて：${diff.map(x => `${esc(x.n)} ${x.v > 0 ? '+' : ''}${x.v}`).join('／')}` : ''}</p>
-    <p class="small muted" style="margin-top:4px">記録の集計で、肌の状態の診断ではありません。顔の形：MediaPipe（Google、Apache License 2.0）。</p></div>`;
+    <p class="small muted pg-foot" style="margin-top:4px">記録の集計で、肌の状態の診断ではありません。顔の形：MediaPipe（Google、Apache License 2.0）。</p></div>`;
 }
 // 目のまわりの段差（まぶたの合わせ目のくぼみ）をなめらかにして、静かに目を閉じた形にする
 function face3dSmoothEyes(m) {
