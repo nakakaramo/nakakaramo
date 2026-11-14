@@ -3229,6 +3229,8 @@ const num = (v, def=0) => { const n = Number(v); return isFinite(n) ? n : def; }
 const numOrNull = v => (v === null || v === undefined || v === '' || !isFinite(Number(v))) ? null : Number(v);
 const avg = arr => { const a = arr.filter(v => v != null && isFinite(v)); return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; };
 const datesRange = (s, e) => { const out=[]; let d=s, g=0; while (d <= e && g++ < 1000) { out.push(d); d = addDays(d, 1); } return out; };
+// 商品名に入っている成分名を探す（いちばん長く一致したもの）。例：「アゼライン酸 美容液 皮脂…」→ アゼライン酸
+const ingFromName = name => { const n = String(name || ''); let best = ''; try { ING_MASTER.forEach(e => [chipText(e.ja)].concat(e.inci || []).forEach(w => { w = String(w || ''); if (w.length >= 3 && w.length > best.length && n.includes(w)) best = chipText(e.ja); })); } catch (er) { /* 何もしない */ } return best; };
 const truncate = (s, n) => { s = String(s||''); return s.length > n ? s.slice(0, n-1) + '…' : s; };
 // 肌悩みのキー（CONCERN_MASTER と同じ。保存データの読み込みは起動の最初に行うので、ここに置く）
 const CONCERN_KEYS = ['acne', 'acnemark', 'redness', 'dry', 'pore', 'spot', 'aging', 'oily', 'sensitive', 'dull', 'rough', 'darkcircle', 'puffy', 'uv'];
@@ -9139,6 +9141,11 @@ function rtPaneHtml(slot) {
   // おすすめ成分は、押すと成分の説明と人気の商品が出る（おすすめケアと同じ）。控えたいものが入った商品は省く。洗顔は洗顔料の中から出す
   const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', wash = s.k === 'wash', cl = s.k === 'cleanse', e = !sun && !wash && !cl && ingEntryOf(x), ok = sun || wash || cl || e;
     return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : wash ? '洗顔｜' + x : cl ? 'クレンジング｜' + x : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(chipText(x))}<i>›</i></button>` : `<span class="cm-c good">${esc(chipText(x))}</span>`; }).join('');
+  // 文章の中の「商品名」は、その商品の成分名にして、押すと持っている商品が出るリンクにする（成分のチップと同じ）
+  const ownLinkText = (t, s) => esc(t).replace(/「([^」]{1,40})」/g, (all, q) => { const pre = q.replace(/(…|\.\.\.)$/, '');
+    const pr = state.myProducts.find(p => !p.demo && (esc(p.name) === pre || (pre.length >= 4 && esc(p.name).startsWith(pre)))); if (!pr) return all;
+    const own = P.steps.flatMap(z => z.own || []).find(o => !o.drug && o.pids.includes(pr.id)); if (!own) return all;
+    return `<button type="button" class="care-link" data-owned="${esc(own.name)}" data-pids="${esc(own.pids.join(','))}">${esc(own.name)}</button>`; });
   const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}</button>`).join('');
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
@@ -9147,7 +9154,7 @@ function rtPaneHtml(slot) {
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
-      ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${esc(x.t)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
+      ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
       ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
@@ -9156,7 +9163,7 @@ function rtPaneHtml(slot) {
   P.steps.forEach(st => { const m = new Map();
     st.prods.forEach(x => { if (st.fixed) { const n = truncate(x.p.name, 18); m.set(n, (m.get(n) || []).concat(x.p.id)); return; }
       (x.ings || []).filter(e => (e.cs || []).length && !/^(グリセリン|濃グリセリン|BG|水|エタノール|香料)$/.test(chipText(e.ja))).slice(0, 4).forEach(e => { const n = chipText(e.ja); m.set(n, (m.get(n) || []).concat(x.p.id)); });
-      if (![...m.values()].some(L => L.includes(x.p.id))) { const n = truncate(x.p.name, 16); m.set(n, (m.get(n) || []).concat(x.p.id)); } }); // 目立つ成分がない商品は、商品名で出す
+      if (![...m.values()].some(L => L.includes(x.p.id))) { const n = ingFromName(x.p.name) || truncate(x.p.name, 16); m.set(n, (m.get(n) || []).concat(x.p.id)); } }); // 目立つ成分がない商品は、商品名に入っている成分名（なければ商品名）で出す
     st.own = [...m].map(([name, pids]) => ({name, pids:[...new Set(pids)], drug:!!st.fixed}));
     const ok = st.own.map(o => nk(o.name)); st.good = st.good.filter(v => { const k = nk(v); return !ok.some(o => o && k && (o === k || o.includes(k) || k.includes(o))); }); }); // 持っている成分と同じおすすめは出さない
   // 前の手順で出した成分・控えたいものは、あとの手順ではくり返さない
