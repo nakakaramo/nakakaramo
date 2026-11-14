@@ -5011,20 +5011,32 @@ function openSupport() {
     </div>`;
   }
   document.body.appendChild(ov); requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('in')));
-  { // 右へなぞると、指についてきて、離すと前の画面に戻る（ほかの画面の「戻る」と同じ）
-    let sx = null, sy = 0, dx = 0, lock = '', t0 = 0;
-    ov.addEventListener('touchstart', e => { if (e.touches.length !== 1 || ov._closing || e.touches[0].clientX < 24) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; lock = ''; t0 = performance.now(); }, {passive:true});
+  { // 右へなぞって戻る：iPhoneの「設定」アプリと同じ動き（指に1対1でついてくる・うしろの画面が少し左から出てくる・離したときの勢いで、戻るか元に戻るかを決める）
+    const EASE = 'cubic-bezier(.2,.9,.3,1)';
+    const under = () => [document.getElementById('page'), document.getElementById('bottom-nav')].filter(Boolean);
+    const setUnder = (x, tr) => under().forEach(el => { el.style.transition = tr || 'none'; el.style.transform = x ? `translate3d(${x}px,0,0)` : ''; });
+    let sx = null, sy = 0, dx = 0, lock = '', lx = 0, lt = 0, v = 0, W = 1;
+    ov.addEventListener('touchstart', e => { if (e.touches.length !== 1 || ov._closing || e.touches[0].clientX < 20) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; lock = ''; v = 0; }, {passive:true}); // 左の端（20px）は、iPhoneのふつうの「戻る」に任せる
     ov.addEventListener('touchmove', e => {
       if (sx == null) return;
-      const mx = e.touches[0].clientX - sx, my = e.touches[0].clientY - sy;
-      if (!lock) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; lock = mx > 0 && Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y'; if (lock === 'y') { sx = null; return; } sx = e.touches[0].clientX; ov.style.transition = 'none'; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
-      e.preventDefault(); dx = Math.max(0, e.touches[0].clientX - sx); ov.style.transform = `translate3d(${dx}px,0,0)`;
+      const x = e.touches[0].clientX, mx = x - sx, my = e.touches[0].clientY - sy;
+      if (!lock) { if (Math.abs(mx) < 6 && Math.abs(my) < 6) return; lock = mx > 0 && Math.abs(mx) > Math.abs(my) ? 'x' : 'y'; if (lock === 'y') { sx = null; return; }
+        sx = x; W = ov.offsetWidth || window.innerWidth; ov.style.transition = 'none'; lx = x; lt = performance.now(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+      e.preventDefault();
+      const now = performance.now(), dt = now - lt; if (dt > 0) v = v * 0.3 + ((x - lx) / dt) * 0.7; lx = x; lt = now;
+      dx = Math.max(0, x - sx); ov.style.transform = `translate3d(${dx}px,0,0)`; setUnder(-(W - dx) * 0.3);
     }, {passive:false});
     const end = () => {
       if (sx == null || lock !== 'x') { sx = null; return; } sx = null;
-      const v = dx / Math.max(1, performance.now() - t0);
-      if (dx > ov.offsetWidth * 0.3 || (v > 0.35 && dx > 40)) { ov._closing = true; ov.style.transition = 'transform .26s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = 'translate3d(100%,0,0)'; hapticTick(); dropHist(); setTimeout(() => ov.remove(), 280); }
-      else { ov.style.transition = 'transform .3s cubic-bezier(.2,.8,.2,1)'; ov.style.transform = ''; }
+      if (performance.now() - lt > 80) v = 0; // 止めてから離したときは、勢いなし
+      const go = dx + v * 220 > W / 2 && v > -0.2; // 離したときの勢いで、半分を越えそうなら戻る
+      if (go) {
+        const t = Math.min(0.42, Math.max(0.18, (W - dx) / Math.max(1.2, v * 1.6) / 1000));
+        ov._closing = true; ov.style.transition = `transform ${t}s ${EASE}`; ov.style.transform = 'translate3d(100%,0,0)'; setUnder(0, `transform ${t}s ${EASE}`);
+        hapticTick(); dropHist(); setTimeout(() => { ov.remove(); setUnder(0); }, t * 1000 + 40);
+      } else {
+        ov.style.transition = `transform .36s ${EASE}`; ov.style.transform = ''; setUnder(-W * 0.3, `transform .36s ${EASE}`); setTimeout(() => { if (!ov._closing) setUnder(0); }, 380);
+      }
     };
     ov.addEventListener('touchend', end); ov.addEventListener('touchcancel', end);
   }
