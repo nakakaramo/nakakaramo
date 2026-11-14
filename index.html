@@ -8973,14 +8973,9 @@ function personalLearn() {
   const v = {good:new Map(), bad:new Map(), list:[], unsure:[]};
   try {
     const sm = researchSummary(), RD = RS_DAYS || {all:[], by:new Map(), prod:new Map()};
-    const confoundOf = k => { const A = RD.by.get(k), pa = RD.prod.get(k); if (!A || !RD.all.length) return null; const n = RD.all.length;
-      for (const [k2, B] of RD.by) { if (k2 === k) continue; { const n2 = RD.name.get(k2) || ''; if (BASE.test(String(n2).replace(/（.*?）|類$/g, '').trim())) continue; } const pb = RD.prod.get(k2); if (pa && pb && [...pb].every(id => pa.has(id)) && [...pa].every(id => pb.has(id))) continue; // 同じ商品にだけ入っている成分どうしは、その商品の結果として扱う
-        let a = 0, b = 0, c = 0, d = 0; RD.all.forEach(dt => { const x = A.has(dt), y = B.has(dt); if (x && y) a++; else if (x) b++; else if (y) c++; else d++; });
-        const den = Math.sqrt((a + b) * (c + d) * (a + c) * (b + d)); if (!den) continue; const phi = (a * d - b * c) / den;
-        if (Math.abs(phi) >= 0.85) return {name:String(RD.name.get(k2) || k2).replace(/（.*?）|類$/g, ''), anti:phi < 0}; }
-      return null; };
+    const confoundOf = k => rsConfound(k, RD);
     // 化粧品の土台になる成分（水・グリセリン・BGなど）は、ほぼどの商品にも入っているので、合う・合わないの判断に使わない
-    const BASE = /^(水|精製水|グリセリン|BG|DPG|ブチレングリコール|ペンチレングリコール|プロパンジオール|1,2-ヘキサンジオール|フェノキシエタノール|メチルパラベン|エチルパラベン|カルボマー|キサンタンガム|水酸化K|水酸化Na|クエン酸|クエン酸Na|EDTA-2Na|エデト酸塩|トコフェロール|シリカ|ジメチコン)$/;
+    const BASE = ING_BASE_RE;
     const CAT_STEP = {'クレンジング':'cleanse', '洗顔':'wash', '化粧水・トナー':'toner', '美容液・アンプル':'serum', '乳液':'moist', 'クリーム':'moist', 'オールインワン':'moist', '日焼け止め':'sunscreen'};
     const stepsOf = name => { const n = normIng(name), st = new Set(); state.myProducts.forEach(p => { if (knownIngs(ingsOfMy(p)).some(k => normIng(String(k.entry.name).replace(/（.*?）/g, '')) === n)) { const k = CAT_STEP[p.category]; if (k) st.add(k); } }); return [...st]; };
     (sm.ings || []).forEach(x => {
@@ -13351,8 +13346,8 @@ function viewPrivacy() {
 <h3>4. 第三者への提供</h3>
 <p>運営者は、法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。ただし、次の「5. 外部に送信される情報」に記載した、サービスの提供に必要な委託先への送信は除きます。</p>
 <h3>4-2. 研究への協力（任意）</h3>
-<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代（答えた場合）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。</p>
-<p>受け取った統計は、スキンケアの研究と本サービスの改善に使い、<b>5人以上をまとめた集計結果</b>の形で、化粧品会社などの研究開発のために第三者に提供（有償の場合を含む）することがあります。特定の個人の記録が分かる形では提供しません。利用者は設定からいつでも協力をやめることができ、やめた時点で、受け取った統計を削除します。</p>
+<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、使っている皮膚科の薬の種類（「ニキビ」「ステロイド（強い）」などの区分だけで、薬の名前は含みません）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差、その成分が入っていた商品の種類）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。</p>
+<p>受け取った統計は、スキンケアの研究と本サービスの改善に使い、<b>5人以上をまとめた集計結果</b>の形で、化粧品会社などの研究開発のために第三者に提供（有償の場合を含む）することがあります。特定の個人の記録が分かる形では提供しません。利用者は設定からいつでも協力をやめることができ、やめた時点で、受け取った統計（過去に受け取った分を含みます）を削除します。</p>
 <h3>5. 外部に送信される情報（電気通信事業法に基づく公表）</h3>
 <p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
 <div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
@@ -13372,7 +13367,7 @@ ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', '�
 ${row('cdnjs（Cloudflare）', 'IPアドレス、ブラウザの情報', '3D表示の部品（three.js）の読み込み。3Dの顔を表示したとき')}
 ${row('Open Food Facts', '食事の写真に写っていたバーコードの数字（JANコード）だけ', '食品の栄養成分表示を調べるため。バーコードが写っていたときだけ')}
 ${row('Google（Gemini API）', '「写真から読み取る」「顔を撮って自動で記録」で選んだ写真（食事・化粧品のパッケージ・顔）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
-${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
+${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（区分だけ）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
 <h3>5-2. 広告について（Google AdSense）</h3>
@@ -13623,6 +13618,16 @@ const RESEARCH_MIN_LOGS = 14;
 const researchState = () => state.settings.research || (state.settings.research = {on:false, adult:false, cid:'', lastSent:'', lastHash:''});
 const R_METRICS = [['condition','cond'],['acneCount','acne'],['redness','red'],['dryness','dry'],['oil','oil']];
 const r2 = v => v == null || !isFinite(v) ? null : Math.round(v * 100) / 100;
+// 化粧品の土台になる成分（水・グリセリン・BGなど）。ほぼどの商品にも入っているので、合う・合わないの判断・研究の集計に使わない
+const ING_BASE_RE = /^(水|精製水|グリセリン|BG|DPG|ブチレングリコール|ペンチレングリコール|プロパンジオール|1,2-ヘキサンジオール|フェノキシエタノール|メチルパラベン|エチルパラベン|カルボマー|キサンタンガム|水酸化K|水酸化Na|クエン酸|クエン酸Na|EDTA-2Na|エデト酸塩|トコフェロール|シリカ|ジメチコン)$/;
+// 別の商品の成分と、いつも同じ日に（または交互に）使っていて、どちらの影響か見分けられないか（|相関|≥0.85）
+function rsConfound(k, RD) { RD = RD || RS_DAYS; if (!RD) return null; const A = RD.by.get(k), pa = RD.prod.get(k); if (!A || !RD.all.length) return null;
+  for (const [k2, B] of RD.by) { if (k2 === k) continue; if (ING_BASE_RE.test(String(RD.name.get(k2) || '').replace(/（.*?）|類$/g, '').trim())) continue; const pb = RD.prod.get(k2); if (pa && pb && [...pb].every(id => pa.has(id)) && [...pa].every(id => pb.has(id))) continue; // 同じ商品にだけ入っている成分どうしは、その商品の結果として扱う
+    let a = 0, b = 0, c = 0, d = 0; RD.all.forEach(dt => { const x = A.has(dt), y = B.has(dt); if (x && y) a++; else if (x) b++; else if (y) c++; else d++; });
+    const den = Math.sqrt((a + b) * (c + d) * (a + c) * (b + d)); if (!den) continue; const phi = (a * d - b * c) / den;
+    if (Math.abs(phi) >= 0.85) return {name:String(RD.name.get(k2) || k2).replace(/（.*?）|類$/g, ''), anti:phi < 0}; }
+  return null; }
+const RS_CAT = {'クレンジング':'cleanse', '洗顔':'wash', '化粧水・トナー':'toner', '美容液・アンプル':'serum', '乳液':'moist', 'クリーム':'moist', 'オールインワン':'moist', '日焼け止め':'sunscreen', '皮膚科の塗り薬':'rx'};
 let RS_DAYS = null; // 成分ごとの「使った日」（学習で、同じ日にしか使っていない成分を見分けるため。送信はしない）
 function researchSummary() {
   const logs = state.skinLogs.filter(l => !l.demo).slice().sort((a, b) => a.date.localeCompare(b.date));
@@ -13642,16 +13647,22 @@ function researchSummary() {
   });
   const ings = []; RS_DAYS = {all:days.map(d => d.l.date), by:new Map([...ing].map(([k, x]) => [k, new Set(x.used.map(l => l.date))])), name:new Map([...ing].map(([k, x]) => [k, x.name])), prod:new Map(), sc:new Map(days.map(({l}) => [l.date, (Number(l.condition) || 0) - 0.6 * (Number(l.acneCount) || 0) - 0.8 * (Number(l.redness) || 0) - 0.5 * (Number(l.dryness) || 0)]))};
   prods.forEach(p => (prodIngs.get(p.id) || []).forEach(e => { const s = RS_DAYS.prod.get(e.key) || new Set(); s.add(p.id); RS_DAYS.prod.set(e.key, s); }));
+  // その成分がどの種類の商品（洗い流す物・美容液・保湿など）に入っていたか（洗い流す物と塗ったままの物では、効き方が違うため）
+  const catOf = k => [...new Set(prods.filter(p => (prodIngs.get(p.id) || []).some(e => e.key === k)).map(p => RS_CAT[p.category]).filter(Boolean))];
   ing.forEach((x, k) => {
     const usedSet = new Set(x.used), not = days.filter(d => !usedSet.has(d.l)).map(d => d.l);
     if (x.used.length < 3 || not.length < 3) return;
+    if (ING_BASE_RE.test(String(x.name || '').replace(/（.*?）|類$/g, '').trim())) return; // 水・グリセリンなどの土台の成分は送らない
     const before = logs.filter(l => l.date >= addDays(x.first, -14) && l.date < x.first), after = logs.filter(l => l.date >= addDays(x.first, 14) && l.date <= addDays(x.first, 42));
-    ings.push({k, name:x.name, du:x.used.length, dn:not.length, d:sub(vec(x.used), vec(not)), ba:before.length >= 3 && after.length >= 3 ? sub(vec(after), vec(before)) : null});
+    ings.push({k, name:x.name, du:x.used.length, dn:not.length, d:sub(vec(x.used), vec(not)), ba:before.length >= 3 && after.length >= 3 ? sub(vec(after), vec(before)) : null, cat:catOf(k), cf:rsConfound(k) ? 1 : 0});
   });
   ings.sort((a, b) => b.du - a.du);
   const conc = {}; logs.forEach(l => (l.otherConcerns || []).forEach(c => { conc[c] = (conc[c] || 0) + 1; }));
-  return {v:1, skin:{type:st.skinType || null, sensitive:!!st.sensitive, age:st.ageBand || null},
-    n:{logs:logs.length, span:logs.length ? diffDays(logs[0].date, logs[logs.length - 1].date) + 1 : 0, usage:recorded ? 'recorded' : 'period'},
+  // 皮膚科の薬は肌への影響が大きいので、種類だけ送る（薬の名前は送らない）。研究では、薬を使っている人を分けて集計できる
+  const rxKinds = [...new Set(prods.filter(p => isRxP(p) && p.status === '使用中').map(p => rxKindOf(p.name) || '薬（種類不明）'))].slice(0, 6);
+  return {v:2, skin:{type:st.skinType || null, sensitive:!!st.sensitive, age:st.ageBand || null, gender:st.gender || null, concerns:(st.concernKeys || []).slice(0, 14)},
+    n:{logs:logs.length, span:logs.length ? diffDays(logs[0].date, logs[logs.length - 1].date) + 1 : 0, usage:recorded ? 'recorded' : 'period', days:days.length},
+    rx:rxKinds,
     base:vec(logs), concerns:Object.fromEntries(Object.entries(conc).map(([c, n]) => [c, r2(n / Math.max(1, logs.length))])), ings:ings.slice(0, 80)};
 }
 const strHash = t => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
@@ -13697,8 +13708,8 @@ function researchCardHtml() {
     <p class="small" style="margin:0 0 8px">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます。協力は任意で、いつでもやめられます。</p>
     <details class="fold"><summary>送る内容・送らない内容</summary>
       <ul class="small" style="margin:8px 0;padding-left:1.2em;line-height:1.7">
-        <li><b>送るもの</b>：肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、<b>成分ごとに「使った日と使わなかった日の肌の差」</b>、使い始める前と後の差</li>
-        <li><b>送らないもの</b>：日付、メモ、写真、商品名・ブランド名、食事の内容、メールアドレス、名前、位置</li>
+        <li><b>送るもの</b>：肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（「ニキビ」などの区分だけ）、記録の日数、肌の状態の平均、<b>成分ごとに「使った日と使わなかった日の肌の差」</b>、使い始める前と後の差</li>
+        <li><b>送らないもの</b>：日付、メモ、写真、商品名・ブランド名・薬の名前、食事の内容、メールアドレス、名前、位置</li>
         <li>送る先は運営者のデータベース（Supabase・東京）です。端末ごとのランダムな番号で区別し、アカウントとはつなげません。</li>
         <li>集めたデータは、<b>5人以上の集計にした統計</b>の形で、化粧品会社などの研究開発に提供することがあります。一人ひとりの記録が分かる形では提供しません。</li>
         <li>やめると、送ったデータも削除されます。</li>
