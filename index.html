@@ -3179,7 +3179,7 @@ const NAV = [
   {r:'routine', label:'ケア管理', icon:'sprout', g:'記録'},
   {r:'my', label:'Myアイテム', icon:'shoppingBag', g:'記録'},
   {r:'mycare', label:'あなたの肌の分析', icon:'spark', g:'振り返り'},
-  {r:'charts', label:'肌の変化・比較', icon:'chart', g:'振り返り'},
+  {r:'charts', label:'肌の変化', icon:'chart', g:'振り返り'},
   {r:'report', label:'週次レポート', icon:'calendar', g:'振り返り'},
   {r:'combo', label:'成分組み合わせ', icon:'flask', g:'振り返り'},
   {r:'visit', label:'受診用まとめ', icon:'note', g:'振り返り'},
@@ -4359,7 +4359,7 @@ function openLifeGoal() {
 // ---------- ショートカット（ホーム）：好きな6つを選べる ----------
 const SHORTCUTS = [
   {k:'log', h:'#/log', ic:'note', l:'肌の記録一覧'}, {k:'scan', h:'#/scan', ic:'camera', l:'カメラで化粧品を登録'},
-  {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
+  {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
   {k:'combo', h:'#/combo', ic:'flask', l:'成分組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
 
   {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'Myアイテム'},
@@ -6553,7 +6553,7 @@ function viewMy() {
   const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
     .sort((a,b) => myStRank(a) - myStRank(b) || (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
-  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a><a class="mt-wide" href="#/trouble">${icon('alert')}<span>肌に合わなかった化粧品</span>${(() => { const n = state.myProducts.filter(p => p.ng).length; return n ? `<em class="mt-n">${n}</em>` : ''; })()}<i>›</i></a></div>`;
+  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a class="mt-wide" href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a><a class="mt-wide" href="#/trouble">${icon('alert')}<span>肌に合わなかった化粧品</span>${(() => { const n = state.myProducts.filter(p => p.ng).length; return n ? `<em class="mt-n">${n}</em>` : ''; })()}<i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
   html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => { const n = state.myProducts.filter(x => (x.category === '皮膚科の塗り薬') === (k === 'rx')).length; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span><b class="ht-n">${n}</b></button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
   if (state.myProducts.length && !list.length) {
@@ -6631,7 +6631,7 @@ function myMenuOpen() {
   const m = document.createElement('div'); m.className = 'my-pop';
   const it = (href, ic, t, extra) => `<a class="my-pop-i" href="${href}">${icon(ic)}<span>${t}</span>${extra || ''}<i>›</i></a>`;
   m.innerHTML = `<div class="my-pop-bg"></div><nav class="my-pop-m" role="menu" style="top:${Math.round(r.bottom + 6)}px;right:${Math.round(window.innerWidth - r.right)}px">
-    ${it('#/combo', 'flask', '成分の組み合わせ')}${it('#/compare', 'compare', '肌との比較')}${it('#/trouble', 'alert', '注意アイテム', n ? `<em class="mt-n">${n}</em>` : '')}</nav>`;
+    ${it('#/combo', 'flask', '成分の組み合わせ')}${it('#/trouble', 'alert', '注意アイテム', n ? `<em class="mt-n">${n}</em>` : '')}</nav>`;
   document.body.appendChild(m); b.classList.add('x'); b.setAttribute('aria-expanded', 'true');
   m.querySelector('.my-pop-bg').addEventListener('click', myMenuClose);
   m.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setTimeout(myMenuClose, 0)));
@@ -6823,7 +6823,6 @@ function viewMyDetail(id) {
         ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : ''}
         <div class="page-actions" style="margin-top:14px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
-          <button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかと比較</button>
           ${isRx ? '' : `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>`}
         </div>
         <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
@@ -6849,7 +6848,6 @@ function viewMyDetail(id) {
         </dl>
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
-          ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかの商品と比較</button>` : ''}
           ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>` : ''}
         </div>
       </div>
@@ -9334,7 +9332,7 @@ function startHtml() {
 // 振り返りの画面（グラフ・週のまとめ・受診用）は、記録タブの「最近の肌状態」からまとめて開く
 function reviewLinksHtml() {
   return `<div class="card"><div class="card-h"><h2>振り返り</h2></div><div class="rv-links">
-    <a href="#/charts">${icon('chart')}<span><b>肌の変化・比較</b><small>グラフで推移を見る</small></span><i>›</i></a>
+    <a href="#/charts">${icon('chart')}<span><b>肌の変化</b><small>グラフで推移を見る</small></span><i>›</i></a>
     <a href="#/report">${icon('calendar')}<span><b>週のまとめ</b><small>1週間の記録をまとめる</small></span><i>›</i></a>
     <a href="#/visit">${icon('note')}<span><b>受診用まとめ</b><small>皮膚科で見せる1枚・PDF</small></span><i>›</i></a></div></div>`;
 }
@@ -11283,6 +11281,37 @@ function advClean(arr, max = 16) {
   });
   return out.slice(0, 6);
 }
+// 食事のおすすめの食べ物：押すと、なぜよいのか（栄養と、肌への働き）を出す
+const FOOD_INFO = {
+  '納豆':['たんぱく質・ビタミンB2・ビタミンK・食物繊維', '皮脂のバランスに関わるビタミンB2と、肌の材料になるたんぱく質がとれます。腸内環境も整えます'],
+  '鮭':['たんぱく質・ビタミンD・ビタミンB群・アスタキサンチン・オメガ3脂肪酸', '肌の材料になるたんぱく質と、うるおいを保つ良い油がとれます'],
+  'ブロッコリー':['ビタミンC・ビタミンA（βカロテン）・ビタミンE・食物繊維', 'コラーゲンづくりに必要なビタミンCが多く、紫外線を浴びた肌を守る働きのある成分もとれます'],
+  '卵':['たんぱく質・ビタミンB2・ビタミンA・ビタミンD', '肌の材料になるたんぱく質と、皮脂を整えるビタミンB2がまとめてとれます'],
+  '鶏むね肉':['たんぱく質・ビタミンB6・ナイアシン', '脂が少なく、肌の材料になるたんぱく質と、肌の代謝を助けるビタミンB6がとれます'],
+  '豆腐':['たんぱく質・大豆イソフラボン・カルシウム・マグネシウム', '低カロリーでたんぱく質がとれます。大豆イソフラボンは肌のうるおいとの関係が研究されています'],
+  'ギリシャヨーグルト':['たんぱく質・カルシウム・乳酸菌', 'ふつうのヨーグルトよりたんぱく質が多く、腸内環境も整えます'],
+  'ヨーグルト':['乳酸菌・たんぱく質・カルシウム・ビタミンB2', '腸内環境を整え、肌あれしにくい体づくりを助けます'],
+  'キウイ':['ビタミンC・ビタミンE・食物繊維', '1個で1日に必要なビタミンCの多くがとれ、コラーゲンづくりを助けます'],
+  'パプリカ':['ビタミンC・ビタミンA（βカロテン）・ビタミンE', 'ビタミンCが野菜の中でもとくに多く、透明感やハリのケアを助けます'],
+  'いちご':['ビタミンC・ポリフェノール・葉酸', 'ビタミンCが多く、コラーゲンづくりを助けます'],
+  'みかん':['ビタミンC・βクリプトキサンチン', '手軽にビタミンCがとれ、コラーゲンづくりを助けます'],
+  'ほうれん草':['鉄・ビタミンA（βカロテン）・ビタミンC・葉酸', '鉄とビタミンAで、くすみ・乾燥しにくい肌づくりを助けます'],
+  'にんじん':['ビタミンA（βカロテン）・食物繊維', '体の中でビタミンAになり、肌や粘膜のうるおいを保つのを助けます'],
+  'トマト':['リコピン・ビタミンC・ビタミンE', 'リコピンは紫外線から肌を守る働きが研究されています'],
+  'きのこ':['ビタミンD・ビタミンB群・食物繊維', '低カロリーで、肌の代謝を助けるビタミンB群と食物繊維がとれます'],
+  'ナッツ':['ビタミンE・良い油・亜鉛・マグネシウム', 'ビタミンEは肌の乾燥や酸化から守るのを助けます。食べすぎない量（ひとつかみ）がおすすめです'],
+  'バナナ':['ビタミンB6・カリウム・食物繊維', '皮脂のバランスに関わるビタミンB6がとれ、甘いお菓子のかわりにもなります'],
+  'まぐろ':['たんぱく質・ビタミンB6・ナイアシン・鉄', '肌の材料になるたんぱく質と、皮脂を整えるビタミンB6がとれます'],
+  'レバー':['ビタミンA・ビタミンB2・鉄・亜鉛', '肌のターンオーバーに関わるビタミンAと、皮脂を整えるビタミンB2がとても多い食べ物です。食べすぎに注意し、週1回くらいに'],
+  '水・お茶':['水分', 'こまめな水分補給は、体の中からのうるおいを保つ基本です。甘い飲み物のかわりにします'],
+  '季節の野菜':['ビタミン・ミネラル・食物繊維', 'いろいろなビタミンと食物繊維がとれ、腸内環境と肌の調子を整えます'],
+};
+const foodInfo = v => FOOD_INFO[String(v || '').trim()] || null;
+function openFoodSheet(name) {
+  const f = foodInfo(name); if (!f) return;
+  openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>栄養</b><p>${esc(f[0])}</p></div><div class="ing-b"><b>効果</b><p>${esc(f[1])}</p></div></div></div>`});
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-food]'); if (!b) return; hapticTick(); openFoodSheet(b.dataset.food); });
 function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
@@ -11290,7 +11319,7 @@ function advChips(x) {
   if (skin) { const pool = comboPool(), careK = new Set(); try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => st.good.forEach(v => careK.add(normIng(chipText(v)))))); } catch (e) { /* 何もしない */ } const out = []; for (let i = 0; i < g.length; i++) { const c = careK.has(normIng(chipText(g[i]))) ? null : comboConflict(g[i], pool); if (c) { out.push(comboAvoidWord(g[i], c)); g.splice(i, 1); i--; continue; } const tw = tagsOfWord(g[i]); if (tw.tags.size) pool.push({id:'g:' + g[i], name:chipText(g[i]), tags:tw.tags, rx:false, act:tw.act}); } out.forEach(o => { if (!a.some(v => chipText(v) === chipText(o))) a.push(o); }); }
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
-  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
+  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' && foodInfo(v) ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
     + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => skin ? `<button type="button" class="adv-c bad adv-ing" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
@@ -12091,7 +12120,7 @@ function personalAnalysis() {
   // ⑦ 足りない情報（勝手に決めずに聞く）
   const ask = [];
   if (!d) ask.push({t:'肌質に合わせた提案になります', act:'setup', b:'肌質診断をする'});
-  if (!ck.length && !(d && d.priority && d.priority.length)) ask.push({t:'気になる悩みを教えてください', a:'#/account/body', b:'肌悩みを選ぶ'});
+  if (d && !ck.length && !(d.priority && d.priority.length)) ask.push({t:'気になる悩みを教えてください', a:'#/account/body', b:'肌悩みを選ぶ'});
   if (L28.length < 3) ask.push({t:`あと${3 - L28.length}日記録すると、今の肌に合わせます`, a:'#/log', b:'肌を記録する', act:'new-log'});
   if (!inUse.length) ask.push({t:'登録すると、今の物で足りるか分かります', a:'#/my', b:'Myアイテムに登録'});
   if (slN < 3) ask.push({t:'睡眠と肌の関係が分かります', act:'life-part', id:'sleep', b:'睡眠を記録'});
@@ -12106,7 +12135,7 @@ function personalAnalysis() {
   const cyc = links.find(x => x.key === 'cycle' && x.enough && x.strong && x.diff < 0);
   if (cyc) week.splice(Math.min(2, week.length), 0, '生理前：新しい物は試さず、保湿を多めに');
   const stage = !d && !L28.length ? 'none' : L28.length < 3 ? 'start' : long ? 'long' : L7.length >= 4 ? 'week' : 'daily';
-  if (ph.length < 2) ask.push({t:'写真で変化を比べられます', act:'new-log', b:'写真つきで記録'});
+  if (ph.length < 2 && L28.length >= 3) ask.push({t:'写真で変化を比べられます', act:'new-log', b:'写真つきで記録'});
   if (missing.length) week.splice(1, 0, `${missing[0].n}を毎日使う`);
   others.forEach(o => { o.care = (pcCareFor(o.k, ctx)[0] || ''); });
   // はじめの基本セット：商品をまだ登録していない人に、肌質に合わせた「まずはこれだけ」を出す（どれもプチプラで十分）
@@ -12172,7 +12201,7 @@ function viewCharts() {
   const dates = datesRange(start, end);
   const map = logMap(), lm = lifeMap();
   const inRange = dates.filter(d => map[d]);
-  let html = pageHead('肌の変化・比較', '過去の記録をグラフで確認し、過去と現在を比べます。', `<a class="btn btn-ghost btn-sm" href="#/compare">${icon('compare')}商品と肌状態の比較</a>`) +
+  let html = pageHead('肌の変化', '過去の記録をグラフで確認します。') +
     `<div class="tabs">${[7,14,30,90].map(r => `<button class="tab ${ui.chartRange === r ? 'active' : ''}" data-action="chart-range" data-id="${r}">${r}日間${r === 90 && locked() ? `<span class="prem-sub">${PREMIUM_NAME}</span>` : ''}</button>`).join('')}</div>`;
   if (!state.skinLogs.length) return html + `<div class="card">${emptyBox('chart', '記録が増えると変化を確認できます', '肌の記録をつけると、ここに推移がグラフで表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-log">記録する</button>')}</div>`;
   if (inRange.length < 5) html += `<div class="notice">記録が増えると変化を確認できます（この期間の記録：${inRange.length}日）。5日以上の記録があると、傾向を見比べやすくなります。</div>`;
@@ -14418,6 +14447,8 @@ document.addEventListener('click', e => {
   e.preventDefault(); e.stopPropagation();
   openPremiumSheet(a.dataset.psheet || (a.dataset.premium || a.dataset.mcam ? '食事の写真の読み取り' : ''));
 }, true);
+// なくした画面のアドレスを開いたとき：今の履歴をその行き先に置きかえて描き直す（戻る操作で、アプリの外に出てしまわないように）
+function redirectTo(h) { try { history.replaceState({d:isRootHash(h) ? 0 : 1}, '', h); NAV_D = isRootHash(h) ? 0 : 1; } catch (e) { location.hash = h; return; } setTimeout(render, 0); }
 function render() {
   try { SHOWN_DAY = todayStr(); } catch (e) { /* 何もしない */ }
   try { gateSync(); } catch (e) { /* 何もしない */ }
@@ -14428,9 +14459,9 @@ function render() {
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
     return;
   }
-  if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; }
-  if (r.name === 'suggest') { location.replace('#/settings'); return; }
-  if (r.name === 'check' || r.name === 'spending') { location.replace('#/account'); return; } // 支出・予算の機能はなくした // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
+  if (['search', 'favorites', 'stores', 'cart', 'prices', 'compare'].includes(r.name)) { redirectTo('#/my'); return; } // 商品と肌の比較は「あなたの肌の分析」の「使い始めた物の前後」にまとめた
+  if (r.name === 'suggest') { redirectTo('#/settings'); return; }
+  if (r.name === 'check' || r.name === 'spending') { redirectTo('#/account'); return; } // 支出・予算の機能はなくした // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, shop:viewShop, product:() => viewProduct(r.id),
     ingredients:() => viewIngredients(r.id), care:() => viewCare(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo, trouble:viewTrouble,
     log:viewLog, routine:viewRoutine, mycare:viewMycare, charts:viewCharts, report:viewReport, settings:viewSettings, account:viewAccount, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), visit:viewVisit};
