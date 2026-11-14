@@ -478,7 +478,6 @@ label.btn{position:relative}
 .hero-home .life-btns .hap-keep{width:100%;display:block}
 .hero-home .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
-.hero-home .life-btns{grid-template-columns:repeat(4,minmax(0,1fr))}
 .life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 .life-btns .life-main{grid-column:1 / -1;grid-row:1}
 .life-btns>:not(.life-main){grid-row:2}
@@ -4343,16 +4342,12 @@ function lifeSumHtml(lf, date) {
     fMain = `${Math.round(t.kcal).toLocaleString()}kcal`;
     fSub = lack > 0 ? `＋${lack}g<small>（たんぱく質があと${lack}g・目標${g.protein}g）</small>` : `たんぱく質 ${p}g<small>（目標${g.protein}g クリア）</small>`; fCls = lack > 0 ? 'bad' : 'good';
   } else if (lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate)) { fMain = `${MEALS.filter(m => lf.meals[m.k].ate).length}回`; fSub = '食べた物を追加するとkcalを表示'; }
-  // 体重（任意）：前に記録した日と比べる
-  let wMain = '未記録', wSub = '毎日の変化を記録できます（任意）', wCls = '';
-  if (lf && lf.weight != null) { wMain = `${lf.weight.toFixed(1)}kg`; const pv = state.lifeLogs.filter(l => !l.demo && l.weight != null && l.date < lf.date).sort((a, b) => b.date.localeCompare(a.date))[0];
-    wSub = pv ? (() => { const df = Math.round((lf.weight - pv.weight) * 10) / 10; return df === 0 ? `前回と同じ<small>（${fmtMD(pv.date)}）</small>` : `${df > 0 ? '＋' : '−'}${Math.abs(df).toFixed(1)}kg<small>（${fmtMD(pv.date)}と比べて）</small>`; })() : ''; }
   // 食事の行の下に、栄養のレーダーチャート（押すと食事の記録が開く）
   const ft = lf && lf.foods && lf.foods.length ? nutTotals(lf.foods) : {kcal:0, p:0, f:0, c:0, veg:0};
   const mealRadar = `<button type="button" class="ls-radar" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|meal' : 'meal'}" aria-label="栄養のバランスを見る">${nutRadarSvg(ft, 210, true)}<span class="ls-rnote"><i class="ls-rkey"></i>緑の点線が1日の目安（100%）</span></button>`;
   // 記録一覧（date あり）では見出しを出さない
-  return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>睡眠・運動・食事・体重</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
-    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'run', '運動', eMain, eSub, eCls)}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}${row('weight', 'weight', '体重', wMain, wSub, wCls)}</div>`;
+  return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
+    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'run', '運動', eMain, eSub, eCls)}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
 }
 function openLifeGoal() {
   const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
@@ -4421,7 +4416,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero hero-home"><div class="hero-wx" id="top-wx">${wxTopInner()}</div>
-    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('run')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('meal')}食事</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="weight">${icon('weight')}体重</button></div></section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('run')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('meal')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
@@ -10350,7 +10345,7 @@ function openLogForm(id) {
 }
 
 /* 食事・運動・睡眠フォーム */
-const LIFE_PARTS = {sleep:{t:'睡眠', icon:'moon'}, exercise:{t:'運動', icon:'chart'}, meal:{t:'食事', icon:'note'}, weight:{t:'体重', icon:'weight'}};
+const LIFE_PARTS = {sleep:{t:'睡眠', icon:'moon'}, exercise:{t:'運動', icon:'chart'}, meal:{t:'食事', icon:'note'}};
 // 写真を撮った時刻（"HH:MM"）を調べる：写真の中の撮影日時（Exif）→ なければファイルの日時
 async function photoTime(file) {
   const hm = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -10462,8 +10457,6 @@ function openLifeForm(id, part, forDate) {
       <label class="check" style="margin-top:10px"><input type="checkbox" name="noEx" ${d.exRecorded && !d.exercise.length ? 'checked' : ''}> この日は運動しなかった</label>
       <div class="field-error" data-err="exercise"></div></div>
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
-    <div class="form-grid" data-part="weight" ${show('weight')}><div class="section-title">WEIGHT 体重</div>
-    ${field('体重（kg）', `<input class="input" id="f_weight" name="weight" inputmode="decimal" value="${d.weight == null ? '' : esc(d.weight)}" placeholder="${state.settings.weight ? esc(state.settings.weight) : '例：55.0'}">`, {name:'weight', hint:'任意です。記録すると、運動の消費カロリーの計算に最新の体重を使います'})}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
@@ -10691,8 +10684,6 @@ function openLifeForm(id, part, forDate) {
     const stepsRaw = toHalf(fe.steps.value).trim();
     let steps = null;
     if (stepsRaw) { if (!/^\d{1,6}$/.test(stepsRaw) || Number(stepsRaw) > 200000) errors.steps = '歩数は0〜200,000の整数（半角数字）で入力してください。'; else steps = Number(stepsRaw); }
-    const wRaw = toHalf(fe.weight.value).trim(); let weight = null;
-    if (wRaw) { const w = Number(wRaw); if (!Number.isFinite(w) || w < 20 || w > 250) errors.weight = '体重は20〜250の数字で入力してください（空欄でも大丈夫です）。'; else weight = Math.round(w * 10) / 10; }
     const radio = n => { const r = $(`input[name="${n}"]:checked`, form); return r ? r.value : ''; };
     if (!showErrors(form, errors)) return;
     const mealPhotos = {};
@@ -10702,12 +10693,11 @@ function openLifeForm(id, part, forDate) {
       ...(() => { if (!foods.length) return {veg:d.veg || '', protein:d.protein || ''}; const tt = nutTotals(foods), g = nutNeeds();
         const lvl = (v, need) => v >= need * 0.7 ? 'しっかり' : v >= need * 0.3 ? '少し' : 'ほぼなし'; return {veg:lvl(tt.veg, g.veg), protein:lvl(tt.p, g.p)}; })(),
       sweets:d.sweets || '', water:d.water || '', tags:d.tags || [], // 「食事の内容」の入力欄はなし（前の値は残す）
-      foods:foods.map(normFood), mealPhotos, exercise:exercise.slice(), exRecorded:exercise.length > 0 || fe.noEx.checked, steps, weight, memo:fe.memo.value.trim()};
+      foods:foods.map(normFood), mealPhotos, exercise:exercise.slice(), exRecorded:exercise.length > 0 || fe.noEx.checked, steps, weight:d.weight == null ? null : d.weight, memo:fe.memo.value.trim()};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); } else state.lifeLogs.push(Object.assign({id:uid(), demo:false}, data));
-    const wBak = state.settings.weight; if (weight != null && !state.lifeLogs.some(l => !l.demo && l.weight != null && l.date > date)) state.settings.weight = weight; // いちばん新しい体重を、カロリー計算の体重にする
     if (save()) { closeModal(); toast(part ? `${LIFE_PARTS[part].t}を記録しました` : '食事・運動・睡眠を記録しました'); render(); }
-    else { state.settings.weight = wBak; if (ex) Object.assign(ex, backup); else state.lifeLogs.pop(); }
+    else { if (ex) Object.assign(ex, backup); else state.lifeLogs.pop(); }
   };
 }
 
