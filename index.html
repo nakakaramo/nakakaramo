@@ -3177,7 +3177,6 @@ const NAV = [
   {r:'suggest', label:'ケアの提案', icon:'leaf', g:'提案・商品'},
   {r:'search', label:'商品検索', icon:'search', g:'提案・商品'},
   {r:'scan', label:'カメラで登録', icon:'camera', g:'提案・商品'},
-  {r:'care', label:'スキンケア設計', icon:'spark', g:'提案・商品'},
   {r:'ingredients', label:'成分辞典', icon:'book', g:'提案・商品'},
   {r:'stores', label:'取扱店舗を探す', icon:'pin', g:'提案・商品'},
   {r:'plan', label:'プラン・アカウント', icon:'user', g:'アカウント'},
@@ -4354,7 +4353,7 @@ const SHORTCUTS = [
   {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
   {k:'combo', h:'#/combo', ic:'flask', l:'成分組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
 
-  {k:'care', h:'#/care', ic:'spark', l:'スキンケア設計'}, {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'Myアイテム'},
+  {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'Myアイテム'},
   {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
   {k:'settings', h:'#/settings', ic:'gear', l:'設定'}
 ];
@@ -8482,6 +8481,16 @@ const careNeedsDiag = () => !diagNow();
 const altDay = () => (Math.floor(Date.parse(todayStr() + 'T00:00:00Z') / 864e5) % 2 === 0 ? 'A' : 'B');
 
 function viewCare(tab) {
+  // スキンケア設計の画面はなくした：肌質診断の結果・洗い方ガイドだけを1枚で出し、ほかはケア管理へ
+  if (tab === 'diag' || tab === 'guide') {
+    let h = '';
+    try { h = tab === 'guide' ? careGuideHtml() : careNeedsDiag() ? `<div class="card rt-start"><b>まず肌質診断をしましょう（1〜2分）</b><p class="small muted">肌質と肌悩みに合わせて、ケアを組み立てます。</p><button type="button" class="btn btn-primary btn-sm" data-action="setup">${icon('spark')}肌質診断をする</button></div>` : careDiagHtml(); }
+    catch (e) { console.error(e); h = `<div class="card">${emptyBox('note', '表示中にエラーが起きました', 'ページを読み込み直してください。')}</div>`; }
+    return h + `<p class="small muted rt-foot">自己申告からの推定で、医学的な診断ではありません。</p>`;
+  }
+  return viewRoutine();
+}
+function viewCareOld(tab) {
   tab = CARE_TABS.some(t => t[0] === tab) ? tab : 'routine';
   let h = pageHead('スキンケア設計', 'あなたの肌質・肌悩み・使っている商品から、朝と夜のケアを組み立てます。');
   h += `<nav class="ct-tabs" role="tablist">${CARE_TABS.map(([k, l]) => `<a role="tab" aria-selected="${k === tab}" class="ct ${k === tab ? 'on' : ''}" href="#/care/${k}">${esc(l)}</a>`).join('')}</nav>`;
@@ -8643,7 +8652,7 @@ function careDiagHtml() {
   const warn = {normal:'季節の変わり目・寝不足で崩れることがある', dry:'刺激を受けやすく、小じわ・肌荒れが起きやすい', oily:'毛穴のつまり・ニキビ・化粧くずれが起きやすい', combo:'同じケアでは、Tゾーンはべたつき、頬は乾燥しやすい', innerdry:'さっぱり系のケアだけだと、乾燥と皮脂が悪化しやすい'}[d.main];
   h += `<div class="card"><div class="card-h"><h2>肌の強みと注意点</h2></div><p><b>強み</b>：${esc(mi.good)}</p><p><b>注意点</b>：${esc(warn)}${d.sensitive ? '。刺激を感じやすいので、新しい商品は1つずつ試す' : ''}</p></div>`;
   h += `<div class="card"><div class="card-h"><h2>優先的に改善したい肌悩み</h2></div>${d.priority.length ? `<ol class="dg-ol">${d.priority.slice(0, 5).map(k => `<li>${esc(concernOf(k).l)}${d.fromAns.includes(k) && !(state.settings.concernKeys || []).includes(k) ? '<small class="muted">（答えから）</small>' : ''}</li>`).join('')}</ol><p class="small muted">赤み・刺激・ニキビの炎症など、肌の土台に関わる悩みを先にしています。</p>` : '<p class="small muted">選ばれた悩みはありません。</p>'}</div>`;
-  h += `<div class="card"><div class="card-h"><h2>おすすめのケア方針</h2></div><p>${esc(CARE_POLICY(d))}</p><a class="btn btn-primary btn-sm" href="#/care/routine">朝・夜のケアを見る</a></div>`;
+  h += `<div class="card"><div class="card-h"><h2>おすすめのケア方針</h2></div><p>${esc(CARE_POLICY(d))}</p><a class="btn btn-primary btn-sm" href="#/routine">朝・夜のケアを見る</a></div>`;
   const T = careTrends();
   h += `<div class="card"><p class="small muted">肌質は、季節・生活・年齢で変わります。肌の記録の変化や季節の変わり目に、やり直してください。${T.retype ? esc(T.retype) : ''}</p><button type="button" class="btn btn-soft btn-sm" data-action="setup">肌質診断をやり直す</button></div>`;
   return h;
@@ -8774,7 +8783,7 @@ function careHomeCard() {
   const mode = rtSettings().mode, R = routineDesign(mode === 'quick' ? 'quick' : 'normal'), today = altDay();
   const cnt = k => { const L = (k === 'am' ? R.am : R.pm).filter(s => !s.missing && (!s.day || s.day === today)); return `${L.filter(s => rtLog()[k][s.id]).length}/${L.length}`; };
   const miss = R.A.missing.filter(m => !m.soft).length;
-  return `<a class="card rt-hc" href="#/care/routine"><div class="card-h"><h2>あなた専用のスキンケア</h2><span class="chip green">${esc(typeLabel(d))}</span></div>
+  return `<a class="card rt-hc" href="#/routine"><div class="card-h"><h2>あなた専用のスキンケア</h2><span class="chip green">${esc(typeLabel(d))}</span></div>
     <div class="rt-hc-row"><span>${icon('sun')}朝 ${cnt('am')}</span><span>${icon('moon')}夜 ${cnt('pm')}</span>${miss ? `<span class="chip warn">足りないケア ${miss}</span>` : ''}</div><span class="link small">朝・夜のケアを見る →</span></a>`;
 }
 // ===== 皮膚科の塗り薬：いつ・どの順番で・どう塗るか（添付文書の用法と、皮膚科の一般的な指導にもとづく）=====
@@ -11879,61 +11888,61 @@ function face3dAreaAt(e) {
    ========================================================= */
 // 悩みごとの「何をするか」（その人の状態で中身を変える）
 const PC_LIFE_NUT = {
-  acne:'たんぱく質と野菜を毎食とり、甘い飲み物・揚げ物が続かないようにします（ビタミンB群：豚肉・卵・納豆など）',
+  acne:'たんぱく質と野菜を毎食。甘い飲み物・揚げ物は控えめに',
   acnemark:'ビタミンC（果物・ブロッコリー・ピーマン）とたんぱく質を意識します',
-  redness:'刺激の強い辛いもの・アルコールが多い日が続かないようにします',
+  redness:'辛いもの・お酒は控えめに',
   sensitive:'たんぱく質と、良い油（青魚・ナッツ）を意識します',
-  dry:'たんぱく質と良い油（青魚・ナッツ・オリーブオイル）、水分をこまめにとります',
+  dry:'たんぱく質・青魚・ナッツと水分をとる',
   pore:'揚げ物・甘いものが続かないようにし、野菜を毎食とります',
-  oily:'揚げ物・甘い飲み物・夜遅い食事が続かないようにします（ビタミンB2・B6：卵・納豆・魚）',
-  spot:'ビタミンC（果物・ブロッコリー）とビタミンE（ナッツ・かぼちゃ）を意識します',
-  dull:'たんぱく質・鉄分（赤身の肉・魚・ほうれん草）・ビタミンCを意識します',
+  oily:'揚げ物・甘い飲み物・遅い夕食を控えめに',
+  spot:'果物・ブロッコリー・ナッツをとる',
+  dull:'たんぱく質・鉄分・ビタミンCをとる',
   aging:'たんぱく質とビタミンC（コラーゲンの材料）を毎食とります',
-  rough:'たんぱく質とビタミンA（にんじん・かぼちゃ・卵）を意識します',
-  darkcircle:'鉄分（赤身の肉・魚）と、塩分・アルコールのとりすぎに気をつけます',
-  puffy:'塩分とアルコールを控えめにし、カリウム（野菜・果物）をとります',
+  rough:'たんぱく質と緑黄色野菜をとる',
+  darkcircle:'鉄分をとり、塩分・お酒は控えめに',
+  puffy:'塩分・お酒を控え、野菜・果物をとる',
   uv:'ビタミンC・Eを意識します'
 };
 // 悩みごとのスキンケアの方法（その人の肌質・状態で選ぶ）
 function pcCareFor(k, ctx) {
   const {oil, dry, sens, inflamed, comedo, rx, rxAcne} = ctx, L = [];
   if (k === 'acne') {
-    if (rxAcne) L.push('皮膚科の薬を決められたとおりに続けます。乾燥・ヒリヒリが出たら保湿を増やし、自分で量を減らさずに皮膚科に相談します');
-    if (inflamed) L.push('赤く腫れたニキビは触らず、つぶしません。数が多い・痛い・何週間も続くときは皮膚科へ');
-    if (comedo && !rx) L.push('白・黒ニキビ（毛穴のつまり）が中心なので、夜だけ角質をやわらかくする成分（サリチル酸など）を週2〜3回から');
-    L.push(ctx.heavyMoist ? '今の保湿は油分が多めです。ニキビがある間は、乳液・ジェルなど軽い物に替えます' : '');
-    L.push(oil ? '洗顔は朝晩2回、よく泡立てて。洗いすぎると逆に皮脂が増えます' : '洗顔はやさしく。乾燥しやすい肌なので、ニキビがあっても保湿は省きません');
-    L.push('保湿は「ノンコメドジェニックテスト済み」の軽い物にします');
+    if (rxAcne) L.push('薬は指示どおり続け、乾燥したら保湿を増やす');
+    if (inflamed) L.push('ニキビは触らない。痛い・続くときは皮膚科へ');
+    if (comedo && !rx) L.push('夜だけサリチル酸などを週2〜3回から');
+    L.push(ctx.heavyMoist ? '油分が多め。ニキビの間は軽い乳液・ジェルに' : '');
+    L.push(oil ? '洗顔は朝晩2回、よく泡立てて' : 'ニキビがあっても保湿は省かない');
+    L.push('保湿はノンコメドジェニックの軽い物に');
   } else if (k === 'pore') {
-    if ((oil || comedo) && !rx && !sens) L.push('皮脂・角栓の毛穴：酵素洗顔か、サリチル酸を週1〜2回。こすったり、はがすパックはしません');
-    else if (oil || comedo) L.push('皮脂・角栓の毛穴：今は刺激を避けたいので、角質ケア（酵素洗顔・サリチル酸）はお休み。やさしい洗顔と保湿で整えます');
-    if (dry || ctx.age >= 30) L.push('乾燥・たるみの毛穴：まず保湿を十分に。化粧水のあとに乳液・クリームで閉じ込めます');
-    L.push('皮脂が多い日でも、保湿はやめません（乾くと皮脂が増えて毛穴が目立ちます）');
+    if ((oil || comedo) && !rx && !sens) L.push('毛穴：酵素洗顔かサリチル酸を週1〜2回');
+    else if (oil || comedo) L.push('毛穴：今は角質ケアを休み、保湿で整える');
+    if (dry || ctx.age >= 30) L.push('毛穴：乳液・クリームでしっかり保湿');
+    L.push('皮脂が多い日も保湿は続ける');
   } else if (k === 'aging') {
-    L.push('朝は日焼け止めを毎日（シワ・たるみの原因の多くは紫外線です）');
-    L.push(sens || rx ? '今は刺激を避けたいので、レチノールは使わず、ナイアシンアミド・保湿でハリを守ります' : 'レチノールを夜だけ、少量から週2〜3回で始め、慣れたら回数を増やします');
-    if (dry) L.push('乾燥でシワが目立ちやすいので、目元・口元にクリームを重ねます');
+    L.push('日焼け止めを毎朝');
+    L.push(sens || rx ? '今はレチノールは使わず、保湿でハリを守る' : 'レチノールを夜に週2〜3回から');
+    if (dry) L.push('目元・口元にクリームを重ねる');
   } else if (k === 'spot' || k === 'acnemark' || k === 'dull') {
-    L.push('日焼け止めを毎朝、外にいる日は2〜3時間ごとに塗り直します（濃くしないことがいちばんの近道です）');
-    L.push(sens ? '美白成分は刺激の少ないもの（トラネキサム酸・ビタミンC誘導体）から1つだけ' : 'ビタミンC誘導体・トラネキサム酸などを1つ選んで、2〜3か月続けます');
-    if (k === 'dull') L.push('くすみは乾燥・角質・血行でも起きるので、保湿と睡眠も合わせて見直します');
+    L.push('日焼け止めを毎朝。外では2〜3時間ごとに塗り直す');
+    L.push(sens ? '刺激の少ない美白成分を1つだけ' : '美白成分を1つ、2〜3か月続ける');
+    if (k === 'dull') L.push('保湿と睡眠も見直す');
   } else if (k === 'redness' || k === 'sensitive') {
-    L.push('使う物を減らします（洗顔・保湿・日焼け止めの3つが基本）。香料・アルコールの多い物はお休み');
-    L.push('ぬるま湯で洗い、タオルは押し当てるだけ。ピーリング・スクラブはしません');
-    L.push('赤み・ヒリヒリが2週間以上続く、広がるときは皮膚科で相談します');
+    L.push('洗顔・保湿・日焼け止めの3つにしぼる');
+    L.push('ぬるま湯で洗い、タオルは押し当てるだけ');
+    L.push('2週間以上続くときは皮膚科へ');
   } else if (k === 'dry') {
-    L.push('洗顔のあと、すぐ（1分以内）に化粧水→乳液・クリームまで');
-    L.push('お湯の温度は32〜34℃に。熱いシャワーを顔に当てません');
-    if (oil) L.push('Tゾーンはテカるけれど頬は乾く肌なので、乾く所だけクリームを重ねます');
+    L.push('洗顔後1分以内に保湿まで');
+    L.push('洗うお湯は32〜34℃に');
+    if (oil) L.push('乾く所だけクリームを重ねる');
   } else if (k === 'oily') {
-    L.push('洗顔は朝晩2回まで。1日に何度も洗うと、かえって皮脂が増えます');
-    L.push(dry ? 'テカるのに乾燥もあるので、さっぱりより「しっとり」を選び、量を少なめに' : '保湿は乳液・ジェルなど軽い物に');
+    L.push('洗顔は朝晩2回まで');
+    L.push(dry ? '「しっとり」を少なめに使う' : '保湿は乳液・ジェルなど軽い物に');
   } else if (k === 'rough') {
-    L.push('ざらつきは、こすらずに。尿素・乳酸などで角質をやわらかくし、保湿を十分に');
+    L.push('こすらず、尿素・乳酸入りで保湿');
   } else if (k === 'darkcircle' || k === 'puffy') {
-    L.push(k === 'puffy' ? '寝る前の塩分・アルコールを控え、朝は冷たいタオルで軽く冷やします' : '睡眠をしっかりとり、目元はこすらず、保湿と日焼け止めを');
+    L.push(k === 'puffy' ? '寝る前の塩分・お酒を控える' : 'よく寝て、目元はこすらない');
   } else if (k === 'uv') {
-    L.push('日焼け止めを毎朝。日焼けした日は冷やして保湿を多めに');
+    L.push('日焼け止めを毎朝');
   }
   return L.filter(Boolean).slice(0, 3);
 }
@@ -12042,19 +12051,19 @@ function personalAnalysis() {
     const slotsOf = q => { const tm = q.p.timing || '朝・夜'; return ['am', 'pm'].filter(s => (s === 'am' ? /朝/ : /夜/).test(tm)); }, mine = slotsOf(x);
     const frag = (x.ings || []).some(e => (e.tags || []).includes('fragrance') || e.k === 'fragrance'), eth = ks.includes('ethanol');
     const c = act >= 1 ? comboConflict(prodComboInfo(x), pool.filter(p => p.id !== x.p.id && p.rx && (() => { const r = rxs.find(z => z.p.id === p.id); const sl = r ? (p.oral ? ['am', 'pm'] : rxPlanOf(r).slots) : []; return sl.some(s => mine.includes(s)); })())) : null; // 同じ時間に使う薬とだけ比べる
-    let v = 'keep', note = help.length ? `今の悩みに合う「${help.slice(0, 2).join('・')}」が入っています` : ['wash', 'cleanse', 'toner', 'emulsion', 'cream', 'sunscreen', 'allinone'].includes(x.step) ? '毎日の基本のケアとして' : '今の悩みに直接は関係しませんが、肌に合っていれば続けて大丈夫です';
-    if ((ctx.sens || topK.includes('redness')) && act >= 1) { v = 'review'; note = '赤み・敏感さがある間は刺激になりやすいので、落ち着くまでお休み'; }
-    else if (c) { v = 'review'; note = `${c.who.name}と一緒に使うと注意（朝と夜で分ければ使えます）`; }
-    else if ((ctx.sens || topK.includes('redness')) && (frag || eth)) { v = 'review'; note = `${frag ? '香料' : 'エタノール'}が入っているので、しみる・赤くなるときは別の物に`; }
-    else if (x.step === 'wash' && /スクラブ|ポリエチレン|メントール|ラウリル硫酸|ラウレス硫酸/.test((x.p.name || '') + (x.p.ingredients || '')) && (ctx.rx || ctx.sens || topK.some(k => ['acne', 'redness', 'sensitive', 'dry'].includes(k)))) { v = 'review'; note = `${/スクラブ|ポリエチレン/.test(x.p.name + (x.p.ingredients || '')) ? 'スクラブ' : '洗浄力の強い成分・メントール'}が入っているので、${ctx.rx ? '薬を使っている' : '今の'}肌には刺激になりやすいです。アミノ酸系のやさしい洗顔料に替えます`; }
-    else if (isHeavy(x) && (topK.includes('acne') || ctx.oil) && !ctx.dry) { v = 'review'; note = '油分が多いので、ニキビ・テカリが気になる間は乳液・ジェルなど軽い物に'; }
+    let v = 'keep', note = help.length ? `悩みに合う「${help.slice(0, 2).join('・')}」入り` : ['wash', 'cleanse', 'toner', 'emulsion', 'cream', 'sunscreen', 'allinone'].includes(x.step) ? '毎日の基本のケアとして' : '合っていれば続けて大丈夫';
+    if ((ctx.sens || topK.includes('redness')) && act >= 1) { v = 'review'; note = '赤みがある間はお休み'; }
+    else if (c) { v = 'review'; note = `${c.who.name}と一緒に使うと注意（朝夜で分ければ可）`; }
+    else if ((ctx.sens || topK.includes('redness')) && (frag || eth)) { v = 'review'; note = `${frag ? '香料' : 'エタノール'}入り。しみるときは別の物に`; }
+    else if (x.step === 'wash' && /スクラブ|ポリエチレン|メントール|ラウリル硫酸|ラウレス硫酸/.test((x.p.name || '') + (x.p.ingredients || '')) && (ctx.rx || ctx.sens || topK.some(k => ['acne', 'redness', 'sensitive', 'dry'].includes(k)))) { v = 'review'; note = `${/スクラブ|ポリエチレン/.test(x.p.name + (x.p.ingredients || '')) ? 'スクラブ' : '洗浄力の強い成分'}入りで刺激になりやすい。アミノ酸系に替える`; }
+    else if (isHeavy(x) && (topK.includes('acne') || ctx.oil) && !ctx.dry) { v = 'review'; note = '油分が多め。テカリの間は軽い物に'; }
     items.push({x, v, note});
   });
   Object.entries(byStep).forEach(([st, L0]) => { const lim = st === 'serum' ? 2 : 1, L = L0.filter(x => (items.find(i => i.x === x) || {}).v === 'keep'); if (L.length > lim) L.slice(lim).forEach(x => { const it = items.find(i => i.x === x); if (it && it.v === 'keep') { it.v = 'cut'; it.note = `同じ種類（${({toner:'化粧水', serum:'美容液', emulsion:'乳液', cream:'クリーム', wash:'洗顔', cleanse:'クレンジング', sunscreen:'日焼け止め', allinone:'オールインワン'})[st] || st}）が${L.length}つあります。今の悩みに合うほうだけで十分です`; } }); });
   // 足りない物：日焼け止め・保湿は、どの悩みでも土台になる（登録がないときだけ聞く）
   const missing = [];
-  if (inUse.length && !inUse.some(x => x.step === 'sunscreen')) missing.push({n:'日焼け止め', why:topK.some(k => ['spot', 'acnemark', 'dull', 'aging'].includes(k)) ? 'シミ・ニキビ跡・シワのケアは、紫外線を防ぐことがいちばんの土台です' : '肌あれ・乾燥・ニキビ跡の悪化を防ぐ土台になります'});
-  if (inUse.length && !inUse.some(x => ['emulsion', 'cream', 'allinone'].includes(x.step))) missing.push({n:'保湿（乳液・クリーム）', why:'化粧水だけだと、うるおいが逃げやすくなります'});
+  if (inUse.length && !inUse.some(x => x.step === 'sunscreen')) missing.push({n:'日焼け止め', why:topK.some(k => ['spot', 'acnemark', 'dull', 'aging'].includes(k)) ? 'シミ・シワ対策の土台です' : '肌あれを防ぐ土台です'});
+  if (inUse.length && !inUse.some(x => ['emulsion', 'cream', 'allinone'].includes(x.step))) missing.push({n:'保湿（乳液・クリーム）', why:'化粧水だけでは乾きやすいです'});
   // ④ 生活と肌の関係（いちばん上の悩みで比べる）
   const main = top[0] ? top[0].k : '';
   const metric = ({acne:{f:l => -(Number(nums(l).acne) || 0), th:0.8, l:'ニキビの数'}, redness:{f:l => -(Number(nums(l).red) || 0), th:0.5, l:'赤み'}, sensitive:{f:l => -(Number(nums(l).red) || 0), th:0.5, l:'赤み'}, dry:{f:l => -(Number(nums(l).dry) || 0), th:0.5, l:'乾燥'}, oily:{f:l => -(Number(nums(l).oil) || 0), th:0.5, l:'皮脂'}, pore:{f:l => -(Number(nums(l).oil) || 0) - ((l.otherConcerns || []).includes('毛穴の目立ち') ? 1 : 0), th:0.5, l:'皮脂・毛穴'}})[main] || {f:l => l.condition, th:0.4, l:'肌の調子'};
@@ -12070,24 +12079,24 @@ function personalAnalysis() {
   if (L28.length >= 8 && P28.length >= 8) { const a = avg(P28.map(metric.f)), b = avg(L28.map(metric.f)); long = {a, b, diff:b - a, better:b - a >= metric.th / 2, worse:b - a <= -metric.th / 2, label:metric.l}; }
   // ⑦ 足りない情報（勝手に決めずに聞く）
   const ask = [];
-  if (!d) ask.push({t:'肌質診断をすると、あなたの肌質に合わせた提案になります', a:'#/care', b:'肌質診断をする'});
-  if (!ck.length && !(d && d.priority && d.priority.length)) ask.push({t:'いちばん気になる肌の悩みを教えてください', a:'#/account/body', b:'肌悩みを選ぶ'});
-  if (L28.length < 3) ask.push({t:`肌の記録があと${3 - L28.length}日分あると、最近の肌に合わせて提案を変えられます`, a:'#/log', b:'肌を記録する', act:'new-log'});
-  if (!inUse.length) ask.push({t:'使っているスキンケアを登録すると、今ある物で足りるか・見直す物があるかを出せます', a:'#/my', b:'Myアイテムに登録'});
-  if (slN < 3) ask.push({t:'睡眠を数日記録すると、睡眠と肌の関係を見られます', act:'life-part', id:'sleep', b:'睡眠を記録'});
+  if (!d) ask.push({t:'肌質に合わせた提案になります', act:'setup', b:'肌質診断をする'});
+  if (!ck.length && !(d && d.priority && d.priority.length)) ask.push({t:'気になる悩みを教えてください', a:'#/account/body', b:'肌悩みを選ぶ'});
+  if (L28.length < 3) ask.push({t:`あと${3 - L28.length}日記録すると、今の肌に合わせます`, a:'#/log', b:'肌を記録する', act:'new-log'});
+  if (!inUse.length) ask.push({t:'登録すると、今の物で足りるか分かります', a:'#/my', b:'Myアイテムに登録'});
+  if (slN < 3) ask.push({t:'睡眠と肌の関係が分かります', act:'life-part', id:'sleep', b:'睡眠を記録'});
   // ⑧ 今週いちばん大事なこと（3つまで）
   const week = [];
   if (top[0]) week.push(`${top[0].name}：${top[0].care[0] || ''}`);
   const rv = items.find(i => i.v === 'review'); if (rv) week.push(`「${truncate(rv.x.p.name, 14)}」は${rv.note}`);
-  if (sl != null && sl < g.sleep - 45) week.push(`睡眠が平均${fmtHM(sl)}です。あと${Math.round((g.sleep - sl) / 15) * 15}分早く寝ることから`);
-  else if (exRec >= 3 && exDays < 2) week.push('運動は週2〜3回、20〜30分歩くことから（汗をかいたら早めに洗顔・保湿）');
+  if (sl != null && sl < g.sleep - 45) week.push(`睡眠：あと${Math.round((g.sleep - sl) / 15) * 15}分早く寝る`);
+  else if (exRec >= 3 && exDays < 2) week.push('運動：週2〜3回、20〜30分歩く');
   if (top[0] && week.length < 3 && top[0].nut) week.push(`食事：${top[0].nut}`);
   if (top[1] && week.length < 3) week.push(`${top[1].name}：${top[1].care[0] || ''}`);
   const cyc = links.find(x => x.key === 'cycle' && x.enough && x.strong && x.diff < 0);
-  if (cyc) week.splice(Math.min(2, week.length), 0, '生理前は肌がゆらぎやすい傾向があります。その時期は新しい物を試さず、保湿を多めにして、刺激の強いケアはお休みします');
+  if (cyc) week.splice(Math.min(2, week.length), 0, '生理前：新しい物は試さず、保湿を多めに');
   const stage = !d && !L28.length ? 'none' : L28.length < 3 ? 'start' : long ? 'long' : L7.length >= 4 ? 'week' : 'daily';
-  if (ph.length < 2) ask.push({t:'記録のときに顔の写真も残すと、写真で見る変化も比べられます', act:'new-log', b:'写真つきで記録'});
-  if (missing.length) week.splice(1, 0, `${missing[0].n}が登録されていません。使っていなければ、プチプラの物で十分なので毎日使いましょう`);
+  if (ph.length < 2) ask.push({t:'写真で変化を比べられます', act:'new-log', b:'写真つきで記録'});
+  if (missing.length) week.splice(1, 0, `${missing[0].n}を毎日使う（プチプラで十分）`);
   others.forEach(o => { o.care = (pcCareFor(o.k, ctx)[0] || ''); });
   // はじめの基本セット：商品をまだ登録していない人に、肌質に合わせた「まずはこれだけ」を出す（どれもプチプラで十分）
   const starter = !inUse.length ? [
@@ -12100,44 +12109,43 @@ function personalAnalysis() {
 function viewMycare() {
   const A = personalAnalysis(), f = v => f1(Math.abs(v));
   const TR = {worse:'<span class="pc-tr up">悪くなっています</span>', better:'<span class="pc-tr down">良くなっています</span>', same:'<span class="pc-tr">変わらず</span>'};
-  const stageT = {none:'まずは肌質診断から', start:'肌質診断をもとにした、基本のケアです', daily:'毎日の記録を反映しています', week:'この1週間の肌・食事・睡眠・運動をまとめて見ています', long:'これまでの記録と比べて、変化も見ています'}[A.stage];
-  let h = pageHead('あなたの肌の分析', stageT);
+  const stageT = {none:'まずは肌質診断から', start:'肌質診断をもとにしています', daily:'毎日の記録を反映しています', week:'この1週間の記録から', long:'これまでの記録と比べています'}[A.stage];
+  let h = `<p class="small muted pc-stage">${esc(stageT)}</p>`; // 見出しは上に出ているので、ここでは出さない
   if (A.ask.length) h += `<div class="card pc-ask"><h2 class="pc-h">${icon('chat')}教えてください</h2>${A.ask.map(q => `<div class="pc-q"><p>${esc(q.t)}</p>${q.act ? `<button type="button" class="btn btn-soft btn-sm" data-action="${q.act}" ${q.id ? `data-id="${q.id}"` : ''}>${esc(q.b)}</button>` : `<a class="btn btn-soft btn-sm" href="${q.a}">${esc(q.b)}</a>`}</div>`).join('')}</div>`;
-  if (A.week.length) h += `<div class="card pc-week"><h2 class="pc-h">${icon('check')}今週いちばん大事なこと</h2><ol class="pc-ol">${A.week.map(w => `<li>${esc(w)}</li>`).join('')}</ol></div>`;
   if (A.long) {
     const good = A.long.better, bad = A.long.worse;
-    h += `<div class="card"><h2 class="pc-h">${icon('chart')}前の4週間と比べて</h2><p class="pc-lead ${good ? 'good' : bad ? 'bad' : ''}">${good ? `${esc(A.long.label)}が良くなっています。今のケアと生活を続けましょう` : bad ? `${esc(A.long.label)}が前より悪くなっています` : `${esc(A.long.label)}は大きく変わっていません`}</p>
-      ${good ? '<p class="small">いま続けていること（使っている物・睡眠・食事）は変えすぎないのがコツです。新しい物を足すなら1つずつにします。</p>' : `<p class="small">原因は1つとは限りません。次を順に見直してみてください：</p><ul class="pc-ul small"><li>最近使い始めた物・やめた物（下の「使い始めた物の前後」）</li><li>睡眠・食事・運動の変化（下の「生活と肌の関係」）</li><li>季節・生理周期・体調・ストレス</li><li>${A.ctx.rx ? '皮膚科の薬を決められたとおりに使えているか' : '良くならない・悪くなる状態が続くときは皮膚科へ'}</li></ul>`}</div>`;
+    h += `<div class="card"><h2 class="pc-h">${icon('chart')}前の4週間と比べて</h2><p class="pc-lead ${good ? 'good' : bad ? 'bad' : ''}">${good ? `${esc(A.long.label)}が良くなっています。今のまま続けましょう` : bad ? `${esc(A.long.label)}が前より悪くなっています` : `${esc(A.long.label)}は大きく変わっていません`}</p>
+      ${good ? '<p class="small">今のケアは変えすぎず、足すなら1つずつ。</p>' : `<p class="small">次を見直してみてください：</p><ul class="pc-ul small"><li>最近使い始めた物・やめた物</li><li>睡眠・食事・運動</li><li>季節・生理・体調・ストレス</li><li>${A.ctx.rx ? '薬を決められたとおり使えているか' : '続くときは皮膚科へ'}</li></ul>`}</div>`;
   }
   if (A.photos && A.photos.a) { const P = A.photos;
     h += `<h2 class="pc-sec">写真で見る変化</h2><div class="card"><div class="pc-ph"><figure><img src="${P.a.photo}" alt="${esc(fmtMD(P.a.date))}の写真"><figcaption>${esc(fmtMD(P.a.date))}</figcaption></figure><figure><img src="${P.b.photo}" alt="${esc(fmtMD(P.b.date))}の写真"><figcaption>${esc(fmtMD(P.b.date))}</figcaption></figure></div>
       <ul class="pc-ul small" style="margin-top:8px"><li>ニキビ：${P.acneA}個 → ${P.acneB}個</li>${P.diffs.slice(0, 4).map(x => `<li>${esc(x.c)}：${x.a ? '強さ' + x.a : 'なし'} → ${x.b ? '強さ' + x.b : 'なし'}</li>`).join('')}</ul>
-      <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚の写真から、いちばん古い写真と新しい写真を並べています。写真の読み取りはそこまで正確ではないので、数字は、写真のあとに自分で直した記録の内容です。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
+      <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚から、最初と最新を並べています。数字は自分で直した記録の内容です。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は、もう持っている物に入っています。新しく買わなくて大丈夫です。</p>' : '<p class="small muted pc-own">新しく買うなら、まずはプチプラの物からで十分です。</p>'}</div>` : ''}
+      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : '<p class="small muted pc-own">買うならプチプラで十分です。</p>'}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
   if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
-  if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みが見つかっていません。今のケアを続けながら、記録を続けてください。</p></div>`;
-  if (A.starter && A.starter.length) h += `<h2 class="pc-sec">まずはこれだけ（はじめの基本セット）</h2><div class="card pc-items">${A.starter.map(x => `<button type="button" class="pc-it pc-st" data-ingsheet="${esc(x.q)}"><span class="pc-v keep">${esc(x.n)}</span><span><b>${esc(x.d)}</b><small>押すと、人気の商品が見られます</small></span><i>›</i></button>`).join('')}<p class="small muted" style="margin:6px 16px 10px">高い物でなくて大丈夫です。プチプラの物から始めて、合う物が見つかったらMyアイテムに登録してください。</p></div>`;
+  if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みはありません。記録を続けてください。</p></div>`;
+  if (A.starter && A.starter.length) h += `<h2 class="pc-sec">まずはこれだけ（はじめの基本セット）</h2><div class="card pc-items">${A.starter.map(x => `<button type="button" class="pc-it pc-st" data-ingsheet="${esc(x.q)}"><span class="pc-v keep">${esc(x.n)}</span><span><b>${esc(x.d)}</b><small>押すと人気の商品</small></span><i>›</i></button>`).join('')}<p class="small muted" style="margin:6px 16px 10px">プチプラで十分です。合う物はMyアイテムに登録を。</p></div>`;
   if (A.items.length) {
     const V = {keep:['続ける', 'keep'], review:['見直す', 'review'], cut:['減らせる', 'cut']};
-    h += `<h2 class="pc-sec">使っている物</h2><div class="card pc-items">${(A.missing || []).map(x => `<div class="pc-it"><span class="pc-v cut">足りない</span><span><b>${esc(x.n)}</b><small>登録されていません。${esc(x.why)}。使っていなければ、プチプラの物で十分です</small></span></div>`).join('')}${['review', 'cut', 'keep'].flatMap(v => A.items.filter(i => i.v === v)).map(i => `<a class="pc-it" href="#/my/${encodeURIComponent(i.x.p.id)}"><span class="pc-v ${V[i.v][1]}">${V[i.v][0]}</span><span><b>${esc(truncate(i.x.p.name, 22))}</b><small>${esc(i.note)}</small></span></a>`).join('')}</div>`;
+    h += `<h2 class="pc-sec">使っている物</h2><div class="card pc-items">${(A.missing || []).map(x => `<div class="pc-it"><span class="pc-v cut">足りない</span><span><b>${esc(x.n)}</b><small>登録されていません。${esc(x.why)}。プチプラで十分です</small></span></div>`).join('')}${['review', 'cut', 'keep'].flatMap(v => A.items.filter(i => i.v === v)).map(i => `<a class="pc-it" href="#/my/${encodeURIComponent(i.x.p.id)}"><span class="pc-v ${V[i.v][1]}">${V[i.v][0]}</span><span><b>${esc(truncate(i.x.p.name, 22))}</b><small>${esc(i.note)}</small></span></a>`).join('')}</div>`;
   }
   // 生活
   const L = A.life, life = [];
-  life.push(L.slN >= 3 ? `睡眠：最近2週間の平均${fmtHM(L.sl)}${L.sl < L.sleepNeed - 45 ? `（目安の${fmtHM(L.sleepNeed)}より短め。寝る時間を15分ずつ早めます）` : '（目安に近く、よい状態です）'}` : '睡眠：記録が少ないので、まだ分かりません');
-  life.push(L.exRec >= 3 ? `運動：2週間で${L.exDays}日（20分以上）${L.exDays < 4 ? '。週2〜3回、20〜30分歩くことから' : '。このペースを続けましょう'}` : '運動：記録が少ないので、まだ分かりません');
-  life.push(L.foodN >= 3 ? `食事：たんぱく質が1日平均${Math.round(L.prot)}g（目安${L.protGoal}g）${L.prot < L.protGoal * 0.8 ? '。卵・納豆・魚などを1品足します' : ''}${L.veg != null && L.veg < 250 ? `。野菜は平均${Math.round(L.veg)}g（目安350g）` : ''}` : '食事：記録が少ないので、まだ分かりません');
+  life.push(L.slN >= 3 ? `睡眠：最近2週間の平均${fmtHM(L.sl)}${L.sl < L.sleepNeed - 45 ? `（目安の${fmtHM(L.sleepNeed)}より短め。15分ずつ早く寝る）` : '（よい状態です）'}` : '睡眠：記録が足りません');
+  life.push(L.exRec >= 3 ? `運動：2週間で${L.exDays}日（20分以上）${L.exDays < 4 ? '。週2〜3回、20〜30分歩く' : '。このまま続けましょう'}` : '運動：記録が足りません');
+  life.push(L.foodN >= 3 ? `食事：たんぱく質が1日平均${Math.round(L.prot)}g（目安${L.protGoal}g）${L.prot < L.protGoal * 0.8 ? '。卵・納豆・魚を1品足す' : ''}${L.veg != null && L.veg < 250 ? `。野菜は平均${Math.round(L.veg)}g（目安350g）` : ''}` : '食事：記録が足りません');
   if (A.stage !== 'none') h += `<h2 class="pc-sec">生活</h2><div class="card"><ul class="pc-ul">${life.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
   // 生活と肌の関係
   const ok = A.links.filter(x => x.enough), lack = A.links.filter(x => !x.enough && x.key.indexOf('food:') !== 0);
-  if (A.stage !== 'none') h += `<h2 class="pc-sec">生活と肌の関係</h2><div class="card"><p class="small muted" style="margin:0 0 8px">${esc(A.metric.l)}で比べています（直近60日）。同じ時期に起きたことでも、それが原因とは限りません。</p>
-    ${ok.length ? ok.map(x => { const better = x.diff > 0; return `<div class="pc-ln ${x.strong ? 'st' : ''}"><b>${esc(x.label)}</b><p>${x.strong ? `${esc(x.aL)}は、${esc(x.bL)}より${esc(A.metric.l)}が${better ? '良い' : '悪い'}傾向です（${x.nA}日と${x.nB}日の比較）。関係があるかもしれません。` : `${esc(x.aL)}と${esc(x.bL)}で、大きな差は見られません（${x.nA}日と${x.nB}日）。`}</p></div>`; }).join('') : ''}
-    ${lack.length ? `<p class="small muted" style="margin-top:8px">${lack.map(x => x.same ? `${esc(x.label)}は、いつも「${esc(x.same)}」なので、比べられません` : `${esc(x.label)}は、比べるための記録がまだ足りません（あと${x.need}日ほど）`).join('。')}。</p>` : ''}</div>`;
+  if (A.stage !== 'none') h += `<h2 class="pc-sec">生活と肌の関係</h2><div class="card"><p class="small muted" style="margin:0 0 8px">${esc(A.metric.l)}で比べています（60日）。原因とは限りません。</p>
+    ${ok.length ? ok.map(x => { const better = x.diff > 0; return `<div class="pc-ln ${x.strong ? 'st' : ''}"><b>${esc(x.label)}</b><p>${x.strong ? `${esc(x.aL)}は、${esc(x.bL)}より${esc(A.metric.l)}が${better ? '良い' : '悪い'}傾向です（${x.nA}日と${x.nB}日）。関係があるかもしれません。` : `${esc(x.aL)}と${esc(x.bL)}で、大きな差は見られません（${x.nA}日と${x.nB}日）。`}</p></div>`; }).join('') : ''}
+    ${lack.length ? `<p class="small muted" style="margin-top:8px">${lack.map(x => x.same ? `${esc(x.label)}は、いつも「${esc(x.same)}」なので、比べられません` : `${esc(x.label)}は記録が足りません（あと${x.need}日ほど）`).join('。')}。</p>` : ''}</div>`;
   const ch = A.changes.filter(c => c.enough);
-  if (A.changes.length) h += `<h2 class="pc-sec">使い始めた物の前後</h2><div class="card">${ch.length ? ch.map(c => `<div class="pc-ln"><b>${esc(truncate(c.p.name, 22))}</b><p>使い始める前の2週間と、使って1〜3週間で、${esc(A.metric.l)}は${Math.abs(c.diff) < A.metric.th / 2 ? '大きく変わっていません' : c.diff > 0 ? '良くなっています' : '悪くなっています'}。${c.others.length ? `同じ時期に「${esc(truncate(c.others[0].name, 14))}」も使い始めているので、どちらの影響かは分かりません。` : ''}</p></div>`).join('') : ''}${A.changes.some(c => !c.enough) ? `<p class="small muted">${A.changes.filter(c => !c.enough).map(c => esc(truncate(c.p.name, 16))).join('・')}は、前後の記録が足りないので、まだ比べられません。</p>` : ''}</div>`;
-  h += `<p class="small muted" style="margin:14px 4px 0">記録をもとにした目安で、医学的な診断ではありません。治療中の病気・処方薬については、皮膚科の指示を優先してください。赤み・痛み・かゆみが強いとき、長く続くときは皮膚科で相談してください。</p>`;
+  if (A.changes.length) h += `<h2 class="pc-sec">使い始めた物の前後</h2><div class="card">${ch.length ? ch.map(c => `<div class="pc-ln"><b>${esc(truncate(c.p.name, 22))}</b><p>使う前と後で、${esc(A.metric.l)}は${Math.abs(c.diff) < A.metric.th / 2 ? '大きく変わっていません' : c.diff > 0 ? '良くなっています' : '悪くなっています'}。${c.others.length ? `同じ時期に「${esc(truncate(c.others[0].name, 14))}」も同じ頃に使い始めたので、どちらの影響か分かりません。` : ''}</p></div>`).join('') : ''}${A.changes.some(c => !c.enough) ? `<p class="small muted">${A.changes.filter(c => !c.enough).map(c => esc(truncate(c.p.name, 16))).join('・')}は記録が足りず、まだ比べられません。</p>` : ''}</div>`;
+  h += `<p class="small muted" style="margin:14px 4px 0">記録からの目安で、診断ではありません。処方薬は皮膚科の指示を優先し、症状が強い・続くときは皮膚科へ。</p>`;
   return h;
 }
 // おすすめケアの上に出す、短いまとめ（くわしくは「あなたの肌の分析」へ）
@@ -13583,7 +13591,7 @@ const actions = {
   'cc-clear': k => { ui[k === 'a' ? 'ccA' : 'ccB'] = ''; if (k === 'a') { ui.ccA = ui.ccB || ''; ui.ccB = ''; } render(); setTimeout(() => { const i = document.getElementById('cc-' + (k === 'a' && ui.ccA ? 'b' : k)); if (i) i.focus(); }, 30); },
   'cc-pick': v => { ui.ccB = v; render(); setTimeout(() => { const c = document.querySelector('.cc-pick'); if (c) c.scrollIntoView({block:'start', behavior:'smooth'}); }, 30); },
   'cc-lv': v => { ui.ccLv = ui.ccLv === Number(v) ? 0 : Number(v) || 0; const L = document.getElementById('cc-list'); if (L) { L.innerHTML = comboDbListHtml(normIng(ui.ccQ || ''), ui.ccLv); document.querySelectorAll('.cc-lvf .ic').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.ccLv)); } else render(); },
-  'care-go': () => { closeModal(true); location.hash = '#/care/routine'; },
+  'care-go': () => { closeModal(true); location.hash = '#/routine'; },
   'care-ai': () => careAiRun(),
   'close-modal': () => dismissModal(),
   'close-modal-bg': (id, el, e) => { if (e.target === el) dismissModal(); },
@@ -14420,7 +14428,7 @@ function render() {
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
-  setTopTitle(r.name === 'home' ? '' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'スキンケア設計', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
