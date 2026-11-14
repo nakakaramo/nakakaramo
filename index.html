@@ -5577,7 +5577,18 @@ function viewShop() {
 // おすすめ成分を押したら：成分の説明と、その成分を使った人気商品（ランキング順）を4〜5個出す
 function ingEntryOf(word) {
   const w = normIng(String(word || '').replace(/（.*?）|\(.*?\)/g, '').trim()); if (!w) return null;
-  return ING_INDEX.get(w) || ING_DB.find(e => [e.name.replace(/（.*?）/g, ''), ...(e.aliases || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || n.includes(w)); })) || null;
+  return ING_INDEX.get(w) || ING_DB.find(e => [e.name.replace(/（.*?）/g, ''), ...(e.aliases || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || n.includes(w)); })) || ingMasterEntry(w);
+}
+// 成分辞典にない成分は、おすすめを決めるときに使う成分表（ING_MASTER）の説明で出す（押しても何も出ない、をなくす）
+const ING_ME_C = new Map();
+function ingMasterEntry(w) {
+  if (ING_ME_C.has(w)) return ING_ME_C.get(w);
+  let out = null;
+  try {
+    const m = (typeof ING_MASTER !== 'undefined' ? ING_MASTER : []).find(x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || n.includes(w)); }));
+    if (m) out = {key:m.k, name:m.ja.replace(/（.*?）/g, ''), aliases:(m.inci || []).slice(), feature:m.mech || '', purpose:m.eff ? m.eff + 'を目的に使われます。' : '', caution:[m.side, m.combo && !/一緒に使えます/.test(m.combo) ? m.combo : ''].filter(Boolean).join('') || '肌に合わないと感じたら使うのをやめてください。', fromMaster:true};
+  } catch (e) { out = null; }
+  ING_ME_C.set(w, out); return out;
 }
 function ingWords(word, e) { // 商品名の中で探す言葉（成分名と、その別名）
   const base = String(word || '').replace(/（.*?）|\(.*?\)/g, '').trim();
@@ -12496,6 +12507,26 @@ async function pushSubEnsure() {
   return sub;
 }
 async function notifySend(c) { const sub = await pushSubEnsure(); if (!sub) return false; await callPush('subscribe', Object.assign({sub:sub.toJSON(), remind_time:c.time, remind_on:true, expiry_on:c.expiry}, notifyInfo())); return true; }
+// お知らせが届くように、許可・送り先・サーバーへの登録をまとめて確かめて直す（ボタンを押したときに呼ぶ）
+async function notifyRepair() {
+  if (!acct.user) throw new Error('先にログイン（無料）してください');
+  if (!pushSupported() || (DEV.ios && !isStandalone())) throw new Error('iPhoneでは、ホーム画面に追加したナカカラモから開いたときにお知らせを使えます');
+  if (Notification.permission === 'default') await Notification.requestPermission();
+  if (Notification.permission !== 'granted') throw new Error(DEV.ios ? 'お知らせが許可されていません。iPhoneの「設定」→「通知」→「ナカカラモ」で「通知を許可」をオンにしてください' : 'お知らせが許可されていません。ブラウザの設定で許可してください');
+  const c = notifyCfg(); c.on = true; state.settings.notify = c; save();
+  if (!(await notifySend(c))) throw new Error('この端末のお知らせの登録ができませんでした。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください');
+  try { localStorage.setItem('nk_notify_sig', phHash(JSON.stringify([c, notifyInfo(), todayStr()]))); } catch (e) { /* 何もしない */ }
+  return c;
+}
+// 設定を開いたとき：オンなのにこの端末の送り先がなくなっていたら、知らせて直せるようにする
+async function notifyHealth() {
+  const card = document.getElementById('notify-card'); if (!card || !notifyCfg().on || !acct.user || !pushSupported() || (DEV.ios && !isStandalone())) return;
+  let ok = false; try { ok = !!(await pushSub()) && Notification.permission === 'granted'; } catch (e) { ok = false; }
+  if (ok || card.querySelector('.nt-warn')) return;
+  const w = document.createElement('div'); w.className = 'notice warn nt-warn'; w.style.margin = '10px 0 0';
+  w.innerHTML = `この端末では、お知らせの登録が切れています。このままだと届きません。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:8px" data-action="notify-fix">もう一度登録する</button>`;
+  card.appendChild(w);
+}
 async function notifyEnable(opt) {
   if (!acct.user) { toast('先にログイン（無料）してください', 'error'); return; }
   if (!pushSupported() || (DEV.ios && !isStandalone())) { openModal({title:'お知らせを使うには', body:`<p style="margin:0">iPhoneでは、ナカカラモを<b>ホーム画面に追加</b>して、そこから開いたときにお知らせを使えます。</p><ol class="points small"><li>Safariで下の共有ボタン（□に↑）を押す</li><li>「ホーム画面に追加」を押す</li><li>ホーム画面のナカカラモから開いて、もう一度オンにする</li></ol>`, footer:'<button type="button" class="btn btn-primary" data-action="close-modal">OK</button>'}); return; }
@@ -12592,7 +12623,7 @@ async function permSheet(force) {
   };
   paint(); requestAnimationFrame(() => ov.classList.add('in'));
 }
-function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); }
+function refreshNotifyCard() { const b = document.getElementById('notify-card'); if (b) b.outerHTML = notifyCardHtml(); setTimeout(notifyHealth, 0); }
 document.addEventListener('change', e => {
   if (e.target.id !== 'f_notify_time' && e.target.id !== 'f_notify_exp') return;
   const c = notifyCfg();
@@ -12602,8 +12633,7 @@ document.addEventListener('change', e => {
   // すぐにサーバーへ伝えて、届いたかどうかを知らせる（伝わっていないのに「設定した」と思わないように）
   (async () => {
     try {
-      if (!(await notifySend(c))) { toast('お知らせの登録が切れていました。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください', 'error'); return; }
-      try { localStorage.setItem('nk_notify_sig', phHash(JSON.stringify([c, notifyInfo(), todayStr()]))); } catch (err) { /* 何もしない */ }
+      await notifyRepair();
       toast(e.target.id === 'f_notify_time' ? `${Number(c.time.slice(0, 2))}時${c.time.slice(3)}分にお知らせします` : '設定しました');
     } catch (err) { toast(err.message || 'お知らせの設定ができませんでした', 'error'); }
   })();
@@ -13295,7 +13325,7 @@ function settingsEmbedHtml(kind) {
   const out = [], P = [], B = [];
   if (cards['身長・体重']) B.push(cards['身長・体重'].outerHTML); // からだと肌（自分の情報）
   const skinC = cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) B.push(skinC.outerHTML);
-  if (!NATIVE_APP) out.push(notifyCardHtml()); // お知らせ（通知）
+  if (!NATIVE_APP) { out.push(notifyCardHtml()); setTimeout(notifyHealth, 300); } // お知らせ（通知）
   if (cards['クラウドに保存']) P.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) P.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
@@ -13743,7 +13773,8 @@ const actions = {
   'ba-make': () => baMake(),
   'ba-share': async () => { try { if (ui.baFile) await navigator.share({files:[ui.baFile], title:'ナカカラモ'}); } catch (e) { /* やめたとき */ } },
   'notify-toggle': (id, el) => { if (ui.notifyBusy) { el.checked = true; return; } if (el.checked) notifyEnable(); else notifyDisable(); },
-  'notify-test': async () => { try { await notifySend(notifyCfg()); await callPush('test'); toast('テストのお知らせを送りました（数秒で届きます）'); } catch (e) { toast(e.message, 'error'); } },
+  'notify-test': async () => { try { await notifyRepair(); const r = await callPush('test'); if (r.sent) toast('テストのお知らせを送りました（数秒で届きます）'); else toast('お知らせを送れませんでした。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください', 'error'); } catch (e) { toast(e.message, 'error'); } },
+  'notify-fix': async () => { try { await notifyRepair(); refreshNotifyCard(); toast('登録しました。テストのお知らせで確かめられます'); } catch (e) { toast(e.message, 'error'); } },
   'acc-name': () => openNameEdit(),
   'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (save()) { closeModal(); toast('保存しました'); render(); } },
   'restore-no': () => { try { localStorage.setItem('nk_restore_no', '1'); } catch (e) { /* 何もしない */ } closeModal(); },
