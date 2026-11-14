@@ -141,7 +141,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 body{margin:0;font-family:var(--font);background:transparent;color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
 #main{overflow-wrap:anywhere;word-break:normal}
 #main .card{min-width:0}
-html:has(body.no-scroll),body.no-scroll{overflow:hidden}.modal-backdrop{overscroll-behavior:contain}
+@media (hover:hover) and (pointer:fine){html:has(body.no-scroll),body.no-scroll{overflow:hidden}}.modal-backdrop{overscroll-behavior:contain}
 a{color:var(--green-d)}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:.02em}
 p{margin:0}
@@ -3995,6 +3995,19 @@ new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requ
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
 // シートを開いている間は、下の画面を動かさない（体の位置を固定して戻す方法だと、閉じたときに一瞬いちばん上が見えてチカチカするので、スクロールだけ止める）
+// 画面を開いている間、うしろのページが動かないようにする。
+// スマホでは overflow:hidden を使わない（iPhoneで上のタブ〈朝のケア・夜のケアなど〉の固定が外れて、上がおかしくなるため）。
+// 代わりに、開いた画面の中のスクロールできる所以外では、指でのスクロールを止める
+function lockTouchGuard(e) {
+  if (lockedY == null || e.touches.length > 1) return;
+  const t = e.target; if (t.closest && t.closest('input,textarea,select,canvas,[data-allow-touch]')) return;
+  for (let el = t; el && el !== document.body; el = el.parentElement) {
+    const cs = getComputedStyle(el);
+    if ((/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) || (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1)) return;
+  }
+  if (e.cancelable) e.preventDefault();
+}
+document.addEventListener('touchmove', lockTouchGuard, {passive:false});
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.classList.add('no-scroll'); }
 function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }
 function closeModal(now) { const r = $('#modal-root');
