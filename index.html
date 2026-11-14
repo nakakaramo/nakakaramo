@@ -1608,6 +1608,15 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .g-note{margin:6px 0 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
 
 /* ===== ログイン・新規登録の全画面 ===== */
+.lg-gate{position:fixed;inset:0;z-index:4000;background:var(--bg);overflow-y:auto;display:flex;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom))}
+.lg-in{width:100%;max-width:360px;text-align:center}
+.lg-ic{border-radius:18px;display:block;margin:0 auto 14px}
+.lg-t{font-size:26px;letter-spacing:.2em;margin:0 0 10px;font-weight:600}
+.lg-d{margin:0 0 26px;color:var(--muted);font-size:14px;line-height:1.7}
+.lg-b{width:100%;min-height:50px;margin-bottom:10px;font-size:15px}
+.lg-n{font-size:12px;color:var(--muted);margin:10px 0 8px;line-height:1.6}
+.lg-l{font-size:12px;margin:0}.lg-l a{color:var(--muted)}
+body.gated #bottom-nav{visibility:hidden}
 .au-ov{position:fixed;inset:0;z-index:4100;background:var(--bg);transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain}
 .au-ov.in{transform:none}.au-ov.out{transform:translateY(100%)}
 .au-page{min-height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom))}
@@ -4842,7 +4851,7 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard() {
   const st = state.settings;
-  swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
+  swState = {acct:false, acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
   openModal({title:'肌質診断', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
@@ -12660,7 +12669,7 @@ function syncCardHtml() {
   const status = !acct.user ? '<p class="small muted" style="margin:8px 0 0">使うには、先に<a href="#/plan">ログイン</a>してください（無料）。</p>'
     : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : '自動でバックアップします'}</p>` : '';
   return `<div class="card" id="sync-card"><div class="card-h"><h2>自動バックアップ</h2></div>
-    <p class="small muted" style="margin:0 0 10px">ログインしていれば、記録・化粧品・設定を、登録したメールアドレスのアカウントに自動でバックアップします。機種変更したときや、ブラウザのデータが消えたときも、ログインすれば続きから使えます。写真も、<b>あなただけが見られる場所</b>に自動でバックアップします。</p>
+    <p class="small muted" style="margin:0 0 10px">記録・化粧品・設定・写真を、あなたのアカウントに自動でバックアップしています。機種変更しても、ログインすれば続きから使えます。</p>
     ${acct.user ? `<p class="small" style="margin:0">バックアップ先：<b>${esc((acct.user.email || 'Googleのアカウント'))}</b></p>` : ''}${status}</div>`;
 }
 async function initCloud() {
@@ -12686,13 +12695,40 @@ async function initCloud() {
       acct.user = session ? session.user : null;
       if (event === 'PASSWORD_RECOVERY') { acct.recovery = true; location.hash = '#/plan'; }
       if ((acct.user && acct.user.id) !== before) { acct.sub = null; acct.subLoaded = false; setTimeout(refreshSub, 0); if (acct.user) setTimeout(() => syncPull(true), 0); }
+      setTimeout(gateSync, 0);
     });
     const {data} = await acct.client.auth.getSession();
     acct.user = data && data.session ? data.session.user : null;
-    acct.status = 'ready';
+    acct.status = 'ready'; gateSync();
     if (acct.user) { syncPull(true); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 4000); } // 開いたときに、お知らせの時刻・最後に記録した日をサーバーと合わせる
     await refreshSub();
-  } catch (e) { acct.status = 'error'; rerenderAcct(); }
+  } catch (e) { acct.status = 'error'; rerenderAcct(); gateSync(); }
+}
+// ===== ログインの入口：ナカカラモはログイン（無料）してから使う（記録は自動でクラウドに保存される） =====
+// 利用規約・プライバシーなどは、ログインしなくても読める。電波がなくてログインの部品が読み込めないときは止めない
+function gateNeeded() {
+  if (EMBED) return false;
+  let n = ''; try { n = parseRoute().name; } catch (e) { n = ''; }
+  if (['terms', 'privacy', 'law'].includes(n)) return false;
+  if (acct.user || acct.status === 'error') return false;
+  return acct.status === 'ready' || !hasSavedLogin();
+}
+function gateSync() {
+  const need = gateNeeded(), g = document.getElementById('login-gate');
+  if (need && !g) {
+    if (acct.status === 'idle') initCloud();
+    const el = document.createElement('div'); el.id = 'login-gate'; el.className = 'lg-gate';
+    el.innerHTML = `<div class="lg-in"><img class="lg-ic" src="apple-touch-icon.png" alt="" width="72" height="72"><h1 class="lg-t">ナカカラモ</h1>
+      <p class="lg-d">肌・食事・睡眠の記録から、あなたに合うケアを提案します。</p>
+      <button type="button" class="btn btn-primary lg-b" data-gate="signup">はじめる（無料で登録）</button>
+      <button type="button" class="btn btn-ghost lg-b" data-gate="login">ログイン</button>
+      <p class="lg-n">記録と写真は、クラウドに自動で保存されます。機種変更しても、ログインすれば戻せます。</p>
+      <p class="lg-l"><a href="#/terms">利用規約</a>・<a href="#/privacy">プライバシーポリシー</a></p></div>`;
+    el.addEventListener('click', e => { const b = e.target.closest('[data-gate]'); if (!b) return; hapticTick(); openAuth(b.dataset.gate).then(() => gateSync()); });
+    document.body.appendChild(el); document.body.classList.add('gated');
+  } else if (!need && g) { g.remove(); document.body.classList.remove('gated');
+    // ログインしたあと：はじめての人には、はじめの質問を出す（クラウドから記録を読み込む時間を少し待つ）
+    setTimeout(() => { if (acct.user && !state.settings.onboarded && !$('#modal-root').innerHTML) openSetupWizard(); }, 1500); }
 }
 async function refreshSub() {
   if (!acct.client || !acct.user) { acct.sub = null; acct.subLoaded = true; rerenderAcct(); return; }
@@ -13413,7 +13449,7 @@ function skinProfileCardHtml() {
     <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     <p class="lbl" style="margin:14px 0 6px">肌悩み<span class="opt">いくつでも</span></p>
     <div class="checks">${CONCERN_MASTER.map(c => `<label class="check"><input type="checkbox" name="st-concern2" value="${c.k}" ${ck.includes(c.k) ? 'checked' : ''}>${esc(c.l)}</label>`).join('')}</div>
-    <p class="small muted" style="margin:8px 0 0">肌悩みは、スキンケア設計とホームの「おすすめケア」に使います。このブラウザ内に保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p></div>`;
+    <p class="small muted" style="margin:8px 0 0">肌悩みは、ケア管理とホームの「おすすめケア」に使います。このブラウザ内に保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p></div>`;
 }
 function researchCardHtml() {
   const r = researchState(), n = state.skinLogs.filter(l => !l.demo).length;
@@ -13491,14 +13527,7 @@ ${NATIVE_APP ? '' : '</template>'}
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <dl class="kv"><dt>使用容量（目安）</dt><dd>約${kb}KB（ブラウザの上限は一般的に5MB前後）</dd><dt>肌の記録</dt><dd>${state.skinLogs.length}件（写真付き ${photos}件）</dd><dt>食事・運動・睡眠</dt><dd>${state.lifeLogs.length}件（食事の写真 ${mealPh}枚・自分で登録した食品 ${state.customFoods.length}件）</dd><dt>Myアイテム</dt><dd>${state.myProducts.length}件</dd><dt>商品データベース</dt><dd>${state.catalog.length}件</dd></dl></details>
       ${storageOK ? '' : '<div class="notice warn" style="margin-top:12px">現在このブラウザでは保存ができない状態です。</div>'}</div>
-    <div class="card"><div class="card-h"><h2>バックアップ</h2></div>
-      <p class="small muted" style="margin-bottom:12px">ブラウザの履歴やWebサイトデータを削除すると、記録も消えます。定期的にバックアップファイルを保存しておくと安心です。</p>
-      <div class="page-actions"><button class="btn btn-ghost btn-sm" data-action="export">バックアップを書き出す（.json）</button><button class="btn btn-ghost btn-sm" data-action="export-csv">記録を表計算用に書き出す（.csv）</button><button class="btn btn-ghost btn-sm" data-action="import">バックアップから復元</button></div>
-      <input type="file" id="import-file" accept="application/json,.json" hidden></div>
-    <div class="card"><div class="card-h"><h2>動作確認用データ</h2></div>
-      <p class="small muted" style="margin-bottom:12px">グラフやレポートの見え方を試すために、架空の「デモ」記録（約4週間分）・食事睡眠の記録を追加できます（架空の商品は入れません）。デモデータには「デモ」と表示され、まとめて削除できます。</p>
-      <div class="page-actions">${hasDemo ? '<button class="btn btn-danger-ghost btn-sm" data-action="demo-remove">デモデータを削除</button>' : '<button class="btn btn-soft btn-sm" data-action="demo-add">デモデータを追加</button>'}
-</div></div>
+    ${hasDemo ? '<div class="card"><div class="card-h"><h2>デモデータ</h2></div><button class="btn btn-danger-ghost btn-sm" data-action="demo-remove">デモデータを削除</button></div>' : ''}
     <div class="card"><div class="card-h"><h2>すべてのデータを削除</h2></div>
       <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・Myアイテム・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
@@ -13783,7 +13812,7 @@ const actions = {
   'pf-color': id => { avDraft = {t:'emoji', v:avDraft && avDraft.t === 'emoji' ? avDraft.v : AVATAR_EMOJI[0], c:id}; pfPaint(); },
   'pf-reset': () => { avDraft = null; pfPaint(); },
   'pf-save': () => { const n = document.getElementById('pf-name'); if (n) state.settings.nickname = n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); state.settings.avatar = avDraft; if (save()) { closeModal(); toast('保存しました'); render(); } },
-  'acct-logout': async () => { try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; acct.confirm = false; toast('ログアウトしました'); render(); },
+  'acct-logout': async () => { try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; acct.confirm = false; toast('ログアウトしました'); render(); gateSync(); },
   'acct-confirm': async () => {
     acct.confirm = true; render();
     if (!acct.price) { try { acct.price = await callBilling('price'); acct.priceErr = ''; } catch (e) { acct.priceErr = e.message; } render(); }
@@ -14388,6 +14417,7 @@ document.addEventListener('click', e => {
 }, true);
 function render() {
   try { SHOWN_DAY = todayStr(); } catch (e) { /* 何もしない */ }
+  try { gateSync(); } catch (e) { /* 何もしない */ }
   applyHelpPref();
   const r = parseRoute();
   if (r.name === 'new') { // ウィジェット・ショートカットから：記録の画面を直接開く
@@ -14428,7 +14458,7 @@ function render() {
     else stopMomentumTop();
   }
   navRestoreY = null;
-  if (!state.settings.permAsked2 && state.settings.onboarded) setTimeout(() => permSheet(), 900); // 最初に開いたとき：位置情報・お知らせの許可
+  if (!state.settings.permAsked2 && state.settings.onboarded) setTimeout(() => { if (!document.getElementById('login-gate')) permSheet(); }, 900); // 最初に開いたとき：位置情報・お知らせの許可
   if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); }, 0); }
   if (r.name === 'log' || r.name === 'routine') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'care') rtDragInit();
@@ -14652,7 +14682,7 @@ if (hasSavedLogin() || AUTH_RET) setTimeout(initCloud, 0); // 以前ログイン
 document.title = SERVICE;
 render();
 // はじめて開いたときは、先に「はじめの質問」を出す
-if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML) openSetupWizard(); }, 400);
+if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML && !document.getElementById('login-gate')) openSetupWizard(); }, 400);
 // シートが出ているときは、ブラウザのいちばん上の色（theme-color）も一緒に薄暗くする
 (() => {
   const metas = [...document.querySelectorAll('meta[name="theme-color"]')], orig = metas.map(m => m.content); let last = '';
