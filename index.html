@@ -27,6 +27,8 @@
 <!-- Google AdSense（サイトの確認と広告の読み込み） -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557443241119064" crossorigin="anonymous"></script>
 <style>
+/* 上の安全な余白（時計・電池の高さ）。iPhoneのホーム画面アプリで、ここが0になる不具合（iOS 26）があるので、そのときはJSで目安の値を入れる */
+:root{--sat:env(safe-area-inset-top)}
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
   --ink:#1E2A23;--ink2:#46524B;--muted:#838B86;--line:#ECE7DF;--line2:#DDD6CA;
@@ -148,13 +150,13 @@ button{font-family:inherit}
 
 /* ---------- Layout ---------- */
 .sidebar{display:none}
-.topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:#FAF9F6;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + var(--sat));background:#FAF9F6;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.06em;color:var(--ink);text-decoration:none;font-weight:500}
 .top-title{margin:0;font-size:21px;line-height:40px;padding:0;white-space:nowrap;font-family:var(--font);font-weight:600;letter-spacing:.02em;color:var(--ink)}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
-.topbar .wm-home{position:absolute;left:0;right:0;top:env(safe-area-inset-top);bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;transform:none;font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
+.topbar .wm-home{position:absolute;left:0;right:0;top:var(--sat);bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;transform:none;font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
 .topbar .wm-brand{font-size:15px;letter-spacing:.24em;color:var(--ink2,#3B4A41)}
 .twx{display:flex;align-items:center;justify-content:space-between;gap:.8em;background:none;border:0;padding:6px 0;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;white-space:nowrap}
@@ -166,7 +168,7 @@ button{font-family:inherit}
 .topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
 /* メニュー（三本線）はなくした。中の画面は、ホームの「ショートカット」からすべて開ける */
 .topbar #top-menu,.topbar .hap-keep:has(#top-menu){display:none!important}
-.topbar{min-height:calc(65px + env(safe-area-inset-top))} /* 上の帯の高さは、どの画面でも同じにする */
+.topbar{min-height:calc(65px + var(--sat))} /* 上の帯の高さは、どの画面でも同じにする */
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
@@ -249,7 +251,7 @@ label.btn{position:relative}
 #drawer-root.open{pointer-events:auto}
 .drawer-bg{position:absolute;inset:0;background:rgba(20,24,22,.38);opacity:0;transition:opacity .25s ease}
 #drawer-root.open .drawer-bg{opacity:1}
-.drawer{position:absolute;top:0;right:0;bottom:0;width:min(320px,84vw);background:var(--surface);box-shadow:-12px 0 32px rgba(0,0,0,.16);transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain;padding:calc(14px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:min(320px,84vw);background:var(--surface);box-shadow:-12px 0 32px rgba(0,0,0,.16);transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain;padding:calc(14px + var(--sat)) 20px calc(24px + env(safe-area-inset-bottom))}
 #drawer-root.open .drawer{transform:none}
 .drawer-h{height:44px;display:flex;align-items:center;justify-content:space-between;font-size:17px}
 .hb-close .hb i{transition:transform .3s ease .05s,opacity .2s ease,top .3s ease .05s}
@@ -783,7 +785,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .fp-open i{position:absolute;top:4px;right:2px;width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px;color:var(--ink)}
 .fp-sumline{text-align:center;font-size:13px;color:var(--ink2);margin:8px 0 0}
 /* 大きくしたとき：今日の肌記録の大きい画面と同じ形。顔の下に「ニキビ選択／肌質選択」、その下に入力 */
-.fp-field.fp-big{position:fixed;inset:0;z-index:300;margin:0;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
+.fp-field.fp-big{position:fixed;inset:0;z-index:300;margin:0;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;padding:calc(10px + var(--sat)) 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
 .fp-big .fp-bighead{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px;order:0}
 .fp-big .fp-bighead b{font-size:17px}
 .fp-big .fp-lbl,.fp-big .fp-open,.fp-big .fp-sumline,.fp-big #fp-hint,.fp-big .fp-zoom{display:none}
@@ -866,7 +868,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
 .photo-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .photo-pick .input{flex:1 1 180px}
-.fscan{position:fixed;inset:0;z-index:200;background:#0B0C0B;color:#fff;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 20px calc(18px + env(safe-area-inset-bottom));overflow:hidden}
+.fscan{position:fixed;inset:0;z-index:200;background:#0B0C0B;color:#fff;display:flex;flex-direction:column;align-items:center;padding:calc(10px + var(--sat)) 20px calc(18px + env(safe-area-inset-bottom));overflow:hidden}
 .fs-top{align-self:stretch;display:flex;justify-content:flex-end}
 .fs-x{background:none;border:0;color:#fff;font:inherit;font-size:15px;padding:8px 4px;cursor:pointer}
 .fs-stage{position:relative;width:min(78vw,330px);aspect-ratio:1;margin:min(8vh,60px) 0 22px}
@@ -891,7 +893,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .gcam-ghost{opacity:.3;pointer-events:none}
 .gcam-fail{padding:24px;text-align:center;color:#fff;display:flex;flex-direction:column;gap:14px;align-items:center;max-width:340px}.gcam-fail p{margin:0;font-size:14px;line-height:1.6}.gcam-fail .small{font-size:12px;color:#ccc}.gcam-fail .btn{min-width:240px;justify-content:center}.gcam-back{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.5)!important}
 .gcam-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.gcam-msg{position:absolute;top:calc(14px + env(safe-area-inset-top));left:0;right:0;margin:0;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.gcam-msg{position:absolute;top:calc(14px + var(--sat));left:0;right:0;margin:0;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .gcam-msg small{font-weight:400;font-size:11.5px}
 .gcam-bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:#000}
 .gcam-shot{width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.25);cursor:pointer}
@@ -977,11 +979,11 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .period-btn input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
 .agree-line{display:flex!important;align-items:flex-start;gap:10px}.agree-line>span{flex:1;min-width:0;line-height:1.6}
 /* iPhoneの上（時計・電池の場所）に、スクロールした中身が重ならないように、背景色で隠す */
-body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
+body::before{content:'';position:fixed;left:0;right:0;top:0;height:var(--sat);background:var(--bg);z-index:3000;pointer-events:none}
 /* 下からページ（シート）が出ているときは、いちばん上（時計・電池のところ）も一緒に薄暗くする */
 body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before{background:#A9ABA6;background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
 /* iPhoneのSafariは、画面のいちばん上にある色で上のバーの色を決めるので、シートが出ている間は上に薄暗い帯を置く・ページの地の色も薄暗くする */
-body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before,body:has(.ps-wrap.on)::before{height:max(env(safe-area-inset-top),12px)}
+body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before,body:has(.ps-wrap.on)::before{height:max(var(--sat),12px)}
 html:has(#modal-root .modal-backdrop:not(.closing)),html:has(#drawer-root.open){background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
 body:has(.ps-wrap.on)::before{background:color-mix(in srgb,rgb(20,20,20) 45%,var(--bg))}
 :root[data-theme="dark"] body:has(#modal-root .modal-backdrop:not(.closing))::before{background:color-mix(in srgb,#000 55%,var(--bg))}
@@ -1212,7 +1214,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .advice .adv-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap}
 .f3-expand{position:absolute;right:8px;top:8px;z-index:2;border:1px solid var(--line2);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:13px;font-family:inherit;cursor:pointer;box-shadow:var(--shadow);line-height:1.4}
 .f3-full{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column}
-.f3-full-head{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 6px}
+.f3-full-head{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--sat)) 14px 6px}
 .f3-full-stage{position:relative;flex:1;min-height:0;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--bg))}
 .f3-full-stage canvas{width:100%;height:100%;display:block;touch-action:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr);gap:10px;align-items:center}
@@ -1608,7 +1610,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .g-note{margin:6px 0 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
 
 /* ===== ログイン・新規登録の全画面 ===== */
-.lg-gate{position:fixed;inset:0;z-index:4000;background:var(--bg);overflow-y:auto;display:flex;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom))}
+.lg-gate{position:fixed;inset:0;z-index:4000;background:var(--bg);overflow-y:auto;display:flex;align-items:center;justify-content:center;padding:max(24px,var(--sat)) 24px max(24px,env(safe-area-inset-bottom))}
 .lg-in{width:100%;max-width:360px;text-align:center}
 .lg-ic{border-radius:18px;display:block;margin:0 auto 14px}
 .lg-t{font-size:26px;letter-spacing:.2em;margin:0 0 10px;font-weight:600}
@@ -1619,7 +1621,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 body.gated #bottom-nav{visibility:hidden}
 .au-ov{position:fixed;inset:0;z-index:4100;background:var(--bg);transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain}
 .au-ov.in{transform:none}.au-ov.out{transform:translateY(100%)}
-.au-page{min-height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom))}
+.au-page{min-height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding:calc(10px + var(--sat)) 22px calc(24px + env(safe-area-inset-bottom))}
 .au-head{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;min-height:56px}
 .au-head h2{margin:0;text-align:center;font-size:17px;font-weight:700;color:var(--ink)}
 .au-back{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -2183,7 +2185,7 @@ img{image-rendering:auto}
 /* はじめの許可（一般的なアプリと同じ、全画面で1つずつ） */
 .pm-ov{position:fixed;inset:0;z-index:4200;background:var(--bg);display:flex;align-items:stretch;justify-content:center;opacity:0;transform:translateY(24px);transition:opacity .28s ease,transform .32s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
 .pm-ov.in{opacity:1;transform:none}
-.pm-in{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:calc(env(safe-area-inset-top) + 28px) 24px calc(env(safe-area-inset-bottom) + 24px)}
+.pm-in{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:calc(var(--sat) + 28px) 24px calc(env(safe-area-inset-bottom) + 24px)}
 .pm-dots{display:flex;gap:6px;height:8px;margin-bottom:28px}.pm-dots i{width:8px;height:8px;border-radius:50%;background:var(--line2,#D9D4CC)}.pm-dots i.on{background:var(--green-d);width:20px;border-radius:99px}
 .pm-big{width:108px;height:108px;border-radius:50%;background:var(--green-p,#EEF5EF);color:var(--green-d);display:flex;align-items:center;justify-content:center;margin:12px 0 26px}
 .pm-big svg{width:50px;height:50px;stroke-width:1.8}
@@ -5611,12 +5613,12 @@ function ingWords(word, e) { // 商品名の中で探す言葉（成分名と、
 const SUN_INFO = [ // 中身はアプリが書いた文（利用者の入力ではない）なので、そのままHTMLとして出す
   ['選び方', '<span class="nw">毎日の通勤・買い物なら</span><span class="nw">SPF20〜30・PA++〜+++、</span><span class="nw">外で長く過ごす日や海・山では</span><span class="nw">SPF50・PA++++が</span>目安です。'],
   ['種類の違い', '<span class="sun-k">' + [['ジェル', '軽くのびがよい'], ['クリーム', 'しっとりして保湿しやすい'], ['ミルク', '汗や水に強いものが多い'], ['スプレー', '髪や背中にも塗り直しやすい'], ['スティック', '手を汚さず塗り直せる'], ['パウダー', 'メイクの上から塗り直せる']].map(([a, b]) => `<i>${a}</i><span>${b}</span>`).join('') + '</span>'],
-  ['注意点', '少なめに塗ると効果が下がるので、決められた量をムラなく塗り、汗をかいたら2〜3時間ごとに塗り直しましょう。肌に合わないときは「紫外線吸収剤フリー（ノンケミカル）」を選ぶ方法もあります。', 'warn']];
+  ['ポイント', '少なめに塗ると効果が下がるので、決められた量をムラなく塗り、汗をかいたら2〜3時間ごとに塗り直しましょう。肌に合わないときは「紫外線吸収剤フリー（ノンケミカル）」を選ぶ方法もあります。', 'warn']];
 // クレンジングは種類で落とす力がちがうので、強い順に並べて出す
 const CL_INFO = rec => [
   ['種類の違い（落とす力が強い順）', '<span class="sun-k">' + [['オイル', 'いちばん強い。濃いメイク・ウォータープルーフ向け'], ['バーム', 'オイルに近い強さで、肌あたりがやわらか'], ['ジェル', '中くらい。オイルフリーはまつエクにも'], ['クリーム', '中くらい。うるおいを残しやすい'], ['ミルク', 'やさしい。薄いメイク・乾燥肌向け'], ['ウォーター', 'いちばん軽い。日焼け止めだけの日に']].map(([a, b]) => `<i>${a}</i><span>${b}</span>`).join('') + '</span>'],
   ['選び方', (rec ? `今のあなたには<span class="cl-rec">${esc(rec)}</span>が合っています。` : '') + 'メイクの濃さに合わせて、落とせるいちばんやさしい種類を選ぶと、肌の負担が少なくなります。'],
-  ['注意点', '乾いた手と顔で使い、こすらずなじませます。オイル・バームは少量の水で白くにごらせてから流すと、すすぎ残しが減ります。', 'warn']];
+  ['ポイント', '乾いた手と顔で使い、こすらずなじませます。オイル・バームは少量の水で白くにごらせてから流すと、すすぎ残しが減ります。', 'warn']];
 // 楽天で探すボタン：美容・コスメのジャンル（日焼け止めは「日焼け止め・UVケア」）の中だけを、レビューの多い順（s=5）で開く。服・傘・サプリなどは出さない
 const rakutenIngUrl = (w, sun) => 'https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(sun ? '日焼け止め' : w) + '/' + (sun ? '216492' : '100939') + '/?s=5&nitem=' + encodeURIComponent(sun ? 'サプリ 飲む ハイドロキノン' : 'サプリ 飲む');
 let ING_AVOID_CTX = [];
@@ -5634,6 +5636,11 @@ function hasAvoid(text, ks) {
   const t = fnorm(text); if (!t || !ks.length) return false;
   return ks.some(k => { let i = t.indexOf(k); while (i >= 0) { const after = t.slice(i + k.length, i + k.length + 4); if (!/^(ふり|free|無添加|不使用|ぜろ|0|無配合|なし|おふ|off)/i.test(after) && !/(無|のん|non)$/i.test(t.slice(Math.max(0, i - 3), i))) return true; /* fnorm でカタカナはひらがなになっている */ i = t.indexOf(k, i + 1); } return false; });
 }
+// 注意点：本当に気をつけることがないとき（刺激は少ない、など）は「ポイント」として出す
+function cautionOrPoint(t) {
+  const txt = String(t || ''), real = /避け|控え|中止|やめ|妊娠|授乳|医師|皮膚科|しみ|赤く|赤み|かぶれ|かゆ|刺激が(出|強)|乾燥しやすく|日光|紫外線|一緒に使わ|同時に使わ|濃度|量|頻度|少量から|夜だけ|朝だけ|割合|アレルギー/.test(txt) && !/^刺激は少ないとされる成分ですが、製品全体の処方によって合う・合わないがあります。?$/.test(txt);
+  return real ? `<div class="ing-b warn"><b>注意点</b><p>${esc(txt)}</p></div>` : `<div class="ing-b"><b>ポイント</b><p>${esc(txt)}</p></div>`;
+}
 async function openIngSheet(word) {
   const clQ = /^クレンジング｜/.test(word), washQ = /^洗顔｜/.test(word), wraw = String(word).replace(/^(洗顔|クレンジング)｜/, '');
   const w1 = wraw.replace(/（.*?）|\(.*?\)/g, '').trim();
@@ -5645,7 +5652,7 @@ async function openIngSheet(word) {
   setTimeout(() => { MODAL_REOPEN = () => openIngSheet(word); }, 0); // 商品を開いて戻ってきたら、このランキングを開き直す
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
     ${useNote && /回|朝|夜|だけ|毎/.test(useNote) ? `<p class="av-note">${esc(useNote)}</p>` : ''}
-    ${isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(wk[4]))}</p></div><div class="ing-b warn"><b>注意点</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(e.feature))}</p></div><div class="ing-b"><b>効果</b><p>${esc(briefTxt(e.purpose))}</p></div><div class="ing-b warn"><b>注意点</b><p>${esc(briefTxt(e.caution))}</p></div></div>
+    ${isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(wk[4]))}</p></div><div class="ing-b"><b>ポイント</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(e.feature))}</p></div><div class="ing-b"><b>効果</b><p>${esc(briefTxt(e.purpose))}</p></div>${cautionOrPoint(briefTxt(e.caution))}</div>
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
     <p class="small muted" style="margin-top:8px">${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p><div id="ing-partner"></div></div>`});
@@ -12211,7 +12218,7 @@ function careLinkHtml(text, G) {
   return esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join('');
 }
 // 「保湿」「化粧水」「美容液」を押したとき：その人に合う、その工程の成分を並べる（押すと成分の説明とおすすめ商品）
-const STEP_T = {moist:['保湿（乳液・クリーム）', 'うるおいを守る成分'], toner:['化粧水', '化粧水で選びたい成分'], serum:['美容液', '美容液で選びたい成分']};
+const STEP_T = {moist:['保湿（乳液・クリーム）', 'おすすめ成分'], toner:['化粧水', 'おすすめ成分'], serum:['美容液', 'おすすめ成分']};
 function openStepSheet(k) {
   const good = [], avoid = [];
   try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.filter(st => st.k === k).forEach(st => { st.good.forEach(v => { if (!good.includes(v)) good.push(v); }); st.avoid.forEach(v => { if (!avoid.includes(v)) avoid.push(v); }); })); } catch (e) { /* 何もしない */ }
@@ -13271,6 +13278,25 @@ let installEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (['settings', 'account'].includes(parseRoute().name)) render(); });
 window.addEventListener('appinstalled', () => { installEvt = null; toast('ホーム画面に追加しました'); });
 const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+
+// ===== iPhoneのホーム画面アプリで、上の余白（時計・電池の高さ）が0になる不具合への対策（iOS 26の不具合） =====
+// 余白が0なのに画面が時計の下まで広がっているときは、機種の画面の高さから目安の余白を入れる（中身が時計の後ろに透けて見えないように）
+(function satFix() {
+  const probe = () => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top);visibility:hidden;pointer-events:none'; document.body.appendChild(d); const h = d.getBoundingClientRect().height; d.remove(); return h; };
+  const est = () => { const H = Math.max(screen.height, screen.width); return H <= 736 ? 20 : H <= 812 ? 47 : H <= 844 ? 47 : H <= 852 ? 54 : H <= 896 ? 48 : H <= 932 ? 59 : 62; };
+  const run = () => {
+    try {
+      const ios = /iPhone|iPod/.test(navigator.userAgent), sa = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true, portrait = window.innerHeight > window.innerWidth;
+      if (!ios || !sa || !portrait) { document.documentElement.style.removeProperty('--sat'); return; }
+      if (probe() > 0) { document.documentElement.style.removeProperty('--sat'); return; }
+      if (Math.max(screen.height, screen.width) - window.innerHeight > 30) { document.documentElement.style.removeProperty('--sat'); return; } // 画面が時計の下から始まっているときは、余白はいらない
+      document.documentElement.style.setProperty('--sat', est() + 'px');
+    } catch (e) { /* 何もしない */ }
+  };
+  if (document.body) run(); else document.addEventListener('DOMContentLoaded', run);
+  window.addEventListener('resize', () => setTimeout(run, 100)); window.addEventListener('orientationchange', () => setTimeout(run, 300));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(run, 100); });
+})();
 if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).then(r => { try { r.update(); } catch (e) { /* 何もしない */ } }).catch(() => {}); }); // 開くたびに、裏の仕組み（sw.js）の更新も確認する
 function installCardHtml() {
   if (isStandalone()) return `<div class="card"><div class="card-h"><h2>アプリとして使う</h2><span class="chip green">追加済み</span></div><p class="small muted">ホーム画面から開いています。電波が弱い場所でも、記録の画面を開けます。</p></div>`;
