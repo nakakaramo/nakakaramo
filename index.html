@@ -14668,7 +14668,7 @@ function placeHomeTabInd() {
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full,.au-ov,.pm-ov')) return;
     const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
-    if (!tg.closest || (!tg.closest('.home-pane') && !blank) || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || (rn.name === 'my' && tg.closest('button,.btn,.m-sw')) || scrollsX(tg) || document.body.classList.contains('m-dragging')) return; // Myアイテムの行は、左スワイプで削除・長押しで並べ替えに使うので除く // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
+    if (!tg.closest || (!tg.closest('.home-pane') && !blank) || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage,#face3d-home,.t3-stage') || (rn.name === 'my' && tg.closest('button,.btn,.m-sw')) || scrollsX(tg) || document.body.classList.contains('m-dragging')) return; // Myアイテムの行は、左スワイプで削除・長押しで並べ替えに使うので除く // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
     pane = document.querySelector('.home-pane'); if (!pane) return;
     x0 = sx = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0; tot = 0;
   }, {passive:true});
