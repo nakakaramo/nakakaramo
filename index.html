@@ -4851,7 +4851,7 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard() {
   const st = state.settings;
-  swState = {acct:false, acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
+  swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
   openModal({title:'肌質診断', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
@@ -12666,10 +12666,10 @@ function syncAsk(row) {
 function syncPaint() { const b = document.getElementById('sync-card'); if (b) b.outerHTML = syncCardHtml(); }
 function syncCardHtml() {
   const on = true; // ログインしていれば、いつも自動でバックアップ
-  const status = !acct.user ? '<p class="small muted" style="margin:8px 0 0">使うには、先に<a href="#/plan">ログイン</a>してください（無料）。</p>'
+  const status = !acct.user ? '<button type="button" class="btn btn-primary btn-sm" style="margin-top:4px" data-action="acc-login">ログインしてバックアップする</button>'
     : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : '自動でバックアップします'}</p>` : '';
   return `<div class="card" id="sync-card"><div class="card-h"><h2>自動バックアップ</h2></div>
-    <p class="small muted" style="margin:0 0 10px">記録・化粧品・設定・写真を、あなたのアカウントに自動でバックアップしています。機種変更しても、ログインすれば続きから使えます。</p>
+    <p class="small muted" style="margin:0 0 10px">${acct.user ? '記録・化粧品・設定・写真を、あなたのアカウントに自動でバックアップしています。機種変更しても、ログインすれば続きから使えます。' : 'ログインしていないので、記録はこの端末の中だけにあり、バックアップされません。端末をなくしたり、アプリを消したりすると記録も消えます。ログイン（無料）すると、自動でバックアップされます。'}</p>
     ${acct.user ? `<p class="small" style="margin:0">バックアップ先：<b>${esc((acct.user.email || 'Googleのアカウント'))}</b></p>` : ''}${status}</div>`;
 }
 async function initCloud() {
@@ -12706,8 +12706,9 @@ async function initCloud() {
 }
 // ===== ログインの入口：ナカカラモはログイン（無料）してから使う（記録は自動でクラウドに保存される） =====
 // 利用規約・プライバシーなどは、ログインしなくても読める。電波がなくてログインの部品が読み込めないときは止めない
+const LOGIN_REQUIRED = false; // ログインしなくても使える（ログインしていないときは、バックアップされない）
 function gateNeeded() {
-  if (EMBED) return false;
+  if (!LOGIN_REQUIRED || EMBED) return false;
   let n = ''; try { n = parseRoute().name; } catch (e) { n = ''; }
   if (['terms', 'privacy', 'law'].includes(n)) return false;
   if (acct.user || acct.status === 'error') return false;
