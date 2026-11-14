@@ -275,6 +275,8 @@ label.btn{position:relative}
 .badge-verified{background:var(--green-s);color:var(--green-d);border:1px solid #CFE0D3}
 .badge-best{background:var(--green-d);color:#fff}
 .notice{background:var(--beige-s);border:1px solid #EADFCB;color:#6B5A40;border-radius:var(--radius-s);padding:12px 14px;font-size:13px;line-height:1.7;margin-bottom:16px}
+.card+.notice,.notice+.notice{margin-top:16px}.notice+.notice{margin-top:0}.notice .nt-h{display:block;margin-bottom:4px}
+.plan-table tr.pt-sec th{background:var(--surface2);color:var(--green-d);font-size:12.5px;font-weight:700;text-align:left;padding:8px 10px}.plan-table td:nth-child(2),.plan-table td:nth-child(3){text-align:center;white-space:nowrap}
 .notice.green{background:var(--green-p);border-color:#D9E7DB;color:var(--green-d)}
 .notice.warn{background:var(--warn-s);border-color:#EEDCB6;color:#7D5A1E}
 .notice.red{background:var(--danger-s);border-color:#EBCFC7;color:#8A3D2C}
@@ -2430,7 +2432,7 @@ html[data-theme="dark"] .cm-per,html[data-theme="dark"] .cm-today.rx{background:
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cm-per,:root:not([data-theme="light"]) .cm-today.rx{background:rgba(200,160,60,.14)}}
 .cm-how{margin:7px 0 0;font-size:13px;line-height:1.7;color:var(--ink2)}
 .cm-today{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:#EEF6F0;font-size:12.5px;line-height:1.65;color:var(--ink)}
-.cm-today i{display:inline-block;font-style:normal;font-size:10.5px;font-weight:700;color:var(--green-d);background:#fff;border-radius:999px;padding:1px 7px;margin-right:6px;vertical-align:1px}
+.cm-today i{display:table;font-style:normal;font-size:10.5px;font-weight:700;color:var(--green-d);background:#fff;border-radius:999px;padding:1px 8px;margin:0 0 4px}
 html[data-theme="dark"] .cm-today{background:rgba(90,150,110,.16)}html[data-theme="dark"] .cm-today i{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cm-today{background:rgba(90,150,110,.16)}:root:not([data-theme="light"]) .cm-today i{background:transparent;box-shadow:inset 0 0 0 1px currentColor}}
 .cm-ing{margin-top:10px}
@@ -2754,19 +2756,28 @@ function fillAds() {
 const PREMIUM_NAME = 'プレミアム';
 const NG_SYMS = ['赤み', 'かゆみ', 'ヒリヒリ', 'ニキビ', '乾燥', 'ブツブツ', '腫れ', 'その他']; // 肌に合わなかったときの症状
 const PREMIUM_READY = true; // 写真読み取り（AI）は関数「vision」で提供
-const PLAN_ROWS = [
-  ['肌の記録・基本のグラフ（30日まで）', '○', '○'],
-  ['化粧品・成分の管理、成分の注意点', '○', '○'],
+const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、ここも直す）。1列だけの行は見出し
+  ['どちらのプランでも使える'],
+  ['肌の記録（3Dの顔・ニキビの場所・肌の写真）', '○', '○'],
+  ['記録一覧・肌の調子カレンダー・週次レポート', '○', '○'],
+  ['肌の変化のグラフ（30日まで）', '○', '○'],
+  ['今日のおすすめケア（記録・天気・あなたの肌の学習から）', '○', '○'],
+  ['ケア管理（朝・夜の順番、おすすめ成分・控えたい成分）', '○', '○'],
+  ['Myアイテム（化粧品・塗り薬）の管理、バーコードで登録', '○', '○'],
+  ['成分の組み合わせチェック・成分辞典', '○', '○'],
   ['食事・運動・睡眠の記録', '○', '○'],
-  ['基本の週次レポート', '○', '○'],
-  ['おすすめケア', '○', '○'],
-  ['天気と肌の関係・生理周期の予告', '○', '○'],
-  ['受診用まとめ（医師に見せる記録の整理）', '○', '○'],
-  ['詳細な分析（商品と肌の比較・90日グラフ・生活習慣との比較など）', '—', '○'],
-  ['成分相性マップ（より詳しい成分の重なりの表示）', '—', '○'],
-  ['写真から読み取り（食事の栄養成分表示・化粧品の成分表示）', '—', '○'],
-  ['専門家（皮膚科専門医など）へのチャット相談', '—', '検討中'],
-  ['広告の表示', 'あり', 'なし']
+  ['天気（湿度・気温・紫外線）・生理周期の予告', '○', '○'],
+  ['受診用まとめ・記録のお知らせ', '○', '○'],
+  ['自動バックアップ（ログインした場合）', '○', '○'],
+  [`${PREMIUM_NAME}で増える`],
+  ['顔を撮って、肌を自動で記録（ガイド付きの撮影）', '—', '○'],
+  ['化粧品のパッケージ・成分表示を写真から読み取り', '—', '○'],
+  ['食事の写真・栄養成分表示から読み取り', '—', '○'],
+  ['AIによるケアの分析と、くわしい説明', '—', '○'],
+  ['今日の食事と肌に合わせた献立の提案', '—', '○'],
+  ['詳しいグラフ（90日・睡眠や食事と肌の比較・部位ごとの比較）', '—', '○'],
+  ['成分相性マップ（使っている物どうしの重なりを表で）', '—', '○'],
+  ['広告', '表示あり', 'なし']
 ];
 /* 有料機能の制限（true＝無料プランでは使えない）。利用者テストで全機能を試してもらう間は false にできます */
 const PREMIUM_LOCK = true;
@@ -13173,7 +13184,7 @@ async function pollSub() {
 }
 function planTable() {
   return `<div class="table-wrap"><table class="table plan-table"><thead><tr><th>機能</th><th>無料</th><th>${PREMIUM_NAME}</th></tr></thead><tbody>
-    ${PLAN_ROWS.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>`;
+    ${PLAN_ROWS.map(r => r.length === 1 ? `<tr class="pt-sec"><th colspan="3">${esc(r[0])}</th></tr>` : `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function priceText() {
   if (acct.price && acct.price.amount != null) return `月額 ${yen(acct.price.amount)}（税込）${CLOUD.testMode ? '・テスト用の仮の価格' : ''}`;
@@ -13189,7 +13200,7 @@ function viewPlan(query) {
   }
   let html = pageHead('プラン・アカウント', '有料プラン（プレミアム）の申し込み・管理と、アカウントの設定です。');
   let notes = ''; // アカウントの画面の中では、お知らせは下にまとめる
-  if (CLOUD.testMode) notes += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
+  if (CLOUD.testMode) notes += `<div class="notice warn"><b class="nt-h">現在はテスト中です。実際の請求は発生しません。</b>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
   notes += `<div class="notice green">ログインすると、肌の記録・化粧品・設定が、登録したメールアドレスのアカウントに自動でバックアップされます（機種変更しても戻せます）。写真もあなただけが見られる場所にバックアップされます。有料プランのカード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
   const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
     <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
