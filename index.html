@@ -573,6 +573,7 @@ label.btn{position:relative}
 details.set-fold>summary{font-size:16px;font-weight:700;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center}
 details.set-fold>summary::-webkit-details-marker{display:none}
 details.set-fold-solo{margin-top:16px;background:var(--surface)}
+.acc-item details.acc-open>summary{pointer-events:none}.acc-item details.acc-open>summary::after{display:none}.acc-item>.card>.card-h h2,.acc-item>details.acc-open>summary{display:none}.acc-item>.card>.card-h:not(:has(>:not(h2))){display:none}
 details.set-fold>summary::after{content:'›';font-size:18px;color:var(--muted);transition:transform .25s ease}
 details.set-fold[open]>summary::after{transform:rotate(90deg)}
 details.acc-cmp{margin-top:14px}
@@ -2246,6 +2247,7 @@ a.acc-me:active{transform:scale(.96)}
 /* 成分の組み合わせ：下の「›」の行 */
 .cb-sec{font-size:13px;font-weight:600;color:var(--muted);margin:18px 4px 8px}
 .cb-rows{padding:0;overflow:hidden}
+.acc-row.nt{grid-template-columns:1fr 12px}
 .cb-rows .acc-row{grid-template-columns:22px 1fr auto 12px;padding:15px 18px;transition:background-color .14s ease}
 .cb-rows .acc-row:active{background:var(--surface2);transform:none!important}
 .cb-rows .acc-row em{font-style:normal;font-size:12.5px;color:var(--muted)}
@@ -2513,7 +2515,7 @@ html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-the
       <div class="sn-copy">最小限で最大限を</div>
     </div>
     <nav id="side-nav"></nav>
-    <div class="sn-foot">データはこのブラウザ内に保存されます。「クラウドに保存」をオンにした場合だけ、写真以外をあなたのアカウントに保存します。</div>
+    <div class="sn-foot">データはこのブラウザ内に保存されます。ログインしている場合は、あなたのアカウントに自動でバックアップします。</div>
   </aside>
   <div id="page">
     <header class="topbar">
@@ -12669,7 +12671,7 @@ function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = true; el.onload = res; el.onerror = () => rej(new Error('load')); document.head.appendChild(el); });
 }
 function hasSavedLogin() { try { return !!localStorage.getItem(CLOUD.storageKey); } catch (e) { return false; } }
-function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'account') { const id = parseRoute().id; if (id === 'me' || id === 'settings' || id === 'privacy') render(); } else if (n === 'home') refreshAdvice(); }
+function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'account') { const id = parseRoute().id; if (id === 'me' || /^(settings|privacy|body)(\/|$)/.test(id)) render(); } else if (n === 'home') refreshAdvice(); }
 // ===== クラウド保存（ログインして「クラウドに保存する」をオンにした人だけ） =====
 // 記録・化粧品・設定をSupabaseに保存し、機種変更やブラウザのデータ削除のあとでも続きから使えるようにする
 // 写真（肌写真・化粧品の写真）はクラウドに送らない（この端末の中だけ）
@@ -13653,7 +13655,14 @@ document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint
 function viewAccount() {
   const sub = parseRoute().id;
   if (sub === 'me') return viewAccountMe().replace('</a>', '</a><div class="acc-thin">') + '</div>'; // 「← アカウント」は外に出す（戻るが2つにならないように）
-  if (['body', 'settings', 'privacy'].includes(sub)) return `<a class="back" href="#/account">← アカウント</a><div class="acc-page">${ACC_SECTIONS[sub].body()}</div>`;
+  // からだと肌・設定・プライバシー：開くと項目の名前だけを並べ、押すと右から、その項目のくわしいページが出る
+  const [sec, idx] = String(sub).split('/');
+  if (['body', 'settings', 'privacy'].includes(sec)) {
+    const items = accItems(sec);
+    if (idx != null && idx !== '') { const it = items[Number(idx)]; if (!it) { redirectTo('#/account/' + sec); return ''; }
+      return `<a class="back" href="#/account/${sec}">← ${esc(ACC_SECTIONS[sec].t)}</a><div class="acc-page acc-item">${it.html}</div>`; }
+    return `<a class="back" href="#/account">← アカウント</a><div class="acc-thin">${items.map((it, i) => `<a class="card acc-sec acc-link" href="#/account/${sec}/${i}"><span class="acc-row nt"><span><b>${esc(it.t)}</b></span><i>›</i></span></a>`).join('')}</div>`;
+  }
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
   return '<div class="acc-thin">' + accMeHtml() + ['body', 'settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
@@ -13672,6 +13681,17 @@ function widgetPreviewCard() {
   return `<div class="card"><div class="card-h"><h2>ウィジェット</h2><span class="small muted">アプリ版で使えます</span></div>
     <p class="small muted" style="margin:0 0 10px">スマホのアプリ版では、ホーム画面にこのような小さな表示を置けるようにする予定です（Web版では置けません）。押すと、その記録画面がすぐ開きます。写真やメモ、商品名は表示しません。</p>
     <div class="wg-row">${small}${medium}</div></div>`;
+}
+// からだと肌・設定・プライバシーの中身を、カードごとに分ける（名前はカードの見出し）
+function accItems(sec) {
+  const tpl = document.createElement('template'); tpl.innerHTML = ACC_SECTIONS[sec].body();
+  return [...tpl.content.children].map(el => {
+    const h = el.querySelector(':scope > .card-h h2, :scope > .card-h h3, :scope > summary, :scope > details > summary');
+    let t = h ? h.textContent.trim() : '';
+    if (!t) { const any = el.querySelector('h2,h3,b'); t = any ? any.textContent.trim() : '項目'; }
+    if (el.matches('details') || el.querySelector(':scope > details.set-fold')) { const d = el.matches('details') ? el : el.querySelector(':scope > details'); d.open = true; d.setAttribute('open', ''); d.classList.add('acc-open'); }
+    return {t:t.replace(/\s+/g, ' ').slice(0, 30), html:el.outerHTML};
+  });
 }
 function settingsEmbedHtml(kind) {
   const t = document.createElement('template'); t.innerHTML = embedView(viewSettings);
@@ -13695,7 +13715,7 @@ function settingsEmbedHtml(kind) {
   return (kind === 'privacy' ? P : kind === 'body' ? B : out).join('');
 }
 // 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
-function refreshAccPanel(k) { const r = parseRoute(); if (r.name === 'account' && r.id === k && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render(); }
+function refreshAccPanel(k) { const r = parseRoute(); if (r.name === 'account' && (r.id === k || r.id.startsWith(k + '/')) && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render(); }
 // ---------- 研究への協力（任意）：肌質ごとに「どの成分を使って、肌がどう変わったか」を統計にする ----------
 // 送るのは、肌質・年代と「成分ごとの肌の変化の平均」だけ。日付・メモ・写真・商品名・メールアドレス・位置は送らない
 const RESEARCH_MIN_LOGS = 14;
@@ -13841,7 +13861,7 @@ ${NATIVE_APP ? '' : '</template>'}
       <p class="small" style="margin:0">記録は<b>この端末のブラウザの中</b>に保存されます。ログインしている場合は、記録と写真をあなたのアカウントに自動でバックアップします。</p>
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <ul class="points small">
-        <li><b>食品のバーコード</b>：食事の写真にバーコードが写っていた場合、その数字（JANコード）だけを食品データベース（Open Food Facts）に送り、栄養成分表示を受け取ります。写真そのものは送りません。</li><li><b>天気</b>：天気の地域を選んだ場合だけ、緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。都道府県を選んだときは県庁所在地の位置、「現在地」を選んで位置情報を許可したときは、約100mに丸めた今いる場所の位置です。現在地のときは、地名を表示するために同じ位置を地名の確認サービス（BigDataCloud）にも送ります。記録やアカウントの情報は送りません。位置はこの端末の中に保存します。</li><li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
+        <li><b>食品のバーコード</b>：食事の写真にバーコードが写っていた場合、その数字（JANコード）だけを食品データベース（Open Food Facts）に送り、栄養成分表示を受け取ります。写真そのものは送りません。</li><li><b>天気</b>：天気の地域を選んだ場合だけ、緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。都道府県を選んだときは県庁所在地の位置、「現在地」を選んで位置情報を許可したときは、約100mに丸めた今いる場所の位置です。現在地のときは、地名を表示するために同じ位置を地名の確認サービス（BigDataCloud）にも送ります。記録やアカウントの情報は送りません。位置はこの端末の中に保存します。</li><li><b>保存場所</b>：データは<b>このブラウザの中</b>（localStorage）に保存されます。ログインしている場合は、記録・Myアイテム・設定と写真を、あなたのアカウント（Supabase・東京）に自動でバックアップします。本人以外は読めません。</li>
         <li><b>肌写真</b>：撮った写真は肌の記録と一緒にこの端末に保存し、ログインしている場合だけ、本人だけが読み書きできる保存場所（Supabase Storage・東京）にバックアップします。アカウントを削除すると一緒に削除します。</li>
         <li><b>お知らせ（通知）</b>：設定でオンにした場合だけ、通知の宛先（ブラウザが作る送り先の情報）、お知らせの時刻、最後に肌を記録した日、化粧品の名前と使用期限の目安の日付をサーバーに保存し、決めた時刻にお知らせを送ります。記録の中身は送りません。オフにすると削除します。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
@@ -14784,7 +14804,7 @@ function render() {
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
-  setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'account' && /^(body|settings|privacy)\/\d+$/.test(r.id) ? ((accItems(r.id.split('/')[0])[Number(r.id.split('/')[1])] || {}).t || '') : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
