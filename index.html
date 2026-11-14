@@ -5655,7 +5655,7 @@ async function openIngSheet(word) {
     ${isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(wk[4]))}</p></div><div class="ing-b"><b>ポイント</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(e.feature))}</p></div><div class="ing-b"><b>効果</b><p>${esc(briefTxt(e.purpose))}</p></div>${cautionOrPoint(briefTxt(e.caution))}</div>
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p><div id="ing-partner"></div></div>`});
+    <p class="small muted" style="margin-top:8px">${ingAvoidKeys().length ? `${(() => { const L = ING_AVOID_CTX.filter(v => ingEntryOf(chipText(v)) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).map(v => { const why = (String(v).match(/[（(](.*?)[）)]/) || [])[1]; return esc(chipText(v)) + (why ? `（${esc(why)}）` : ''); }); return L.length ? `今のあなたの肌・使っている物・薬から、${L.join('、')}が入った商品は省いています。` : '肌に合わなかった成分が入った商品は省いています。'; })()}` : ''}</p><div id="ing-partner"></div></div>`});
   const WASH_N = /洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|パウダー|wash/i, WASH_NG = /ボディ|シャンプー|ハンド|食器|洗濯|ヘア|メイク落とし|クレンジング(オイル|バーム|ジェル|ミルク|ウォーター)|拭き取り|詰め?替/i;
   const keys = wk ? [] : ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []);
   const hit = isCl ? x => { const n = cleanShopName(x.name) || x.name; return /クレンジング|メイク落とし|cleansing/i.test(n) && !/ボディ|シャンプー|頭皮|ヘア|スカルプ|洗顔フォーム|詰め?替/i.test(n) && shopSingle(x, w0); }
@@ -5795,7 +5795,13 @@ const WASH_KIND = [
   [/./, 'アミノ酸', ['アミノ酸 洗顔', 'アミノ酸 洗顔フォーム', 'アミノ酸系 洗顔料 弱酸性'], /アミノ酸|ココイル|グルタミン|ラウロイル(メチル)?(アラニン|タウリン)/, 'ココイルグルタミン酸Naなど、アミノ酸からできた洗浄成分。肌と同じ弱酸性で、汚れは落としながら、うるおいを守る皮脂やセラミドを取りすぎないのが特長です。乾燥肌・敏感肌にも向いています。'],
 ];
 function washKindOf(w) { return WASH_KIND.find(([re]) => re.test(w)); }
-document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet][data-avoid]'); if (b) { try { ING_AVOID_CTX = JSON.parse(b.dataset.avoid) || []; } catch (er) { ING_AVOID_CTX = []; } } }, true); // ケア管理から開くときは、その手順の「控えたい」を使う
+// 控えたい成分を決める：その手順から開いたときはその手順の「控えたい」、ほかの場所から開いたときは、今の肌の状態・天気・使っている薬・組み合わせをまとめて考えたケア管理の「控えたい」全部
+function holisticAvoid() {
+  const out = [];
+  try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => st.avoid.forEach(v => { if (/と.+の併用|併用$/.test(v) && !/（/.test(v)) return; if (!out.includes(v)) out.push(v); }))); } catch (e) { /* 何もしない */ }
+  return out;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet]'); if (!b) return; if (b.hasAttribute('data-avoid')) { try { ING_AVOID_CTX = JSON.parse(b.dataset.avoid) || []; } catch (er) { ING_AVOID_CTX = []; } } else ING_AVOID_CTX = holisticAvoid(); }, true); // ケア管理から開くときは、その手順の「控えたい」を使う // ケア管理から開くときは、その手順の「控えたい」を使う
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet]'); if (!b) return; hapticTick(); openIngSheet(b.dataset.ingsheet); });
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-ingfind]'); if (!b) return;
@@ -13289,7 +13295,6 @@ const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: stan
       const ios = /iPhone|iPod/.test(navigator.userAgent), sa = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true, portrait = window.innerHeight > window.innerWidth;
       if (!ios || !sa || !portrait) { document.documentElement.style.removeProperty('--sat'); return; }
       if (probe() > 0) { document.documentElement.style.removeProperty('--sat'); return; }
-      if (Math.max(screen.height, screen.width) - window.innerHeight > 30) { document.documentElement.style.removeProperty('--sat'); return; } // 画面が時計の下から始まっているときは、余白はいらない
       document.documentElement.style.setProperty('--sat', est() + 'px');
     } catch (e) { /* 何もしない */ }
   };
