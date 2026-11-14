@@ -108,6 +108,8 @@ html{-webkit-text-size-adjust:100%;background:var(--bg)}
 /* いちばん下・勢いでいちばん上に着いたときは、iPhoneのふつうの跳ね返り（なめらか）をそのまま使う。
    上で下に引っぱったときだけ、アプリの「引っぱって更新」が引き受ける（そのときは、ふつうの跳ね返りを止める） */
 html,body{overscroll-behavior-y:auto}
+/* スクロールしたときに右端に出る縦の線（位置の目印）は出さない。パソコン（マウス）では、操作しやすいように残す */
+@media (hover:none),(pointer:coarse){html,body{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}}
 #page{position:relative}
 #page{will-change:auto}
 .ptr{position:absolute;left:50%;bottom:calc(100% + 16px);width:30px;height:30px;margin-left:-15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-d);opacity:0;pointer-events:none;transform-origin:50% 50%}
