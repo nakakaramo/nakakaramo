@@ -1,5 +1,5 @@
 {
-"updated": "2026-11-13",
+"updated": "2026-11-14",
 "items": [
 {
 "brand": "EKATO.",
@@ -1033,6 +1033,39 @@
 "image": "https://www22.a8.net/svt/bgt?aid=261113185278&wid=001&eno=01&mid=s00000027456001025000&mc=1",
 "program": "s00000027456001",
 "ingredients": "レチノール誘導体",
+"partial": true
+},
+{
+"brand": "ホメオバウ",
+"name": "高濃度フラーレン美容液（お試し）",
+"category": "美容液",
+"url": "https://px.a8.net/svt/ejp?a8mat=4BGK81+56Y4QA+5R9Y+609HT",
+"pixel": "https://www17.a8.net/0.gif?a8mat=4BGK81+56Y4QA+5R9Y+609HT",
+"image": "https://www24.a8.net/svt/bgt?aid=261113185314&wid=001&eno=01&mid=s00000026863001009000&mc=1",
+"program": "s00000026863001",
+"ingredients": "フラーレン",
+"partial": true
+},
+{
+"brand": "HOLO BELL",
+"name": "サンブロック保湿BB（メンズ）",
+"category": "日焼け止め",
+"url": "https://px.a8.net/svt/ejp?a8mat=4BGK81+679KMQ+4CRM+HWAG1",
+"pixel": "https://www19.a8.net/0.gif?a8mat=4BGK81+679KMQ+4CRM+HWAG1",
+"image": "https://www23.a8.net/svt/bgt?aid=261113185375&wid=001&eno=01&mid=s00000020317003006000&mc=1",
+"program": "s00000020317003",
+"ingredients": "",
+"partial": true
+},
+{
+"brand": "まるごと椿石鹸",
+"name": "まるごと椿石鹸（長崎五島産椿油）",
+"category": "洗顔",
+"url": "https://px.a8.net/svt/ejp?a8mat=4BGK81+4M3YK2+2MY2+5YJRL",
+"pixel": "https://www19.a8.net/0.gif?a8mat=4BGK81+4M3YK2+2MY2+5YJRL",
+"image": "https://www26.a8.net/svt/bgt?aid=261113185279&wid=001&eno=01&mid=s00000012305001001000&mc=1",
+"program": "s00000012305001",
+"ingredients": "ツバキ種子油",
 "partial": true
 }
 ]
