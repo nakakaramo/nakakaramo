@@ -4923,7 +4923,9 @@ function openSupport() {
   const onPop = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); if (!ov._closing) { ov._closing = true; ov.remove(); } }; // 戻る操作（iPhoneのスワイプ・Androidの戻る）で閉じたとき：iPhoneの動きにまかせて、すぐ消す
   const dropHist = () => { if (!histOn) return; histOn = false; window.removeEventListener('popstate', onPop); history.back(); }; // ボタン・アプリ内のスワイプで閉じたとき：足した履歴を戻しておく（同じアドレスなので画面は変わらない）
   try { history.pushState({spOv:1}, '', location.href); histOn = true; window.addEventListener('popstate', onPop); } catch (e) { /* 何もしない */ }
-  const close = () => { if (ov._closing) return; ov._closing = true; ov.style.transition = ''; ov.style.transform = ''; ov.classList.add('out'); dropHist(); setTimeout(() => ov.remove(), 560); };
+  // 戻るボタンで閉じるとき：ほかのページ（プライバシーなど）から戻るときと同じ動き・速さにする（前の画面が左から出てくる）
+  const close = () => { if (ov._closing) return; ov._closing = true; ov.remove(); dropHist();
+    const m = document.getElementById('main'); if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); void m.offsetWidth; m.classList.add('pg-pop'); setTimeout(() => m.classList.remove('pg-pop'), 600); } };
   const head = `<div class="au-head"><button type="button" class="au-back sp-backbtn" data-sp="close" aria-label="戻る"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>お問い合わせ</h2><span></span></div>`;
   if (!premium) {
     ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
@@ -7232,7 +7234,7 @@ async function amedasNow(lat, lon) {
     const near = Object.keys(m).filter(c => tb[c] && ok(m[c], 'temp')).map(c => ({c, d:km(tb[c])})).sort((a, b) => a.d - b.d);
     const tSt = near[0], hSt = near.find(x => ok(m[x.c], 'humidity')); // 湿度は、測っている観測所の中でいちばん近いところ
     if (!tSt || tSt.d > 35) return null;
-    const out = {temp:m[tSt.c].temp[0], tStation:tb[tSt.c][3], hum:hSt && hSt.d <= 45 ? m[hSt.c].humidity[0] : null, hStation:hSt && hSt.d <= 45 ? tb[hSt.c][3] : '', at:AMD.mapKey};
+    const out = {temp:m[tSt.c].temp[0], tStation:tb[tSt.c][3], hum:hSt && hSt.d <= 20 ? m[hSt.c].humidity[0] : null, hStation:hSt && hSt.d <= 20 ? tb[hSt.c][3] : '', at:AMD.mapKey};
     // 今日これまでの最高・最低気温（3時間ごとのファイル）
     try {
       const day = AMD.mapKey.slice(0, 8), hh = Number(AMD.mapKey.slice(8, 10)), blocks = [];
@@ -9732,7 +9734,7 @@ async function openGuideCam(done, o = {}) {
   const prev = o.noGhost ? null : photoList().slice(-1)[0], root = document.createElement('div'); // 記録を編集するときは、前回の写真を重ねない
   root.className = 'gcam'; root.innerHTML = `<div class="gcam-view"><video playsinline autoplay muted></video>${prev ? `<img class="gcam-ghost" src="${safeImg(prev.photo)}" alt="">` : ''}
     <svg class="gcam-guide" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><mask id="gm"><rect width="300" height="400" fill="#fff"/><ellipse cx="150" cy="185" rx="78" ry="105" fill="#000"/></mask></defs><rect width="300" height="400" fill="rgba(0,0,0,.35)" mask="url(#gm)"/><ellipse cx="150" cy="185" rx="78" ry="105" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 5"/></svg>
-    <p class="gcam-msg">顔を枠に合わせてください${prev ? `<br><small>うすく見えているのは前回（${esc(fmtMD(prev.date))}）の写真です</small>` : ''}</p></div>
+    <p class="gcam-msg">明るい場所で、顔を枠に合わせてください${prev ? `<br><small>うすく見えているのは前回（${esc(fmtMD(prev.date))}）の写真です</small>` : ''}</p></div>
     <div class="gcam-bar">${prev ? '<button type="button" class="gcam-sm" data-g="ghost">前回の写真：表示</button>' : '<span></span>'}<button type="button" class="gcam-shot" data-g="shot" aria-label="撮る"></button><button type="button" class="gcam-sm" data-g="close">やめる</button></div>`;
   document.body.appendChild(root); lockScroll();
   const video = root.querySelector('video'); let stream = null;
@@ -9900,7 +9902,7 @@ function openLogForm(id) {
       <p class="fp-sumline" id="fp-sumline"></p>
       <p class="fp-gest">1本の指で回す／2本の指で広げると拡大。</p>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
-    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">撮ると、今日の肌を自動で入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
+    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">明るい場所で撮ると、今日の肌を自動で入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
