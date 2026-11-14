@@ -1332,7 +1332,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pop-item.ir.ir-pr{grid-template-columns:64px minmax(0,1fr) 12px;border-color:#CFE0D3;background:#F7FBF8}.ir-brand{font-size:11px;color:var(--muted);font-weight:600}.ir-note{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
 .ing-h .pr-tag{vertical-align:2px}
-.ir-t em{font-style:normal;font-size:16px;font-weight:800;color:var(--ink)}
+.ir-t em{font-style:normal;font-size:16px;font-weight:800;color:var(--ink)}.ir-t em.ir-np{font-size:12px;font-weight:600;color:var(--muted)}
 .ing-amz.main{background:#BF0000;border-color:#BF0000;color:#fff}.ing-amz.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}
 .ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz>span:not(.pr-tag){flex:1;min-width:0}.ing-amz .pr-tag{flex:none;margin:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
@@ -5575,7 +5575,7 @@ function viewShop() {
       ${x.image ? extImgHtml(x.image, 'shop-img') : ''}
       <div class="shop-meta">${x.a8 ? '<span class="chip"><span class="pr-tag" style="margin:0 4px 0 0">PR</span>提携ブランド</span>' : ''}${x.fromIng ? `<span class="chip green">${esc(x.fromIng)}${x.a8 ? '入り' : `の人気${x.ingRank ? ` ${x.ingRank}位` : ''}`}</span>` : ''}${x.rank ? `<span class="chip">楽天ランキング${esc(String(x.rank))}位</span>` : ''}${x.reviews ? `<span class="chip">レビュー${Number(x.reviews).toLocaleString()}件</span>` : ''}</div>
       <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>${x.a8 && x.brand ? `<div class="small muted">${esc(x.brand)}</div>` : ''}${x.a8 && /^https:\/\//.test(x.pixel || '') ? `<img src="${esc(x.pixel)}" width="1" height="1" alt="" style="position:absolute;opacity:0">` : ''}
-      ${x.price ? `<div class="shop-price">¥${Number(x.price).toLocaleString()}<small>税込・${esc(x.site || '楽天市場')}</small></div>` : ''}
+      ${x.price ? `<div class="shop-price">¥${Number(x.price).toLocaleString()}<small>税込・${esc(x.site || '楽天市場')}</small></div>` : x.a8 ? '<p class="small muted" style="margin:4px 0 0">価格はお店で確認</p>' : ''}
     </div>
     <div class="card mt"><div class="card-h"><h2>購入サイト</h2></div>
       ${L.main ? btn(L.main, true) : ''}
@@ -5662,7 +5662,7 @@ async function openIngSheet(word) {
     const day = Number(todayStr().replace(/-/g, '')) || 0, rk = x => (x.partial ? 1000 : 0) + ((P.indexOf(x) * 7919 + day) % 997);
     got.sort((a, b) => rk(a) - rk(b)); got.splice(4);
     if (!got.length) return;
-    box.innerHTML = `<h3 class="ing-h">提携ブランド<span class="pr-tag" style="margin-left:6px">PR</span></h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`;
+    box.innerHTML = `<h3 class="ing-h">提携ブランド<span class="pr-tag" style="margin-left:6px">PR</span></h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : '<em class="ir-np">価格はお店で確認</em>'}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`;
     box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); sheetGo('#/shop'); };
   });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
