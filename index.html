@@ -1712,7 +1712,7 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .mb-empty{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.8}
 /* 今日使った化粧品・塗り薬：押すと、写真とチェックマークが一緒にへこむ */
 .used-tile{transition:transform .15s ease}
-.used-tile:active{transform:scale(.95)}
+.used-tile:active,.used-tile:active .thumb{transform:none!important;opacity:1!important} /* 使ったアイテムは押しても沈まない。選ぶと枠だけ緑になる */
 /* 下のバー：指でなぞっても、バーごと画面が動かないようにする */
 .bottom-nav{touch-action:none;overscroll-behavior:none}
 .food-pick.food-add-row{display:flex;justify-content:flex-end}
@@ -5645,9 +5645,8 @@ async function openIngSheet(word) {
     ${useNote && /回|朝|夜|だけ|毎/.test(useNote) ? `<p class="av-note">${esc(useNote)}</p>` : ''}
     ${isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(wk[4]))}</p></div><div class="ing-b warn"><b>注意点</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl"><div class="ing-b"><b>特徴</b><p>${esc(briefTxt(e.feature))}</p></div><div class="ing-b"><b>効果</b><p>${esc(briefTxt(e.purpose))}</p></div><div class="ing-b warn"><b>注意点</b><p>${esc(briefTxt(e.caution))}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
-    <div id="ing-partner"></div>
     <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">売れている順に、手ごろな価格（プチプラ）の物を少し優先して並べています。押すと、商品のくわしい情報と購入サイトが見られます。${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p></div>`});
+    <p class="small muted" style="margin-top:8px">${ingAvoidKeys().length ? `控えたい成分（${esc(ING_AVOID_CTX.map(chipText).filter(v => ingEntryOf(v) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).join('・') || '合わなかった成分')}）が入っている商品は省いています。` : ''}</p><div id="ing-partner"></div></div>`});
   const WASH_N = /洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|パウダー|wash/i, WASH_NG = /ボディ|シャンプー|ハンド|食器|洗濯|ヘア|メイク落とし|クレンジング(オイル|バーム|ジェル|ミルク|ウォーター)|拭き取り|詰め?替/i;
   const keys = wk ? [] : ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []);
   const hit = isCl ? x => { const n = cleanShopName(x.name) || x.name; return /クレンジング|メイク落とし|cleansing/i.test(n) && !/ボディ|シャンプー|頭皮|ヘア|スカルプ|洗顔フォーム|詰め?替/i.test(n) && shopSingle(x, w0); }
@@ -5656,13 +5655,14 @@ async function openIngSheet(word) {
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
   partnersLoad().then(P => {
     const box = document.getElementById('ing-partner'); if (!box) return;
-    const av = ingAvoidKeys(), got = P.filter(x => { if (isCl) return /クレンジング|メイク落とし/.test(x.category + x.name) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); if (wk) return /洗顔/.test(x.category || '') && wk[3].test(x.ingredients || '') && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); const t = fnorm(((x.ingredients || '') + ' ' + x.name).replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')); return keys.some(k => t.includes(k)) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
+    const av = ingAvoidKeys(), got = P.filter(x => { if (isCl) return /クレンジング|メイク落とし/.test(x.category + x.name) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); if (wk) return /洗顔/.test(x.category || '') && wk[3].test(x.ingredients || '') && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); // 主成分として入っている物だけ：商品名に入っているか、全成分の前のほう（多く入っている順の8番目まで）にあるか。ブランドが公表している主な成分だけの物は、その中にあるか
+      const fx = v => fnorm(String(v || '').replace(/パルミチン酸レチノール|ビタミンA油/g, /パルミチン酸|レチニル/.test(w0) ? '$&' : 'ビタミンA')), ingL = String(x.ingredients || '').split(/[、,，]/).map(fx).filter(Boolean), main = x.partial ? ingL : ingL.slice(0, 8), nm = fx(x.name);
+      return keys.some(k => nm.includes(k) || main.some(i => i.includes(k))) && !hasAvoid((x.ingredients || '') + ' ' + x.name, av); });
     // 全成分がわかっている商品を先に。同じ条件の中では日ごとに順番を入れ替える（いつも同じ商品だけにならないように）
     const day = Number(todayStr().replace(/-/g, '')) || 0, rk = x => (x.partial ? 1000 : 0) + ((P.indexOf(x) * 7919 + day) % 997);
     got.sort((a, b) => rk(a) - rk(b)); got.splice(4);
     if (!got.length) return;
-    box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
-      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。${isCl ? '提携ブランドのクレンジングを出しています。' : wk ? `全成分に${esc(wk[1])}系の成分が入っている洗顔料を出しています。` : `全成分（または、ブランドが公表している主な成分）に「${esc(w0)}」が入っている商品を出しています。`}買う前に、お店のページで全成分を確かめてください。</p>`;
+    box.innerHTML = `<h3 class="ing-h">提携ブランド<span class="pr-tag" style="margin-left:6px">PR</span></h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}${x.partial ? '<small class="ir-note">主な成分から選んでいます</small>' : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`;
     box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); sheetGo('#/shop'); };
   });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
@@ -12107,7 +12107,7 @@ function personalAnalysis() {
   if (cyc) week.splice(Math.min(2, week.length), 0, '生理前：新しい物は試さず、保湿を多めに');
   const stage = !d && !L28.length ? 'none' : L28.length < 3 ? 'start' : long ? 'long' : L7.length >= 4 ? 'week' : 'daily';
   if (ph.length < 2) ask.push({t:'写真で変化を比べられます', act:'new-log', b:'写真つきで記録'});
-  if (missing.length) week.splice(1, 0, `${missing[0].n}を毎日使う（プチプラで十分）`);
+  if (missing.length) week.splice(1, 0, `${missing[0].n}を毎日使う`);
   others.forEach(o => { o.care = (pcCareFor(o.k, ctx)[0] || ''); });
   // はじめの基本セット：商品をまだ登録していない人に、肌質に合わせた「まずはこれだけ」を出す（どれもプチプラで十分）
   const starter = !inUse.length ? [
@@ -12134,14 +12134,14 @@ function viewMycare() {
       <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚から、最初と最新を並べています。数字は自分で直した記録の内容です。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : '<p class="small muted pc-own">買うならプチプラで十分です。</p>'}</div>` : ''}
+      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
   if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
   if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みはありません。記録を続けてください。</p></div>`;
-  if (A.starter && A.starter.length) h += `<h2 class="pc-sec">まずはこれだけ（はじめの基本セット）</h2><div class="card pc-items">${A.starter.map(x => `<button type="button" class="pc-it pc-st" data-ingsheet="${esc(x.q)}"><span class="pc-v keep">${esc(x.n)}</span><span><b>${esc(x.d)}</b><small>押すと人気の商品</small></span><i>›</i></button>`).join('')}<p class="small muted" style="margin:6px 16px 10px">プチプラで十分です。合う物はMyアイテムに登録を。</p></div>`;
+  if (A.starter && A.starter.length) h += `<h2 class="pc-sec">まずはこれだけ（はじめの基本セット）</h2><div class="card pc-items">${A.starter.map(x => `<button type="button" class="pc-it pc-st" data-ingsheet="${esc(x.q)}"><span class="pc-v keep">${esc(x.n)}</span><span><b>${esc(x.d)}</b><small>押すと人気の商品</small></span><i>›</i></button>`).join('')}<p class="small muted" style="margin:6px 16px 10px">合う物はMyアイテムに登録を。</p></div>`;
   if (A.items.length) {
     const V = {keep:['続ける', 'keep'], review:['見直す', 'review'], cut:['減らせる', 'cut']};
-    h += `<h2 class="pc-sec">使っている物</h2><div class="card pc-items">${(A.missing || []).map(x => `<div class="pc-it"><span class="pc-v cut">足りない</span><span><b>${esc(x.n)}</b><small>登録されていません。${esc(x.why)}。プチプラで十分です</small></span></div>`).join('')}${['review', 'cut', 'keep'].flatMap(v => A.items.filter(i => i.v === v)).map(i => `<a class="pc-it" href="#/my/${encodeURIComponent(i.x.p.id)}"><span class="pc-v ${V[i.v][1]}">${V[i.v][0]}</span><span><b>${esc(truncate(i.x.p.name, 22))}</b><small>${esc(i.note)}</small></span></a>`).join('')}</div>`;
+    h += `<h2 class="pc-sec">使っている物</h2><div class="card pc-items">${(A.missing || []).map(x => `<div class="pc-it"><span class="pc-v cut">足りない</span><span><b>${esc(x.n)}</b><small>登録されていません。${esc(x.why)}</small></span></div>`).join('')}${['review', 'cut', 'keep'].flatMap(v => A.items.filter(i => i.v === v)).map(i => `<a class="pc-it" href="#/my/${encodeURIComponent(i.x.p.id)}"><span class="pc-v ${V[i.v][1]}">${V[i.v][0]}</span><span><b>${esc(truncate(i.x.p.name, 22))}</b><small>${esc(i.note)}</small></span></a>`).join('')}</div>`;
   }
   // 生活
   const L = A.life, life = [];
