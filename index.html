@@ -11802,7 +11802,7 @@ function face3dSaveView(nextKey) {
   try { if (!st.lost) { st.renderer.render(st.scene, st.cam); FACE3D.snap = FACE3D.snap || {}; FACE3D.snap[st.viewKey] = st.renderer.domElement.toDataURL('image/png'); } } catch (e) { /* 何もしない */ }
   if (!st.auto) FACE3D.seen[st.viewKey] = true;
   // 最初の1周の途中で別のタブに移ったときも、戻ってきたら途中から動きを続ける
-  FACE3D.view[st.viewKey] = st.auto ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z};
+  FACE3D.view[st.viewKey] = st.auto ? {yaw:st.yaw, pitch:st.pitch, z:st.cam.position.z, auto:true, phase:st.phase, t:Date.now()} : {yaw:st.target ? st.target.yaw : st.yaw, pitch:st.target ? st.target.pitch : st.pitch, z:st.zoomT || st.cam.position.z, t:Date.now()};
 }
 // ホームの今日の記録：3Dの頭のてっぺんが、画面のどの高さに描かれるかを計算して、左の「ニキビ」の上をそこにそろえる
 function t3AlignTop(st, cv) {
@@ -11863,7 +11863,9 @@ async function drawFace3d(opts) {
   group.position.y = 0.4; scene.add(group);
   // 自動で左右に回る動きは、アプリを開いて最初の1回だけ（画面を切り替えるたびには動かさない）。前に見ていた向きも覚えておく
   FACE3D.seen = FACE3D.seen || {}; FACE3D.view = FACE3D.view || {};
-  const vk = opts.canvas, firstTime = !FACE3D.seen[vk], pv = FACE3D.view[vk];
+  const vk = opts.canvas, firstTime = !FACE3D.seen[vk];
+  // ほかの画面に3秒以上いてから戻ってきたときは、顔を正面に戻す（すぐ戻ったとき・同じ画面で日にちを変えたときは、向きをそのままにする）
+  let pv = FACE3D.view[vk]; if (pv && !pv.auto && pv.t && Date.now() - pv.t >= 3000) { delete FACE3D.view[vk]; pv = null; }
   const st = FACE3D.st = {gridInfo, renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.34, 14, 12), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
     yaw:pv ? pv.yaw : 0, pitch:pv ? pv.pitch : 0.05, phase:pv && pv.auto ? pv.phase : 0, auto:opts.auto !== false && (firstTime || !!(pv && pv.auto)), dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null, viewKey:vk, born:performance.now()};
   if (pv && pv.z && !opts.full) { cam.position.z = pv.z; }
@@ -14823,7 +14825,7 @@ function render() {
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { face3dSaveView(); FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
