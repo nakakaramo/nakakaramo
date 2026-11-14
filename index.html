@@ -570,6 +570,7 @@ label.btn{position:relative}
 .set-sub details.fold{margin-top:8px!important}
 details.set-fold>summary{font-size:16px;font-weight:700;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center}
 details.set-fold>summary::-webkit-details-marker{display:none}
+details.set-fold-solo{margin-top:16px;background:var(--surface)}
 details.set-fold>summary::after{content:'›';font-size:18px;color:var(--muted);transition:transform .25s ease}
 details.set-fold[open]>summary::after{transform:rotate(90deg)}
 details.acc-cmp{margin-top:14px}
@@ -1262,7 +1263,9 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .ld-life{margin-top:12px}
-.sns-links{display:flex;flex-wrap:wrap;gap:6px 12px}
+.rs-box{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--surface2,#F6F3EE)}.rs-h{display:block;font-size:13px;margin-bottom:4px;color:var(--ink2)}.rs-h.ok{color:var(--green-d)}.rs-h.ng{color:#B5533C}.rs-box ul{margin:0;padding-left:1.1em;font-size:13.5px;line-height:1.65}.rs-box li+li{margin-top:2px}
+.sns-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px}
+.sns-ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--surface2,#F4F1EC);color:var(--ink)!important;text-decoration:none!important;transition:transform .15s ease}.sns-ic:active{transform:scale(.92)}
 .ng-list{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .ng-h{display:block;font-size:13.5px;color:#B4562F;margin-bottom:6px}
 .ng-row{padding:8px 10px;border-radius:10px;background:#FBF1EC;margin-bottom:6px}
@@ -4402,13 +4405,12 @@ function openLifeGoal() {
     ${field('必要な睡眠時間', `<select class="select" name="sleepNeed">${opts.map(m => `<option value="${m}" ${m === (st.sleepNeed || 420) ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>`, {name:'sleepNeed', hint:'大人はおよそ7時間前後が目安です（厚生労働省「健康づくりのための睡眠ガイド2023」）'})}
     ${field('身長（cm）', `<input class="input" name="height" inputmode="decimal" value="${st.height || ''}" placeholder="例：160">`, {name:'height', hint:'このブラウザ内にだけ保存されます'})}
     ${field('体重（kg）', `<input class="input" name="weight" inputmode="decimal" value="${st.weight || ''}" placeholder="例：55">`, {name:'weight', hint:'運動の消費カロリーの計算に使います。空欄なら55kgとして計算します。このブラウザ内にだけ保存されます'})}
-    ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal || Math.round(st.weight || 55)}">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。体重を入れると「体重×1g」が自動で入ります（自分で変えることもできます）'})}
+    ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal && st.proteinGoal !== Math.round(st.weight || 55) ? st.proteinGoal : ''}" placeholder="例：${Math.round(st.weight || 55)}">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。空欄なら「体重×1g」を目標にします（自分で決めることもできます）'})}
   </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="goal-form" class="btn btn-primary">保存する</button>`});
   // 体重を入れると、たんぱく質の目標に「体重×1g」を自動で入れる（自分で変えたあとは変えない）
   const f = $('#goal-form'), pg = f.elements.proteinGoal, auto = () => Math.round(num(toHalf(f.elements.weight.value)) || 55);
-  let touched = !!st.proteinGoal && st.proteinGoal !== Math.round(st.weight || 55);
-  pg.addEventListener('input', () => { touched = pg.value.trim() !== '' && Number(toHalf(pg.value)) !== auto(); });
-  f.elements.weight.addEventListener('input', () => { if (!touched) pg.value = auto(); });
+  // 空欄のときは、薄い「例：」の数字だけ体重に合わせて変える（体重と同じ数字なら、自動のままにする）
+  f.elements.weight.addEventListener('input', () => { pg.placeholder = `例：${auto()}`; });
 }
 // ---------- ショートカット（ホーム）：好きな6つを選べる ----------
 const SHORTCUTS = [
@@ -13320,7 +13322,12 @@ async function handlePwSubmit(form) {
    ※ 名前・連絡先が決まったら LEGAL を書き換えます
    ========================================================= */
 // 公式SNS（ユーザー名を変えたら、ここを直す）
-const SNS_LINKS = [{l:'Instagram', url:'https://www.instagram.com/nakakaramo/'}, {l:'TikTok', url:'https://www.tiktok.com/@nakakaramo'}, {l:'X', url:'https://x.com/nakakaramo'}];
+const SNS_LINKS = [{k:'ig', l:'Instagram', url:'https://www.instagram.com/nakakaramo/'}, {k:'tt', l:'TikTok', url:'https://www.tiktok.com/@nakakaramo'}, {k:'x', l:'X', url:'https://x.com/nakakaramo'}];
+// SNSのアイコン（各サービスの形を、単色のシンプルな線・面で描いたもの）
+const SNS_ICON = {
+  ig:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  tt:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M16.6 2h-3.3v13.2a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1V9a6.3 6.3 0 1 0 5.3 6.2V8.6a7.6 7.6 0 0 0 4.4 1.4V6.7a4.4 4.4 0 0 1-4.4-4.7z"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'};
 const LEGAL = {
   draft: true,               // 下書きのあいだは true（画面に「下書き」と表示）
   updated: '2026年11月13日',  // 最終改定日
@@ -13340,7 +13347,7 @@ function viewTerms() {
   return legalWrap('利用規約', `
 <p>この利用規約（以下「本規約」）は、${C}（以下「運営者」）が提供する「${S}」（以下「本サービス」）の利用条件を定めるものです。本サービスを利用するすべての方（以下「利用者」）は、本規約に同意したうえで本サービスを利用するものとします。</p>
 <h3>第1条（本サービスの内容）</h3>
-<ol><li>本サービスは、肌の状態・スキンケア・化粧品・生活習慣・購入金額などを記録・管理し、利用者が自分に合ったケアを効率よく選ぶための情報整理を手助けするサービスです。</li>
+<ol><li>本サービスは、肌の状態・スキンケア・化粧品・生活習慣などを記録・管理し、利用者が自分に合ったケアを効率よく選ぶための情報整理を手助けするサービスです。</li>
 <li>本サービスは医療行為・診断・治療を行うものではありません。肌の症状が強い場合や長引く場合は、医療機関に相談してください。</li>
 <li>本サービスの集計・比較・提案は、利用者が入力した記録や公開情報をもとにした目安であり、商品や成分の効果・安全性、肌の変化の原因を保証または断定するものではありません。</li></ol>
 <h3>第2条（料金プラン）</h3>
@@ -13669,7 +13676,7 @@ function settingsEmbedHtml(kind) {
   if (NATIVE_APP && cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
   if (NATIVE_APP) out.push(widgetPreviewCard());
   P.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
-  if (cards['プライバシー']) P.push(`<div class="card"><details class="fold set-fold"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details></div>`);
+  if (cards['プライバシー']) P.push(`<details class="fold set-fold set-fold-solo"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details>`);
   const install = top.find(c => /アプリとして使う/.test(c.textContent)); if (install) out.push(install.outerHTML);
   const about = Object.keys(cards).find(k => /について$/.test(k)); if (about) out.push(cards[about].outerHTML);
   return (kind === 'privacy' ? P : kind === 'body' ? B : out).join('');
@@ -13771,13 +13778,9 @@ function researchCardHtml() {
   return `<div class="card"><div class="card-h"><h2>研究への協力</h2><span class="chip ${r.on ? 'green' : ''}">${r.on ? '協力中' : 'オフ'}</span></div>
     <p class="small" style="margin:0 0 8px">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます。協力は任意で、いつでもやめられます。</p>
     <details class="fold"><summary>送る内容・送らない内容</summary>
-      <ul class="small" style="margin:8px 0;padding-left:1.2em;line-height:1.7">
-        <li><b>送るもの</b>：肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（「ニキビ」などの区分だけ）、記録の日数、肌の状態の平均、<b>成分ごとに「使った日と使わなかった日の肌の差」</b>、使い始める前と後の差</li>
-        <li><b>送らないもの</b>：日付、メモ、写真、商品名・ブランド名・薬の名前、食事の内容、メールアドレス、名前、位置</li>
-        <li>送る先は運営者のデータベース（Supabase・東京）です。端末ごとのランダムな番号で区別し、アカウントとはつなげません。</li>
-        <li>集めたデータは、<b>5人以上の集計にした統計</b>の形で、化粧品会社などの研究開発に提供することがあります。一人ひとりの記録が分かる形では提供しません。</li>
-        <li>やめると、送ったデータも削除されます。</li>
-      </ul>
+      <div class="rs-box"><b class="rs-h ok">送るもの</b><ul><li>肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）</li><li>皮膚科の薬の種類（「ニキビ」などの区分だけ）</li><li>記録の日数と、肌の状態の平均</li><li>成分ごとの「使った日と使わなかった日の肌の差」</li><li>使い始める前と後の肌の差</li></ul></div>
+      <div class="rs-box"><b class="rs-h ng">送らないもの</b><ul><li>日付・メモ・写真</li><li>商品名・ブランド名・薬の名前</li><li>食事の内容・メールアドレス・名前・位置</li></ul></div>
+      <div class="rs-box"><b class="rs-h">しくみ</b><ul><li>送り先は、運営者のデータベース（Supabase・東京）です</li><li>端末ごとのランダムな番号で区別し、アカウントとはつなげません</li><li>5人以上をまとめた統計にしてから、化粧品会社などの研究開発に提供することがあります。一人ひとりの記録が分かる形では出しません</li><li>やめると、送ったデータも削除されます</li></ul></div>
       <div class="set-sub"><h3>送る内容のプレビュー（あなたの記録）</h3>${researchPreviewHtml()}</div>
     </details>
     ${r.on ? `<p class="small muted" style="margin:10px 0 0">${n < RESEARCH_MIN_LOGS ? `記録が${RESEARCH_MIN_LOGS}日分たまると送られます（今：${n}日分）。` : r.lastSent ? `最後に送った日：${fmtMD(r.lastSent)}（記録が増えると、1日1回まで新しい統計に置きかえます）` : 'まだ送っていません。次にアプリを開いたときに送ります。'}</p>
@@ -13848,7 +13851,7 @@ ${NATIVE_APP ? '' : '</template>'}
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
     <div class="card"><div class="card-h"><h2>ナカカラモについて</h2></div>
       <dl class="kv" style="margin-bottom:12px"><dt>サービス名</dt><dd>${esc(SERVICE)}</dd><dt>バージョン</dt><dd>第2版（試作）</dd><dt>お問い合わせ</dt><dd><a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a></dd>
-        <dt>SNS</dt><dd class="sns-links">${SNS_LINKS.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.l)}</a>`).join('')}</dd></dl><p class="small pg-foot">肌の状態・化粧品・成分・生活習慣・購入金額をまとめて管理し、スキンケアにかける時間と無駄な出費を減らすことを目指すアプリです。</p>
+        <dt>SNS</dt><dd class="sns-links">${SNS_LINKS.map(s => `<a class="sns-ic sns-${s.k}" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(s.l)}" title="${esc(s.l)}">${SNS_ICON[s.k]}</a>`).join('')}</dd></dl><p class="small pg-foot">肌の状態・スキンケア・成分・生活習慣をまとめて記録し、自分の肌に合うケアを見つけることを目指すアプリです。</p>
       <ul class="small muted" style="padding-left:18px;margin:10px 0 0">
         <li>医師の診断を代わりに行うものではありません。症状が強い・長引く場合は医療機関に相談してください。</li>
         <li>商品や成分の効果、組み合わせの安全性を保証するものではありません。</li>
@@ -14294,7 +14297,7 @@ const actions = {
     if (save()) { toast('デモデータを削除しました'); render(); }
   },
   'delete-all': async () => {
-    if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・Myアイテム・支出・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
+    if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・Myアイテム・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
     state = normalize(freshState()); // 初めて開いたときと同じく、すべての項目をそろえる（足りないと画面がエラーになる）
     if (save()) { toast('すべてのデータを削除しました'); location.hash = '#/home'; render(); }
   }
