@@ -1532,6 +1532,25 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .legal-table th,.legal-table td{border:1px solid var(--line);padding:8px;vertical-align:top;text-align:left}
 .legal-table th{background:var(--surface-2,rgba(0,0,0,.03))}
 .legal-kv dd{line-height:1.7}
+.rpc-head{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 8px}.rpc-head h2{font-size:17px;margin:0;color:var(--muted)}.rpc-now{font-size:14px;font-weight:600;background:none;border:0;padding:0;color:var(--green-d);cursor:pointer}
+.rpc-car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}.rpc-car::-webkit-scrollbar{display:none}
+.rpc-car>.rpc{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;margin:0!important;min-width:0}
+.rpc-range{margin:0;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rpc-big{display:flex;align-items:baseline;gap:4px;font-size:36px;font-weight:700;line-height:1.2;margin:2px 0 10px;font-variant-numeric:tabular-nums}.rpc-big small{font-size:16px;color:var(--muted);font-weight:600}.rpc-big-l{margin-left:8px;font-size:13px;font-weight:600;color:var(--muted)}.rpc-nodata{font-size:22px;color:var(--muted)}
+.rpc-chart{position:relative;height:150px;margin:6px 34px 26px 0}
+.rpc-grid i{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}
+.rpc-avg{position:absolute;left:0;right:0;border-top:2px dashed #6CC07A;z-index:2;pointer-events:none}
+.rpc-cols{position:absolute;inset:0;display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.rpc-col{position:relative;display:flex;flex-direction:column;align-items:center;height:100%}
+.rpc-bar-w{position:relative;flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.rpc-bar{display:block;width:72%;border-radius:6px 6px 2px 2px;min-height:6px}
+.rpc-none{display:block;width:72%;height:4px;border-radius:2px;background:var(--line)}
+.rpc-a{font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px}
+.rpc-wd{position:absolute;bottom:-22px;font-size:12px;color:var(--muted)}.rpc-wd.today{color:var(--green-d);font-weight:700}
+.rpc-ax span{position:absolute;right:-34px;transform:translateY(50%);font-size:11px;color:var(--muted);width:30px}.rpc-ax span.avg{color:#3E9A50;font-weight:700}
+.rpc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}.rpc-stats>div{display:flex;flex-direction:column;min-width:0}.rpc-stats b{font-size:13px;font-weight:700}.rpc-stats b.c1{color:#D0613A}.rpc-stats b.c2{color:#C0455A}.rpc-stats b.c3{color:#3B82C4}.rpc-stats span{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}.rpc-stats small{font-size:11px;color:var(--muted)}.rpc-stats small.rpc-up{color:var(--green-d)}.rpc-stats small.rpc-down{color:var(--danger,#C0392B)}
+.rpc-foot{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:14px}.rpc-foot b{font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}.rpc-foot small{font-size:12px;font-weight:500}
+.rpc-hint{margin:8px 2px 12px}
 .rp-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;margin-bottom:12px;padding:12px}
 .rp-range{display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1.35;min-width:0}.rp-range>span:last-child{font-size:11.5px;color:var(--muted);margin-top:2px}
 .rp-dd{display:flex;align-items:center;justify-content:center;gap:2px;font-variant-numeric:tabular-nums}.rp-dd i{font-style:normal;font-size:13px;color:var(--muted)}.rp-d{display:inline-block;width:6.4em;text-align:center;font-size:15px;white-space:nowrap}
@@ -12486,9 +12505,54 @@ function tagSummary(lifeLogs) {
   const e = Object.entries(c).sort((a,b) => b[1] - a[1]);
   return e.length ? e.map(([k, n]) => `${k} ${n}日`).join('、') : '記録なし';
 }
+
+// 週次レポート：iPhoneのスクリーンタイムのように、1週間ごとのカードを横にスワイプして前の週を見る
+const RP_MAXW = 26;
+function rpWeekCount() { const t = todayStr(), real = state.skinLogs.filter(l => !l.demo); if (!real.length) return 1; const first = real.reduce((a, l) => l.date < a ? l.date : a, t); return Math.max(1, Math.min(RP_MAXW, Math.floor(diffDays(weekStart(first), weekStart(t)) / 7) + 1)); }
+function rpPaneHtml(off) {
+  const t = todayStr(), ws = addDays(weekStart(t), off * 7), we = addDays(ws, 6), map = logMap();
+  const logs = logsInRange(ws, we), s = stats(logs), p = stats(logsInRange(addDays(ws, -7), addDays(ws, -1)));
+  const md = d => { const x = parseYmd(d); return `${x.getMonth() + 1}月${x.getDate()}日`; };
+  const r1 = v => v == null ? '－' : (Math.round(v * 10) / 10).toFixed(1);
+  const avgPct = s.cond == null ? null : s.cond / 5 * 100;
+  const bars = datesRange(ws, we).map(d => { const L = map[d], dd = parseYmd(d), fut = d > t;
+    return `<div class="rpc-col"><div class="rpc-bar-w">${L ? `${L.acneCount ? `<small class="rpc-a">${L.acneCount}</small>` : ''}<i class="rpc-bar" style="height:${L.condition / 5 * 100}%;background:${COND_COLORS[L.condition]}" title="${esc(COND_LABELS[L.condition])}"></i>` : fut ? '' : '<i class="rpc-none"></i>'}</div><span class="rpc-wd ${d === t ? 'today' : ''}">${WD[dd.getDay()]}</span></div>`; }).join('');
+  const dl = (v, q, good) => v == null || q == null ? '' : Math.abs(v - q) < 0.05 ? '<small class="rpc-eq">先週と同じ</small>' : `<small class="${(v > q) === (good === 'up') ? 'rpc-up' : 'rpc-down'}">先週より${v > q ? '＋' : '−'}${r1(Math.abs(v - q))}</small>`;
+  return `<div class="card rpc" data-off="${off}">
+    <p class="rpc-range">${md(ws)}〜${md(we)}の平均</p>
+    <div class="rpc-big">${s.cond == null ? '<span class="rpc-nodata">記録なし</span>' : `${r1(s.cond)}<small>/5</small>`}<span class="rpc-big-l">肌の調子</span></div>
+    <div class="rpc-chart"><div class="rpc-grid"><i style="bottom:100%"></i><i style="bottom:60%"></i><i style="bottom:20%"></i><i style="bottom:0"></i></div>
+      ${avgPct != null ? `<div class="rpc-avg" style="bottom:${avgPct}%"></div>` : ''}<div class="rpc-cols">${bars}</div>
+      <div class="rpc-ax"><span style="bottom:100%">5</span>${avgPct != null ? `<span class="avg" style="bottom:${avgPct}%">平均</span>` : ''}<span style="bottom:20%">1</span></div></div>
+    <div class="rpc-stats"><div><b class="c1">ニキビ（1日）</b><span>${s.n ? `${r1(s.acneAvg)}個` : '－'}</span>${dl(s.acneAvg, p.acneAvg, 'down')}</div><div><b class="c2">赤み</b><span>${r1(s.red)}</span>${dl(s.red, p.red, 'down')}</div><div><b class="c3">乾燥</b><span>${r1(s.dry)}</span>${dl(s.dry, p.dry, 'down')}</div></div>
+    <div class="rpc-foot"><span>記録した日</span><b>${s.n}日${s.cond != null && p.cond != null ? `<small>・調子は${dl(s.cond, p.cond, 'up').replace(/<[^>]+>/g, '')}</small>` : ''}</b></div></div>`;
+}
+function viewReport() {
+  const n = rpWeekCount(); if (ui.reportOffset < -(n - 1)) ui.reportOffset = -(n - 1); if (ui.reportOffset > 0) ui.reportOffset = 0;
+  const offs = []; for (let o = -(n - 1); o <= 0; o++) offs.push(o);
+  setTimeout(bindReportCar, 0);
+  return pageHead('週次レポート', '') + `<div class="rpc-head"><h2>肌の調子</h2><button type="button" class="link rpc-now" data-action="report-now" ${ui.reportOffset === 0 ? 'hidden' : ''}>今週を表示</button></div>
+    <div class="rpc-car" id="rpc-car">${offs.map(rpPaneHtml).join('')}</div>
+    <p class="rpc-hint small muted">${n > 1 ? '横にスワイプすると、前の週を見られます。' : '記録が1週間以上たまると、横にスワイプして前の週を見られます。'}</p>
+    <div id="rp-body">${reportBodyHtml()}</div>
+    <p class="small muted pg-foot" style="margin-top:16px">記録した内容を決まったルールで集計しています。記録がない項目は「記録なし」と表示します。</p>`;
+}
+function bindReportCar() {
+  const car = document.getElementById('rpc-car'); if (!car || car._b) return; car._b = 1;
+  const panes = [...car.children], idxOf = off => panes.findIndex(x => Number(x.dataset.off) === off);
+  const go = (i, smooth) => { const el = panes[i]; if (el) car.scrollTo({left:el.offsetLeft - car.offsetLeft - (car.clientWidth - el.clientWidth) / 2, behavior:smooth ? 'smooth' : 'auto'}); };
+  go(Math.max(0, idxOf(ui.reportOffset)), false);
+  let tm = null;
+  car.addEventListener('scroll', () => { clearTimeout(tm); tm = setTimeout(() => {
+    const c = car.scrollLeft + car.clientWidth / 2; let best = 0, bd = 1e9; panes.forEach((el, i) => { const m = el.offsetLeft - car.offsetLeft + el.clientWidth / 2, dd = Math.abs(m - c); if (dd < bd) { bd = dd; best = i; } });
+    const off = Number(panes[best].dataset.off); if (off === ui.reportOffset) return; ui.reportOffset = off; hapticTick();
+    const b = document.getElementById('rp-body'); if (b) b.innerHTML = reportBodyHtml();
+    const nb = document.querySelector('.rpc-now'); if (nb) nb.hidden = off === 0; }, 90); }, {passive:true});
+  car._go = go;
+}
 // 週次レポートの日付：「11/9（月）」の形で、幅をそろえる（週を変えても、ボタンや文字がガクガク動かないように）
 const rpMD = s => { const d = parseYmd(s); return `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`; };
-function viewReport() {
+function reportBodyHtml() {
   const t = todayStr();
   const ws = addDays(weekStart(t), ui.reportOffset * 7), we = addDays(ws, 6);
   const effEnd = we < t ? we : t;
@@ -12504,29 +12568,7 @@ function viewReport() {
   const sleepW = lifeW.map(sleepMin).filter(v => v != null);
   const sleepP = lifeInRange(addDays(ws, -7), addDays(ws, -1)).map(sleepMin).filter(v => v != null);
 
-  let html = pageHead('週次レポート', '1週間分の記録をまとめます。') +
-    `<div class="card rp-nav">
-      <button class="btn btn-ghost btn-sm" data-action="report-prev" aria-label="前の週"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5l-7 7 7 7"/></svg></button>
-      <div class="rp-range"><span class="rp-dd"><b class="rp-d">${rpMD(ws)}</b><i>〜</i><b class="rp-d">${rpMD(we)}</b></span><span>${ui.reportOffset === 0 ? '今週' : ui.reportOffset === -1 ? '先週' : `${-ui.reportOffset}週間前`}</span></div>
-      <button class="btn btn-ghost btn-sm" data-action="report-next" aria-label="次の週" ${ui.reportOffset >= 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 5l7 7-7 7"/></svg></button></div>
-    <div class="notice green rp-note"><p>記録した内容を、決まったルールで集計しています。</p><p>記録がない項目は「記録なし」と表示します。</p></div>`;
-
-  html += `<div class="card"><div class="card-h"><h2>肌の記録</h2><span class="small muted">${s.n} / ${daysElapsed || 7}日 記録</span></div>
-    <div class="week-strip">${datesRange(ws, we).map(d => { const L = map[d], dd = parseYmd(d);
-      return `<div class="d">${WD[dd.getDay()]}<br>${dd.getDate()}${L ? `<div class="dot" style="background:${COND_COLORS[L.condition]};color:${COND_FG[L.condition]}" title="${esc(COND_LABELS[L.condition])}">${L.condition}</div><div class="ws-acne">${L.acneCount}<i>個</i></div>` : `<div class="dot none">${d > t ? '' : '–'}</div>`}</div>`; }).join('')}</div>
-    <div class="rp-legend"><p><span class="rp-dot"></span>丸の数字：肌の調子<br><small>1＝とても悪い 〜 5＝とても良い</small></p><p><b>1個・2個…</b>：ニキビの数</p></div></div>`;
-
-  html += logs.length ? `<div class="card"><div class="card-h"><h2>肌状態とニキビ数の変化</h2></div>
-      <div class="stat-row" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
-        <div class="stat"><div class="lbl">肌の調子 平均</div><div class="val">${f1(s.cond)}</div><div class="sub">${deltaChip(s.cond, p.cond, 'up')}</div></div>
-        <div class="stat"><div class="lbl">ニキビ 合計</div><div class="val">${s.acneTotal}<span class="small muted">個</span></div><div class="sub">1日平均 ${f1(s.acneAvg)}</div></div>
-        <div class="stat"><div class="lbl">ニキビ 1日平均</div><div class="val">${f1(s.acneAvg)}</div><div class="sub">${deltaChip(s.acneAvg, p.acneAvg, 'down')}</div></div>
-        <div class="stat"><div class="lbl">赤み 平均</div><div class="val">${f1(s.red)}</div><div class="sub">${deltaChip(s.red, p.red, 'down')}</div></div>
-        <div class="stat"><div class="lbl">乾燥 平均</div><div class="val">${f1(s.dry)}</div><div class="sub">${deltaChip(s.dry, p.dry, 'down')}</div></div>
-        <div class="stat"><div class="lbl">皮脂 平均</div><div class="val">${f1(s.oil)}</div><div class="sub">${deltaChip(s.oil, p.oil, 'down')}</div></div>
-      </div><p class="small muted rp-p" style="margin-top:10px">前週の記録：${p.n}日分</p><p class="small muted rp-p">記録した日が少ないと、平均は大きく変わります。</p></div>`
-    : `<div class="card">${emptyBox('calendar', 'この週の肌記録はありません', '記録をつけると、ニキビ数や自己評価の変化がここに集計されます。', ui.reportOffset === 0 ? '<button class="btn btn-primary btn-sm" data-action="new-log">記録する</button>' : '')}</div>`;
-
+  let html = '';
   // 記録がない項目のカードは出さない（短く見やすくする）
   if (used.length) html += `<div class="card"><div class="card-h"><h2>使用した商品と使用頻度の振り返り</h2></div>
     ${used.length ? used.map(x => { const fc = freqCheck(x, ws, effEnd); return `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
@@ -14163,6 +14205,7 @@ const actions = {
   },
   'chart-range': v => { if (Number(v) === 90 && locked()) { toast('90日間のグラフは' + PREMIUM_NAME + 'の機能です'); return; } ui.chartRange = Number(v); render(); },
   'report-prev': () => { ui.reportOffset--; render(); },
+  'report-now': () => { const car = document.getElementById('rpc-car'); if (car && car._go) car._go(car.children.length - 1, true); },
   'report-next': () => { if (ui.reportOffset < 0) { ui.reportOffset++; render(); } },
   'open-menu': () => toggleDrawer(),
   'export-csv': () => {
