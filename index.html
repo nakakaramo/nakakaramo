@@ -8917,9 +8917,15 @@ function comboAvoidWord(g, c) { const w = `${chipText(g)}（${c.who.name}と併�
 let PL_C = null;
 function personalLearn() {
   const key = state.savedAt + '|' + todayStr(); if (PL_C && PL_C.key === key) return PL_C.v;
-  const v = {good:new Map(), bad:new Map(), list:[]};
+  const v = {good:new Map(), bad:new Map(), list:[], unsure:[]};
   try {
-    const sm = researchSummary();
+    const sm = researchSummary(), RD = RS_DAYS || {all:[], by:new Map(), prod:new Map()};
+    const confoundOf = k => { const A = RD.by.get(k), pa = RD.prod.get(k); if (!A || !RD.all.length) return null; const n = RD.all.length;
+      for (const [k2, B] of RD.by) { if (k2 === k) continue; { const n2 = RD.name.get(k2) || ''; if (BASE.test(String(n2).replace(/（.*?）|類$/g, '').trim())) continue; } const pb = RD.prod.get(k2); if (pa && pb && [...pb].every(id => pa.has(id)) && [...pa].every(id => pb.has(id))) continue; // 同じ商品にだけ入っている成分どうしは、その商品の結果として扱う
+        let a = 0, b = 0, c = 0, d = 0; RD.all.forEach(dt => { const x = A.has(dt), y = B.has(dt); if (x && y) a++; else if (x) b++; else if (y) c++; else d++; });
+        const den = Math.sqrt((a + b) * (c + d) * (a + c) * (b + d)); if (!den) continue; const phi = (a * d - b * c) / den;
+        if (Math.abs(phi) >= 0.85) return {name:String(RD.name.get(k2) || k2).replace(/（.*?）|類$/g, ''), anti:phi < 0}; }
+      return null; };
     // 化粧品の土台になる成分（水・グリセリン・BGなど）は、ほぼどの商品にも入っているので、合う・合わないの判断に使わない
     const BASE = /^(水|精製水|グリセリン|BG|DPG|ブチレングリコール|ペンチレングリコール|プロパンジオール|1,2-ヘキサンジオール|フェノキシエタノール|メチルパラベン|エチルパラベン|カルボマー|キサンタンガム|水酸化K|水酸化Na|クエン酸|クエン酸Na|EDTA-2Na|エデト酸塩|トコフェロール|シリカ|ジメチコン)$/;
     const CAT_STEP = {'クレンジング':'cleanse', '洗顔':'wash', '化粧水・トナー':'toner', '美容液・アンプル':'serum', '乳液':'moist', 'クリーム':'moist', 'オールインワン':'moist', '日焼け止め':'sunscreen'};
@@ -8930,9 +8936,19 @@ function personalLearn() {
       const d = x.d || {}, sc = (d.cond || 0) * 1.0 - (d.acne || 0) * 0.6 - (d.red || 0) * 0.8 - (d.dry || 0) * 0.5; // 調子が上がる・ニキビ/赤み/乾燥が減る＝プラス
       const e = ingM(x.k) || ingEntryOf(x.name) || null, name = String(x.name || (e && (e.ja || e.name)) || x.k).replace(/（.*?）/g, '');
       const row = {k:x.k, name:name.replace(/類$/, ''), sc:Math.round(sc * 100) / 100, du:x.du, dn:x.dn, d, steps:stepsOf(x.name)};
+      // 別の商品の成分と、いつも同じ日に使っている（または、いつも入れ替わりで使っている）ときは、どちらのせいか分からないので決めつけない
+      const tw = confoundOf(x.k); if (tw && Math.abs(sc) >= 0.35) { if (!v.unsure.some(u => u.with === row.name)) v.unsure.push({name:row.name, with:tw.name, anti:tw.anti}); return; }
       if (sc >= 0.35) { v.good.set(normIng(name), row); v.list.push(Object.assign({v:'good'}, row)); }
       else if (sc <= -0.35) { v.bad.set(normIng(name), row); v.list.push(Object.assign({v:'bad'}, row)); }
     });
+    // 一緒に使うことが多い別の成分のほうが強く効いているときは、その成分を「使った日」「使わなかった日」に分けて比べ直す（巻き添えで良い・悪いと決めつけない）
+    { const rows = v.list.slice(), mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+      const sameProds = (a, b) => { const pa = RD.prod.get(a), pb = RD.prod.get(b); return pa && pb && pa.size === pb.size && [...pa].every(id => pb.has(id)); };
+      rows.forEach(X => { const A = RD.by.get(X.k); if (!A) return;
+        for (const Y of rows) { if (Y === X || Math.abs(Y.sc) < Math.abs(X.sc) || sameProds(X.k, Y.k)) continue; const B = RD.by.get(Y.k); if (!B) continue;
+          let wsum = 0, eff = 0; [true, false].forEach(yOn => { const ds = RD.all.filter(dt => B.has(dt) === yOn), u = ds.filter(dt => A.has(dt)).map(dt => RD.sc.get(dt)), n = ds.filter(dt => !A.has(dt)).map(dt => RD.sc.get(dt)); if (u.length >= 2 && n.length >= 2) { const w = Math.min(u.length, n.length); eff += w * (mean(u) - mean(n)); wsum += w; } });
+          const adj = wsum ? eff / wsum : null;
+          if (adj == null || Math.abs(adj) < 0.35 || Math.sign(adj) !== Math.sign(X.sc)) { const m = X.v === 'good' ? v.good : v.bad; m.delete(normIng(X.name)); v.list = v.list.filter(r => r !== X); if (adj == null && !v.unsure.some(u => u.with === X.name)) v.unsure.push({name:X.name, with:Y.name, anti:false}); break; } } }); }
     state.myProducts.filter(p => p.ng && !p.demo).forEach(p => knownIngs(ingsOfMy(p)).forEach(k => { const n = normIng(String(k.entry.name).replace(/（.*?）/g, '')); if (BASE.test(String(k.entry.name).replace(/（.*?）|類$/g, '').trim())) return; if (!v.bad.has(n) && !v.good.has(n)) { const row = {k:k.entry.key, name:String(k.entry.name).replace(/（.*?）/g, ''), ng:p.name}; v.bad.set(n, row); v.list.push(Object.assign({v:'bad'}, row)); } }));
   } catch (e) { /* 学習できなくても、ほかの提案はそのまま */ }
   v.list.sort((a, b) => (b.sc || -9) - (a.sc || -9));
@@ -9028,8 +9044,11 @@ function rtPlan(slot, solo) {
     const sp0 = prodOf(['serum']), rest = calm || rxHard ? sp0.filter(x => prodComboInfo(x).act >= 1) : [], sp = sp0.filter(x => !rest.includes(x));
     const amIds = (() => { if (solo || !rest.length) return new Set(); try { return new Set(rtPlan('am', true).steps.flatMap(z => z.prods.map(y => y.p.id))); } catch (e) { return new Set(); } })(), toAm = rest.filter(x => amIds.has(x.p.id));
     const restNote = rest.length ? T(`${toAm.length === rest.length ? '' : '今日は'}「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」は${toAm.length === rest.length ? '夜はお休みして、朝に使います' : 'お休みします'}（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
-    const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4);
-    const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? 'レチノール' : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
+    // レチノールを使ったことがなく、記録もまだ少ない人には、いきなりすすめない（まずはおだやかな成分から）
+    const retNew = state.skinLogs.filter(l => !l.demo).length < 14 && !state.myProducts.some(p => !p.demo && knownIngs(ingsOfMy(p)).some(k => /レチノ|retin/i.test(String(k.entry.name) + (k.entry.key || ''))));
+    const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4) && !(retNew && sensT);
+    const retW = retNew ? 'ナイアシンアミド' : 'レチノール';
+    const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? retW : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
     const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの併用']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
       today:uniq([restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
@@ -11369,6 +11388,9 @@ function advChips(x) {
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
   if (skin) { const pool = comboPool(), careK = new Set(); try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => st.good.forEach(v => careK.add(normIng(chipText(v)))))); } catch (e) { /* 何もしない */ } const out = []; for (let i = 0; i < g.length; i++) { const c = careK.has(normIng(chipText(g[i]))) ? null : comboConflict(g[i], pool); if (c) { out.push(comboAvoidWord(g[i], c)); g.splice(i, 1); i--; continue; } const tw = tagsOfWord(g[i]); if (tw.tags.size) pool.push({id:'g:' + g[i], name:chipText(g[i]), tags:tw.tags, rx:false, act:tw.act}); } out.forEach(o => { if (!a.some(v => chipText(v) === chipText(o))) a.push(o); }); }
+  if (skin) { const PL = personalLearn(); if (PL.good.size || PL.bad.size) { // あなたの記録で合わなかった成分はおすすめから外し、合っていた成分を先に出す
+    for (let i = g.length - 1; i >= 0; i--) { const row = plOf(g[i], PL.bad); if (row) { const w = `${chipText(g[i])}（${row.ng ? '肌に合わなかった物に入っていた' : 'あなたの記録で、使った日の肌が悪い傾向'}）`; if (!a.some(v => chipText(v) === chipText(g[i]))) a.push(w); g.splice(i, 1); } }
+    g.sort((x, y) => (plOf(y, PL.good) ? 1 : 0) - (plOf(x, PL.good) ? 1 : 0)); } }
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
   return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' && foodInfo(v) ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
@@ -12233,7 +12255,7 @@ function viewMycare() {
   { const PL = personalLearn(), G = PL.list.filter(x => x.v === 'good').slice(0, 4), B = PL.list.filter(x => x.v === 'bad').slice(0, 4);
     if (A.stage !== 'none') h += `<h2 class="pc-sec">あなたの肌で学んだこと</h2><div class="card">${G.length || B.length ? `${G.length ? `<p class="pc-lead good" style="margin:0 0 4px">合っている成分</p><div class="pc-ings">${G.map(x => `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.name)}">${esc(x.name)}<i>›</i></button>`).join('')}</div>` : ''}
       ${B.length ? `<p class="pc-lead bad" style="margin:${G.length ? 12 : 0}px 0 4px">合わないかもしれない成分</p><div class="pc-ings">${B.map(x => `<button type="button" class="cm-c bad cm-ing-b" data-avoidsheet="${esc(x.name)}">${esc(x.name)}<i>›</i></button>`).join('')}</div>` : ''}
-      <p class="small muted" style="margin:8px 0 0">使った日と使わなかった日の肌を比べた結果です。おすすめに毎日反映しています。</p>` : '<p class="small muted" style="margin:0">成分ごとに、使った日と使わなかった日がそれぞれ5日以上たまると、あなたに合う成分がわかってきます。</p>'}</div>`; }
+      <p class="small muted" style="margin:8px 0 0">使った日と使わなかった日の肌を比べた結果です。おすすめに毎日反映しています。</p>` : '<p class="small muted" style="margin:0">成分ごとに、使った日と使わなかった日がそれぞれ5日以上たまると、あなたに合う成分がわかってきます。</p>'}${(() => { const U = personalLearn().unsure.slice(0, 2); return U.length ? U.map(u => `<p class="small muted" style="margin:8px 0 0">${esc(u.name)}と${esc(u.with)}は、${u.anti ? 'いつも交互に' : 'いつも同じ日に'}使っているため、どちらが肌に影響しているかまだ分かりません。${u.anti ? '両方使う日・どちらも使わない日' : '片方だけ使う日'}があると見分けられます。</p>`).join('') : ''; })()}</div>`; }
   // 生活
   const L = A.life, life = [];
   life.push(L.slN >= 3 ? `睡眠：最近2週間の平均${fmtHM(L.sl)}${L.sl < L.sleepNeed - 45 ? `（目安の${fmtHM(L.sleepNeed)}より短め。15分ずつ早く寝る）` : '（よい状態です）'}` : '睡眠：記録が足りません');
@@ -13530,6 +13552,7 @@ const RESEARCH_MIN_LOGS = 14;
 const researchState = () => state.settings.research || (state.settings.research = {on:false, adult:false, cid:'', lastSent:'', lastHash:''});
 const R_METRICS = [['condition','cond'],['acneCount','acne'],['redness','red'],['dryness','dry'],['oil','oil']];
 const r2 = v => v == null || !isFinite(v) ? null : Math.round(v * 100) / 100;
+let RS_DAYS = null; // 成分ごとの「使った日」（学習で、同じ日にしか使っていない成分を見分けるため。送信はしない）
 function researchSummary() {
   const logs = state.skinLogs.filter(l => !l.demo).slice().sort((a, b) => a.date.localeCompare(b.date));
   const st = state.settings, prods = state.myProducts.filter(p => !p.demo);
@@ -13546,7 +13569,8 @@ function researchSummary() {
     const ks = new Map(); used.forEach(id => (prodIngs.get(id) || []).forEach(e => ks.set(e.key, e.name)));
     ks.forEach((name, k) => { const x = ing.get(k) || {name, used:[], first:l.date}; x.used.push(l); ing.set(k, x); });
   });
-  const ings = [];
+  const ings = []; RS_DAYS = {all:days.map(d => d.l.date), by:new Map([...ing].map(([k, x]) => [k, new Set(x.used.map(l => l.date))])), name:new Map([...ing].map(([k, x]) => [k, x.name])), prod:new Map(), sc:new Map(days.map(({l}) => [l.date, (Number(l.condition) || 0) - 0.6 * (Number(l.acneCount) || 0) - 0.8 * (Number(l.redness) || 0) - 0.5 * (Number(l.dryness) || 0)]))};
+  prods.forEach(p => (prodIngs.get(p.id) || []).forEach(e => { const s = RS_DAYS.prod.get(e.key) || new Set(); s.add(p.id); RS_DAYS.prod.set(e.key, s); }));
   ing.forEach((x, k) => {
     const usedSet = new Set(x.used), not = days.filter(d => !usedSet.has(d.l)).map(d => d.l);
     if (x.used.length < 3 || not.length < 3) return;
