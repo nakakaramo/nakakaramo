@@ -643,7 +643,7 @@ details.acc-cmp{margin-top:14px}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 @keyframes hpInMy{from{transform:translateX(var(--hp-from,0))}to{transform:none}}
 .mk-pane.home-pane.hp-in{animation-name:hpInMy}
-.home-tabs.my-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
+.home-tabs.my-tabs,.home-tabs.hm-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
 .my-tabs .ht{display:inline-flex;align-items:center;justify-content:center;gap:5px}
 .my-tabs .ht-n{font-size:12px;font-weight:600;line-height:1.5;background:var(--surface2,#F4F1EC);color:var(--muted);border-radius:999px;padding:1px 8px;transition:background .2s,color .2s}
 .my-tabs .ht.active .ht-n{background:var(--green-l,#E5F2EA);color:var(--green-d)}
@@ -2425,7 +2425,9 @@ html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A
 .pc-items{padding:4px 0}.pc-it{display:flex;gap:10px;align-items:flex-start;padding:10px 16px;color:var(--ink);text-decoration:none;border-top:1px solid var(--line)}.pc-it:first-child{border-top:0}.pc-it b{display:block;font-size:14px}.pc-it small{display:block;font-size:12.5px;color:var(--muted);line-height:1.55}
 .pc-v{flex:none;font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;margin-top:2px}.pc-v.keep{background:#EEF6F0;color:var(--green-d)}.pc-v.review{background:#FDF1EC;color:#B04A32}.pc-v.cut{background:#FBF3E2;color:#7A5A12}
 .pc-ln{padding:8px 0;border-top:1px solid var(--line)}.pc-ln:first-of-type{border-top:0}.pc-ln b{font-size:13.5px}.pc-ln p{margin:2px 0 0;font-size:13.5px;line-height:1.65}.pc-ln.st b{color:var(--green-d)}
-.pc-mini{display:block;color:var(--ink);text-decoration:none}.pc-mini-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px}.pc-mini-h i{font-style:normal;color:var(--muted)}
+.care-link:active{transform:none!important;opacity:.7}
+.care-link{display:inline;padding:0;margin:0;border:0;background:none;font:inherit;color:var(--green-d);text-decoration:underline;text-decoration-color:var(--green);text-underline-offset:3px;text-decoration-thickness:1.5px;cursor:pointer}
+.pc-mini{display:block;color:var(--ink)}.pc-mini-h{color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px}.pc-mini-h i{font-style:normal;color:var(--muted)}
 html[data-theme="dark"] .pc-tr.up,html[data-theme="dark"] .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}html[data-theme="dark"] .pc-tr.down,html[data-theme="dark"] .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}html[data-theme="dark"] .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pc-tr.up,:root:not([data-theme="light"]) .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}:root:not([data-theme="light"]) .pc-tr.down,:root:not([data-theme="light"]) .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}:root:not([data-theme="light"]) .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}}
 html[data-theme="dark"] button.cm-c.good{box-shadow:inset 0 0 0 1px rgba(120,180,140,.35)}html[data-theme="dark"] button.cm-c.bad{box-shadow:inset 0 0 0 1px rgba(230,130,100,.35);color:#F0A58E}
@@ -4459,7 +4461,7 @@ function viewHome() {
 
   const onboard = ''; // 肌悩みの質問は「はじめにやること」の1つ目にまとめた
   const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
-  const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
+  const tabs = `<nav class="home-tabs hm-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
   if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
@@ -4473,7 +4475,7 @@ function viewHome() {
   html += tail0;
   return html;
 }
-const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'おすすめケア', i:'spark'}, {k:'sc', l:'ショートカット', i:'grid'}];
+const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'おすすめケア', i:'spark'}]; // ショートカットのタブはなくした
 function meter(label, v) {
   return `<div class="meter"><span class="muted">${esc(label)}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><span>${v}</span></div>`;
 }
@@ -12126,14 +12128,14 @@ function personalAnalysis() {
   if (slN < 3) ask.push({t:'睡眠と肌の関係が分かります', act:'life-part', id:'sleep', b:'睡眠を記録'});
   // ⑧ 今週いちばん大事なこと（3つまで）
   const week = [];
-  if (top[0]) week.push(`${top[0].name}：${top[0].care[0] || ''}`);
+  if (top[0] && top[0].care[0]) week.push(top[0].care[0]);
   const rv = items.find(i => i.v === 'review'); if (rv) week.push(`「${truncate(rv.x.p.name, 14)}」は${rv.note}`);
-  if (sl != null && sl < g.sleep - 45) week.push(`睡眠：あと${Math.round((g.sleep - sl) / 15) * 15}分早く寝る`);
-  else if (exRec >= 3 && exDays < 2) week.push('運動：週2〜3回、20〜30分歩く');
-  if (top[0] && week.length < 3 && top[0].nut) week.push(`食事：${top[0].nut}`);
-  if (top[1] && week.length < 3) week.push(`${top[1].name}：${top[1].care[0] || ''}`);
+  if (sl != null && sl < g.sleep - 45) week.push(`あと${Math.round((g.sleep - sl) / 15) * 15}分早く寝る`);
+  else if (exRec >= 3 && exDays < 2) week.push('週2〜3回、20〜30分歩く');
+  if (top[0] && week.length < 3 && top[0].nut) week.push(top[0].nut);
+  if (top[1] && week.length < 3 && top[1].care[0]) week.push(top[1].care[0]);
   const cyc = links.find(x => x.key === 'cycle' && x.enough && x.strong && x.diff < 0);
-  if (cyc) week.splice(Math.min(2, week.length), 0, '生理前：新しい物は試さず、保湿を多めに');
+  if (cyc) week.splice(Math.min(2, week.length), 0, '生理前は新しい物を試さず、保湿を多めに');
   const stage = !d && !L28.length ? 'none' : L28.length < 3 ? 'start' : long ? 'long' : L7.length >= 4 ? 'week' : 'daily';
   if (ph.length < 2 && L28.length >= 3) ask.push({t:'写真で変化を比べられます', act:'new-log', b:'写真つきで記録'});
   if (missing.length) week.splice(1, 0, `${missing[0].n}を毎日使う`);
@@ -12144,7 +12146,7 @@ function personalAnalysis() {
     {n:'保湿', d:ctx.dry ? 'セラミド入りの乳液かクリーム' : ctx.oil ? 'ナイアシンアミド入りの軽い乳液・ジェル' : 'セラミド・ヒアルロン酸入りの乳液', q:ctx.dry ? 'セラミド' : ctx.oil ? 'ナイアシンアミド' : 'セラミド'},
     {n:'日焼け止め', d:ctx.sens ? '紫外線吸収剤不使用（ノンケミカル）のもの' : ctx.oil ? 'さらっとしたジェル・ミルクタイプ' : 'SPF30・PA+++くらいの毎日使いやすいもの', q:'日焼け止め'}
   ].concat(top[0] && top[0].ings.length && !ctx.sens ? [{n:'美容液（あれば）', d:`${top[0].name}に：${top[0].ings[0].ja}入り`, q:top[0].ings[0].ja}] : []) : [];
-  return {d, top, others, starter, items, links, changes, life, long, ask, week:week.slice(0, 3), stage, ctx, n7:L7.length, n28:L28.length, metric, photos, missing};
+  return {d, top, others, starter, items, links, changes, life, long, ask, week:week.map(w => String(w).replace(/^[^：「」]{1,10}：/, '')).slice(0, 3), stage, ctx, n7:L7.length, n28:L28.length, metric, photos, missing};
 }
 function viewMycare() {
   const A = personalAnalysis(), f = v => f1(Math.abs(v));
@@ -12161,8 +12163,9 @@ function viewMycare() {
     h += `<h2 class="pc-sec">写真で見る変化</h2><div class="card"><div class="pc-ph"><figure><img src="${P.a.photo}" alt="${esc(fmtMD(P.a.date))}の写真"><figcaption>${esc(fmtMD(P.a.date))}</figcaption></figure><figure><img src="${P.b.photo}" alt="${esc(fmtMD(P.b.date))}の写真"><figcaption>${esc(fmtMD(P.b.date))}</figcaption></figure></div>
       <ul class="pc-ul small" style="margin-top:8px"><li>ニキビ：${P.acneA}個 → ${P.acneB}個</li>${P.diffs.slice(0, 4).map(x => `<li>${esc(x.c)}：${x.a ? '強さ' + x.a : 'なし'} → ${x.b ? '強さ' + x.b : 'なし'}</li>`).join('')}</ul>
       <p class="small muted" style="margin:6px 0 0">${P.days}日の間の${P.n}枚から、最初と最新を並べています。数字は自分で直した記録の内容です。</p><a class="link small" href="#/photos">写真をすべて見る ›</a></div>`; }
+  const G = careGoods();
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
-      <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${careLinkHtml(x, G)}</li>`).join('')}</ul></div>
       ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
   if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
@@ -12188,11 +12191,31 @@ function viewMycare() {
   h += `<p class="small muted" style="margin:14px 4px 0">記録からの目安で、診断ではありません。処方薬は皮膚科の指示を優先し、症状が強い・続くときは皮膚科へ。</p>`;
   return h;
 }
+// 文章の中の「洗顔」「日焼け止め」などを、その人に合うおすすめ商品へのリンクにする（緑の文字・緑の下線）
+function careGoods() {
+  const g = {}; try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => { if (!g[st.k] && st.good && st.good.length) g[st.k] = st.good[0]; })); } catch (e) { /* 何もしない */ }
+  return g;
+}
+function careLinkHtml(text, G) {
+  G = G || careGoods();
+  const map = [
+    [/日焼け止め/, () => '日焼け止め'],
+    [/クレンジング/, () => 'クレンジング｜' + (G.cleanse || '')],
+    [/洗顔料|洗顔(?!後|の後|のあと)/, () => '洗顔｜' + (G.wash || 'アミノ酸系')],
+    [/化粧水/, () => G.toner || 'ヒアルロン酸'],
+    [/美容液/, () => G.serum || 'ナイアシンアミド'],
+    [/乳液|クリーム|保湿/, () => G.moist || 'セラミド'],
+  ];
+  const re = new RegExp(map.map(m => m[0].source).join('|'), 'g'), used = new Set();
+  // 「」の中（商品名）はリンクにしない
+  return esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join('');
+}
 // おすすめケアの上に出す、短いまとめ（くわしくは「あなたの肌の分析」へ）
 function mycareMiniHtml() {
   let A = null; try { A = personalAnalysis(); } catch (e) { return ''; }
   if (!A.week.length && !A.ask.length) return '';
-  return `<a class="card pc-mini" href="#/mycare"><span class="pc-mini-h">${icon('spark')}<b>今週いちばん大事なこと</b><i>›</i></span>${A.week.length ? `<ol class="pc-ol">${A.week.map(w => `<li>${esc(w)}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</a>`;
+  const G = careGoods();
+  return `<div class="card pc-mini"><a class="pc-mini-h" href="#/mycare">${icon('spark')}<b>今週いちばん大事なこと</b><i>›</i></a>${A.week.length ? `<ol class="pc-ol">${A.week.map(w => `<li>${careLinkHtml(w, G)}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</div>`;
 }
 
 function viewCharts() {
