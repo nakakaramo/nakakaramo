@@ -3874,7 +3874,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 // ===== 切り替え（タブ・モード・期間など）に動きをつける =====
 // 選んでいる印（色の板）が、前に選んでいた場所から新しい場所へすべって動く。下の中身も、動いた向きからふわっと入れかわる
 const SW_GROUPS = '.rt-modes,.ct-tabs,.tabs,.map-tabs,.chips:has(> .tab.active),.chips:has(> .hap-keep > .tab.active)';
