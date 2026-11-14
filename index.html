@@ -979,7 +979,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 /* iPhoneの上（時計・電池の場所）に、スクロールした中身が重ならないように、背景色で隠す */
 body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
 /* 下からページ（シート）が出ているときは、いちばん上（時計・電池のところ）も一緒に薄暗くする */
-body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before{background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
+body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before{background:#A9ABA6;background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
 /* iPhoneのSafariは、画面のいちばん上にある色で上のバーの色を決めるので、シートが出ている間は上に薄暗い帯を置く・ページの地の色も薄暗くする */
 body:has(#modal-root .modal-backdrop:not(.closing))::before,body:has(#drawer-root.open)::before,body:has(.ps-wrap.on)::before{height:max(env(safe-area-inset-top),12px)}
 html:has(#modal-root .modal-backdrop:not(.closing)),html:has(#drawer-root.open){background:color-mix(in srgb,rgb(30,36,32) 38%,var(--bg))}
@@ -12202,14 +12202,27 @@ function careLinkHtml(text, G) {
     [/日焼け止め/, () => '日焼け止め'],
     [/クレンジング/, () => 'クレンジング｜' + (G.cleanse || '')],
     [/洗顔料|洗顔(?!後|の後|のあと)/, () => '洗顔｜' + (G.wash || 'アミノ酸系')],
-    [/化粧水/, () => G.toner || 'ヒアルロン酸'],
-    [/美容液/, () => G.serum || 'ナイアシンアミド'],
-    [/乳液|クリーム|保湿/, () => G.moist || 'セラミド'],
+    [/化粧水/, () => '@toner'],
+    [/美容液/, () => '@serum'],
+    [/乳液|クリーム|保湿/, () => '@moist'],
   ];
   const re = new RegExp(map.map(m => m[0].source).join('|'), 'g'), used = new Set();
   // 「」の中（商品名）はリンクにしない
-  return esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join('');
+  return esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join('');
 }
+// 「保湿」「化粧水」「美容液」を押したとき：その人に合う、その工程の成分を並べる（押すと成分の説明とおすすめ商品）
+const STEP_T = {moist:['保湿（乳液・クリーム）', 'うるおいを守る成分'], toner:['化粧水', '化粧水で選びたい成分'], serum:['美容液', '美容液で選びたい成分']};
+function openStepSheet(k) {
+  const good = [], avoid = [];
+  try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.filter(st => st.k === k).forEach(st => { st.good.forEach(v => { if (!good.includes(v)) good.push(v); }); st.avoid.forEach(v => { if (!avoid.includes(v)) avoid.push(v); }); })); } catch (e) { /* 何もしない */ }
+  const def = {moist:['セラミド', 'ヒアルロン酸', 'グリセリン', 'スクワラン'], toner:['ヒアルロン酸', 'グリセリン', 'セラミド'], serum:['ナイアシンアミド', 'ビタミンC誘導体', 'セラミド']}[k] || [];
+  def.forEach(v => { if (good.length < 4 && !good.includes(v)) good.push(v); });
+  const T = STEP_T[k] || [k, 'おすすめの成分'];
+  openModal({title:esc(T[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><h3 class="ing-h" style="margin-top:0">${esc(T[1])}</h3><div class="pc-ings">${good.map(v => `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(v)}" data-avoid="${esc(JSON.stringify(avoid))}">${esc(chipText(v))}<i>›</i></button>`).join('')}</div>
+    ${avoid.length ? `<h3 class="ing-h">控えたい成分</h3><div class="pc-ings">${avoid.map(v => `<button type="button" class="cm-c bad cm-ing-b" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>`).join('')}</div>` : ''}
+    <p class="small muted" style="margin-top:10px">成分を押すと、説明とおすすめの商品が見られます。</p></div>`});
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-stepsheet]'); if (!b) return; hapticTick(); openStepSheet(b.dataset.stepsheet); });
 // おすすめケアの上に出す、短いまとめ（くわしくは「あなたの肌の分析」へ）
 function mycareMiniHtml() {
   let A = null; try { A = personalAnalysis(); } catch (e) { return ''; }
