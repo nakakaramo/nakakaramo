@@ -1533,7 +1533,9 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .legal-table th{background:var(--surface-2,rgba(0,0,0,.03))}
 .legal-kv dd{line-height:1.7}
 .rp-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;margin-bottom:12px;padding:12px}
-.rp-range{display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1.35}.rp-range b{font-size:15px}.rp-range span{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rp-range{display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1.35;min-width:0}.rp-range>span:last-child{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rp-dd{display:flex;align-items:center;justify-content:center;gap:2px;font-variant-numeric:tabular-nums}.rp-dd i{font-style:normal;font-size:13px;color:var(--muted)}.rp-d{display:inline-block;width:6.4em;text-align:center;font-size:15px;white-space:nowrap}
+.rp-nav .btn{width:44px;min-width:44px;height:44px;padding:0;border-radius:50%}
 .rp-note p{margin:0;line-height:1.7}.rp-note p+p{margin-top:4px}
 .week-strip .ws-acne{margin-top:5px;font-size:13px;font-weight:700;color:var(--ink)}.week-strip .ws-acne i{font-style:normal;font-size:9.5px;font-weight:500;color:var(--muted);margin-left:1px}
 .rp-legend{display:grid;gap:6px;margin-top:12px;font-size:12px;color:var(--muted)}.rp-legend p{margin:0;line-height:1.6}.rp-legend small{font-size:11px}.rp-legend b{color:var(--ink)}
@@ -7552,11 +7554,11 @@ function weekReviewHtml() {
   const avg = (a, k) => a.length ? a.reduce((x, l) => x + (Number(l[k]) || 0), 0) / a.length : null, r1 = v => Math.round(v * 10) / 10;
   const c1 = avg(cur, 'condition'), c0 = avg(prev, 'condition'), a1 = cur.reduce((x, l) => x + (l.acneCount || 0), 0), a0 = prev.reduce((x, l) => x + (l.acneCount || 0), 0);
   const cmp = (v, p, good) => p == null || v == null ? '' : v === p ? '<small class="wr-eq">先週と同じ</small>' : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">先週比 ${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
-  return `<div class="card wr-card"><div class="card-h"><h2>今週のふり返り</h2></div>
+  return `<div class="card wr-card"><div class="card-h"><h2>今週のふり返り</h2><a class="link" href="#/report">週次レポート →</a></div>
     <div class="wr-grid"><span><small>記録した日</small><b>${cur.length}<i>日</i></b></span>
       <span><small>肌の調子</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1 == null ? null : r1(c1), c0 == null ? null : r1(c0), true)}</span>
       <span><small>ニキビ/日</small><b>${cur.length ? r1(a1 / cur.length) : '－'}<i>個</i></b>${prev.length && cur.length ? cmp(r1(a1 / cur.length), r1(a0 / prev.length), false) : ''}</span></div>
-    <a class="link small" href="#/report">週のまとめを詳しく見る ›</a></div>`;
+    </div>`;
 }
 // ===== スキンケア設計：データ（成分マスター・肌悩みマスター・併用注意・参考文献）=====
 // ここは「データ」だけ。後から成分や文献を足すときは、この配列に1行ずつ足す（画面や判定のコードは変えなくてよい）
@@ -9493,7 +9495,7 @@ function dermHintHtml() {
   return `<div class="notice red derm-hint">${icon('note')}<span><b>皮膚科での相談をおすすめします</b><small>${esc(why)}。痛み・腫れ・跡が残りそうなときは、化粧品を変えるより早めの受診が近道です。これは記録からの目安で、診断ではありません。</small><span class="ch-act"><a class="link small" href="#/visit">受診用まとめを作る ›</a><button type="button" class="link small" data-action="derm-hide">今週は表示しない</button></span></span></div>`;
 }
 // ===== 肌の調子カレンダー（調子の色・生理・乾燥した日を1か月で見る） =====
-function skinCalHtml() {
+function skinCalHtml(inModal) {
   const t = todayStr(), ym = ui.calYM || monthKey(t), [y, m] = ym.split('-').map(Number);
   const days = new Date(y, m, 0).getDate(), lead = new Date(y, m - 1, 1).getDay();
   const by = {}; state.skinLogs.forEach(l => { by[l.date] = l; });
@@ -9503,15 +9505,15 @@ function skinCalHtml() {
     const k = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, l = by[k], fut = k > t;
     const per = l && (l.factors || []).includes('生理中'), dry = wxTags(state.weather[k]).includes('乾燥した日');
     if (l) n++;
-    cells += `<button type="button" class="sc-d ${l ? 'has' : ''} ${k === t ? 'today' : ''}" ${l ? `data-action="cal-day" data-id="${k}"` : 'disabled'} ${fut ? 'aria-hidden="true"' : ''} style="${l ? `--c:${COND_COLORS[l.condition] || '#ccc'}` : ''}" aria-label="${m}月${d}日${l ? ' ' + COND_LABELS[l.condition] : ''}">
+    cells += `<button type="button" class="sc-d ${l ? 'has' : ''} ${k === t ? 'today' : ''}" ${l ? `data-action="${inModal ? 'cal-pick' : 'cal-day'}" data-id="${k}"` : 'disabled'} ${fut ? 'aria-hidden="true"' : ''} style="${l ? `--c:${COND_COLORS[l.condition] || '#ccc'}` : ''}" aria-label="${m}月${d}日${l ? ' ' + COND_LABELS[l.condition] : ''}">
       <span class="sc-n">${d}</span>${l && l.acneCount ? `<small class="sc-a">${l.acneCount}</small>` : ''}<span class="sc-dots">${per ? '<i class="p"></i>' : ''}${dry ? '<i class="w"></i>' : ''}</span></button>`;
   }
   const canNext = ym < monthKey(t);
-  return `<div class="card skin-cal"><div class="card-h"><h2>肌の調子カレンダー</h2><span class="small muted">${n}日記録</span></div>
+  return `<div class="${inModal ? 'skin-cal sc-modal' : 'card skin-cal'}">${inModal ? `<p class="small muted" style="margin:0 0 6px;text-align:right">${n}日記録</p>` : `<div class="card-h"><h2>肌の調子カレンダー</h2><span class="small muted">${n}日記録</span></div>`}
     <div class="sc-h"><button type="button" class="ldc-nav" data-action="cal-m" data-id="-1" aria-label="前の月"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5l-7 7 7 7"/></svg></button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-action="cal-m" data-id="1" aria-label="次の月" ${canNext ? '' : 'disabled'}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 5l7 7-7 7"/></svg></button></div>
     <div class="sc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="sc-g">${cells}</div>
     <p class="sc-lg">${[5,4,3,2,1].map(v => `<span><i style="background:${COND_COLORS[v]}"></i>${COND_LABELS[v]}</span>`).join('')}<span><i class="dot p"></i>生理</span><span><i class="dot w"></i>乾燥した日</span></p>
-    <p class="small muted" style="margin:6px 0 0">数字の右下はニキビの数です。日にちを押すと、その日の記録を開きます。</p>
+    <p class="small muted" style="margin:6px 0 0">数字の右下はニキビの数です。日にちを押すと、その日の記録を${inModal ? '表示' : '開き'}ます。</p>
     <div class="page-actions" style="margin-top:10px"><button type="button" class="btn btn-soft btn-sm" data-action="month-share">${icon('image')}${m}月のまとめを画像にする</button></div></div>`;
 }
 // ===== 1か月のまとめを画像にしてシェア（顔写真は入れない） =====
@@ -9586,7 +9588,7 @@ function viewLogInner() {
   html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') ui.logTab = 'recent'; // 以前の「食事・運動・睡眠」タブは、記録一覧の中に入れた
-  if (ui.logTab === 'recent') return html + weekReviewHtml() + skinCalHtml() + recentCardHtml() + factorCardHtml() + reviewLinksHtml();
+  if (ui.logTab === 'recent') return html + weekReviewHtml() + factorCardHtml() + reviewLinksHtml();
   const logs = logsDesc();
   if (!logs.length) return html + `<div class="card">${emptyBox('note', 'まだ肌の記録がありません', 'ニキビ・赤み・乾燥・皮脂などを、数タップで記録できます。', '<button class="btn btn-primary btn-sm" data-action="new-log">最初の記録をつける</button>')}</div>`;
   const lm = lifeMap();
@@ -9655,7 +9657,7 @@ function logDayDetailHtml(list, i) {
 }
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
-  return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
+  return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="肌の調子カレンダー">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="log" aria-label="大きく見る">⤢</button><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
@@ -9714,7 +9716,9 @@ function bindLogDaySwipe() {
   const card = document.getElementById('log-day-card'); if (!card) return;
   const cb = document.getElementById('ld-calbtn'), cal = document.getElementById('ld-cal');
   if (cb && cal) {
-    cb.addEventListener('click', e => { e.stopPropagation(); ldCalOpen(cal.hidden); });
+    // 左上のカレンダーのボタン：肌の調子カレンダー（色・ニキビの数・生理・乾燥した日）を開き、日にちを押すとその日の記録を出す
+    cb.addEventListener('click', e => { e.stopPropagation(); hapticTick(); const L = logDayList(), cur = (L[logDayIdx(L)] || {}).date; ui.calYM = cur ? cur.slice(0, 7) : monthKey(todayStr());
+      openModal({title:'肌の調子カレンダー', size:'small', dismissable:true, body:`<div id="sc-body">${skinCalHtml(true)}</div>`}); });
     cal.addEventListener('click', e => {
       e.stopPropagation();
       const d = e.target.closest('[data-ldc]'); if (d) { ldCalOpen(false); logDayFind(d.dataset.ldc); return; }
@@ -12482,6 +12486,8 @@ function tagSummary(lifeLogs) {
   const e = Object.entries(c).sort((a,b) => b[1] - a[1]);
   return e.length ? e.map(([k, n]) => `${k} ${n}日`).join('、') : '記録なし';
 }
+// 週次レポートの日付：「11/9（月）」の形で、幅をそろえる（週を変えても、ボタンや文字がガクガク動かないように）
+const rpMD = s => { const d = parseYmd(s); return `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`; };
 function viewReport() {
   const t = todayStr();
   const ws = addDays(weekStart(t), ui.reportOffset * 7), we = addDays(ws, 6);
@@ -12500,9 +12506,9 @@ function viewReport() {
 
   let html = pageHead('週次レポート', '1週間分の記録をまとめます。') +
     `<div class="card rp-nav">
-      <button class="btn btn-ghost btn-sm" data-action="report-prev" aria-label="前の週">‹ 前週</button>
-      <div class="rp-range"><b>${fmtMD(ws)} 〜</b><b>${fmtMD(we)}</b>${ui.reportOffset === 0 ? '<span>今週</span>' : ''}</div>
-      <button class="btn btn-ghost btn-sm" data-action="report-next" aria-label="次の週" ${ui.reportOffset >= 0 ? 'disabled' : ''}>翌週 ›</button></div>
+      <button class="btn btn-ghost btn-sm" data-action="report-prev" aria-label="前の週"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5l-7 7 7 7"/></svg></button>
+      <div class="rp-range"><span class="rp-dd"><b class="rp-d">${rpMD(ws)}</b><i>〜</i><b class="rp-d">${rpMD(we)}</b></span><span>${ui.reportOffset === 0 ? '今週' : ui.reportOffset === -1 ? '先週' : `${-ui.reportOffset}週間前`}</span></div>
+      <button class="btn btn-ghost btn-sm" data-action="report-next" aria-label="次の週" ${ui.reportOffset >= 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 5l7 7-7 7"/></svg></button></div>
     <div class="notice green rp-note"><p>記録した内容を、決まったルールで集計しています。</p><p>記録がない項目は「記録なし」と表示します。</p></div>`;
 
   html += `<div class="card"><div class="card-h"><h2>肌の記録</h2><span class="small muted">${s.n} / ${daysElapsed || 7}日 記録</span></div>
@@ -13870,7 +13876,8 @@ const actions = {
   'remind-hide': () => { state.settings.remindHide = true; save(); render(); toast('お知らせの案内を閉じました。「設定」からいつでも設定できます'); },
   'derm-hide': () => { state.settings.dermHide = todayStr(); save(); render(); },
   'combo-hide': () => { state.settings.comboHide = comboSig(); save(); render(); },
-  'cal-m': v => { const n = Number(v) || 0; ui.calYM = shiftMonth(ui.calYM || monthKey(todayStr()), n); if (ui.calYM > monthKey(todayStr())) ui.calYM = monthKey(todayStr()); render(); },
+  'cal-m': v => { const n = Number(v) || 0; ui.calYM = shiftMonth(ui.calYM || monthKey(todayStr()), n); if (ui.calYM > monthKey(todayStr())) ui.calYM = monthKey(todayStr()); const sb = document.getElementById('sc-body'); if (sb) { sb.innerHTML = skinCalHtml(true); return; } render(); },
+  'cal-pick': v => { closeModal(); setTimeout(() => logDayFind(v), 60); },
   'cal-day': v => { const l = state.skinLogs.find(x => x.date === v); if (l) openLogForm(l.id); },
   'month-share': () => monthShare(),
   'new-log': v => { const t = v === 'free' ? null : state.skinLogs.find(l => l.date === todayStr()); if (t) openLogForm(t.id); else openLogForm(); },
