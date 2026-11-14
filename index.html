@@ -5800,6 +5800,32 @@ function openOwnedSheet(name, pids) {
     ${e && !L.some(p => isRxP(p)) ? `<div class="ing-dl" style="margin-top:12px">${ingInfoHtml(e, name)}</div>` : ''}</div>`});
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
 }
+// 運動・睡眠・食事の「控えたいもの」を押したときの説明：[当てはまる言葉, 説明, なぜ控える？, 代わりにこうする]
+const LIFE_AVOID = [
+  [/菓子パン|ドーナツ|ケーキ|チョコ|お菓子|スイーツ|甘いもの|甘い物|クッキー|アイス/, '砂糖と脂質が多い食べ物です。', '血糖値が急に上がりやすく、皮脂が増えたりニキビが悪化したりしやすいと報告されています。', 'おやつは、ナッツ・ヨーグルト・果物にします。'],
+  [/ジュース|缶コーヒー|清涼飲料|甘い飲み物|加糖|エナジードリンク/, '砂糖が多く入った飲み物です。', '飲み物の砂糖は吸収が早く、血糖値が上がりやすいため、皮脂やニキビに影響しやすくなります。', '水・お茶・無糖の炭酸水にします。'],
+  [/ポテトチップス|スナック|フライドポテト|唐揚げ|からあげ|揚げ|フライ|天ぷら|とんかつ/, '油で揚げた、脂質と塩分が多い食べ物です。', '続くと野菜やたんぱく質が足りなくなりがちで、肌の調子が乱れやすくなります。', '焼く・蒸す・煮る料理を選び、揚げ物は回数を減らします。'],
+  [/ラーメン|カップ麺|インスタント|麺類|単品/, '炭水化物と塩分が多く、野菜やたんぱく質が少なくなりがちな食事です。', '単品だと、肌に必要なたんぱく質・ビタミンが足りなくなりやすいです。', '卵・野菜を足すか、定食にします。'],
+  [/お酒|アルコール|ビール|飲酒|寝酒/, 'お酒です。', '飲みすぎると肌が乾燥しやすく、眠りも浅くなります。', '量を控えて、同じくらいの水を一緒に飲みます。'],
+  [/スマホ|画面|ブルーライト|ゲーム|動画/, '寝る直前に、スマホ・パソコンの画面を見ることです。', '画面の光と刺激で寝つきが悪くなり、眠りが浅くなります。睡眠不足は肌の回復を妨げます。', '寝る30分〜1時間前には、画面を見るのをやめます。'],
+  [/カフェイン|コーヒー|緑茶|紅茶/, '夕方以降のコーヒー・緑茶・エナジードリンクです。', 'カフェインの目を覚ます作用は数時間続き、寝つきを悪くします。', '夕方からは、麦茶などカフェインのない飲み物にします。'],
+  [/夜更かし|寝不足|遅くまで|不規則/, '寝る時間が遅い・短いことです。', '肌は寝ている間に修復されるため、睡眠が短いと肌荒れしやすくなります。', '毎日同じ時刻に寝て、同じ時刻に起きます。'],
+  [/夜食|寝る前の食事|遅い夕食|寝る直前/, '寝る直前に食べることです。', '消化のために眠りが浅くなりやすいです。', '夕食は、寝る3時間前までにすませます。'],
+  [/汗/, '運動でかいた汗を、ふかずにそのままにすることです。', '汗と皮脂が毛穴にたまると、ニキビやかゆみの原因になります。', '清潔なタオルで押さえるようにふき、早めに洗い流します。'],
+  [/座りっぱなし|運動不足|動かない/, '長い時間、座ったまま動かないことです。', '血のめぐりが悪くなり、肌に栄養が届きにくくなります。', '1時間に1回は立って、体を動かします。'],
+  [/紫外線|日差し|日中の屋外|炎天下|日焼け/, '日差しの強い時間の、屋外での運動です。', '紫外線は、シミ・くすみ・肌荒れの原因になります。', '朝や夕方に運動し、日焼け止め・帽子を使います。'],
+  [/激しい|やりすぎ|無理|追い込/, '息が切れるほどの激しい運動を、長く続けることです。', '疲れがたまると、睡眠や肌の回復に影響することがあります。', '会話ができるくらいの強さで、続けられる量にします。'],
+  [/顔を触|タオル|マスク|ヘルメット/, '運動中に、汗をかいた顔を触ったり、こすったりすることです。', '摩擦と汚れで、ニキビや赤みが出やすくなります。', '顔は清潔なタオルで押さえるだけにします。'],
+];
+function openLifeAvoidSheet(area, word) {
+  const hit = LIFE_AVOID.find(([re]) => re.test(word));
+  const why = hit ? hit[2] : area === '食事' ? '今の肌の状態と食事の記録から、控えたほうが肌によいと考えたものです。' : area === '睡眠' ? '眠りの質が下がると、肌の回復が遅れやすくなります。' : '肌の負担になりやすいことです。';
+  openModal({title:esc(word), size:'small', dismissable:true, body:`<div class="ing-sheet av-sheet"><div class="ing-dl">
+    ${hit ? `<div class="ing-b"><b>説明</b><p>${esc(hit[1])}</p></div>` : ''}
+    <div class="ing-b warn"><b>なぜ控えたほうがいい？</b><p>${esc(why)}</p></div>
+    ${hit ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(hit[3])}</p></div>` : ''}</div></div>`});
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-lifeavoid]'); if (!b) return; hapticTick(); const [a, ...w] = b.dataset.lifeavoid.split('|'); openLifeAvoidSheet(a, w.join('|')); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-owned]'); if (!b) return; hapticTick(); openOwnedSheet(b.dataset.owned, (b.dataset.pids || '').split(',').filter(Boolean)); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-avoidsheet]'); if (!b) return; hapticTick(); openAvoidSheet(b.dataset.avoidsheet); });
 // 洗顔料は「成分」ではなく商品の種類なので、洗顔料の中から探す
@@ -11421,7 +11447,7 @@ function advChips(x) {
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
   return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' && foodInfo(v) ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
-    + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => skin ? `<button type="button" class="adv-c bad adv-ing" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
+    + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => skin ? `<button type="button" class="adv-c bad adv-ing" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<button type="button" class="adv-c bad adv-ing" data-lifeavoid="${esc(x.area + '|' + v)}">${esc(v)}<i>›</i></button>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
