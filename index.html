@@ -5790,6 +5790,21 @@ function openAvoidSheet(word) {
     ${e ? `<a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : ''}
     <p class="small muted pg-foot" style="margin-top:8px">今の肌の状態（肌質診断・最近の肌の記録・使っている薬）から出しています。皮膚科で言われていることがあれば、そちらを優先してください。</p></div>`});
 }
+// 皮膚科の塗り薬の説明・効果・使い方・注意点（成分マスター・薬の一覧・使い方の表から、簡潔に）
+function rxInfoHtml(p) {
+  const d = RX_DRUGS.find(x => x[1] === p.name), kind = d ? d[0] : rxKindOf(p.name), act = d ? d[2] : String(p.ingredients || '').split(/[、,・]/)[0].trim();
+  const use = kind ? (RX_USE[kind] || kind) : '';
+  const ms = String(act || '').split(/・/).map(masterOf).filter(Boolean);
+  const first = t => (String(t || '').split(/(?<=。)/).filter(x => x.trim())[0] || '').trim();
+  const r = RX_PLAN.find(o => o.re.test(`${p.name} ${p.ingredients || ''} ${kind}`));
+  const desc = (use ? `${use}の治療に使う処方薬です。` : '皮膚科の処方薬です。') + (act ? `成分は${act}です。` : '') + (/ステロイド/.test(kind) ? `強さは「${kind.replace(/^ステロイド（|）$/g, '')}」です。` : '');
+  const eff = ms.length && ms[0].eff ? ms[0].eff : use ? `${use}をおさえる` : '';
+  const how = r ? `${r.per}。${r.how}` : '';
+  const notes = (r && r.note && r.note.length ? r.note : ms.map(m => first(m.side)).filter(Boolean)).slice(0, 3);
+  const blk = (t, v, c) => v ? `<div class="ing-b ${c || ''}"><b>${t}</b><p>${v}</p></div>` : '';
+  return `<div class="ing-dl" style="margin-top:12px">${blk('説明', esc(desc))}${blk('効果', esc(eff))}${ms.length && ms[0].mech ? blk('どう効く？', esc(first(ms[0].mech))) : ''}${blk('使い方', esc(how))}${notes.length ? blk('注意点', notes.map(n => '・' + esc(String(n).replace(/。?$/, '。'))).join('<br>'), 'warn') : ''}</div>
+    <p class="small muted pg-foot" style="margin-top:8px">添付文書などにもとづく一般的な情報です。使い方・量・期間は、医師・薬剤師の指示を優先してください。</p>`;
+}
 // 登録済みの成分：押すと、その成分が入っている登録済みの商品を出す
 function openOwnedSheet(name, pids) {
   const L = pids.map(id => state.myProducts.find(p => p.id === id)).filter(Boolean), e = ingEntryOf(name);
@@ -5797,7 +5812,7 @@ function openOwnedSheet(name, pids) {
   openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet">
     <p class="small muted" style="margin:0 0 10px">${L.some(p => isRxP(p)) ? '登録している皮膚科の薬です。' : L.some(p => truncate(p.name, 16) === name) ? 'Myアイテムに登録している商品です。' : 'Myアイテムに登録している、この成分が入った商品です。'}</p>
     <div class="irk-list">${L.map(p => `<button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}">${p.image ? extImgHtml(p.image, 'pop-img ir-img') : `<span class="pop-img ir-img own-ic">${icon('bottle')}</span>`}<span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b>${p.timing ? `<small class="own-tm">使う時間：${esc(p.timing)}</small>` : ''}</span><i class="ing-go">›</i></button>`).join('') || '<p class="small muted">商品が見つかりませんでした。</p>'}</div>
-    ${e && !L.some(p => isRxP(p)) ? `<div class="ing-dl" style="margin-top:12px">${ingInfoHtml(e, name)}</div>` : ''}</div>`});
+    ${L.some(p => isRxP(p)) ? L.filter(p => isRxP(p)).slice(0, 2).map(rxInfoHtml).join('') : e ? `<div class="ing-dl" style="margin-top:12px">${ingInfoHtml(e, name)}</div>` : ''}</div>`});
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
 }
 // 運動・睡眠・食事の「控えたいもの」を押したときの説明：[当てはまる言葉, 説明, なぜ控える？, 代わりにこうする]
@@ -9190,7 +9205,7 @@ function rtPaneHtml(slot) {
       <p class="cm-how no-ph">${esc(s.how)}</p>
       ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
-      ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${chips(s.avoid)}</div></div>` : ''}
+      ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
   // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
   const nk = v => normIng(chipText(v));
@@ -11383,8 +11398,10 @@ function adviceLocal(d) {
 const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい成分'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
 // 説明を短く：最初の1文（短すぎるときは2文）だけにする
 // 成分の説明と効果（簡潔に）：成分マスター（作用・効果）を優先し、なければ辞典の説明から、産地などのどうでもいい文は外す
+// 成分マスターの元のデータ（作用・効果・副作用）を名前で探す
+function masterOf(name) { const w = normIng(chipText(name)); if (!w) return null; try { const nm = x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].map(normIng); return ING_MASTER.find(x => nm(x).includes(w)) || ING_MASTER.find(x => nm(x).some(n => n.length >= 2 && (w.includes(n) || n.includes(w)))) || null; } catch (e) { return null; } }
 function ingInfo(e, name) {
-  let m = null; try { m = ING_MASTER.find(x => e && x.db === e.key) || (name ? ingMasterEntry(normIng(name)) : null); } catch (er) { /* 何もしない */ }
+  let m = null; try { m = ING_MASTER.find(x => e && x.db === e.key) || (name ? masterOf(name) : null); } catch (er) { /* 何もしない */ }
   const first = t => (String(t || '').split(/(?<=。)/).filter(x => x.trim())[0] || '').trim();
   let desc = m && m.mech ? first(m.mech) : '';
   if (!desc && e) { const ss = String(e.feature || '').split(/(?<=。)/).map(x => x.trim()).filter(Boolean), keep = ss.filter(x => !/含まれる|由来|から作られ|から取れ|日本では|昔から|名前/.test(x)); desc = (keep[0] || ss[0] || ''); }
