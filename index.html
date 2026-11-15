@@ -2543,6 +2543,7 @@ html[data-theme="dark"] .cm-ph i{background:var(--surface2)!important;color:var(
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cm-ph i{background:var(--surface2)!important;color:var(--ink)!important}}
 @keyframes cmFlash{0%{box-shadow:0 0 0 0 rgba(90,150,110,.0)}30%{box-shadow:0 0 0 3px rgba(90,150,110,.45)}100%{box-shadow:0 0 0 0 rgba(90,150,110,0)}}
 .cm-step.cm-flash .cm-b{animation:cmFlash 1.1s ease}
+button.cm-c .cm-dtag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:4px;background:#fff;color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}button.cm-c .cm-dtag.rx{color:#8A5A1E;box-shadow:inset 0 0 0 1px #E8D3B0}
 button.cm-c{border:0;font:inherit;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:3px;box-shadow:inset 0 0 0 1px #CFE3D4}button.cm-c i{font-style:normal;opacity:.7}.cm-c.bad{background:#FDF1EC;color:#B04A32}
 html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-theme="dark"] .cm-c.bad{background:rgba(217,105,75,.14)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cm-c.good{background:rgba(90,150,110,.16)}:root:not([data-theme="light"]) .cm-c.bad{background:rgba(217,105,75,.14)}}
@@ -9607,12 +9608,15 @@ function rtPaneHtml(slot) {
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
+  // ニキビが続いていて、ニキビの薬を登録していない人：夜の美容成分の手順の「おすすめ成分」に、塗り薬の成分も出す（市販薬はランキング、処方薬は説明だけ）
+  const drugStep = slot === 'pm' && P.acne && !P.hasAcneRx ? (P.steps.find(st => st.k === 'serum') || P.steps.find(st => st.k.startsWith('spot:')) || P.steps.find(st => !st.fixed && /保湿/.test(st.name)) || null) : null;
+  const dChips = s => s === drugStep ? Object.entries(ACNE_DRUG_ING).map(([k, x]) => `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name)}<small class="cm-dtag ${x.kind}">${x.kind === 'otc' ? '市販薬' : '皮膚科で処方'}</small><i>›</i></button>`).join('') : '';
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
       ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
-      ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.k === 'serum' || s.k === 'toner' || s.k.startsWith('spot:') ? 'おすすめ成分' : 'おすすめ'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
+      ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${s.k === 'serum' || s.k === 'toner' || s.k.startsWith('spot:') || s === drugStep ? 'おすすめ成分' : 'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
       ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
   // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
@@ -9632,58 +9636,52 @@ function rtPaneHtml(slot) {
   let h = '';
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
-  if (slot === 'pm' && P.acne && !P.hasAcneRx) h += acneDrugCardHtml();
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
   if (!P.hasProd) h += `<div class="card cm-hint"><p class="small no-ph">使っている化粧品を「Myアイテム」に登録すると、それぞれの順番に商品名が入ります。</p><a class="link small" href="#/my">Myアイテムを開く →</a></div>`;
   h += `<p class="small muted rt-foot no-ph">肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てた目安です。皮膚科の塗り薬は、医師の指示を優先してください。</p>`;
   return h;
 }
-// ===== ニキビの塗り薬の提案（登録していない人に） =====
-// 薬機法・医薬品等適正広告基準に合わせて：市販薬は、楽天市場のレビューの多い順に並べるだけ（効き目の保証・「No.1」などの表現はしない）。
-// 処方薬（医療用医薬品）は一般の人への広告ができないため、商品名・ランキング・購入リンクは出さず、成分の種類の説明と「皮膚科で相談」だけにする
-function acneDrugCardHtml() {
-  return `<div class="card rx-sug"><div class="card-h"><h2>ニキビの塗り薬</h2></div>
-    <p class="small no-ph" style="margin:0 0 10px">ニキビが続くときは、塗り薬を使う方法もあります。</p>
-    <div class="irk-list"><button type="button" class="pop-item ir" data-action="otc-acne"><span class="ir-t"><b>市販のニキビ薬</b><small class="ir-note">ドラッグストアや通販で買える薬（人気順）</small></span><i class="ing-go">›</i></button>
-    <button type="button" class="pop-item ir" data-action="rx-acne-info"><span class="ir-t"><b>皮膚科で処方される主な薬</b><small class="ir-note">診察を受けて、医師が選ぶ薬（参考）</small></span><i class="ing-go">›</i></button></div>
-    <p class="hint no-ph">赤く腫れる・数が多い・跡が残りそうなときは、市販薬より先に皮膚科に相談してください。</p></div>`;
-}
-const RX_ACNE_INFO = [
-  ['アダパレン（外用レチノイド）', '毛穴のつまりをできにくくして、白ニキビ・黒ニキビから治していく塗り薬です。使い始めは乾燥・ヒリヒリが出やすいです。'],
-  ['過酸化ベンゾイル', 'ニキビの原因になる菌を減らし、毛穴のつまりにも働く塗り薬です。服や髪の色が抜けることがあります。'],
-  ['アダパレンと過酸化ベンゾイルの配合薬', '上の2つを1本にした塗り薬です。'],
-  ['抗菌薬の塗り薬（クリンダマイシン・ナジフロキサシン・オゼノキサシンなど）', '赤く腫れたニキビの菌を減らす塗り薬です。菌が薬に強くならないよう、ほかの薬と組み合わせて使われることが多いです。'],
-  ['抗菌薬と過酸化ベンゾイルの配合薬', '抗菌薬と過酸化ベンゾイルを1本にした塗り薬です。'],
-];
-function openRxAcneInfo() {
-  openModal({title:'皮膚科で処方される主な薬', size:'small', dismissable:true, body:`<div class="ing-sheet">
-    <p class="small muted" style="margin:0 0 10px">ニキビの治療で皮膚科から出される、主な塗り薬の種類です（参考）。どの薬を使うかは、診察を受けて医師が肌の状態に合わせて決めます。通販では買えません。</p>
-    <div class="ing-dl">${RX_ACNE_INFO.map(([t, d]) => `<div class="ing-b"><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</div>
-    <p class="small muted" style="margin-top:10px">皮膚科で薬をもらったら、Myアイテムの「塗り薬」に登録すると、ケア管理の順番・併用注意に入ります。</p></div>`});
-}
-let OTC_ACNE = null;
-async function openOtcAcneSheet() {
-  setTimeout(() => { MODAL_REOPEN = () => openOtcAcneSheet(); }, 0);
-  openModal({title:'市販のニキビ薬', size:'small', dismissable:true, body:`<div class="ing-sheet">
-    <p class="small muted" style="margin:0 0 10px">ドラッグストアや通販で買える医薬品（第2類医薬品など）です。楽天市場でレビューの多い順に並べています<span class="pr-tag" style="margin-left:6px">PR</span></p>
+// ===== ニキビの塗り薬の成分（薬を登録していない人に、おすすめ成分として出す） =====
+// 薬機法・医薬品等適正広告基準に合わせて：市販薬は、楽天市場のレビューの多い順に並べるだけ（効き目の保証・「No.1」・医師の推薦などの表現はしない）。
+// 処方薬（医療用医薬品）は一般の人への広告ができないため、商品名・ランキング・購入リンクは出さず、成分の説明と「皮膚科で処方される」ことだけを伝える
+const ACNE_DRUG_ING = {
+  ibp:{name:'イブプロフェンピコノール', kind:'otc', d:'炎症をしずめる成分です。赤いニキビ用の市販薬（第2類医薬品）に使われています。', q:['イブプロフェンピコノール ニキビ 第2類医薬品', 'イブプロフェンピコノール 医薬品 クリーム']},
+  ada:{name:'アダパレン', kind:'rx', d:'毛穴のつまりをできにくくして、白ニキビ・黒ニキビから治していく塗り薬の成分です。使い始めは乾燥・ヒリヒリが出やすいです。'},
+  bpo:{name:'過酸化ベンゾイル', kind:'rx', d:'ニキビの原因になる菌を減らし、毛穴のつまりにも働く塗り薬の成分です。服や髪の色が抜けることがあります。'},
+};
+const OTC_ING_CACHE = {};
+async function openAcneDrugSheet(k) {
+  const x = ACNE_DRUG_ING[k]; if (!x) return;
+  if (x.kind === 'rx') {
+    openModal({title:x.name, size:'small', dismissable:true, body:`<div class="ing-sheet">
+      <div class="ing-dl"><div class="ing-b"><b>説明</b><p>${esc(x.d)}</p></div>
+      <div class="ing-b warn"><b>皮膚科で処方される成分です</b><p>この成分の塗り薬は、皮膚科で診察を受けて、医師が肌の状態に合わせて処方します。ドラッグストアや通販では買えません。ニキビが続く・赤く腫れる・跡が残りそうなときは、皮膚科に相談してください。</p></div></div>
+      <p class="small muted" style="margin-top:10px">皮膚科で薬をもらったら、Myアイテムの「塗り薬」に登録すると、ケアの順番・併用注意に入ります。</p></div>`});
+    return;
+  }
+  setTimeout(() => { MODAL_REOPEN = () => openAcneDrugSheet(k); }, 0);
+  openModal({title:x.name, size:'small', dismissable:true, body:`<div class="ing-sheet">
+    <div class="ing-dl"><div class="ing-b"><b>説明</b><p>${esc(x.d)}</p></div></div>
+    <h3 class="ing-h">この成分の市販薬の人気ランキング</h3>
+    <p class="small muted" style="margin:0 0 8px">楽天市場でレビューの多い順です<span class="pr-tag" style="margin-left:6px">PR</span></p>
     <div id="otc-pop">${skelHtml(3, {label:'商品を探しています'})}</div>
     <p class="small muted" style="margin-top:10px">医薬品です。使う前に添付文書（説明書）をよく読み、使用上の注意を守ってください。効き方には個人差があります。5〜6日使ってもよくならないとき、赤く腫れる・数が多いときは、皮膚科に相談してください。皮膚科の薬を使っている人は、医師・薬剤師に確認してから使ってください。</p></div>`});
   try {
-    if (!OTC_ACNE) {
-      const qs = ['ニキビ 治療薬 第2類医薬品', 'ニキビ 薬 クリーム 第2類医薬品', 'アクネ 医薬品'];
-      const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'otc'}))), L = [];
-      res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.forEach(x => { const n = String(x.name || '');
+    if (!OTC_ING_CACHE[k]) {
+      const res = await Promise.allSettled(x.q.map(q => findFetch({q, mode:'otc'}))), L = [];
+      res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.forEach(y => { const n = String(y.name || '');
         if (!/第[123]類医薬品/.test(n) || !/ニキビ|にきび|アクネ|吹き出物|吹出物/.test(n) || /セット|まとめ買い|[×xX]\s*\d|\d+\s*個/.test(n)) return; // 医薬品で、ニキビ用の、1個の物だけ
-        if (/yahoo/i.test(x.site || x.url || '') ? !affSite('yahoo') : !affSite('rakuten')) return;
-        if (!L.some(y => sameProduct({name:y.name}, {name:x.name}))) L.push(x); }); });
-      OTC_ACNE = L.slice(0, 15);
+        if (/yahoo/i.test(y.site || y.url || '') ? !affSite('yahoo') : !affSite('rakuten')) return;
+        if (!L.some(z => sameProduct({name:z.name}, {name:y.name}))) L.push(y); }); });
+      OTC_ING_CACHE[k] = L.slice(0, 15);
     }
-    const box = document.getElementById('otc-pop'); if (!box) return;
-    box.innerHTML = OTC_ACNE.length ? `<div class="irk-list">${OTC_ACNE.map((x, i) => `<button type="button" class="pop-item ir" data-otcpick="${i}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`
+    const list = OTC_ING_CACHE[k], box = document.getElementById('otc-pop'); if (!box) return;
+    box.innerHTML = list.length ? `<div class="irk-list">${list.map((y, i) => `<button type="button" class="pop-item ir" data-otcpick="${i}">${y.image ? extImgHtml(y.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(y.name))}</b>${y.price ? `<em>¥${Number(y.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`
       : `<p class="small muted">今は商品を見つけられませんでした。時間をおいて、もう一度お試しください。</p>`;
-    box.onclick = ev => { const t = ev.target.closest('[data-otcpick]'); if (!t) return; const x = OTC_ACNE[Number(t.dataset.otcpick)]; if (!x) return; ui.shopItem = Object.assign({}, x, {fromIng:'市販のニキビ薬'}); sheetGo('#/shop'); };
+    box.onclick = ev => { const t = ev.target.closest('[data-otcpick]'); if (!t) return; const y = list[Number(t.dataset.otcpick)]; if (!y) return; ui.shopItem = Object.assign({}, y, {fromIng:x.name + '（市販薬）', ingRank:Number(t.dataset.otcpick) + 1}); sheetGo('#/shop'); };
   } catch (e) { const box = document.getElementById('otc-pop'); if (box) box.innerHTML = '<p class="small muted">通信できませんでした。電波のよい場所で、もう一度お試しください。</p>'; }
 }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-acnedrug]'); if (!b) return; hapticTick(); openAcneDrugSheet(b.dataset.acnedrug); });
 function viewRoutine() {
   const slot = ui.rtTab === 'am' || ui.rtTab === 'pm' ? ui.rtTab : (new Date().getHours() < 15 ? 'am' : 'pm'); ui.rtTab = slot;
   const tabs = `<nav class="home-tabs rt-tabs" role="tablist" aria-label="朝と夜">${[['am', 'sun', '朝のケア'], ['pm', 'moon', '夜のケア']].map(([k, ic, l]) => `<button type="button" class="ht ${slot === k ? 'active' : ''}" role="tab" aria-selected="${slot === k}" data-action="rt-tab" data-id="${k}">${icon(ic)}<span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
@@ -14834,8 +14832,6 @@ const actions = {
     if (!p.image) { if (inp) inp.click(); return; } // 自分の写真がまだないときは、すぐに写真を選ぶ
     openModal({title:'写真', size:'small', dismissable:true, body:`<div class="stack-actions"><label class="btn btn-primary" for="myph-in">${icon('image')}写真を選ぶ</label><button type="button" class="btn btn-ghost" data-myphoto-del="${esc(id)}">写真を外す</button></div>`});
     document.querySelectorAll('#modal-root label[for="myph-in"],#modal-root [data-myphoto-del]').forEach(b => b.addEventListener('click', () => setTimeout(() => closeModal(true), 50))); },
-  'otc-acne': () => openOtcAcneSheet(),
-  'rx-acne-info': () => openRxAcneInfo(),
   'plan-pick': id => { acct.plan = id === 'year' ? 'year' : 'month'; render(); },
   'trial-seen': id => { try { localStorage.setItem('nk_trial_seen_' + id, '1'); } catch (e) { /* 何もしない */ } render(); },
   'ref-copy': async () => { const u = refLink(); if (!u) return; try { if (navigator.share) { await navigator.share({title:SERVICE, text:`肌の記録アプリ「${SERVICE}」の紹介です。登録してこのコード（${acct.refCode}）を使うと、${PREMIUM_NAME}が1か月無料になります。`, url:u}); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(u); toast('紹介リンクをコピーしました'); } catch (e) { toast('コピーできませんでした。コードを伝えてください', 'error'); } },
