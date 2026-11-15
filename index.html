@@ -13252,19 +13252,21 @@ function viewPlan(query) {
   }
   // ログイン中
   const s = acct.sub;
+  const ownerFree = !!(s && s.price_id === 'owner_free'); // 運営者の確認用（Stripeを通さない無料のプレミアム）
   if (EMBED) {
     // プラン → メールアドレス → 状態 → 契約内容の確認 の順に、1つの枠にまとめる
     const end = s && s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '';
-    const stateTxt = !acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? (s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み（${esc(end)}で終了）</span>` : `有効${end ? `（次回の更新日：${esc(end)}）` : ''}`)
+    const stateTxt = !acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? (ownerFree ? '有効（運営者の確認用・無料）' : s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み（${esc(end)}で終了）</span>` : `有効${end ? `（次回の更新日：${esc(end)}）` : ''}`)
       : s && ['past_due','unpaid','incomplete'].includes(s.status) ? '<span style="color:var(--danger)">お支払いを確認できていません</span>' : '未契約';
     html += `<div class="card"><dl class="kv"><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>状態</dt><dd>${stateTxt}</dd></dl>
-      ${s ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
+      ${s && !ownerFree ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
       <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd></dl>
     <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   if (isDev()) html += diagCardHtml(); // サーバーの設定の診断は、運営者だけ（?dev=1 で開いた端末）に出す
   if (!acct.subLoaded) return done(html);
   if (isPremium() && EMBED) return done(html);
+  if (isPremium() && ownerFree) return done(html + `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2></div><p class="small">運営者の確認用として、無料で有効になっています。</p></div>`);
   if (isPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
     html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2></div>
