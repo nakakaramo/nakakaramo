@@ -1767,6 +1767,9 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .used-tile:active,.used-tile:active .thumb{transform:none!important;opacity:1!important} /* 使ったアイテムは押しても沈まない。選ぶと枠だけ緑になる */
 /* 下のバー：指でなぞっても、バーごと画面が動かないようにする */
 .bottom-nav{touch-action:none;overscroll-behavior:none}
+/* iPhoneで速くスクロールしたとき、下のバー・上の帯が画面からずれて遅れてついてくることがあるので、別の層にして画面に固定する */
+.bottom-nav,body::before{-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+body::before{transform:translate3d(0,var(--vv-top,0px),0)}
 .food-pick.food-add-row{display:flex;justify-content:flex-end}
 
 /* カレンダーの月の切り替え：矢印を円のまん中に、月が変わっても位置がずれないように */
@@ -15186,6 +15189,25 @@ function ptrRepaint() {
 // 画面の動きは、CSSのトランジションではなく、毎フレーム自分で位置を計算して動かす（iPhoneでも途中で飛ばないように）
 // 決まった距離まで引っぱった時点で（指を離すのを待たずに）更新を始める。iPhoneの標準アプリと同じ動き
 // 下のバーの上で指を上下に動かすと、iPhoneではバーごと画面が引っぱられることがあるため止める（タップはそのまま効く）
+// 下のバー・上の帯を、いま見えている画面（visualViewport）の上下にぴったり合わせる。iPhoneで、見えている画面と
+// ページの枠がずれたとき（バーが途中に浮く・上の帯が消える）でも、見えている画面の端に置き直す。文字の入力中（キーボード表示中）はしない
+(function pinBars() {
+  const vv = window.visualViewport; if (!vv) return;
+  let raf = 0, last = '';
+  const typing = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !/^(checkbox|radio|button|file|range)$/.test(a.type || '')); };
+  const fix = () => {
+    raf = 0; const nav = document.getElementById('bottom-nav'); if (!nav) return;
+    if (nav.style.transform && !nav.dataset.pin) return; // 右へなぞって戻る動きなど、ほかの動きの最中は触らない
+    const top = vv.offsetTop, off = typing() || vv.scale > 1.01 ? 0 : Math.round(window.innerHeight - top - vv.height);
+    const key = `${off}|${Math.round(top)}`; if (key === last) return; last = key;
+    if (Math.abs(off) > 2 && Math.abs(off) < 600) { nav.style.transform = `translate3d(0,${-off}px,0)`; nav.dataset.pin = '1'; }
+    else if (nav.dataset.pin) { nav.style.transform = ''; delete nav.dataset.pin; }
+    document.documentElement.style.setProperty('--vv-top', !typing() && top > 2 && top < 600 ? Math.round(top) + 'px' : '0px');
+  };
+  const q = () => { if (!raf) raf = requestAnimationFrame(fix); };
+  vv.addEventListener('scroll', q); vv.addEventListener('resize', q); window.addEventListener('scroll', q, {passive:true}); window.addEventListener('orientationchange', q);
+  document.addEventListener('focusout', () => setTimeout(q, 60));
+})();
 (function lockBottomNav() { const nav = document.getElementById('bottom-nav'); if (nav) nav.addEventListener('touchmove', e => { if (e.cancelable) e.preventDefault(); }, {passive:false}); })();
 (function pullToRefresh() {
   const page = document.getElementById('page'), ptr = document.getElementById('ptr'); if (!page || !ptr) return;
