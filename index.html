@@ -1345,6 +1345,9 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .pop-item.ir{display:grid;grid-template-columns:26px 64px minmax(0,1fr) 12px;align-items:center;gap:12px;margin:0;padding:10px 12px;border-radius:16px}
 .ir-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);background:var(--surface2,#F4F1EC)}.ir-n.top3{background:#C98B5C;color:#fff}
 .pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
+.own-th .thumb{width:100%;height:100%;aspect-ratio:auto}.own-th .thumb .ph{font-size:0;gap:0}.own-th .thumb svg{width:100%;height:100%;display:block}
+.my-photo{position:relative;width:132px;margin:0 auto 4px}.my-photo .thumb{border-radius:18px}.my-photo .thumb svg{width:100%;height:100%;display:block}
+.my-photo-b{display:flex;justify-content:center;gap:8px;margin:0 0 6px}.my-photo-b label{cursor:pointer}
 .ir-t{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pop-item.ir.ir-pr{grid-template-columns:64px minmax(0,1fr) 12px;border-color:#CFE0D3;background:#F7FBF8}.ir-brand{font-size:11px;color:var(--muted);font-weight:600}.ir-note{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
@@ -3564,7 +3567,8 @@ function normalize(d) {
     purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : [],
     order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null, // 長押しで並べ替えた順番
     offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
-    ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300)} : null // 肌に合わなかった記録
+    ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300)} : null, // 肌に合わなかった記録
+    image:safeImg(p.image) // 自分で付けた写真
   })) : [];
   out.skinLogs = Array.isArray(d.skinLogs) ? d.skinLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
     id:String(l.id), date:l.date, condition:clamp(Math.round(num(l.condition,3)),1,5), acneCount:clamp(Math.round(num(l.acneCount)),0,99),
@@ -3708,6 +3712,8 @@ const PHOTO_READY = (async () => {
 /* ---------- データ取得 ---------- */
 const getCat = id => state.catalog.find(p => p.id === id);
 const getMy = id => state.myProducts.find(p => p.id === id);
+// Myアイテムの写真：自分で付けた写真 → 商品の写真 → 塗り薬のイラスト → カテゴリの絵 の順に出す
+const myThumb = p => thumbHtml(Object.assign({}, getCat(p.catalogId) || {}, p.image ? {image:p.image} : {}, {name:p.name, category:p.category || (getCat(p.catalogId) || {}).category, isSample:false}), false);
 const getLog = id => state.skinLogs.find(l => l.id === id);
 const getLife = date => state.lifeLogs.find(l => l.date === date);
 const logsAsc = () => state.skinLogs.slice().sort((a,b) => a.date.localeCompare(b.date));
@@ -4094,7 +4100,7 @@ function emptyBox(iconName, title, text, btnHtml='') {
 }
 // Myアイテムを「写真＋短い名前」のタイルで見せる（ホームの使用中の化粧品）
 const shortName = n => String(n || '').replace(/^【[^】]*】\s*/, '');
-const myTileHtml = p => `<a class="used-tile" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-nm">${esc(truncate(shortName(p.name), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></a>`;
+const myTileHtml = p => `<a class="used-tile" href="#/my/${encodeURIComponent(p.id)}">${myThumb(p)}<span class="used-nm">${esc(truncate(shortName(p.name), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></a>`;
 // 通販サイトの商品画像：小さいサムネイルではなく大きい画像を使う（楽天は600×600、Yahoo!は600px）
 function hiResImg(u) {
   u = String(u || ''); if (!/^https:\/\//.test(u)) return '';
@@ -5879,7 +5885,7 @@ function openOwnedSheet(name, pids) {
   setTimeout(() => { MODAL_REOPEN = () => openOwnedSheet(name, pids); }, 0);
   openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet">
     <p class="small muted" style="margin:0 0 10px">${L.some(p => isRxP(p)) ? '登録している皮膚科の薬です。' : L.some(p => truncate(p.name, 16) === name) ? 'Myアイテムに登録している商品です。' : 'Myアイテムに登録している、この成分が入った商品です。'}</p>
-    <div class="irk-list">${L.map(p => `<button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}">${p.image ? extImgHtml(p.image, 'pop-img ir-img') : `<span class="pop-img ir-img own-ic">${icon('bottle')}</span>`}<span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b>${p.timing ? `<small class="own-tm">使う時間：${esc(p.timing)}</small>` : ''}</span><i class="ing-go">›</i></button>`).join('') || '<p class="small muted">商品が見つかりませんでした。</p>'}</div>
+    <div class="irk-list">${L.map(p => `<button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}"><span class="pop-img ir-img own-th">${myThumb(p)}</span><span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b>${p.timing ? `<small class="own-tm">使う時間：${esc(p.timing)}</small>` : ''}</span><i class="ing-go">›</i></button>`).join('') || '<p class="small muted">商品が見つかりませんでした。</p>'}</div>
     ${L.some(p => isRxP(p)) ? L.filter(p => isRxP(p)).slice(0, 2).map(rxInfoHtml).join('') : e ? `<div class="ing-dl" style="margin-top:12px">${ingInfoHtml(e, name)}</div>` : ''}</div>`});
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
 }
@@ -5900,6 +5906,32 @@ const LIFE_AVOID = [
   [/激しい|やりすぎ|無理|追い込/, '息が切れるほどの激しい運動を、長く続けることです。', '疲れがたまると、睡眠や肌の回復に影響することがあります。', '会話ができるくらいの強さで、続けられる量にします。'],
   [/顔を触|タオル|マスク|ヘルメット/, '運動中に、汗をかいた顔を触ったり、こすったりすることです。', '摩擦と汚れで、ニキビや赤みが出やすくなります。', '顔は清潔なタオルで押さえるだけにします。'],
 ];
+// 運動・睡眠の「おすすめ」を押したときの説明：[当てはまる言葉, 説明, なぜいい？, やり方]
+const LIFE_GOOD = [
+  [/同じ時刻|起きる時刻|リズム|規則/, '毎日、だいたい同じ時刻に寝て起きることです。', '体内時計が整うと眠りが深くなり、寝ている間の肌の修復が進みやすくなります。', '休みの日も、起きる時刻のずれを1〜2時間以内にします。'],
+  [/お風呂|入浴|湯船/, '寝る1〜2時間前に、ぬるめのお湯につかることです。', '体の深いところの温度がいったん上がって下がるときに、自然に眠くなります。', '38〜40℃のお湯に10〜15分。熱すぎるお湯は肌が乾燥しやすいので避けます。'],
+  [/0時|早く寝|早寝|30分早/, 'いつもより早めに布団に入ることです。', '睡眠時間が長くなるほど、肌の回復や水分を保つ力が整いやすくなります。', 'まずは今より30分早く寝るところから始めます。'],
+  [/日光|朝日|朝の光|光を浴/, '朝起きたら、カーテンを開けて日の光を浴びることです。', '朝の光で体内時計がリセットされ、夜に自然と眠くなります。', '起きてすぐ、窓ぎわで数分すごします。'],
+  [/音楽|リラックス|深呼吸|瞑想|アロマ/, '寝る前に、気持ちを落ち着かせる時間をつくることです。', 'ストレスがやわらぐと寝つきがよくなり、ストレスによる肌荒れも起きにくくなります。', '静かな音楽を聞く・ゆっくり深呼吸するなど、5〜10分でできることにします。'],
+  [/寝室|暗く|照明|室温|加湿/, '眠りやすい部屋にすることです。', '暗く静かで、温度と湿度がちょうどよい部屋だと、深く眠れます。乾燥しにくくなり肌にもよいです。', '照明を落とし、冬は加湿器などで湿度を50〜60%にします。'],
+  [/散歩|ウォーキング|歩/, '少し早足で歩くことです。', '血のめぐりがよくなり、肌に栄養や酸素が届きやすくなります。気分転換にもなり、眠りも深くなります。', '会話ができるくらいの速さで、10〜30分歩きます。'],
+  [/ストレッチ|ヨガ|ほぐ/, '体をゆっくりのばすことです。', '血のめぐりがよくなり、体と気持ちがほぐれます。寝る前に行うと寝つきもよくなります。', '反動をつけずに、1か所20〜30秒ずつ、気持ちいいところまでのばします。'],
+  [/階段|こまめに動|立つ/, 'ふだんの生活の中で、体を動かす回数を増やすことです。', '運動の時間がとれなくても、こまめに動くと血のめぐりがよくなります。', 'エレベーターより階段、1時間に1回は立つ、などから始めます。'],
+  [/洗顔|保湿|汗を流|シャワー/, '運動のあと、早めに汗を流して保湿することです。', '汗と皮脂を放っておくと、毛穴がつまってニキビやかゆみの原因になります。', '運動後はなるべく早く洗顔かシャワーをして、化粧水・乳液でうるおいを戻します。'],
+  [/日焼け止め|帽子|日陰/, '外で運動するときに、紫外線を防ぐことです。', '紫外線は、シミ・くすみ・肌荒れの原因になります。', '日焼け止めを塗り、帽子をかぶります。汗をかいたら塗り直します。'],
+  [/筋トレ|スクワット|プランク/, '自分の体重を使う、軽めの筋トレです。', '筋肉がつくと代謝が上がり、血のめぐりもよくなります。', 'スクワットなどを10回×2〜3セット、息を止めずにゆっくり行います。'],
+  [/水分|水を飲|こまめに飲/, '運動の前後に、こまめに水を飲むことです。', '汗で水分が出ていくと、肌も乾燥しやすくなります。', 'のどがかわく前に、コップ1杯ずつ飲みます。'],
+  [/ジョギング|ランニング|有酸素|サイクリング|水泳/, '息が少しはずむくらいの運動です。', '血のめぐりがよくなり、ストレスもやわらぎます。', '会話ができるくらいの強さで、20〜30分を週2〜3回から始めます。'],
+];
+function openLifeGoodSheet(area, word) {
+  const hit = LIFE_GOOD.find(([re]) => re.test(word));
+  const why = hit ? hit[2] : area === '睡眠' ? 'よく眠れると、寝ている間に肌の修復が進み、肌の調子が整いやすくなります。' : '体を動かすと血のめぐりがよくなり、肌に栄養が届きやすくなります。';
+  openModal({title:esc(word), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl">
+    ${hit ? `<div class="ing-b"><b>説明</b><p>${esc(hit[1])}</p></div>` : ''}
+    <div class="ing-b"><b>なぜいい？</b><p>${esc(why)}</p></div>
+    ${hit ? `<div class="ing-b"><b>やり方</b><p>${esc(hit[3])}</p></div>` : ''}</div></div>`});
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-lifegood]'); if (!b) return; hapticTick(); const [a, ...w] = b.dataset.lifegood.split('|'); openLifeGoodSheet(a, w.join('|')); });
 function openLifeAvoidSheet(area, word) {
   const hit = LIFE_AVOID.find(([re]) => re.test(word));
   const why = hit ? hit[2] : area === '食事' ? '今の肌の状態と食事の記録から、控えたほうが肌によいと考えたものです。' : area === '睡眠' ? '眠りの質が下がると、肌の回復が遅れやすくなります。' : '肌の負担になりやすいことです。';
@@ -5908,6 +5940,10 @@ function openLifeAvoidSheet(area, word) {
     <div class="ing-b warn"><b>なぜ控えたほうがいい？</b><p>${esc(why)}</p></div>
     ${hit ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(hit[3])}</p></div>` : ''}</div></div>`});
 }
+// Myアイテムに、自分で撮った・選んだ写真を付ける（この商品だけに付く）
+document.addEventListener('change', async e => { const inp = e.target; if (!inp || !inp.dataset || !inp.dataset.myphoto) return; const p = getMy(inp.dataset.myphoto), f = inp.files && inp.files[0]; if (!p || !f) return;
+  try { p.image = await readImage(f, 720, 0.84); save(); render(); toast('写真を付けました'); } catch (err) { toast(err.message, 'error'); } inp.value = ''; });
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-myphoto-del]'); if (!b) return; const p = getMy(b.dataset.myphotoDel); if (!p) return; p.image = null; save(); render(); toast('写真を外しました'); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-lifeavoid]'); if (!b) return; hapticTick(); const [a, ...w] = b.dataset.lifeavoid.split('|'); openLifeAvoidSheet(a, w.join('|')); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-owned]'); if (!b) return; hapticTick(); openOwnedSheet(b.dataset.owned, (b.dataset.pids || '').split(',').filter(Boolean)); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-avoidsheet]'); if (!b) return; hapticTick(); openAvoidSheet(b.dataset.avoidsheet); });
@@ -6706,7 +6742,7 @@ function viewMy() {
       const days = diffDays(p.startDate, productEnd(p)) + 1;
       const period = p.status === '使用終了' ? `${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}（${days}日）` : p.status === STOCK ? `${fmtShort(p.startDate)} 購入` : (days > 0 ? `${days}日目` : `${fmtShort(p.startDate)}から`);
       const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing, p.timing === '必要なときだけ' ? '' : p.frequency, period].filter(Boolean).join('・');
-      return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><button type="button" class="m-del" data-action="swipe-del" data-id="${esc(p.id)}" tabindex="-1">${icon('trash')}<span>削除</span></button><div class="mrow-in"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {name:p.name, isSample:false}), false)}
+      return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><button type="button" class="m-del" data-action="swipe-del" data-id="${esc(p.id)}" tabindex="-1">${icon('trash')}<span>削除</span></button><div class="mrow-in"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${myThumb(p)}
         <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b>${(cat.category || p.category) === '日焼け止め' ? uvChip(p.name + ' ' + (cat.name || '')) : ''}<small>${esc(meta)}</small>${on && prodLifeChips(p) ? `<span class="mrow-life">${prodLifeChips(p)}</span>` : ''}</span></a>
         <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div></div>`;
     }).join('')}</div>`;
@@ -6950,6 +6986,8 @@ function viewMyDetail(id) {
     ${p.ng ? `<a class="card ng-banner" href="#/trouble">${icon('alert')}<span><b>肌に合わなかった（${fmtShort(p.ng.date)}）</b><small>${esc(p.ng.sym.join('・') || '症状は未記録')}</small></span><i>›</i></a>` : ''}
     <div class="card detail-top">
       <div>
+        <div class="my-photo">${myThumb(p)}</div>
+        <div class="my-photo-b"><label class="btn btn-ghost btn-sm">${icon('camera')}${p.image || (cat && (cat.image || cat.imageUrl)) ? '写真を変える' : '写真を付ける'}<input type="file" accept="image/*" data-myphoto="${esc(p.id)}" class="vh"></label>${p.image ? `<button type="button" class="btn btn-ghost btn-sm" data-myphoto-del="${esc(p.id)}">写真を外す</button>` : ''}</div>
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
         <div class="chips" style="margin:10px 0 14px"><span class="chip">${esc(p.category)}</span>${(isRx ? (use ? [use] : []) : p.purposes).map(x => `<span class="chip green">${esc(x)}</span>`).join('')}</div>
         <dl class="kv">
@@ -10122,7 +10160,7 @@ function openLogForm(id) {
       <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
     <div class="field lf-sep"><div class="used-head"><span class="lbl">使ったアイテム<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="use-all-mini" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
-      ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
+      ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${myThumb(p)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
         <p class="hint">使ったものの写真を押してください。予定の使用頻度と実際の使用を比べられます。</p>`
       : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
     </div>
@@ -11512,7 +11550,33 @@ const FOOD_INFO = {
   '水・お茶':['水分', 'こまめな水分補給は、体の中からのうるおいを保つ基本です。甘い飲み物のかわりにします'],
   '季節の野菜':['ビタミン・ミネラル・食物繊維', 'いろいろなビタミンと食物繊維がとれ、腸内環境と肌の調子を整えます'],
 };
-const foodInfo = v => FOOD_INFO[String(v || '').trim()] || null;
+// 名前がぴったり合わない食べ物（「鮭の塩焼き」など）も、含まれる食材や種類から説明を出す
+const FOOD_CAT = [
+  [/鮭|さけ|サーモン|さば|サバ|いわし|あじ|さんま|ぶり|魚|ツナ|しらす/, ['たんぱく質・オメガ3脂肪酸・ビタミンD・ビタミンB群', '肌の材料になるたんぱく質と、うるおいを保つ良い油がとれます']],
+  [/えび|いか|たこ|あさり|しじみ|牡蠣|かき|ほたて|貝/, ['たんぱく質・亜鉛・鉄・タウリン', '肌の生まれ変わりに関わる亜鉛と、たんぱく質がとれます']],
+  [/鶏|ささみ|チキン|豚|牛|肉|ハム/, ['たんぱく質・ビタミンB群・鉄・亜鉛', '肌の材料になるたんぱく質と、代謝を助けるビタミンB群がとれます。脂の少ない部位がおすすめです']],
+  [/卵|たまご|玉子/, ['たんぱく質・ビタミンB2・ビタミンA・ビタミンD', '肌の材料になるたんぱく質と、皮脂を整えるビタミンB2がとれます']],
+  [/納豆|豆腐|大豆|豆乳|味噌|みそ|枝豆|厚揚げ|油揚げ|きな粉/, ['たんぱく質・大豆イソフラボン・ビタミンB群', '植物性のたんぱく質がとれます。大豆イソフラボンは肌のうるおいとの関係が研究されています']],
+  [/ヨーグルト|牛乳|チーズ|乳/, ['たんぱく質・カルシウム・乳酸菌・ビタミンB2', '腸内環境を整え、肌あれしにくい体づくりを助けます']],
+  [/キウイ|いちご|みかん|オレンジ|レモン|グレープフルーツ|柿|アセロラ/, ['ビタミンC・食物繊維', 'コラーゲンづくりに必要なビタミンCがとれます']],
+  [/バナナ|りんご|ぶどう|ベリー|果物|フルーツ|もも|梨/, ['ビタミン・ポリフェノール・食物繊維', '甘いお菓子のかわりにでき、ビタミンと食物繊維もとれます']],
+  [/ブロッコリー|パプリカ|ピーマン|小松菜|ほうれん草|菜の花|ケール|春菊/, ['ビタミンC・ビタミンA（βカロテン）・鉄', 'ビタミンCとビタミンAで、ハリとうるおいのある肌づくりを助けます']],
+  [/にんじん|かぼちゃ|トマト|モロヘイヤ|緑黄色/, ['ビタミンA（βカロテン）・リコピン・ビタミンC', '肌や粘膜のうるおいを保ち、紫外線から肌を守る働きのある成分がとれます']],
+  [/キャベツ|白菜|大根|玉ねぎ|きゅうり|レタス|もやし|ごぼう|れんこん|野菜|サラダ/, ['ビタミンC・食物繊維・カリウム', '食物繊維で腸内環境が整い、肌の調子も整いやすくなります']],
+  [/きのこ|しいたけ|しめじ|えのき|まいたけ|エリンギ/, ['ビタミンD・ビタミンB群・食物繊維', '低カロリーで、肌の代謝を助けるビタミンB群と食物繊維がとれます']],
+  [/わかめ|ひじき|海藻|のり|もずく|昆布/, ['ミネラル・食物繊維', '腸内環境を整え、不足しがちなミネラルもとれます']],
+  [/ナッツ|アーモンド|くるみ|ごま/, ['ビタミンE・良い油・亜鉛', 'ビタミンEは肌の乾燥や酸化から守るのを助けます。ひとつかみが目安です']],
+  [/玄米|雑穀|オートミール|全粒|そば/, ['ビタミンB群・食物繊維・ミネラル', '白いごはん・パンより血糖値が上がりにくく、皮脂のバランスを保ちやすくなります']],
+  [/キムチ|ぬか漬け|漬物|発酵|甘酒/, ['乳酸菌・ビタミンB群', '腸内環境を整え、肌あれしにくい体づくりを助けます']],
+  [/水|お茶|麦茶|白湯|ルイボス/, ['水分', 'こまめな水分補給は、体の中からのうるおいを保つ基本です']],
+];
+function foodInfo(v) {
+  const w = String(v || '').replace(/[（(].*?[）)]/g, '').trim(); if (!w) return null;
+  if (FOOD_INFO[w]) return FOOD_INFO[w];
+  const k = Object.keys(FOOD_INFO).filter(x => w.includes(x)).sort((a, b) => b.length - a.length)[0]; if (k) return FOOD_INFO[k];
+  const c = FOOD_CAT.find(([re]) => re.test(w)); if (c) return c[1];
+  return ['いろいろな栄養', '今の肌の状態と食事の記録から、肌によいと考えた食べ物です。いろいろな食材を組み合わせて、バランスよく食べましょう'];
+}
 function openFoodSheet(name) {
   const f = foodInfo(name); if (!f) return;
   openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>栄養</b><p>${esc(f[0])}</p></div><div class="ing-b"><b>効果</b><p>${esc(f[1])}</p></div></div></div>`});
@@ -11528,7 +11592,7 @@ function advChips(x) {
     g.sort((x, y) => (plOf(y, PL.good) ? 1 : 0) - (plOf(x, PL.good) ? 1 : 0)); } }
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
-  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' && foodInfo(v) ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
+  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<button type="button" class="adv-c good adv-ing" data-lifegood="${esc(x.area + '|' + v)}">${esc(v)}<i>›</i></button>`).join('')}</div></div>` : ''}`
     + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => skin ? `<button type="button" class="adv-c bad adv-ing" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<button type="button" class="adv-c bad adv-ing" data-lifeavoid="${esc(x.area + '|' + v)}">${esc(v)}<i>›</i></button>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
