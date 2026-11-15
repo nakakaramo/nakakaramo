@@ -5958,7 +5958,7 @@ function openAvoidOwnSheet(k) {
     <p class="small muted" style="margin:0 0 10px">Myアイテムに登録している商品です。</p>
     <div class="irk-list"><button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}"><span class="pop-img ir-img own-th">${myThumb(p)}</span><span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b></span><i class="ing-go">›</i></button></div>
     <div class="ing-dl" style="margin-top:12px">
-      <div class="ing-b warn"><b>なぜ控える？</b><p>${esc(`${a.here}は、併用注意の「${who}」を使うので、「${pn}」は${a.here}には使いません。${a.when ? `${a.when}に使います（時間を分ければ使えます）。` : '今日はお休みします。'}`)}</p></div>
+      <div class="ing-b warn"><b>なぜ控える？</b><p>${esc(a.why ? `「${pn}」：${a.why}${a.when ? `（${a.when}は使います）` : ''}` : `${a.here}は、併用注意の「${who}」を使うので、「${pn}」は${a.here}には使いません。${a.when ? `${a.when}に使います（時間を分ければ使えます）。` : '今日はお休みします。'}`)}</p></div>
       ${row.why ? `<div class="ing-b"><b>一緒に使うと？</b><p>${esc(row.why)}</p></div>` : ''}
       ${row.how ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(row.how)}</p></div>` : ''}</div></div>`});
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
@@ -9375,6 +9375,24 @@ function rtPlan(slot, solo) {
     keep.sort((a, b) => (plOf(b, PL.good) ? 1 : 0) - (plOf(a, PL.good) ? 1 : 0)); st.good = keep;
     drop.forEach(g => { const row = plOf(g, PL.bad); const w = `${chipText(g)}（${row.ng ? '肌に合わなかった物に入っていた' : 'あなたの記録で、使った日の肌が悪い傾向'}）`; if (!st.avoid.some(x => chipText(x) === chipText(g))) st.avoid.push(w); });
     st.learned = keep.filter(g => plOf(g, PL.good)).map(chipText); }); }
+  // スキンケア設計で休ませた商品（処方薬と重なる・同じ種類が多いなど）も、黙って消さずに理由を出す
+  if (R && R.dropped) {
+    const here = slot === 'am' ? '朝' : '夜', usedIds = new Set(steps.flatMap(st => st.prods.map(x => x.p.id)));
+    let otherUsed = new Set(); if (!solo) { try { otherUsed = new Set(rtPlan(slot === 'am' ? 'pm' : 'am', true).steps.flatMap(z => z.prods.map(y => y.p.id))); } catch (e) { otherUsed = new Set(); } }
+    const kindOf = k => ({emulsion:'moist', cream:'moist', allinone:'moist', mask:'serum', other:'serum', spot:'serum'})[k] || k;
+    R.dropped.filter(o => o.x && !o.x.rx && (!o.slot || o.slot === slot) && !usedIds.has(o.x.p.id)).forEach(o => {
+      const nm = truncate(o.x.p.name, 16);
+      if (steps.some(st => (st.avoidOwn || []).some(a => a.p.id === o.x.p.id) || st.today.some(t => String((t && t.t) || '').includes(nm)))) return; // もう説明している
+      const st = steps.find(z => !z.fixed && z.k === kindOf(o.x.step)) || steps.find(z => z.k === 'serum') || steps.filter(z => !z.fixed).pop(); if (!st) return;
+      const why = String(o.why || '').replace(/。$/, '');
+      // 同じ時間に使う物と併用注意なら、その組み合わせを理由にする（どれと重なるのかがわかるように）
+      const pool = steps.flatMap(z => z.prods).map(x => { const i = prodComboInfo(x); return {id:x.p.id, name:truncate(x.p.name, 18), tags:i.tags, rx:!!x.rx, act:i.act}; });
+      const cc = comboConflict(prodComboInfo(o.x), pool, o.x.p.id);
+      if (cc) (st.avoidOwn = st.avoidOwn || []).push({p:o.x.p, c:cc, here, when:otherUsed.has(o.x.p.id) ? (slot === 'am' ? '夜' : '朝') : ''});
+      else if (/処方薬|併用|刺激/.test(why)) (st.avoidOwn = st.avoidOwn || []).push({p:o.x.p, why:why + '。', here, when:otherUsed.has(o.x.p.id) ? (slot === 'am' ? '夜' : '朝') : ''});
+      else st.today.push(T(`「${nm}」は${otherUsed.has(o.x.p.id) ? `${here}は使いません（${slot === 'am' ? '夜' : '朝'}に使います）。` : '今は使いません。'}${why}`, '成分'));
+    });
+  }
   return {steps, d, w, tips, lead, calm, hasProd:all.length > 0, R};
 }
 function rtPaneHtml(slot) {
