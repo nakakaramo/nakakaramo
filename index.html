@@ -5955,6 +5955,20 @@ function rxInfoHtml(p) {
     <p class="small muted pg-foot" style="margin-top:8px">添付文書などにもとづく一般的な情報です。使い方・量・期間は、医師・薬剤師の指示を優先してください。</p>`;
 }
 // 登録済みの成分：押すと、その成分が入っている登録済みの商品を出す
+const AVOID_OWN = new Map();
+function openAvoidOwnSheet(k) {
+  const a = AVOID_OWN.get(k); if (!a) return; const p = getMy(a.p.id) || a.p, row = (a.c && a.c.row) || {};
+  const pn = truncate(p.name, 24), who = a.c && a.c.who ? a.c.who.name : '';
+  openModal({title:esc(a.nm), size:'small', dismissable:true, body:`<div class="ing-sheet av-sheet">
+    <p class="small muted" style="margin:0 0 10px">Myアイテムに登録している商品です。</p>
+    <div class="irk-list"><button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}"><span class="pop-img ir-img own-th">${myThumb(p)}</span><span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b></span><i class="ing-go">›</i></button></div>
+    <div class="ing-dl" style="margin-top:12px">
+      <div class="ing-b warn"><b>なぜ控える？</b><p>${esc(`${a.here}は、併用注意の「${who}」を使うので、「${pn}」は${a.here}には使いません。${a.when ? `${a.when}に使います（時間を分ければ使えます）。` : '今日はお休みします。'}`)}</p></div>
+      ${row.why ? `<div class="ing-b"><b>一緒に使うと？</b><p>${esc(row.why)}</p></div>` : ''}
+      ${row.how ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(row.how)}</p></div>` : ''}</div></div>`});
+  document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-avoidown]'); if (!b) return; hapticTick(); openAvoidOwnSheet(b.dataset.avoidown); });
 function openOwnedSheet(name, pids) {
   const L = pids.map(id => state.myProducts.find(p => p.id === id)).filter(Boolean), e = ingEntryOf(name);
   setTimeout(() => { MODAL_REOPEN = () => openOwnedSheet(name, pids); }, 0);
@@ -9236,6 +9250,10 @@ function rtPlan(slot, solo) {
   const rxOn = RXP.filter(r => r.slots.includes(slot));
   const rxHard = RXP.some(r => r.slots.includes(slot) && (r.avoid.includes('レチノール') || r.steroid)); // 同じ時間（朝・夜）に使う薬だけで判断する（朝と夜で分ければ使える） // レチノイド・過酸化ベンゾイル・ステロイドを使っている間は、刺激の強い化粧品を休む
   const rxAvoid = uniq(RXP.filter(r => r.slots.length).flatMap(r => r.avoid));
+  // 薬と刺激が重なるので休む美容液は、文章ではなく「控えたい成分」に、持っている商品として出す（押すと理由が出る）
+  const rxWho = (() => { const r = RXP.find(r => r.slots.includes(slot) && (r.avoid.includes('レチノール') || r.steroid)); return r && r.x && r.x.p ? truncate(r.x.p.name, 18) : '皮膚科の塗り薬'; })();
+  const RX_ROW = {why:'皮膚科の塗り薬を使っている肌に、刺激の出やすい成分を重ねると、赤み・乾燥・ヒリヒリが強く出やすくなります。'};
+  const restOwn = (L, toOther) => L.map(x => ({p:x.p, c:{who:{name:rxWho}, row:RX_ROW}, when:toOther && toOther.includes(x) ? (slot === 'am' ? '夜' : '朝') : '', here:slot === 'am' ? '朝' : '夜'}));
   const rxStep = r => add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗顔（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
     today:r.note.map(t => T(t, '薬')), avoid:r.avoid});
   const spotSteps = () => here.filter(s => s.kind === 'spot').forEach(s => add('spot:' + s.x.p.id, {name:STEP_LABEL.spot, prods:[s.x], how:'気になるところだけに、少量をのせます。'}));
@@ -9252,7 +9270,7 @@ function rtPlan(slot, solo) {
     const restNote = rest.length ? T(`今日は「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     let sg = uniq([markT && !calm ? 'ビタミンC誘導体' : '', acneT || oilT || poreT ? 'ナイアシンアミド' : '', calm || sensT ? 'パンテノール' : '', calm ? 'ツボクサエキス（CICA）' : '']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。', good:sg, avoid:uniq([sensT ? '高濃度のビタミンC（純粋ビタミンC）' : '']),
-      today:restNote ? [restNote] : calm ? [T('赤み・肌あれがある日は、刺激の少ない美容液にして、しずめる成分を選びます', '肌')] : []});
+      today:restNote && !rxHard ? [restNote] : calm ? [T('赤み・肌あれがある日は、刺激の少ない美容液にして、しずめる成分を選びます', '肌')] : [], avoidOwn:rxHard ? restOwn(rest) : []});
     spotSteps(); rxSteps('moist');
     add('moist', moistO('am', uniq([lowHum || cold ? T('乾燥する日は、頬・口元にクリームを少し重ねます', '天気') : null, hot ? T('暑い日は少なめでOK（保湿をやめると、かえって皮脂が増えることがあります）', '天気') : null])));
     rxSteps('drug'); rxSteps('cover');
@@ -9286,7 +9304,8 @@ function rtPlan(slot, solo) {
     const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? retW : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
     const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの併用']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
-      today:uniq([restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
+      avoidOwn:rxHard ? restOwn(rest, toAm) : [],
+      today:uniq([rxHard ? null : restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
     spotSteps(); rxSteps('moist');
     add('moist', moistO('pm', uniq([lowHum ? T('空気が乾いている日は、最後にクリームでふたをして、寝ている間の乾燥を防ぎます', '天気') : null, calm ? T('肌を休ませる日は、うるおいを守るのが一番です', '肌') : null])));
     rxSteps('drug'); rxSteps('cover');
@@ -9334,7 +9353,7 @@ function rtPlan(slot, solo) {
     steps.forEach(st => { if (st.fixed) return; st.prods = st.prods.filter(x => { const info = prodComboInfo(x);
       const c = comboConflict(info, pool.filter(p => p.rx || keep.includes(p.id)), x.p.id);
       if (c && !(info.act >= 1)) { st.today.push(T(`「${truncate(x.p.name, 16)}」は${c.who.name}と併用注意の成分が入っています。しみる・赤くなるときは、別の物に替えます`, c.who.rx ? '薬' : '成分')); keep.push(x.p.id); return true; } // 日焼け止め・保湿など欠かせない物は休まず、注意を出す
-      if (c) { let canOther = false; if (slot === 'pm' && !solo) { try { canOther = rtPlan('am', true).steps.some(z => z.prods.some(y => y.p.id === x.p.id)); } catch (e) { canOther = false; } } st.today.push(T(`「${truncate(x.p.name, 16)}」は${c.who.name}と一緒に使うと注意なので、${canOther ? `${otherJa}だけ使います` : '今日はお休みします'}`, c.who.rx ? '薬' : '成分')); { const i = pool.findIndex(p => p.id === x.p.id); if (i >= 0) pool.splice(i, 1); } return false; }
+      if (c) { let canOther = false; if (slot === 'pm' && !solo) { try { canOther = rtPlan('am', true).steps.some(z => z.prods.some(y => y.p.id === x.p.id)); } catch (e) { canOther = false; } } (st.avoidOwn = st.avoidOwn || []).push({p:x.p, c, when:canOther ? otherJa : '', here:hereJa}); { const i = pool.findIndex(p => p.id === x.p.id); if (i >= 0) pool.splice(i, 1); } return false; }
       { const oc = comboConflict(info, otherRx); if (oc && info.act >= 1) st.today.push(T(`「${truncate(x.p.name, 16)}」は${hereJa}だけにして、${otherJa}の${oc.who.name}とは時間を分けて使います`, '成分')); }
       keep.push(x.p.id); return true; }); });
     // おすすめ成分：使っている物と併用注意になる成分は、おすすめにせず「控えたい」へ
@@ -9377,6 +9396,8 @@ function rtPaneHtml(slot) {
     const pr = state.myProducts.find(p => !p.demo && (esc(p.name) === pre || (pre.length >= 4 && esc(p.name).startsWith(pre)))); if (!pr) return all;
     const own = P.steps.flatMap(z => z.own || []).find(o => !o.drug && o.pids.includes(pr.id)); if (!own) return all;
     return `<button type="button" class="care-link" data-owned="${esc(own.name)}" data-pids="${esc(own.pids.join(','))}">${esc(own.name)}</button>`; });
+  // 持っている商品で、今は控えるもの（併用注意の薬などと同じ時間に使わない）：青い枠で出し、押すと理由が出る
+  const aoChips = s => (s.avoidOwn || []).map(a => { const k = `${slot}|${s.k}|${a.p.id}`, nm = ingFromName(a.p.name) || truncate(a.p.name, 16); AVOID_OWN.set(k, Object.assign({nm}, a)); return `<button type="button" class="cm-c own cm-ing-b" data-avoidown="${esc(k)}">${icon('bottle')}${esc(nm)}<i>›</i></button>`; }).join('');
   const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}<i>›</i></button>`).join('');
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
@@ -9385,9 +9406,9 @@ function rtPaneHtml(slot) {
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
-      ${s.today.map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
-      ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.gl || 'おすすめ成分'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
-      ${s.avoid.length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${chips(s.avoid)}</div></div>` : ''}
+      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
+      ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.fixed ? 'おすすめ' : s.gl || 'おすすめ成分'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
+      ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
   // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
   const nk = v => normIng(chipText(v));
