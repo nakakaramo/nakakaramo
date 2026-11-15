@@ -1516,6 +1516,10 @@ details.fold[open] summary{margin-bottom:10px}
 .modal-backdrop.m-now,.modal-backdrop.m-now .modal{animation:none!important} /* 戻ってきて開き直すときは、動かさずにそのまま出す */
 /* 閉じるときは、後ろの暗い色だけを薄くする（シート自体はフェードさせず、下にすべらせるだけ） */
 .modal-backdrop.closing{background:transparent!important;transition:background-color .17s ease}
+/* キーボードが出ている間：見えている範囲（上の位置・高さはJSで指定）にぴったり合わせ、シートをキーボードのすぐ上に置く */
+.modal-backdrop.kb{bottom:auto!important;transition:none}
+.modal-backdrop.kb .modal{max-height:calc(var(--kb-h,100vh) - max(var(--sat),12px) - 8px)!important}
+body:has(#modal-root .modal-backdrop.kb)::before{transform:translate3d(0,var(--kb-top,0px),0)!important}
 @keyframes bgIn{from{background-color:transparent}}
 .sheet-grab{display:flex;justify-content:center;padding:8px 0 0;cursor:grab;touch-action:none}
 .sheet-grab i{width:40px;height:5px;border-radius:99px;background:var(--line2)}
@@ -15746,6 +15750,27 @@ function ptrRepaint() {
   const q = () => { if (!raf) raf = requestAnimationFrame(fix); };
   vv.addEventListener('scroll', q); vv.addEventListener('resize', q); window.addEventListener('scroll', q, {passive:true}); window.addEventListener('orientationchange', q);
   document.addEventListener('focusout', () => setTimeout(q, 60));
+})();
+// 下から出るシートで文字を入力するとき（キーボードが出ている間）は、シートと暗い背景を「見えている範囲」に合わせる
+// （iPhoneはキーボードが出ると画面ごと上へずれるので、そのままだとシートが浮いたり、上に白い帯や後ろのページが見えたりする）
+(function fitModalToKeyboard() {
+  const vv = window.visualViewport; if (!vv) return;
+  let raf = 0, cur = null;
+  const fix = () => {
+    raf = 0;
+    const bd = document.querySelector('#modal-root .modal-backdrop:not(.closing)'), a = document.activeElement;
+    const kb = !!(bd && a && bd.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !/^(checkbox|radio|button|file|range)$/.test(a.type || '') && window.innerHeight - vv.height > 120 && window.innerWidth < 640);
+    if (cur && cur !== bd) { cur.classList.remove('kb'); cur.style.top = cur.style.height = ''; cur = null; }
+    const root = document.documentElement.style;
+    if (!kb) { if (cur) { cur.classList.remove('kb'); cur.style.top = cur.style.height = ''; cur = null; root.removeProperty('--kb-top'); } return; }
+    cur = bd; bd.classList.add('kb');
+    bd.style.top = Math.round(vv.offsetTop) + 'px'; bd.style.height = Math.round(vv.height) + 'px';
+    root.setProperty('--kb-top', Math.round(vv.offsetTop) + 'px'); root.setProperty('--kb-h', Math.round(vv.height) + 'px');
+  };
+  const q = () => { if (!raf) raf = requestAnimationFrame(fix); };
+  vv.addEventListener('scroll', q); vv.addEventListener('resize', q); window.addEventListener('scroll', q, {passive:true});
+  document.addEventListener('focusin', () => { q(); setTimeout(q, 120); setTimeout(q, 400); });
+  document.addEventListener('focusout', () => setTimeout(q, 80));
 })();
 (function lockBottomNav() { const nav = document.getElementById('bottom-nav'); if (nav) nav.addEventListener('touchmove', e => { if (e.cancelable) e.preventDefault(); }, {passive:false}); })();
 (function pullToRefresh() {
