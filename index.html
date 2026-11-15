@@ -995,8 +995,12 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .ref-row{display:flex;gap:10px;align-items:center;margin-top:10px}.ref-row .input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.12em}
 .ref-code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.16em;padding:8px 12px;border-radius:12px;background:var(--surface2);text-align:center}
 .trial-bn .page-actions{gap:8px}
-.care-lock{text-align:center;padding:24px 18px}.care-lock>svg{width:30px;height:30px;color:var(--green-d)}.care-lock h2{font-size:17px;margin:8px 0 6px}.care-lock .small{margin:0 0 12px}
-.care-lock-l{text-align:left;margin:0 auto 16px;max-width:320px;padding:10px 12px 10px 30px;background:var(--green-l,#E5F2EA);border-radius:12px;font-size:12.5px}
+.care-lock{text-align:center;padding:26px 20px 22px}.care-lock>svg{width:28px;height:28px;color:var(--green-d)}
+.care-lock h2{font-size:17px;line-height:1.5;margin:10px 0 8px}.care-lock h2 span,.care-lock .cl-lead span{display:inline-block}
+.care-lock .cl-lead{margin:0 auto 16px;max-width:320px;line-height:1.75;color:var(--muted);text-wrap:balance}
+.care-lock ul.care-lock-l{list-style:none;text-align:left;margin:0 auto 18px;max-width:320px;padding:14px 16px;background:var(--green-l,#E5F2EA);border-radius:14px;font-size:13px;line-height:1.55;display:grid;gap:10px}
+.care-lock ul.care-lock-l li{display:flex;gap:8px;align-items:flex-start}.care-lock ul.care-lock-l li svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--green-d)}
+.care-lock .cl-note{margin:12px 0 0}
 :root[data-theme="dark"] .care-lock-l{background:var(--green-s)}
 .ptz{position:relative;display:block;padding:12px 14px 52px;border:1px solid var(--line);border-radius:14px;background:var(--surface2,#FAF8F4);cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .ptz:active{transform:scale(.99)}
@@ -9140,11 +9144,11 @@ function ingLinkHtml(html, seen) {
 const careLockLoading = () => acct.status === 'loading' || (acct.status === 'idle' && hasSavedLogin()) || (!!acct.user && !acct.subLoaded);
 const careLocked = () => PREMIUM_LOCK && !isPremium() && !careLockLoading();
 function careLockHtml(what) {
-  return `<div class="card care-lock">${icon('lock')}<h2>${esc(what)}は${PREMIUM_NAME}の機能です</h2>
-    <p class="small">肌の記録・天気・使っている化粧品から、あなたに合う朝・夜のケアと、今日のおすすめを作ります。</p>
-    <ul class="pf-l care-lock-l"><li>朝・夜のケアの順番と、おすすめ成分・控えたい成分</li><li>今日のおすすめケア（肌・睡眠・食事・運動）</li><li>今週いちばん大事なこと</li><li>献立の提案・AIの分析</li></ul>
+  return `<div class="card care-lock">${icon('lock')}<h2><span>${esc(what)}は</span><span>${PREMIUM_NAME}の機能です</span></h2>
+    <p class="small cl-lead"><span>肌の記録・天気・使っている化粧品から、</span><span>あなたに合うケアを作ります。</span></p>
+    <ul class="care-lock-l">${['朝・夜のケアの順番', 'おすすめ成分・控えたい成分', '今日のおすすめ（肌・睡眠・食事・運動）', '今日のポイント・献立の提案・AIの分析'].map(t => `<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${t}</span></li>`).join('')}</ul>
     <button type="button" class="btn btn-primary" data-psheet="${esc(what)}" style="width:100%;justify-content:center">${PREMIUM_NAME}プランを見る</button>
-    <p class="small muted" style="margin:10px 0 0">新しく登録すると、3日間無料で使えます。</p></div>`;
+    <p class="small muted cl-note">新しく登録すると、3日間無料で使えます。</p></div>`;
 }
 const careLoadingHtml = () => `<div class="card">${skelHtml(3, {label:'読み込み中'})}</div>`;
 let CARE_LOCK_SHOWN = '';
