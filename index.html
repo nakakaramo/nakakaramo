@@ -937,7 +937,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .sc-ind{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / 3);border-radius:9px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.08);transform:translateX(calc(var(--to) * 100%))}
 .sc-ind.go{animation:scInd .3s cubic-bezier(.3,.7,.3,1)}
 @keyframes scInd{from{transform:translateX(calc(var(--from) * 100%))}to{transform:translateX(calc(var(--to) * 100%))}}
-.sc-tab{position:relative;border:0;background:none;border-radius:9px;padding:8px 0;font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:4px;transition:color .2s}
+.sc-tab{position:relative;cursor:pointer;border:0;background:none;border-radius:9px;padding:8px 0;font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:4px;transition:color .2s}
 .sc-tab.on{color:var(--ink)}
 .sc-body.in-r{animation:scInR .32s cubic-bezier(.3,.7,.3,1)}.sc-body.in-l{animation:scInL .32s cubic-bezier(.3,.7,.3,1)}
 @keyframes scInR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
@@ -1487,6 +1487,7 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-photo img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;display:block}
 .ld-photo p{margin:0;padding:0 8px}
 .ld-ph-on .ld-photo{display:flex}
+.ld-ph-on canvas,.ld-ph-on .f3-load{visibility:hidden} /* 写真のときは3Dの顔（はみ出す首も）を出さない */
 .ld-none .ld-vsw{visibility:hidden}
 /* 3Dの顔は、顔とそのまわり少しだけを触れる大きさにする（その外では、ふつうにページをスクロールできる） */
 .ld-card .ld-stage{max-width:240px;width:100%;aspect-ratio:auto;height:190px;margin:0 auto}
@@ -2510,6 +2511,7 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .ct2-go svg{width:17px;height:17px;color:var(--green-d);flex:none}.ct2-go span{flex:1}.ct2-go i{font-style:normal;color:var(--muted);font-size:17px}
 /* ケア管理 */
 .home-tabs.rt-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
+.home-tabs.log-tabs{grid-template-columns:repeat(2,minmax(0,124px))} /* 記録のタブは2つ：均等に並べる */
 .rt-tabs .ht svg{width:17px;height:17px}
 .cm-sum{padding:16px 18px;margin-bottom:14px}
 .cm-sum-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
@@ -7995,7 +7997,7 @@ function skinChangeHtml() {
   const avgOf = (a, f) => a.length ? a.reduce((x, l) => x + (Number(f(l)) || 0), 0) / a.length : null;
   const idx = SC_RANGES.findIndex(x => x[0] === k), an = ui.scAnim; ui.scAnim = null; // 切り替えたときだけ動かす
   const tabs = `<div class="sc-tabs" role="tablist" aria-label="期間"><span class="sc-ind ${an ? 'go' : ''}" style="--to:${idx};--from:${an ? an.from : idx}" aria-hidden="true"></span>${SC_RANGES.map(([v, l]) => { const lk = v !== 'week' && locked();
-    return `<button type="button" role="tab" aria-selected="${k === v}" class="sc-tab ${k === v ? 'on' : ''}" ${lk ? `data-psheet="肌の変化（${l}）"` : `data-action="sc-range" data-id="${v}"`}>${l}${lk ? `<span class="sc-lock">${icon('lock')}</span>` : ''}</button>`; }).join('')}</div>`;
+    return `<div role="tab" tabindex="0" aria-selected="${k === v}" class="sc-tab ${k === v ? 'on' : ''}" ${lk ? `data-psheet="肌の変化（${l}）"` : `data-action="sc-range" data-id="${v}"`}>${l}${lk ? `<span class="sc-lock">${icon('lock')}</span>` : ''}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`; }).join('')}</div>`;
   const head = `<div class="card sc-card"><div class="card-h"><h2>肌の変化</h2><a class="link" href="#/report">レポート →</a></div>${tabs}`;
   if (!real.length) return head + `<p class="small muted" style="margin:6px 0 0">肌の記録をつけると、ここで変化を見られます。</p></div>`;
   // 期間：週間＝直近7日、月間＝直近30日、年間＝直近12か月（くらべるのは、その1つ前の同じ長さ）
@@ -10327,7 +10329,7 @@ function logDayDetailHtml(list, i) {
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
   return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="肌の調子カレンダー">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
-    <button type="button" class="ld-vsw ${ui.ldView === 'photo' ? 'ph' : ''}" data-action="ld-view" aria-label="3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）"><span>3D</span><span>写真</span></button>
+    <div role="button" tabindex="0" class="ld-vsw ${ui.ldView === 'photo' ? 'ph' : ''}" data-action="ld-view" aria-label="3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）"><span>3D</span><span>写真</span><label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>
     <div class="f3-stage ld-stage ${ui.ldView === 'photo' ? 'ld-ph-on' : ''}" id="ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div><div class="ld-photo" id="ld-photo">${ldPhotoHtml(list[i])}</div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
@@ -14619,6 +14621,9 @@ document.addEventListener('change', async e => {
   } catch (er) { toast(er.message || '画像を読み込めませんでした', 'error'); }
 });
 document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint(); });
+// ボタンの中に重ねた見えないスイッチ（.hap-in-l）：指で押すとiPhoneが「コツッ」と鳴る。そのあと、下のボタンを押したことにする
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.hap-in-l')) e.stopPropagation(); }, true);
+document.addEventListener('change', e => { const i = e.target; if (!i.classList || !i.classList.contains('hap-in')) return; hapticAt = Date.now(); try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (er) { /* 何もしない */ } const b = i.closest('[data-action],[data-psheet]'); if (b) b.click(); });
 document.addEventListener('keydown', e => { if (e.target.id === 'pf-name1' && e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && parseRoute().id === 'me/name') { e.preventDefault(); actions['name-save'](); } }); // 表示名のページ：キーボードの「完了」で保存
 function viewAccount() {
   const sub = parseRoute().id;
@@ -14990,10 +14995,10 @@ const actions = {
   'life-edit': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'life-day': v => { const [date, part] = String(v).split('|'); const l = getLife(date); openLifeForm(l ? l.id : null, part, date); },
   'ld-view': () => { // どこを押しても、3D⇄写真を切り替える
-    ui.ldView = ui.ldView === 'photo' ? '3d' : 'photo'; hapticTick();
+    ui.ldView = ui.ldView === 'photo' ? '3d' : 'photo'; if (Date.now() - hapticAt > 300) hapticTick(); // 重ねたスイッチで鳴らしていなければ鳴らす
     const sg = document.getElementById('ld-stage'); if (!sg) { render(); return; } sg.classList.toggle('ld-ph-on', ui.ldView === 'photo');
     const b = document.querySelector('.ld-vsw'); if (b) { b.classList.toggle('ph', ui.ldView === 'photo'); b.setAttribute('aria-label', `3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）`); } },
-  'sc-range': v => { if (v !== 'week' && locked()) { openPremiumSheet('肌の変化'); return; } const from = SC_RANGES.findIndex(x => x[0] === (ui.scRange || 'week')); if (ui.scRange === v || (!ui.scRange && v === 'week')) return; hapticTick(); ui.scAnim = {from}; ui.scRange = v; render(); },
+  'sc-range': v => { if (v !== 'week' && locked()) { openPremiumSheet('肌の変化'); return; } const from = SC_RANGES.findIndex(x => x[0] === (ui.scRange || 'week')); if (ui.scRange === v || (!ui.scRange && v === 'week')) return; if (Date.now() - hapticAt > 300) hapticTick(); ui.scAnim = {from}; ui.scRange = v; render(); },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); swScrollTop(); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
