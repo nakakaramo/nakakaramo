@@ -13843,16 +13843,18 @@ async function callVision(mode, image, payload) {
   const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' || mode === 'official' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : mode === 'meal' ? {mode, image, fast:true} : mode === 'skin' && payload && payload.images ? {mode, image, images:payload.images} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
-    let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
+    let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。', lim = false;
     try {
       const st = error.context && error.context.status, j = await error.context.json();
       if (j && (j.error || j.message || j.msg)) msg = String(j.error || j.message || j.msg);
+      lim = !!(j && j.limit); // 1日の回数を使い切ったとき（診断の案内はつけない）
       if (/JWT/i.test(msg)) msg = 'サーバーの設定で、ログインの確認方法が合っていません（Verify JWT）。' + (st ? `［${st}］` : '');
     } catch (e) { /* 何もしない */ }
-    if (mode !== 'diag') msg += '（うまくいかないときは「アカウント」→「プラン・アカウント」の「診断する」で原因を調べられます）';
+    if (mode !== 'diag' && !lim) msg += '（うまくいかないときは「アカウント」→「プラン・アカウント」の「診断する」で原因を調べられます）';
     throw new Error(msg);
   }
   if (data && data.error) throw new Error(data.error);
+  if (data && data.kindName && data.remaining != null && data.remaining <= 3) setTimeout(() => toast(data.remaining ? `今日の${data.kindName}は、あと${data.remaining}回です（明日の0時にもとに戻ります）` : `今日の${data.kindName}の回数を使い切りました（明日の0時にもとに戻ります）`), 600);
   return data;
 }
 // ---------- 写真読み取り・AI分析がうまく動かないときの診断 ----------
@@ -14026,9 +14028,9 @@ function viewPlan(query) {
   if (CLOUD.testMode) notes += `<div class="notice warn"><b class="nt-h">現在はテスト中です。実際の請求は発生しません。</b>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
   notes += `<div class="notice green">ログインすると、肌の記録・化粧品・設定が、登録したメールアドレスのアカウントに自動でバックアップされます（機種変更しても戻せます）。写真もあなただけが見られる場所にバックアップされます。有料プランのカード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
   const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
-    <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
+    <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（写真の読み取りは1日15回まで）。</p></div>`;
   // アカウントの画面の中では、プランの比較は一番下に、押すと開く形で出す
-  const cmpFold = `<details class="fold acc-cmp"><summary>プランの比較</summary>${planTable()}<p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です（1日30回まで）。</p></details>`;
+  const cmpFold = `<details class="fold acc-cmp"><summary>プランの比較</summary>${planTable()}<p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です（写真の読み取りは1日15回まで）。</p></details>`;
   if (!EMBED) html += notes;
   const done = h => EMBED ? h + notes + cmpFold : h;
   if (!EMBED) html += cmpCard;
