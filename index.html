@@ -933,6 +933,11 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .or-line{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:10px 0}
 .or-line::before,.or-line::after{content:"";flex:1;border-top:1px solid var(--line)}
 .wr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.sc-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:3px;background:var(--bg);border-radius:12px;margin:2px 0 10px}
+.sc-tab{border:0;background:none;border-radius:9px;padding:8px 0;font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:4px}
+.sc-tab.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.sc-lock svg{width:12px;height:12px;display:block}
+.sc-span{margin:0 0 8px}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
 .wr-grid small{font-size:11px;color:var(--muted);white-space:nowrap}.wr-grid small.wr-up,.wr-grid small.wr-down,.wr-grid small.wr-eq{font-size:10.5px}
 .wr-grid b{font-size:20px;line-height:1.3}
@@ -1347,6 +1352,11 @@ a.used-tile{color:inherit;text-decoration:none}
 .cmp-ml{font-size:12.5px;color:var(--muted)}
 .cmp-detail summary{cursor:pointer}
 /* 成分の組み合わせ：結果のまとめ */
+.cs-list{list-style:none;margin:10px 0 2px;padding:0;display:grid;gap:8px}
+.cs-list li{display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:3px;align-items:start;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.cs-list li .cl-b{grid-row:span 2;margin-top:1px}
+.cs-pair{font-size:14px;line-height:1.5}.cs-pair b{font-weight:700}.cs-pair i{font-style:normal;color:var(--muted);margin:0 4px;font-size:12.5px}
+.cs-list small{grid-column:2;color:var(--muted);font-size:12px;line-height:1.5}
 .combo-sum .cs-big{display:flex;flex-direction:column;gap:2px}
 .combo-sum .cs-big b{font-size:20px}
 .combo-sum .cs-big span{font-size:12.5px;color:var(--muted)}
@@ -1458,8 +1468,17 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y;position:relative}
-.ld-card .ld-top{position:absolute;top:10px;left:10px;right:auto;margin:0;z-index:6}
-.ld-card .ld-cal{left:0;right:auto}
+.ld-card .ld-top{position:absolute;top:10px;right:10px;left:auto;margin:0;z-index:6}
+.ld-card .ld-cal{right:0;left:auto}
+/* 3Dの顔⇄顔写真の切り替え（左上） */
+.ld-vsw{position:absolute;top:14px;left:14px;z-index:6;display:flex;padding:2px;background:var(--bg);border-radius:999px;border:1px solid var(--line)}
+.ld-vsw button{border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:var(--muted);padding:5px 11px;border-radius:999px}
+.ld-vsw button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.ld-photo{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;background:var(--surface);z-index:3}
+.ld-photo img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;display:block}
+.ld-photo p{margin:0;padding:0 8px}
+.ld-ph-on .ld-photo{display:flex}
+.ld-none .ld-vsw{visibility:hidden}
 /* 3Dの顔は、顔とそのまわり少しだけを触れる大きさにする（その外では、ふつうにページをスクロールできる） */
 .ld-card .ld-stage{max-width:240px;width:100%;aspect-ratio:auto;height:190px;margin:0 auto}
 .ld-swipe{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px;margin-top:8px;user-select:none;-webkit-user-select:none}
@@ -4442,10 +4461,10 @@ function drawCharts() {
     el.dataset.w = String(w); el.innerHTML = c.fn(w);
   });
 }
-function xLabels(dates, x, iw, h) {
+function xLabels(dates, x, iw, h, fmt) {
   const n = dates.length, step = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 46))));
   // 右端（いちばん新しい日）から数えて日付を出す。右端の日付は欄の中に収まるように右寄せ
-  return dates.map((d, i) => (n - 1 - i) % step === 0 ? `<text class="ax" x="${x(i).toFixed(1)}" y="${h-8}" text-anchor="${i === n - 1 && n > 1 ? 'end' : 'middle'}"${i === n - 1 && n > 1 ? ' dx="6"' : ''}>${fmtShort(d)}</text>` : '').join('');
+  return dates.map((d, i) => (n - 1 - i) % step === 0 ? `<text class="ax" x="${x(i).toFixed(1)}" y="${h-8}" text-anchor="${i === n - 1 && n > 1 ? 'end' : 'middle'}"${i === n - 1 && n > 1 ? ' dx="6"' : ''}>${fmt ? fmt(d) : fmtShort(d)}</text>` : '').join('');
 }
 function lineChart(w, o) {
   const h = o.height || 200, pl = 34, pr = 14, pt = 12, pb = 28;
@@ -4457,7 +4476,7 @@ function lineChart(w, o) {
     s += `<line class="grid" x1="${pl}" x2="${w-pr}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/>`;
     s += `<text class="ax" x="${pl-8}" y="${(y(t)+4).toFixed(1)}" text-anchor="end">${esc(o.yFmt ? o.yFmt(t) : t)}</text>`;
   });
-  s += xLabels(o.dates, x, iw, h);
+  s += xLabels(o.dates, x, iw, h, o.xFmt);
   const r = n > 45 ? 2 : 3.2;
   o.series.forEach(se => {
     let path = '';
@@ -7011,7 +7030,7 @@ function ngSuspects(day, l) { // その日に使ったもの＋その日まで�
 }
 function viewTrouble() {
   const ng = state.myProducts.filter(p => p.ng).sort((a, b) => b.ng.date.localeCompare(a.ng.date));
-  let html = `<a class="back" href="#/my">← Myアイテム</a>` + pageHead('注意アイテム', '肌に合わなかった化粧品と、肌が荒れた日に使っていたものを、あとで確かめられます。');
+  let html = `<a class="back" href="#/my">← Myアイテム</a>`; // 上のバーに「注意アイテム」と出ているので、同じ見出しは出さない
   html += `<div class="card"><div class="card-h"><h2>合わなかった化粧品</h2>${ng.length ? `<span class="chip">${ng.length}件</span>` : ''}</div>`;
   html += ng.length ? ng.map(p => `<div class="ng-item"><a class="ng-name" href="#/my/${encodeURIComponent(p.id)}"><b>${esc(p.name)}</b><small>${esc([p.brand, p.category].filter(Boolean).join('・'))}</small></a>
       <div class="ng-meta"><span>${fmtDate(p.ng.date)}</span>${p.ng.sym.map(x => `<span class="chip warn">${esc(x)}</span>`).join('')}</div>
@@ -7570,26 +7589,31 @@ function viewCombo() {
     if (active.length) h += locked() ? lockCard('成分相性マップ', '使用中の化粧品ごとに、注意が必要な成分の重なりと使う時間帯を一覧の表で確認できます。') : comboMap(comboReport(active));
     return h + `<details class="card fold"><summary><b>信頼できる情報源</b></summary>${sourcesHtml()}</details>`;
   }
-  let html = pageHead('成分の組み合わせ', '登録したアイテムのうち、一緒に使うときに注意が必要なものを出します。');
+  let html = ''; // 上のバーに「成分組み合わせ」と出ているので、同じ見出しは出さない
   if (!active.length) html += `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'Myアイテムで「使用中」の商品を登録すると、一緒に使うときに注意が必要なものがここに出ます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
   else {
     const r = comboReport(active);
     r.alerts = r.alerts.filter(al => !al.pairs.length); // 商品どうしの組み合わせは「使っている商品の併用の注意」で出す
-    const nAl = r.alerts.length + (r.uvNote ? 1 : 0) + prodAnalysis().pairs.length;
+    // 何と何が注意なのかを、最初にまとめて出す
+    const PA = prodAnalysis(), uvN = uvLackNote(PA.infos), sn = n => esc(truncate(shortName(n), 20));
+    const nAl = r.alerts.length + (uvN ? 1 : 0) + PA.pairs.length;
+    const rows = PA.pairs.map(p => `<li>${lvChip(p.r.lv)}<span class="cs-pair"><b>${sn(p.x.p.name)}</b><i>と</i><b>${sn(p.y.p.name)}</b></span><small>${esc(p.r.rule || '')}</small></li>`)
+      .concat(uvN ? [`<li>${lvChip(uvN.lv)}<span class="cs-pair"><b>${esc(uvN.products.map(p => truncate(shortName(p.name), 20)).join('、'))}</b></span><small>${esc(uvN.label)}が入っていますが、日焼け止めが登録されていません</small></li>`] : [])
+      .concat(r.alerts.map(al => `<li>${lvChip(al.rule.lv || 2)}<span class="cs-pair"><b>${esc(al.products.map(p => truncate(shortName(p.name), 20)).join('、'))}</b></span><small>${esc(al.rule.title)}</small></li>`));
     html += `<div class="card combo-sum ${nAl ? 'warn' : 'ok'}"><div class="cs-big"><b>${nAl ? `注意 ${nAl}件` : '注意はありません'}</b><span>使用中の化粧品 ${active.length}件を確認しました</span></div>
+      ${rows.length ? `<ul class="cs-list">${rows.join('')}</ul>` : ''}
       ${r.missing.length ? `<div class="cs-miss"><p class="small"><b>全成分がまだの商品（${r.missing.length}件）</b>：入れると、もっと正しく確かめられます</p>${r.missing.map(x => x.p).map(p => `<button type="button" class="btn btn-soft btn-sm" data-action="edit-my" data-id="${esc(p.id)}">${esc(truncate(shortName(p.name), 16))}の全成分を入れる</button>`).join('')}</div>` : ''}</div>`;
     html += comboLevelsHtml();
-    if (r.alerts.length || r.uvNote) {
+    if (r.alerts.length) { // 日焼け止めの注意は、上の「使っている商品の併用の注意」に出しているので、ここには出さない
       html += `<div class="card"><div class="card-h"><h2>そのほかの注意点</h2></div>`;
       r.alerts.forEach(al => { html += `<div class="alert-card"><b>${esc(al.rule.title)}</b>${esc(al.rule.note)}<div class="small" style="margin-top:6px">・${al.products.map(p => esc(truncate(p.name, 24))).join('<br>・')}</div></div>`; });
-      if (r.uvNote) html += `<div class="alert-card"><b>日中の紫外線対策</b>レチノール類や角質ケア成分を含む商品を使う場合、日中の紫外線対策が一般的に勧められています。使用中の日焼け止めが登録されていません（登録していないだけの場合は問題ありません）。</div>`;
       html += '</div>';
     }
   }
   const nNg = COMBO_DB.filter(x => x.lv >= 2).length, nOk = COMBO_DB.filter(x => x.lv === 1).length;
   html += `<h3 class="cb-sec">組み合わせを調べる</h3><div class="card cb-rows">
-    <a class="acc-row" href="#/combo/ng">${icon('alert')}<span><b>併用注意</b></span><em>${nNg}件</em><i>›</i></a>
     <a class="acc-row" href="#/combo/ok">${icon('check')}<span><b>併用OK</b></span><em>${nOk}件</em><i>›</i></a>
+    <a class="acc-row" href="#/combo/ng">${icon('alert')}<span><b>併用注意</b></span><em>${nNg}件</em><i>›</i></a>
     <a class="acc-row" href="#/combo/search">${icon('search')}<span><b>成分・塗り薬で調べる</b></span><em></em><i>›</i></a></div>`;
   html += `<div class="notice cb-note">成分名が含まれているかどうかだけで判定しています。濃度・処方・使用量・個人差は考慮できないため、<b>安全性や効果を判断するものではありません</b>。各製品の使用方法・注意事項を優先し、気になる症状がある場合は皮膚科医や薬剤師に相談してください。</div>`;
   return html;
@@ -7953,6 +7977,45 @@ function badgeCheck() { // 新しく条件を満たしたバッジを記録し�
 function badgesHtml() {
   const got = state.settings.badges;
   return `<div class="card"><div class="card-h"><h2>バッジ</h2><span class="small muted">${got.length} / ${BADGES.length}</span></div><div class="badges">${BADGES.map(b => `<span class="badge ${got.includes(b.k) ? 'on' : ''}" title="${esc(b.d)}">${icon(got.includes(b.k) ? 'spark' : 'check')}<b>${esc(b.l)}</b></span>`).join('')}</div></div>`;
+}
+// ===== 記録：肌の変化（週間は無料、月間・年間はプレミアム）=====
+const SC_RANGES = [['week', '週間'], ['month', '月間'], ['year', '年間']];
+function skinChangeHtml() {
+  let k = ui.scRange || 'week'; if (k !== 'week' && locked()) k = 'week';
+  const t = todayStr(), real = state.skinLogs.filter(l => !l.demo), r1 = v => Math.round(v * 10) / 10;
+  const avgOf = (a, f) => a.length ? a.reduce((x, l) => x + (Number(f(l)) || 0), 0) / a.length : null;
+  const tabs = `<div class="sc-tabs" role="tablist" aria-label="期間">${SC_RANGES.map(([v, l]) => { const lk = v !== 'week' && locked();
+    return `<button type="button" role="tab" aria-selected="${k === v}" class="sc-tab ${k === v ? 'on' : ''}" ${lk ? `data-psheet="肌の変化（${l}）"` : `data-action="sc-range" data-id="${v}"`}>${l}${lk ? `<span class="sc-lock">${icon('lock')}</span>` : ''}</button>`; }).join('')}</div>`;
+  const head = `<div class="card sc-card"><div class="card-h"><h2>肌の変化</h2><a class="link" href="#/report">レポート →</a></div>${tabs}`;
+  if (!real.length) return head + `<p class="small muted" style="margin:6px 0 0">肌の記録をつけると、ここで変化を見られます。</p></div>`;
+  // 期間：週間＝直近7日、月間＝直近30日、年間＝直近12か月（くらべるのは、その1つ前の同じ長さ）
+  const days = k === 'week' ? 7 : k === 'month' ? 30 : 365, start = addDays(t, -(days - 1)), pStart = addDays(start, -days), pEnd = addDays(start, -1);
+  const cur = real.filter(l => l.date >= start && l.date <= t), prev = real.filter(l => l.date >= pStart && l.date <= pEnd);
+  const c1 = avgOf(cur, l => l.condition), c0 = avgOf(prev, l => l.condition), a1 = avgOf(cur, l => l.acneCount || 0), a0 = avgOf(prev, l => l.acneCount || 0);
+  const prevName = k === 'week' ? '前の週' : k === 'month' ? '前の月' : '前の年';
+  const cmp = (v, p, good) => p == null || v == null ? `<small class="wr-eq">${prevName}の記録なし</small>` : r1(v) === r1(p) ? `<small class="wr-eq">${prevName}と同じ</small>` : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">${prevName}より ${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
+  const grid = `<div class="wr-grid sc-grid"><span><small>記録した日</small><b>${cur.length}<i>/${days}日</i></b></span>
+      <span><small>肌の調子（平均）</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1, c0, true)}</span>
+      <span><small>ニキビ（1日平均）</small><b>${a1 == null ? '－' : r1(a1)}<i>個</i></b>${cmp(a1, a0, false)}</span></div>`;
+  // グラフ：週間・月間は1日ごと、年間は1か月ごとの平均
+  let dates, cond, acne, xFmt;
+  if (k === 'year') {
+    const ms = []; const d0 = parseYmd(t); for (let i = 11; i >= 0; i--) { const d = new Date(d0.getFullYear(), d0.getMonth() - i, 1); ms.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); }
+    dates = ms.map(m => m + '-01'); const by = m => real.filter(l => l.date.slice(0, 7) === m);
+    cond = ms.map(m => { const a = by(m); return a.length ? r1(avgOf(a, l => l.condition)) : null; }); acne = ms.map(m => { const a = by(m); return a.length ? r1(avgOf(a, l => l.acneCount || 0)) : null; });
+    xFmt = d => `${Number(d.slice(5, 7))}月`;
+  } else {
+    dates = datesRange(start, t); const map = logMap();
+    cond = dates.map(d => map[d] && !map[d].demo ? map[d].condition : null); acne = dates.map(d => map[d] && !map[d].demo ? (map[d].acneCount || 0) : null);
+  }
+  const aMax = Math.max(4, ...acne.filter(v => v != null)), aTop = Math.ceil(aMax / 2) * 2;
+  const unit = k === 'year' ? '1か月の平均' : '1日ごと';
+  const charts = `<div class="sc-ch"><p class="sc-ch-h">肌の調子<small>${unit}・1=とても悪い〜5=とても良い</small></p>
+      ${chartSlot('sc-cond-' + k, w => lineChart(w, {dates, height:140, yMin:1, yMax:5, yTicks:[1, 3, 5], xFmt, label:'肌の調子の変化', series:[{name:'肌の調子', color:'#5A8A69', values:cond}]}))}</div>
+    <div class="sc-ch"><p class="sc-ch-h">ニキビの数<small>${unit}</small></p>
+      ${chartSlot('sc-acne-' + k, w => lineChart(w, {dates, height:120, yMin:0, yMax:aTop, yTicks:[0, aTop / 2, aTop], xFmt, label:'ニキビの数の変化', series:[{name:'ニキビ', color:'#C9785F', values:acne}]}))}</div>`;
+  const span = k === 'year' ? `${fmtShort(start)}〜今日（直近12か月）` : `${fmtShort(start)}〜${fmtShort(t)}（直近${days}日）`;
+  return head + `<p class="small muted sc-span">${span}</p>` + grid + charts + `<p class="small muted" style="margin:6px 0 0">記録した日だけの平均です。</p></div>`;
 }
 function weekReviewHtml() {
   const t = todayStr(), ws = weekStart(t), pws = addDays(ws, -7), pwe = addDays(ws, -1);
@@ -8766,7 +8829,11 @@ function comboPairs(infos) {
 function uvLackNote(infos) {
   const risky = infos.filter(x => x.ings.some(e => ['otcretinoid', 'retinoidAll', 'aha', 'bha', 'hq'].some(t => e.tags.includes(t))));
   if (!risky.length || infos.some(x => x.step === 'sunscreen')) return null;
-  return {lv:2, t:'レチノイド・AHAなど × 紫外線対策の不足', why:'レチノイドやAHAを使っていると、紫外線の影響を受けやすくなります。日焼け止めが登録されていません。', how:'毎朝、日焼け止めを使います（持っていれば、Myアイテムに登録してください）。', freq:'毎朝', products:risky.map(x => x.p), ev:'B', src:['aad', 'fda'], checked:COMBO_CHECKED};
+  // 実際に入っている成分の名前だけ出す（入っていない成分は書かない）
+  const TAG_NAME = {otcretinoid:'レチノール', retinoidAll:'レチノイド', aha:'AHA', bha:'BHA', hq:'ハイドロキノン'};
+  const names = [...new Set(risky.flatMap(x => x.ings.flatMap(e => Object.keys(TAG_NAME).filter(t => e.tags.includes(t)).map(t => /^otc|retinoid/.test(t) ? (e.ja && /レチ/.test(e.ja) ? e.ja : TAG_NAME[t]) : TAG_NAME[t]))))].slice(0, 3);
+  const label = names.join('・') || 'レチノールなど';
+  return {lv:2, label, t:`${label} × 紫外線対策の不足`, why:`${label}を使っていると、紫外線の影響を受けやすくなります。日焼け止めが登録されていません。`, how:'毎朝、日焼け止めを使います（持っていれば、Myアイテムに登録してください）。', freq:'毎朝', products:risky.map(x => x.p), ev:'B', src:['aad', 'fda'], checked:COMBO_CHECKED};
 }
 
 
@@ -9944,7 +10011,7 @@ function comboLevelsHtml() {
   const A = prodAnalysis(), uv = uvLackNote(A.infos);
   if (!A.pairs.length && !uv) return '';
   return `<div class="card"><div class="card-h"><h2>使っている商品の併用の注意</h2><span class="chip">${A.pairs.length + (uv ? 1 : 0)}件</span></div>
-    ${uv ? comboCardHtml(uv, {a:'レチノイド・AHAなど', b:'紫外線対策の不足', sub:esc(uv.products.map(p => truncate(p.name, 18)).join('、'))}) : ''}
+    ${uv ? comboCardHtml(uv, {compact:true, a:uv.label, b:'日焼け止めなし', sub:`${esc(uv.products.map(p => truncate(p.name, 22)).join('、'))}に入っています`}) : ''}
     ${A.pairs.map(p => comboCardHtml(p.r, {compact:true, a:truncate(p.x.p.name, 22), b:truncate(p.y.p.name, 22), sub:`${p.shared.length ? `どちらも${esc(p.shared.join('・'))}に使っています` : '使う時間は別です'}`})).join('')}</div>`;
 }
 // 商品名に書かれた濃度（例：「ナイアシンアミド10%」）。書かれていなければ空
@@ -10169,12 +10236,12 @@ function recentCardHtml() {
 // 記録の画面：上のバーの下の中身を .home-pane に入れる（横スワイプで中身だけ動かすため）
 function viewLog() { const h = viewLogInner(), i = h.indexOf('</nav>') + 6; return h.slice(0, i) + '<div class="home-pane">' + h.slice(i) + '</div>'; }
 function viewLogInner() {
-  const tabs = [['list','記録一覧'],['recent','最近の肌状態'],['photos','肌写真']];
+  const tabs = [['list','記録一覧'],['recent','肌の変化'],['photos','肌写真']];
   let html = '';
   html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') ui.logTab = 'recent'; // 以前の「食事・運動・睡眠」タブは、記録一覧の中に入れた
-  if (ui.logTab === 'recent') return html + weekReviewHtml() + factorCardHtml() + reviewLinksHtml();
+  if (ui.logTab === 'recent') return html + skinChangeHtml() + factorCardHtml() + reviewLinksHtml();
   const logs = logsDesc();
   if (!logs.length) return html + `<div class="card">${emptyBox('note', 'まだ肌の記録がありません', 'ニキビ・赤み・乾燥・皮脂などを、数タップで記録できます。', '<button class="btn btn-primary btn-sm" data-action="new-log">最初の記録をつける</button>')}</div>`;
   const lm = lifeMap();
@@ -10244,7 +10311,8 @@ function logDayDetailHtml(list, i) {
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
   return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="肌の調子カレンダー">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
-    <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="log" aria-label="大きく見る">⤢</button><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
+    <div class="ld-vsw" role="tablist" aria-label="表示の切り替え"><button type="button" role="tab" class="${ui.ldView === 'photo' ? '' : 'on'}" data-action="ld-view" data-id="3d" aria-selected="${ui.ldView !== 'photo'}">3D</button><button type="button" role="tab" class="${ui.ldView === 'photo' ? 'on' : ''}" data-action="ld-view" data-id="photo" aria-selected="${ui.ldView === 'photo'}">写真</button></div>
+    <div class="f3-stage ld-stage ${ui.ldView === 'photo' ? 'ld-ph-on' : ''}" id="ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div><div class="ld-photo" id="ld-photo">${ldPhotoHtml(list[i])}</div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
@@ -10294,7 +10362,13 @@ function logDaySet(date) {
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
   if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
+  const ph = document.getElementById('ld-photo'); if (ph) ph.innerHTML = ldPhotoHtml(l);
   const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { face3dShowLog(st, logFaceData(l)); if (st.auto) { st.auto = false; st.target = {yaw:0, pitch:0.05}; } st.dirty = true; } // 矢印で日付を変えたら自動で回すのはやめる（自動で回るのは最初に出る直近の記録だけ）
+}
+// 3Dの顔と、その日の顔写真を切り替える（写真がない日は、写真がないことを出す）
+function ldPhotoHtml(l) {
+  const src = l && safeImg(l.photo);
+  return src ? `<img src="${src}" alt="${esc(fmtMD(l.date))}の顔写真">` : `<p class="small muted">この日の顔写真はありません<br><span style="font-size:11px">肌の記録で写真を撮ると、ここで見られます</span></p>`;
 }
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
@@ -10302,7 +10376,7 @@ function bindLogDaySwipe() {
   const card = document.getElementById('log-day-card'); if (!card) return;
   const cb = document.getElementById('ld-calbtn'), cal = document.getElementById('ld-cal');
   if (cb && cal) {
-    // 左上のカレンダーのボタン：肌の調子カレンダー（色・ニキビの数・乾燥した日）を開き、日にちを押すとその日の記録を出す
+    // 右上のカレンダーのボタン：肌の調子カレンダー（色・ニキビの数・乾燥した日）を開き、日にちを押すとその日の記録を出す
     cb.addEventListener('click', e => { e.stopPropagation(); hapticTick(); const L = logDayList(), cur = (L[logDayIdx(L)] || {}).date; ui.calYM = cur ? cur.slice(0, 7) : monthKey(todayStr());
       openModal({title:'肌の調子カレンダー', size:'small', dismissable:true, body:`<div id="sc-body">${skinCalHtml(true)}</div>`}); });
     cal.addEventListener('click', e => {
@@ -14534,7 +14608,9 @@ function viewAccount() {
   const sub = parseRoute().id;
   if (sub === 'me/name') { // 表示名：右から出るページで、すぐ入力できるようにする
     // 入力欄に移すとき、iPhoneが画面を上へずらさないようにする（ずれると上の「アカウント」が時計の下にもぐる）
-    setTimeout(() => { const i = document.getElementById('pf-name1'); if (i && document.activeElement !== i) { try { i.focus({preventScroll:true}); } catch (e) { i.focus(); } try { i.setSelectionRange(i.value.length, i.value.length); } catch (e) { /* 何もしない */ } } const t = document.getElementById('kb-keep'); if (t) t.remove(); }, 30);
+    // 右からすべって出る動きが終わってから入力欄に移す（動いている途中に移すと、入力の線（カーソル）が元の位置に残って、あとから動いて見えるため）
+    const kb = document.getElementById('kb-keep');
+    setTimeout(() => { const i = document.getElementById('pf-name1'); if (i && document.activeElement !== i) { try { i.focus({preventScroll:true}); } catch (e) { i.focus(); } try { i.setSelectionRange(i.value.length, i.value.length); } catch (e) { /* 何もしない */ } } const t = document.getElementById('kb-keep'); if (t) t.remove(); }, kb ? 580 : 30);
     [80, 250, 450, 700].forEach(t => setTimeout(() => { if (parseRoute().id === 'me/name' && (window.scrollY > 0 || (window.visualViewport && window.visualViewport.offsetTop > 0))) window.scrollTo(0, 0); }, t));
     return `<a class="back" href="#/account/me">← プロフィール</a><div class="acc-thin"><div class="card nm-edit"><label class="lbl" for="pf-name1">表示名<span class="opt">20文字まで</span></label>
       <input class="input" id="pf-name1" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：はだこ" autocomplete="nickname" enterkeyhint="done">
@@ -14897,6 +14973,8 @@ const actions = {
   'life-part': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'life-edit': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'life-day': v => { const [date, part] = String(v).split('|'); const l = getLife(date); openLifeForm(l ? l.id : null, part, date); },
+  'ld-view': v => { ui.ldView = v === 'photo' ? 'photo' : '3d'; const sg = document.getElementById('ld-stage'); if (!sg) { render(); return; } sg.classList.toggle('ld-ph-on', ui.ldView === 'photo'); document.querySelectorAll('[data-action="ld-view"]').forEach(b => { const on = b.dataset.id === ui.ldView; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); }); },
+  'sc-range': v => { if (v !== 'week' && locked()) { openPremiumSheet('肌の変化'); return; } ui.scRange = v; render(); },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); swScrollTop(); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
@@ -15075,7 +15153,7 @@ const actions = {
   'notify-test': async () => { try { await notifyRepair(); const r = await callPush('test'); if (r.sent) toast('テストのお知らせを送りました（数秒で届きます）'); else toast('お知らせを送れませんでした。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください', 'error'); } catch (e) { toast(e.message, 'error'); } },
   'notify-fix': async () => { try { await notifyRepair(); refreshNotifyCard(); toast('登録しました。テストのお知らせで確かめられます'); } catch (e) { toast(e.message, 'error'); } },
   'acc-name': () => {
-    try { const t = document.createElement('input'); t.id = 'kb-keep'; t.setAttribute('aria-hidden', 'true'); t.style.cssText = 'position:fixed;top:120px;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0'; document.body.appendChild(t); t.focus(); setTimeout(() => t.remove(), 1500); } catch (e) { /* 何もしない */ } // 押した瞬間にキーボードを出しておく（iPhoneは、押した瞬間でないとキーボードを出せないため）
+    try { const t = document.createElement('input'); t.id = 'kb-keep'; t.setAttribute('aria-hidden', 'true'); t.style.cssText = 'position:fixed;top:120px;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0;caret-color:transparent;color:transparent;background:transparent'; document.body.appendChild(t); t.focus(); setTimeout(() => t.remove(), 2000); } catch (e) { /* 何もしない */ } // 押した瞬間にキーボードを出しておく（iPhoneは、押した瞬間でないとキーボードを出せないため）
     location.hash = '#/account/me/name';
   },
   'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (n) n.blur();
