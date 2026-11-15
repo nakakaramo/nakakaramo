@@ -14529,8 +14529,15 @@ document.addEventListener('change', async e => {
   } catch (er) { toast(er.message || '画像を読み込めませんでした', 'error'); }
 });
 document.addEventListener('input', e => { if (e.target.id === 'pf-name') pfPaint(); });
+document.addEventListener('keydown', e => { if (e.target.id === 'pf-name1' && e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && parseRoute().id === 'me/name') { e.preventDefault(); actions['name-save'](); } }); // 表示名のページ：キーボードの「完了」で保存
 function viewAccount() {
   const sub = parseRoute().id;
+  if (sub === 'me/name') { // 表示名：右から出るページで、すぐ入力できるようにする
+    setTimeout(() => { const i = document.getElementById('pf-name1'); if (i && document.activeElement !== i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (e) { /* 何もしない */ } } const t = document.getElementById('kb-keep'); if (t) t.remove(); }, 30);
+    return `<a class="back" href="#/account/me">← プロフィール</a><div class="acc-thin"><div class="card nm-edit"><label class="lbl" for="pf-name1">表示名<span class="opt">20文字まで</span></label>
+      <input class="input" id="pf-name1" maxlength="20" value="${esc(state.settings.nickname || '')}" placeholder="例：はだこ" autocomplete="nickname" enterkeyhint="done">
+      <button type="button" class="btn btn-primary" data-action="name-save" style="width:100%;justify-content:center;margin-top:14px">保存する</button></div></div>`;
+  }
   if (sub === 'me') return viewAccountMe().replace('</a>', '</a><div class="acc-thin">') + '</div>'; // 「← アカウント」は外に出す（戻るが2つにならないように）
   // からだと肌・設定・プライバシー：開くと項目の名前だけを並べ、押すと右から、その項目のくわしいページが出る
   const [sec, idx] = String(sub).split('/');
@@ -15065,8 +15072,12 @@ const actions = {
   'notify-toggle': (id, el) => { if (ui.notifyBusy) { el.checked = true; return; } if (el.checked) notifyEnable(); else notifyDisable(); },
   'notify-test': async () => { try { await notifyRepair(); const r = await callPush('test'); if (r.sent) toast('テストのお知らせを送りました（数秒で届きます）'); else toast('お知らせを送れませんでした。「お知らせを受け取る」を一度オフにして、もう一度オンにしてください', 'error'); } catch (e) { toast(e.message, 'error'); } },
   'notify-fix': async () => { try { await notifyRepair(); refreshNotifyCard(); toast('登録しました。テストのお知らせで確かめられます'); } catch (e) { toast(e.message, 'error'); } },
-  'acc-name': () => openNameEdit(),
-  'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (save()) { closeModal(); toast('保存しました'); render(); } },
+  'acc-name': () => {
+    try { const t = document.createElement('input'); t.id = 'kb-keep'; t.setAttribute('aria-hidden', 'true'); t.style.cssText = 'position:fixed;top:40%;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0'; document.body.appendChild(t); t.focus(); setTimeout(() => t.remove(), 1500); } catch (e) { /* 何もしない */ } // 押した瞬間にキーボードを出しておく（iPhoneは、押した瞬間でないとキーボードを出せないため）
+    location.hash = '#/account/me/name';
+  },
+  'name-save': () => { const n = document.getElementById('pf-name1'); state.settings.nickname = n ? n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; if (n) n.blur();
+    if (save()) { toast('保存しました'); if (parseRoute().id === 'me/name') { NAV_SRC.back = Date.now(); if (history.length > 1 && navStack[navStack.length - 2] === '#/account/me') history.back(); else location.hash = '#/account/me'; } else { closeModal(); render(); } } },
   'restore-no': () => { try { localStorage.setItem('nk_restore_no', '1'); } catch (e) { /* 何もしない */ } closeModal(); },
   'restore-yes': () => { try { const K = STORE_KEY + '_broken_backup', raw = localStorage.getItem(K); localStorage.setItem(STORE_KEY + '_before_restore', localStorage.getItem(STORE_KEY) || ''); state = normalize(JSON.parse(raw)); if (save()) { localStorage.removeItem(K); closeModal(); toast('以前のデータに戻しました'); render(); } } catch (e) { toast('戻せませんでした', 'error'); } },
   'pf-emoji': id => { avDraft = {t:'emoji', v:id, c:(avDraft && avDraft.c) || AVATAR_COLORS[0]}; pfPaint(); },
