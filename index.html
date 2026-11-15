@@ -2029,6 +2029,7 @@ body::before{transform:translate3d(0,var(--vv-top,0px),0)}
 @media (max-width:380px){.rt-det{padding-left:14px}.rt-dl{grid-template-columns:1fr;gap:2px}}
 #sw-body .sw-sec small{font-weight:500;color:var(--muted);font-size:12px;margin-left:4px}
 
+.uv-chip.uv-wait{opacity:.55;font-weight:600}
 .uv-chip{display:inline-flex;align-self:flex-start;width:max-content;max-width:100%;font-style:normal;font-size:11px;font-weight:700;line-height:1.5;padding:1px 8px;border-radius:999px;background:#FFF3D6;color:#8A5A00;white-space:nowrap}
 :root[data-theme="dark"] .uv-chip{background:#3A2E14;color:#F2C46B}
 .mrow-t .uv-chip{margin:2px 0}
@@ -5738,8 +5739,25 @@ function quickFindHtml() {
 // 日焼け止めのSPF・PAを商品名から読み取る（例：「SPF50+・PA++++」）。書かれていなければ空
 function uvSpec(name) {
   const n = String(name || '').normalize('NFKC').replace(/＋/g, '+');
-  const spf = (n.match(/SPF\s*([0-9]{1,2}\s*\+?)/i) || [])[1], pa = (n.match(/PA\s*(\+{1,4})/i) || [])[1];
-  return [spf ? 'SPF' + spf.replace(/\s/g, '') : '', pa ? 'PA' + pa : ''].filter(Boolean).join('・');
+  const sm = n.match(/SPF\s*[:：]?\s*(50\s*\+|[1-9][0-9]?)(?![0-9])/i), pm = n.match(/PA\s*[:：]?\s*(\+{1,4})/i);
+  const spf = sm ? sm[1].replace(/\s/g, '') : '', pa = pm ? pm[1] : '';
+  if (spf && Number(spf.replace('+', '')) > 50) return '';
+  return [spf ? 'SPF' + spf : '', pa ? 'PA' + pa : ''].filter(Boolean).join('・');
+}
+// 商品名に書いていないSPF・PAは、サーバーで商品説明・公式サイトから調べた値を使う（x.uv）
+const uvOfItem = x => { const a = uvSpec(x.name), b = x.uv || ''; return a.includes('SPF') && a.includes('PA') ? a : b.length > a.length ? b : a; };
+const UV_KNOWN = new Map();
+async function uvFill(items) {
+  const need = items.filter(x => { const u = uvOfItem(x); return !(u.includes('SPF') && u.includes('PA')) && !UV_KNOWN.has(x.name); });
+  for (let i = 0; i < need.length; i += 10) {
+    const part = need.slice(i, i + 10);
+    try {
+      const r = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'uvinfo', names:part.map(x => ({name:x.name, url:x.url || ''}))})});
+      const j = await r.json().catch(() => ({})); const uv = j.uv || {};
+      part.forEach(x => { if (uv[x.name] != null) UV_KNOWN.set(x.name, uv[x.name]); if (uv[x.name]) x.uv = uv[x.name]; });
+    } catch (e) { break; }
+  }
+  items.forEach(x => { if (!x.uv && UV_KNOWN.get(x.name)) x.uv = UV_KNOWN.get(x.name); });
 }
 const uvChip = (name, cls) => { const u = uvSpec(name); return u ? `<i class="uv-chip ${cls || ''}">${esc(u)}</i>` : ''; };
 function tidyName(n) {
@@ -5968,7 +5986,7 @@ async function openIngSheet(word) {
     + [['rakuten', '楽天市場', '#BF0000', rakutenIngUrl(wk ? wk[2][0] : w0, isSun)], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&i=beauty&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
   const listBox = b.querySelector('.irk-list'), moreBtn = b.querySelector('.ing-more');
   if (none) { listBox.innerHTML = '<p class="small muted">アプリの中では人気商品を見つけられませんでした。下のボタンから楽天市場で探せます。</p>'; const kk = b.querySelector('.ing-kinds'); if (kk) kk.remove(); }
-  const rowHtml = x => `<button type="button" class="pop-item ir" data-ingpick="${list.indexOf(x)}"><span class="pop-r ir-n"></span>${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${isSun ? uvChip(x.name) : ''}${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`;
+  const rowHtml = x => `<button type="button" class="pop-item ir" data-ingpick="${list.indexOf(x)}"><span class="pop-r ir-n"></span>${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${isSun ? (uvOfItem(x) ? `<i class="uv-chip">${esc(uvOfItem(x))}</i>` : '<i class="uv-chip uv-wait">SPF・PAを確認中</i>') : ''}${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`;
   const rows = new Map(); // 商品 → 行（作った行は使い回す。画像を読み直さない）
   const rowOf = x => { if (!rows.has(x)) { const t = document.createElement('div'); t.innerHTML = rowHtml(x); rows.set(x, t.firstElementChild); } const el = rows.get(x); return el.parentElement && el.parentElement.classList.contains('hap-keep') ? el.parentElement : el; };
   const paint = () => {
@@ -5981,6 +5999,8 @@ async function openIngSheet(word) {
     moreBtn.hidden = L.length <= shown; moreBtn.textContent = `ランキングをもっと見る（あと${Math.max(0, L.length - shown)}件）`;
   };
   paint();
+  // 日焼け止め：商品名にSPF・PAがない物は、サーバーで調べて入れる（調べ終わったら、その行のSPF・PAだけ書きかえる）
+  if (isSun) uvFill(list).then(() => list.forEach(x => { const n = rows.get(x); if (!n) return; const c = n.querySelector('.uv-chip'); if (!c) return; const u = uvOfItem(x); if (u) { c.textContent = u; c.classList.remove('uv-wait'); } else c.remove(); }));
   b.onclick = ev => {
     const k = ev.target.closest('[data-ingkind]'); if (k) { if (k.disabled || cur === k.dataset.ingkind) return; cur = k.dataset.ingkind; shown = 5; hapticTick(); paint(); return; }
     if (ev.target.closest('[data-ingmore]')) { shown += 10; paint(); return; }
