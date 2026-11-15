@@ -3792,10 +3792,11 @@ function ingsInName(text) {
   const ks = [];
   ING_DB.forEach(e => e.aliases.forEach(a => { const k = normIng(a); if (k.length >= 3) ks.push([k, a, e.key]); }));
   try { ING_M_INDEX.forEach((e, k) => { if (k.length < 3) return; const d = ING_INDEX.get(normIng(String(e.ja).replace(/（.*?）/g, ''))); ks.push([k, d ? (d.aliases[0] || d.name) : e.ja, d ? d.key : 'm:' + e.k]); }); } catch (e) { /* 何もしない */ }
-  [['シカ', 'ツボクサエキス'], ['cica', 'ツボクサエキス'], ['txa', 'トラネキサム酸'], ['ヒアルロン', 'ヒアルロン酸'], ['ハトムギ', 'ハトムギ種子エキス'], ['ビタミンc', 'ビタミンC誘導体']].forEach(([w, nm]) => { const d = ING_INDEX.get(normIng(nm)); ks.push([normIng(w), nm, d ? d.key : 'x:' + nm]); });
+  [['シカ', 'CICA'], ['cica', 'CICA'], ['txa', 'トラネキサム酸'], ['ヒアルロン', 'ヒアルロン酸'], ['ハトムギ', 'ハトムギ種子エキス'], ['ビタミンc', 'ビタミンC誘導体']].forEach(([w, nm]) => { const d = ING_INDEX.get(normIng(nm)); ks.push([normIng(w), nm, d ? d.key : 'x:' + nm]); });
   ks.sort((x, y) => y[0].length - x[0].length).forEach(([k, nm, id]) => add(k, nm, id));
   hits.sort((x, y) => t.indexOf(x.k) - t.indexOf(y.k)); // 商品名に出てくる順
-  const out = hits.map(h => h.nm).filter(nm => !/^(水|精製水|エキス|オイル|エタノール|香料|グリセリン|BG|アクア)$/i.test(nm)).slice(0, 8);
+  const cica = ING_INDEX.get(normIng('CICA'));
+  const out = hits.map(h => cica && h.id === cica.key ? 'CICA' : h.nm).filter(nm => !/^(水|精製水|エキス|オイル|エタノール|香料|グリセリン|BG|アクア)$/i.test(nm)).slice(0, 8);
   ING_NAME_C.set(t, out); return out;
 }
 const areaName = id => (AREAS.find(a => a.id === id) || {}).name || id;
