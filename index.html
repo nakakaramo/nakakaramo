@@ -15114,7 +15114,7 @@ const actions = {
   },
   'acct-delete': async () => {
     const warn = paidPremium() ? '\n・ご契約中のプレミアムプランは、ただちに解約されます（日割りの返金はありません）' : '';
-    if (!await confirmDialog(`アカウントを削除しますか？\n・メールアドレスと契約状況がサーバーから削除されます${warn}\n・この端末の中の肌の記録などは削除されません\n・元に戻せません`, {ok:'アカウントを削除する', title:'アカウントの削除'})) return;
+    if (!await confirmDialog(`アカウントを削除しますか？\n・メールアドレスと契約状況がサーバーから削除されます${warn}\n・この端末の中の肌の記録などは削除されません\n・元に戻せません`, {ok:'削除する', title:'アカウントの削除'})) return;
     acct.busy = true; render();
     try { await photoDeleteAll(); try { const sub = pushSupported() ? await pushSub() : null; if (sub) { await callPush('unsubscribe', {endpoint:sub.endpoint}); await sub.unsubscribe(); } } catch (e) { /* 何もしない */ } await callBilling('delete_account'); try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; toast('アカウントを削除しました'); }
     catch (e) { toast(e.message, 'error'); }
