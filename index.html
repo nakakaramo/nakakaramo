@@ -13924,7 +13924,7 @@ function openPremiumSheet(feature) {
   el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
     <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
     <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><span class="ps-cancel">料金はすべて税込です</span></p>
-    ${planCardsHtml(PS_PLAN, (acct.price && acct.price.amount) || 1200, (acct.price && acct.price.year && acct.price.year.amount) || 12000, 'radio')}
+    ${planCardsHtml(PS_PLAN, (acct.price && acct.price.amount) || 600, (acct.price && acct.price.year && acct.price.year.amount) || 6000, 'radio')}
     ${premFeatsHtml()}
     ${logged ? '' : `<div class="ps-auth"><p class="small ps-note"><b>新しく登録すると、3日間${PREMIUM_NAME}を無料で試せます</b>（カードの登録はいりません。終わると自動で無料プランに戻ります）。登録済みの人はログインしてください。</p>
       <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
@@ -14217,7 +14217,7 @@ const LEGAL = {
   updated: '2026年11月15日',  // 最終改定日
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
-  price: '月額1,200円（税込）または年額12,000円（税込）'
+  price: '月額600円（税込）または年額6,000円（税込）'
 };
 function legalWrap(title, body) {
   const contact = LEGAL.email ? `<a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a>` : '（準備中）';
