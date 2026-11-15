@@ -2537,7 +2537,7 @@ html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A
 .care-link:active{transform:none!important;opacity:.7}
 .care-link{display:inline;padding:0;margin:0;border:0;background:none;font:inherit;color:var(--green-d);text-decoration:underline;text-decoration-color:var(--green);text-underline-offset:3px;text-decoration-thickness:1.5px;cursor:pointer}
 .pc-mini{display:block;color:var(--ink)}.pc-mini-s{font-size:11.5px;font-weight:500;color:var(--muted);margin-left:2px}
-.pc-mini-h{color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px}.pc-mini-h i{font-style:normal;color:var(--muted)}
+.pc-mini-h{color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px;white-space:nowrap}.pc-mini-s{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pc-mini-h i{font-style:normal;color:var(--muted)}
 html[data-theme="dark"] .pc-tr.up,html[data-theme="dark"] .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}html[data-theme="dark"] .pc-tr.down,html[data-theme="dark"] .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}html[data-theme="dark"] .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pc-tr.up,:root:not([data-theme="light"]) .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}:root:not([data-theme="light"]) .pc-tr.down,:root:not([data-theme="light"]) .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}:root:not([data-theme="light"]) .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}}
 html[data-theme="dark"] button.cm-c.good{box-shadow:inset 0 0 0 1px rgba(120,180,140,.35)}html[data-theme="dark"] button.cm-c.bad{box-shadow:inset 0 0 0 1px rgba(230,130,100,.35);color:#F0A58E}
@@ -13039,7 +13039,22 @@ function mycareMiniHtml() {
   // 同じようなことは1つに
   const bg = t => { const x = String(t).replace(/[、。・\s「」（）]/g, ''), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
   const sim = (a, b) => { const A0 = bg(a), B0 = bg(b); let n = 0; A0.forEach(x => { if (B0.has(x)) n++; }); return n / Math.max(1, Math.min(A0.size, B0.size)); };
-  const top = []; cand.sort((a, b) => b.pr - a.pr).forEach(c => { if (top.length < 3 && !top.some(t => sim(t.txt, c.txt) >= 0.5)) top.push(c); });
+  // 同じ話題（保湿・薬・食事など）は2回出さない。重なる部分だけなら、その部分を外して残りを出す
+  const TOPIC = {保湿:/保湿|うるおい|乾燥|クリーム|ふた/, 薬:/薬|処方/, 食事:/食|たんぱく|野菜|甘い|揚げ|糖/, UV:/UV|日焼け|紫外線/, 角質:/角質|ピーリング|スクラブ|レチノ|AHA|BHA|攻め/, 睡眠:/睡眠|寝/, 触る:/触らない|つぶさない|触る/, 洗顔:/洗顔|クレンジング|落とし/, 水分:/水分|水を/};
+  const topics = t => Object.keys(TOPIC).filter(k => TOPIC[k].test(t));
+  const END = {休み:'休む', 続け:'続ける', 控え:'控える', 避け:'避ける', 止め:'止める', やめ:'やめる', 守り:'守る', 使い:'使う', 増やし:'増やす', 減らし:'減らす', 整え:'整える', 抑え:'抑える', 落とし:'落とす'};
+  const endFix = t => t.replace(/(休み|続け|控え|避け|止め|やめ|守り|使い|増やし|減らし|整え|抑え|落とし)$/, m => END[m]);
+  const used = new Set(), top = [];
+  cand.sort((a, b) => b.pr - a.pr).forEach(c => {
+    if (top.length >= 3 || top.some(t => sim(t.txt, c.txt) >= 0.5)) return;
+    let txt = c.txt, html = c.html;
+    if (topics(txt).some(k => used.has(k))) {
+      const rest = txt.split(/[、。]/).map(x => x.trim()).filter(x => x && !topics(x).some(k => used.has(k)));
+      if (!rest.length || rest.join('').length < 6) return;
+      txt = endFix(rest.join('、')); html = careLinkHtml(txt, G);
+    }
+    topics(txt).forEach(k => used.add(k)); top.push({html, txt});
+  });
   if (!top.length && !(A.ask || []).length) return '';
   return `<div class="card pc-mini"><a class="pc-mini-h" href="#/mycare">${icon('spark')}<b>今日のポイント</b><small class="pc-mini-s">いちばん大事なこと3つ</small><i>›</i></a>${top.length ? `<ol class="pc-ol">${top.map(c => `<li>${c.html}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</div>`;
 }
