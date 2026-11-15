@@ -296,6 +296,11 @@ label.btn{position:relative}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:14px;margin:0}
 .kv dt{color:var(--muted)}
 .kv dd{margin:0;word-break:break-word}
+.kv dd.kv-e{display:flex;align-items:center;gap:8px}.kv dd.kv-e>span{flex:1;min-width:0}
+.kv-ed{flex:none;width:32px;height:32px;margin:-6px -6px -6px 0;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.kv-ed:active{background:var(--line,#eee)}.kv-ed svg{width:17px;height:17px}
+.card-h .kv-ed{margin:-6px -6px -6px auto}
+.mf-pick{grid-template-columns:repeat(3,minmax(0,1fr))}
 .na{color:var(--muted);font-size:13px}
 .divider{height:1px;background:var(--line);margin:16px 0}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none}
@@ -7059,7 +7064,7 @@ function viewMyDetail(id) {
   const known = knownIngs(ingsOfMy(p));
   const t = todayStr();
   let compareHtml = '';
-  if (p.status === STOCK) compareHtml = '<p class="small muted">ストック（未開封）の商品です。使い始めたら「編集」でステータスを「使用中」にし、使用開始日を更新してください。</p>';
+  if (p.status === STOCK) compareHtml = '<p class="small muted">ストック（未開封）の商品です。使い始めたら、Myアイテムの一覧でスイッチを「使用中」にし、使用開始日を更新してください。</p>';
   else {
     const before = periodStats(addDays(p.startDate, -14), addDays(p.startDate, -1));
     const during = periodStats(p.startDate, end);
@@ -7072,6 +7077,7 @@ function viewMyDetail(id) {
   { // 化粧品も塗り薬も、同じ形の画面にする
     const isRx = p.category === '皮膚科の塗り薬';
     const use = isRx ? rxUseOf(p.name) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
+    const fEd = (k, l) => `<button type="button" class="kv-ed" data-action="my-field" data-id="${esc(p.id)}|${k}" aria-label="${l}を編集">${icon('edit')}</button>`;
     const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
     return `<a class="back" href="#/my">← Myアイテム</a>
     ${p.ng ? '' : (() => { const h = ngWarnFor(p); return h.length ? `<div class="card ngw-card">${ngWarnHtml(h, true)}</div>` : ''; })()}
@@ -7083,8 +7089,9 @@ function viewMyDetail(id) {
         <dl class="kv" style="margin-top:12px">
           ${!isRx && p.brand ? `<dt>ブランド</dt><dd>${esc(p.brand)}</dd>` : ''}
           ${use ? `<dt>使用目的</dt><dd>${esc(use)}</dd>` : ''}
-          <dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}（${esc(p.frequency)}）</dd>
-          <dt>使用開始日</dt><dd>${fmtDate(p.startDate)}</dd>
+          <dt>使用タイミング</dt><dd class="kv-e"><span>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}</span>${fEd('timing', '使用タイミング')}</dd>
+          <dt>使用頻度</dt><dd class="kv-e"><span>${esc(p.frequency)}</span>${fEd('frequency', '使用頻度')}</dd>
+          <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd class="kv-e"><span>${fmtDate(p.startDate)}</span>${fEd('startDate', '使用開始日')}</dd>
           <dt>成分</dt><dd>${(() => { // 成分は1回だけ。解説のある成分は緑の下線（押すと成分の説明へ）
             const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || e.includes(w)); }) : null; };
             const lk = (k, t) => `<a class="care-link" href="#/ingredients/${k.entry.key}">${esc(t)}</a>`;
@@ -7094,15 +7101,14 @@ function viewMyDetail(id) {
           })()}</dd>
         </dl>
         ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : ''}
-        <div class="page-actions" style="margin-top:14px">
-          <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
-          ${isRx ? '' : `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>`}
-        </div>
+        ${isRx ? '' : `<div class="page-actions" style="margin-top:14px">
+          <button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>
+        </div>`}
         <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
       </div>
     </div>
     <div class="mt"><div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div></div>
-    <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
+    <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2>${fEd('memo', 'メモ')}</div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
   }
   return `<a class="back" href="#/my">← Myアイテム</a>
     <div class="card detail-top">
@@ -7137,6 +7143,45 @@ function viewMyDetail(id) {
         <details class="fold" style="margin-top:12px"><summary>全成分を表示</summary><p class="prose small">${esc(ingsOfMy(p))}</p></details>`
       : offBusy[p.id] ? '<p class="na">メーカーの公式サイトで全成分を調べています（10〜30秒）…</p>' : p.offChecked ? '<p class="na">メーカーの公式サイトに全成分の記載が見つかりませんでした。「編集」から入力すると、成分の解説や組み合わせの確認ができます。</p>' : '<p class="na">全成分が未登録です。「編集」から入力すると、成分の解説や組み合わせの確認ができます。</p>'}${p.offUrl && ingsOfMy(p) ? `<p class="small muted" style="margin:8px 0 0">全成分はメーカー公式の情報です（<a href="${esc(p.offUrl)}" target="_blank" rel="noopener noreferrer">公式ページ</a>）</p>` : ''}</div>
     <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
+}
+
+/* Myアイテムの詳細：使用タイミング・頻度・使用開始日・メモを、それぞれ横の鉛筆から直す */
+const MY_FIELD_T = {timing:'使用タイミング', frequency:'使用頻度', startDate:'使用開始日', memo:'使用感・肌状態のメモ'};
+function openMyField(id, k) {
+  const p = getMy(id); if (!p || !MY_FIELD_T[k]) return;
+  const t = todayStr(), ky = `${esc(p.id)}|${k}`;
+  let body = '';
+  if (k === 'timing') body = `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="mf-tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div><p class="hint" style="margin-top:8px">朝と夜の両方に使うときは、2つとも選んでください</p>`;
+  else if (k === 'frequency') body = `<div class="tm-pick mf-pick">${FREQS.map(v => `<label class="tm-opt"><input type="radio" name="mf-fq" value="${esc(v)}" ${p.frequency === v ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div>`;
+  else if (k === 'startDate') body = `<input type="date" class="input" id="mf-date" value="${esc(p.startDate)}" max="${t}" aria-label="使用開始日"><p class="hint" style="margin-top:8px">ストックの場合は購入日</p>`;
+  else body = `<textarea class="textarea" id="mf-memo" maxlength="500" rows="5" placeholder="例：少しピリピリした、香りが好き など" aria-label="使用感・肌状態のメモ">${esc(p.memo || '')}</textarea>`;
+  body += '<p class="small" id="mf-err" role="alert" style="display:none;color:var(--danger);margin-top:8px"></p>';
+  openModal({title:MY_FIELD_T[k], body, dismissable:true,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="my-field-save" data-id="${ky}">保存する</button>`});
+  if (k === 'timing') $$('#modal-root input[name="mf-tm"]').forEach(ip => ip.addEventListener('change', () => { // 「必要な時だけ」と朝・夜は一緒に選べない（フォームと同じ）
+    if (!ip.checked) return; $$('#modal-root input[name="mf-tm"]').forEach(o => { if (o !== ip && ((ip.value === '必要なときだけ') !== (o.value === '必要なときだけ'))) o.checked = false; });
+  }));
+}
+function saveMyField(id, k) {
+  const p = getMy(id); if (!p || !MY_FIELD_T[k]) return closeModal();
+  const err = m => { const e = document.getElementById('mf-err'); if (e) { e.textContent = m; e.style.display = ''; } };
+  if (k === 'timing') {
+    const tms = $$('#modal-root input[name="mf-tm"]:checked').map(x => x.value);
+    const v = tms.includes('必要なときだけ') ? '必要なときだけ' : tms.length === 2 ? '朝・夜' : tms[0] || '';
+    if (!v) return err('使用タイミングを選んでください。');
+    p.timing = v;
+  } else if (k === 'frequency') {
+    const v = ($('#modal-root input[name="mf-fq"]:checked') || {}).value;
+    if (!FREQS.includes(v)) return err('使用頻度を選んでください。');
+    p.frequency = v;
+  } else if (k === 'startDate') {
+    const v = (document.getElementById('mf-date') || {}).value || '';
+    if (!isValidYmd(v)) return err('日付を選択してください。');
+    if (v > todayStr()) return err('未来の日付は選べません。');
+    if (p.endDate && v > p.endDate) return err('使用終了日より後の日付は選べません。');
+    p.startDate = v;
+  } else p.memo = String((document.getElementById('mf-memo') || {}).value || '').slice(0, 500);
+  if (save()) { closeModal(); render(); toast('保存しました'); }
 }
 
 /* Myアイテム 登録・編集フォーム */
@@ -14368,6 +14413,8 @@ const actions = {
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
   'edit-my': id => openMyForm(id),
+  'my-field': arg => openMyField(...String(arg).split('|')),
+  'my-field-save': arg => saveMyField(...String(arg).split('|')),
   'ng-open': (id, el) => { if (parseRoute().name === 'my' && getMy(id) && getMy(id).ng) { location.hash = '#/trouble'; return; } openNgForm(id, el && el.dataset.date); },
   'my-menu': () => myMenuOpen(),
   'ng-save': id => {
