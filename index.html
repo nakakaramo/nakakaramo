@@ -1356,6 +1356,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .pop-item.ir{display:grid;grid-template-columns:26px 64px minmax(0,1fr) 12px;align-items:center;gap:12px;margin:0;padding:10px 12px;border-radius:16px}
 .ir-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);background:var(--surface2,#F4F1EC)}.ir-n.top3{background:#C98B5C;color:#fff}
 .pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
+.rx-sug .pop-item.ir{grid-template-columns:minmax(0,1fr) 12px;padding:12px 14px}#otc-pop .pop-item.ir{grid-template-columns:64px minmax(0,1fr) 12px}.rx-sug .ir-t b{font-size:15px}.rx-sug .ir-note{display:block;font-size:12px;color:var(--muted);margin-top:2px}.rx-sug .irk-list{gap:8px}
 .own-th .thumb{width:100%;height:100%;aspect-ratio:auto}.own-th .thumb .ph{font-size:0;gap:0}.own-th .thumb svg{width:100%;height:100%;display:block}
 .my-photo{position:relative;width:132px;margin:0 auto 4px}.my-photo .thumb{border-radius:18px}.my-photo .thumb svg{width:100%;height:100%;display:block}
 .my-ph-ed{position:absolute;right:-6px;bottom:-6px;width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--green-d);cursor:pointer;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.08)}.my-ph-ed svg{width:16px;height:16px}
@@ -9398,7 +9399,12 @@ function rtPlan(slot, solo) {
       else st.today.push(T(`「${nm}」は${otherUsed.has(o.x.p.id) ? `${here}は使いません（${slot === 'am' ? '夜' : '朝'}に使います）。` : '今は使いません。'}${why}`, '成分'));
     });
   }
-  return {steps, d, w, tips, lead, calm, hasProd:all.length > 0, R};
+  // どの手順にも「おすすめ」を出す（併用注意などで消えて空になったときは、だれにでも合いやすい物を入れる）
+  steps.forEach(st => { if (st.fixed || (st.good && st.good.length)) return;
+    const fb = st.k === 'moist' ? (oilT && !dryT ? ['ヒアルロン酸', 'グリセリン'] : ['セラミド', 'ヒアルロン酸']) : st.k === 'toner' ? ['ヒアルロン酸', 'グリセリン'] : st.k === 'water' ? ['32℃くらいのぬるま湯', 'やわらかいタオルで押さえる'] : st.k === 'serum' ? (sensT || calm ? ['パンテノール'] : ['ナイアシンアミド']) : [];
+    st.good = fb; });
+  const hasAcneRx = RXP.some(r => /ニキビ/.test(((RX_DRUGS.find(z => z[1] === r.x.p.name) || [])[0]) || '') || /アダパレン|過酸化ベンゾイル|クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(String(r.x.p.ingredients || '') + r.x.p.name));
+  return {steps, d, w, tips, lead, calm, hasProd:all.length > 0, R, acne:acneT, hasAcneRx};
 }
 function rtPaneHtml(slot) {
   let P; try { P = rtPlan(slot); } catch (e) { console.error(e); return `<div class="card">${emptyBox('note', '表示中にエラーが起きました', 'ページを読み込み直してください。')}</div>`; }
@@ -9428,7 +9434,7 @@ function rtPaneHtml(slot) {
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${esc(s.how)}</p>
       ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
-      ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.fixed ? 'おすすめ' : s.gl || 'おすすめ成分'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
+      ${s.good.length || s.own.length ? `<div class="cm-ing"><small class="g">${icon('check')}${s.k === 'serum' || s.k === 'toner' || s.k.startsWith('spot:') ? 'おすすめ成分' : 'おすすめ'}</small><div>${oChips(s)}${gChips(s)}</div></div>` : ''}
       ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
   // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
@@ -9441,14 +9447,64 @@ function rtPaneHtml(slot) {
     const ok = st.own.map(o => nk(o.name)); st.good = st.good.filter(v => { const k = nk(v); return !ok.some(o => o && k && (o === k || o.includes(k) || k.includes(o))); }); }); // 持っている成分と同じおすすめは出さない
   // 前の手順で出した成分・控えたいものは、あとの手順ではくり返さない
   { const sg = new Set(), sa = new Set(), key = v => String(v).split(/[（）()・\s]+/).filter(Boolean).sort().join('|');
-    P.steps.forEach(st => st.own.forEach(o => sg.add(key(o.name)))); P.steps.forEach(st => { st.good = st.good.filter(v => !sg.has(key(v)) && sg.add(key(v))); st.avoid = st.avoid.filter(v => !sa.has(key(v)) && sa.add(key(v))); }); }
+    P.steps.forEach(st => st.own.forEach(o => sg.add(key(o.name)))); P.steps.forEach(st => { st.good = st.good.filter(v => !sg.has(key(v)) && sg.add(key(v))); st.avoid = st.avoid.filter(v => !sa.has(key(v)) && sa.add(key(v))); });
+    // ほかの手順と同じで消えて「控えたい」だけになった手順にも、おすすめを入れる（まだ出していない物を優先）
+    const FB = {moist:['セラミド', 'スクワラン', 'グリセリン', 'ヒアルロン酸'], toner:['グリセリン', 'ヒアルロン酸', 'パンテノール'], serum:['ナイアシンアミド', 'パンテノール'], water:['32℃くらいのぬるま湯', 'やわらかいタオルで押さえる']};
+    P.steps.forEach(st => { if (st.fixed || st.good.length || st.own.length || !FB[st.k]) return; const fresh = FB[st.k].filter(v => !sg.has(key(v)) && !st.avoid.some(a => chipText(a) === v)); st.good = (fresh.length ? fresh : FB[st.k]).slice(0, 2); }); }
   let h = '';
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
+  if (slot === 'pm' && P.acne && !P.hasAcneRx) h += acneDrugCardHtml();
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
   if (!P.hasProd) h += `<div class="card cm-hint"><p class="small no-ph">使っている化粧品を「Myアイテム」に登録すると、それぞれの順番に商品名が入ります。</p><a class="link small" href="#/my">Myアイテムを開く →</a></div>`;
   h += `<p class="small muted rt-foot no-ph">肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てた目安です。皮膚科の塗り薬は、医師の指示を優先してください。</p>`;
   return h;
+}
+// ===== ニキビの塗り薬の提案（登録していない人に） =====
+// 薬機法・医薬品等適正広告基準に合わせて：市販薬は、楽天市場のレビューの多い順に並べるだけ（効き目の保証・「No.1」などの表現はしない）。
+// 処方薬（医療用医薬品）は一般の人への広告ができないため、商品名・ランキング・購入リンクは出さず、成分の種類の説明と「皮膚科で相談」だけにする
+function acneDrugCardHtml() {
+  return `<div class="card rx-sug"><div class="card-h"><h2>ニキビの塗り薬</h2></div>
+    <p class="small no-ph" style="margin:0 0 10px">ニキビが続くときは、塗り薬を使う方法もあります。</p>
+    <div class="irk-list"><button type="button" class="pop-item ir" data-action="otc-acne"><span class="ir-t"><b>市販のニキビ薬</b><small class="ir-note">ドラッグストアや通販で買える薬（人気順）</small></span><i class="ing-go">›</i></button>
+    <button type="button" class="pop-item ir" data-action="rx-acne-info"><span class="ir-t"><b>皮膚科で処方される主な薬</b><small class="ir-note">診察を受けて、医師が選ぶ薬（参考）</small></span><i class="ing-go">›</i></button></div>
+    <p class="hint no-ph">赤く腫れる・数が多い・跡が残りそうなときは、市販薬より先に皮膚科に相談してください。</p></div>`;
+}
+const RX_ACNE_INFO = [
+  ['アダパレン（外用レチノイド）', '毛穴のつまりをできにくくして、白ニキビ・黒ニキビから治していく塗り薬です。使い始めは乾燥・ヒリヒリが出やすいです。'],
+  ['過酸化ベンゾイル', 'ニキビの原因になる菌を減らし、毛穴のつまりにも働く塗り薬です。服や髪の色が抜けることがあります。'],
+  ['アダパレンと過酸化ベンゾイルの配合薬', '上の2つを1本にした塗り薬です。'],
+  ['抗菌薬の塗り薬（クリンダマイシン・ナジフロキサシン・オゼノキサシンなど）', '赤く腫れたニキビの菌を減らす塗り薬です。菌が薬に強くならないよう、ほかの薬と組み合わせて使われることが多いです。'],
+  ['抗菌薬と過酸化ベンゾイルの配合薬', '抗菌薬と過酸化ベンゾイルを1本にした塗り薬です。'],
+];
+function openRxAcneInfo() {
+  openModal({title:'皮膚科で処方される主な薬', size:'small', dismissable:true, body:`<div class="ing-sheet">
+    <p class="small muted" style="margin:0 0 10px">ニキビの治療で皮膚科から出される、主な塗り薬の種類です（参考）。どの薬を使うかは、診察を受けて医師が肌の状態に合わせて決めます。通販では買えません。</p>
+    <div class="ing-dl">${RX_ACNE_INFO.map(([t, d]) => `<div class="ing-b"><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</div>
+    <p class="small muted" style="margin-top:10px">皮膚科で薬をもらったら、Myアイテムの「塗り薬」に登録すると、ケア管理の順番・併用注意に入ります。</p></div>`});
+}
+let OTC_ACNE = null;
+async function openOtcAcneSheet() {
+  setTimeout(() => { MODAL_REOPEN = () => openOtcAcneSheet(); }, 0);
+  openModal({title:'市販のニキビ薬', size:'small', dismissable:true, body:`<div class="ing-sheet">
+    <p class="small muted" style="margin:0 0 10px">ドラッグストアや通販で買える医薬品（第2類医薬品など）です。楽天市場でレビューの多い順に並べています<span class="pr-tag" style="margin-left:6px">PR</span></p>
+    <div id="otc-pop">${skelHtml(3, {label:'商品を探しています'})}</div>
+    <p class="small muted" style="margin-top:10px">医薬品です。使う前に添付文書（説明書）をよく読み、使用上の注意を守ってください。効き方には個人差があります。5〜6日使ってもよくならないとき、赤く腫れる・数が多いときは、皮膚科に相談してください。皮膚科の薬を使っている人は、医師・薬剤師に確認してから使ってください。</p></div>`});
+  try {
+    if (!OTC_ACNE) {
+      const qs = ['ニキビ 治療薬 第2類医薬品', 'ニキビ 薬 クリーム 第2類医薬品', 'アクネ 医薬品'];
+      const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'otc'}))), L = [];
+      res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.forEach(x => { const n = String(x.name || '');
+        if (!/第[123]類医薬品/.test(n) || !/ニキビ|にきび|アクネ|吹き出物|吹出物/.test(n) || /セット|まとめ買い|[×xX]\s*\d|\d+\s*個/.test(n)) return; // 医薬品で、ニキビ用の、1個の物だけ
+        if (/yahoo/i.test(x.site || x.url || '') ? !affSite('yahoo') : !affSite('rakuten')) return;
+        if (!L.some(y => sameProduct({name:y.name}, {name:x.name}))) L.push(x); }); });
+      OTC_ACNE = L.slice(0, 15);
+    }
+    const box = document.getElementById('otc-pop'); if (!box) return;
+    box.innerHTML = OTC_ACNE.length ? `<div class="irk-list">${OTC_ACNE.map((x, i) => `<button type="button" class="pop-item ir" data-otcpick="${i}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`
+      : `<p class="small muted">今は商品を見つけられませんでした。時間をおいて、もう一度お試しください。</p>`;
+    box.onclick = ev => { const t = ev.target.closest('[data-otcpick]'); if (!t) return; const x = OTC_ACNE[Number(t.dataset.otcpick)]; if (!x) return; ui.shopItem = Object.assign({}, x, {fromIng:'市販のニキビ薬'}); sheetGo('#/shop'); };
+  } catch (e) { const box = document.getElementById('otc-pop'); if (box) box.innerHTML = '<p class="small muted">通信できませんでした。電波のよい場所で、もう一度お試しください。</p>'; }
 }
 function viewRoutine() {
   const slot = ui.rtTab === 'am' || ui.rtTab === 'pm' ? ui.rtTab : (new Date().getHours() < 15 ? 'am' : 'pm'); ui.rtTab = slot;
@@ -14504,6 +14560,8 @@ const actions = {
     if (!p.image) { if (inp) inp.click(); return; } // 自分の写真がまだないときは、すぐに写真を選ぶ
     openModal({title:'写真', size:'small', dismissable:true, body:`<div class="stack-actions"><label class="btn btn-primary" for="myph-in">${icon('image')}写真を選ぶ</label><button type="button" class="btn btn-ghost" data-myphoto-del="${esc(id)}">写真を外す</button></div>`});
     document.querySelectorAll('#modal-root label[for="myph-in"],#modal-root [data-myphoto-del]').forEach(b => b.addEventListener('click', () => setTimeout(() => closeModal(true), 50))); },
+  'otc-acne': () => openOtcAcneSheet(),
+  'rx-acne-info': () => openRxAcneInfo(),
   'plan-pick': id => { acct.plan = id === 'year' ? 'year' : 'month'; render(); },
   'trial-seen': id => { try { localStorage.setItem('nk_trial_seen_' + id, '1'); } catch (e) { /* 何もしない */ } render(); },
   'ref-copy': async () => { const u = refLink(); if (!u) return; try { if (navigator.share) { await navigator.share({title:SERVICE, text:`肌の記録アプリ「${SERVICE}」の紹介です。登録してこのコード（${acct.refCode}）を使うと、${PREMIUM_NAME}が1か月無料になります。`, url:u}); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(u); toast('紹介リンクをコピーしました'); } catch (e) { toast('コピーできませんでした。コードを伝えてください', 'error'); } },
