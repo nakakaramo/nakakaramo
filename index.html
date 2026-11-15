@@ -978,6 +978,14 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 @media(min-width:640px){.ps-wrap{align-items:center}.ps{border-radius:24px}}
 .ps-x{position:absolute;top:12px;right:12px;width:36px;height:36px}
 .ps h2{margin:0;font-size:22px}.ps-price{margin:4px 0 10px;font-size:13px;color:var(--ink2)}.ps-price b{font-size:18px;color:var(--ink)}
+.plan-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+.pp-opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pp-opt b{font-size:14px}.pp-opt span{font-size:13px;color:var(--ink2)}.pp-opt em{font-style:normal;font-size:11px;font-weight:700;color:var(--green);margin-top:2px}
+.pp-opt.on,.pp-opt:has(input:checked){border-color:var(--green);background:var(--green-l,#E5F2EA)}
+.pp-opt input{position:absolute;opacity:0;pointer-events:none}
+.ref-row{display:flex;gap:10px;align-items:center;margin-top:10px}.ref-row .input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.12em}
+.ref-code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.16em;padding:8px 12px;border-radius:12px;background:var(--surface2);text-align:center}
+.trial-bn .page-actions{gap:8px}
 .ps-list{margin:0 0 14px;padding:12px 14px 12px 32px;background:var(--green-l,#E5F2EA);border-radius:14px;font-size:13.5px;line-height:1.7}
 #ps-form{display:flex;flex-direction:column;gap:10px}.ps-note,.ps-me{margin:0}
 .ps-agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6}.ps-agree input{margin-top:3px;width:18px;height:18px;flex:none}
@@ -1700,6 +1708,7 @@ body.gated #bottom-nav{visibility:hidden}
 /* ダークモード：明るい背景のまま文字が読めなくなっていた箱を直す */
 :root[data-theme="dark"] .ir-pr{background:var(--green-p);border-color:#2E4535}
 :root[data-theme="dark"] .ps-list{background:var(--green-s);color:var(--ink)}
+:root[data-theme="dark"] .pp-opt.on,:root[data-theme="dark"] .pp-opt:has(input:checked){background:var(--green-s)}
 :root[data-theme="dark"] .au-info{background:var(--green-s)}
 :root[data-theme="dark"] .adv-box.good{background:#1E2C22}
 :root[data-theme="dark"] .adv-box.bad{background:#33231D}
@@ -2406,6 +2415,7 @@ a,img,button,label{-webkit-touch-callout:none!important}
 .ct2-sh small{flex-basis:100%;font-size:12px;font-weight:400;color:var(--muted);margin-left:24px}
 .ct2-sec .ct2-i:first-of-type{border-top:0}
 .ct2-none{margin:4px 0 0 24px;font-size:13px;color:var(--muted);line-height:1.6}
+.ct2-ask{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--surface2);display:flex;flex-direction:column;align-items:flex-start;gap:8px}.ct2-ask p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.6}.ct2-ask .btn svg{width:14px;height:14px}
 
 /* おすすめケアの中の「今の肌に合う成分」 */
 .ct2-adv{margin-top:4px}
@@ -2733,6 +2743,23 @@ const CLOUD = {
   storageKey:'hadatomo-auth',
   google:true                                                // Supabase で Google ログインを設定したら true にします
 };
+// ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
+const APP_VER = '2026.11.15';
+const ERRLOG = {n:0, seen:new Set()};
+function logError(msg, src, stack) {
+  try {
+    if (!CLOUD.url || !CLOUD.key || location.protocol === 'file:' || /^(localhost|127\.|\[::1\])/.test(location.hostname) || navigator.webdriver) return;
+    msg = String(msg || '').replace(/"[^"]{16,}"/g, '"…"').replace(/'[^']{16,}'/g, "'…'").replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '(mail)').slice(0, 480);
+    const where = String(src || '');
+    if (!msg || /^Script error\.?$/i.test(msg) || /ResizeObserver loop|(chrome|moz|safari(-web)?)-extension:|webkit-masked-url/i.test(msg + ' ' + where + ' ' + (stack || ''))) return;
+    const k = msg.slice(0, 120); if (ERRLOG.seen.has(k) || ERRLOG.n >= 8) return; ERRLOG.seen.add(k); ERRLOG.n++;
+    const page = String(location.hash || '#/').split('?')[0].split('/').slice(0, 2).join('/').slice(0, 60);
+    fetch(CLOUD.url + '/rest/v1/app_errors', {method:'POST', keepalive:true, headers:{'Content-Type':'application/json', apikey:CLOUD.key, Prefer:'return=minimal'},
+      body:JSON.stringify({msg, src:where.replace(/^https?:\/\/[^/]+/, '').slice(0, 280), stack:String(stack || '').replace(/https?:\/\/[^/\s)]+/g, '').replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '(mail)').slice(0, 2900), page, ver:APP_VER, ua:String(navigator.userAgent || '').slice(0, 280), logged_in:!!(typeof acct !== 'undefined' && acct && acct.user)})}).catch(() => {});
+  } catch (e) { /* 何もしない */ }
+}
+window.addEventListener('error', e => { if (e && e.target && e.target !== window && !e.message) return; logError(e.message || (e.error && e.error.message), `${e.filename || ''}:${e.lineno || 0}:${e.colno || 0}`, e.error && e.error.stack); }); // 画像の読み込み失敗などは送らない
+window.addEventListener('unhandledrejection', e => { const r = e && e.reason; if (r && /AbortError|NotAllowedError|Load failed|Failed to fetch|NetworkError|fetch timeout/i.test(String(r.name || '') + ' ' + String(r.message || r))) return; logError((r && r.message) || String(r), 'promise', r && r.stack); }); // 通信が切れただけのものは送らない
 /* ---------- 広告（無料プランだけに表示。プレミアムでは表示しない） ----------
    ・肌の記録・グラフ・レポート・食事などの「健康に関わる画面」には表示しません
    ・広告サービスと契約するまでは enabled:false のままにします（preview:true の間は「広告枠」の位置だけ表示） */
@@ -3623,6 +3650,7 @@ function normalize(d) {
   out.settings.wxLoc = ds.wxLoc && Number.isFinite(+ds.wxLoc.lat) && Number.isFinite(+ds.wxLoc.lon) ? Object.assign({lat:+ds.wxLoc.lat, lon:+ds.wxLoc.lon}, ds.wxLoc.ip ? {ip:true, at:+ds.wxLoc.at || 0} : {}) : null; // 現在地（約1kmに丸めた位置。ip＝ネット回線からのおおよその場所）
   out.settings.cloudSync = !!ds.cloudSync; // クラウドに保存する（ログインしている人だけ）
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
+  out.settings.nameShort1 = !!ds.nameShort1; // 通販サイトの長い商品名を短くした
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   out.settings.surveyDone = !!ds.surveyDone;
   out.settings.concernKeys = strArr(ds.concernKeys).filter(k => CONCERN_KEYS.includes(k)); /* CONCERN_MASTER はあとで作られるので、起動時に読めるキーの一覧を使う */ // 肌悩み（14の中から）
@@ -3686,6 +3714,7 @@ function widgetSync() {
   try { const n = window.HadatomoNative; if (n && n.widget && typeof n.widget.update === 'function') n.widget.update(d); } catch (e) { /* アプリ版でないときは何もしない */ }
 }
 let state = load();
+setTimeout(() => { try { if (shortenOldNames()) render(); } catch (e) { /* 何もしない */ } }, 1500); // 通販サイトの長い商品名を、1回だけ短くする
 if (storageOK) save(); // 第1版のデータを新しい形式で保存し直す
 // 写真を別の保存場所から読み込んで、目印を写真に戻す（前から端末にある写真は、ここで別の保存場所へ移す）
 const PHOTO_READY = (async () => {
@@ -4487,6 +4516,7 @@ function viewHome() {
   const budget = state.settings.monthlyBudget;
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
+  html += trialBannerHtml();
   html += `<section class="hero hero-home"><div class="hero-wx" id="top-wx">${wxTopInner()}</div>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${todayLog ? `${icon('edit')}記録を編集` : `${icon('plus')}今日の肌を記録`}</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('run')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('meal')}食事</button></div></section>`;
 
@@ -5452,6 +5482,7 @@ function netToCat(x, others) {
     jan:/^(\d{8}|\d{13})$/.test(x.jan || '') ? x.jan : '', source:`${x.site}（${x.shop || 'ショップ'}）`, checkedAt:todayStr(), offers:[]};
   const g = guessFromName(p.name); if (g && g.brand) p.brand = g.brand; if (g && g.purposes && g.purposes.length) p.purposes = g.purposes.filter(v => PURPOSES.includes(v));
   if (!p.brand) p.brand = (findState && findState.brandHint) || brandOrCompany(x.name, x.shop); // ブランド名も自動で入れる（カメラで読んだブランド名があればそれを使う）
+  p.name = compactName(p.name, p.brand) || p.name; // 検索用の言葉が並んだ長い名前を短くする
   state.catalog.push(p);
   if (!save()) { state.catalog.pop(); return null; }
   pickCleanImage(p, x, others || []);
@@ -5615,6 +5646,41 @@ function tidyName(n) {
     .replace(/^[\s\d\/:：／~〜～]+(?=\S)/, '')
     .replace(/\s+/g, ' ').trim();
   return t || String(n || '');
+}
+// 通販サイトの長い商品名（検索用の言葉が並んだもの）を「ブランド＋商品名＋種類」くらいに短くする
+const CATW = ['美容液','セラム','アンプル','化粧水','トナー','ローション','乳液','エマルジョン','クリーム','ジェル','洗顔料','洗顔フォーム','洗顔','クレンジングオイル','クレンジングバーム','クレンジング','日焼け止め','サンスクリーン','UVクリーム','パック','マスク','パッド','オイル','バーム','ミスト','エッセンス','フォーム'];
+const SEO_W = new Set('毛穴 テカリ ニキビ 思春期 思春期ニキビ 大人ニキビ ニキビ跡 韓国 韓国コスメ コスメ スキンケア 基礎化粧品 乾燥肌 敏感肌 脂性肌 混合肌 オイリー肌 普通肌 全肌質 低刺激 プレゼント ギフト 女性 男性 メンズ レディース ユニセックス 人気 おすすめ 皮脂 皮脂ケア 美白 透明感 くすみ シミ そばかす 肌荒れ 角質 角質ケア 毛穴ケア ツヤ ツヤ肌 ハリ エイジングケア 鎮静 鎮静ケア 保湿ケア 高保湿 大容量 正規品 公式 送料無料 赤み 赤ら顔 乾燥 しわ シワ たるみ 黒ずみ いちご鼻 角栓 ターンオーバー 肌 顔 顔用 全身 フェイス 10代 20代 30代 40代 50代 学生 中学生 高校生 プチプラ 母の日 父の日 クリスマス 誕生日 韓国スキンケア オルチャン 水分 うるおい 潤い 弾力 キメ 肌理 ビタミン ビタミンC ナイアシンアミド CICA シカ ヒアルロン酸 セラミド レチノール'.split(' '));
+function compactName(name, brand) {
+  let t = String(name || '').replace(/[【\[<＜《〔][^】\]>＞》〕]*[】\]>＞》〕]/g, ' ').replace(/[（(][^）)]{0,30}[）)]/g, ' ')
+    .replace(/\d+(\.\d+)?\s*(ml|mL|ML|g|G|枚|個|本|包)(\s*[×xX]\s*\d+(個|本|セット)*)?/g, ' ').replace(/[×xX]\s*\d+(個|本|セット)?/g, ' ').replace(/\d+\s*(個|本)?セット/g, ' ')
+    .replace(/[|｜／/・,，、!！★☆♪◆◇■□●○]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t) return String(name || '').slice(0, 40);
+  const toks = t.split(' ').filter(Boolean);
+  const b = String(brand || '').trim();
+  const keep = [];
+  let catSeen = false, ingSeen = 0;
+  for (const w of toks) {
+    if (b && w.toLowerCase() === b.toLowerCase()) continue;
+    const isCat = CATW.some(c => w === c || w.endsWith(c));
+    if (SEO_W.has(w) && !(keep.length === 0 && /酸|ナイアシン|レチノ|ビタミン|CICA|シカ|セラミド|ヒアルロン/.test(w))) continue;
+    keep.push(w);
+    if (isCat) { catSeen = true; break; }
+    if (keep.length >= 4) break;
+  }
+  let out = keep.join(' ');
+  if (b && !out.toLowerCase().includes(b.toLowerCase())) out = b + ' ' + out;
+  out = out.trim();
+  if (out.length > 32) out = out.slice(0, 32).replace(/\s\S*$/, '');
+  return out || t.slice(0, 32);
+}
+// 前に登録した、通販サイトの長い名前の商品も1回だけ短くする（自分で名前を変えた物はそのまま）
+function shortenOldNames() {
+  if (state.settings.nameShort1) return;
+  let ch = 0;
+  state.catalog.forEach(c => { if (!c.shopUrl || String(c.name || '').length <= 24) return; const nn = compactName(c.name, c.brand); if (!nn || nn === c.name || nn.length < 4) return;
+    state.myProducts.forEach(m => { if (m.catalogId === c.id && m.name === c.name) { m.name = nn; ch++; } }); c.name = nn; ch++; });
+  state.settings.nameShort1 = true; save();
+  return ch;
 }
 // ===== 提携ブランド（A8.net）のおすすめ商品 =====
 // partners.json（index.html と同じ場所）に商品を入れると、その成分が入っている商品を「提携ブランドのおすすめ（PR）」に出す
@@ -5898,6 +5964,7 @@ const LIFE_AVOID = [
   [/お酒|アルコール|ビール|飲酒|寝酒/, 'お酒です。', '飲みすぎると肌が乾燥しやすく、眠りも浅くなります。', '量を控えて、同じくらいの水を一緒に飲みます。'],
   [/スマホ|画面|ブルーライト|ゲーム|動画/, '寝る直前に、スマホ・パソコンの画面を見ることです。', '画面の光と刺激で寝つきが悪くなり、眠りが浅くなります。睡眠不足は肌の回復を妨げます。', '寝る30分〜1時間前には、画面を見るのをやめます。'],
   [/カフェイン|コーヒー|緑茶|紅茶/, '夕方以降のコーヒー・緑茶・エナジードリンクです。', 'カフェインの目を覚ます作用は数時間続き、寝つきを悪くします。', '夕方からは、麦茶などカフェインのない飲み物にします。'],
+  [/辛い|激辛|香辛料|唐辛子/, '唐辛子など、辛い物です。', '体が温まって血管が広がり、赤みやほてりが強くなりやすいです。', '赤み・肌あれがある間は、辛さ控えめにします。'],
   [/夜更かし|寝不足|遅くまで|不規則/, '寝る時間が遅い・短いことです。', '肌は寝ている間に修復されるため、睡眠が短いと肌荒れしやすくなります。', '毎日同じ時刻に寝て、同じ時刻に起きます。'],
   [/夜食|寝る前の食事|遅い夕食|寝る直前/, '寝る直前に食べることです。', '消化のために眠りが浅くなりやすいです。', '夕食は、寝る3時間前までにすませます。'],
   [/汗/, '運動でかいた汗を、ふかずにそのままにすることです。', '汗と皮脂が毛穴にたまると、ニキビやかゆみの原因になります。', '清潔なタオルで押さえるようにふき、早めに洗い流します。'],
@@ -11385,15 +11452,27 @@ function careTodayData() {
   if (acne) { const top = Object.entries(ff.days ? ff.acne.areas : sk.acneByArea).sort((a, b) => b[1] - a[1])[0]; add('夜', `${top ? top[0] + 'の' : ''}ニキビは触らない・つぶさない`, [`この1週間でニキビ${acne}個${inflamed ? `（赤いニキビ${inflamed}個）` : ''}`, '髪・マスク・枕カバーがふれる所は清潔に'], ['肌']); }
   // ---- 生活（睡眠・食事・運動）----
   if (short || late) { const bt = sl.avgBedtime ? (() => { const [h, m] = sl.avgBedtime.split(':').map(Number); let x = h * 60 + m - 30; if (x < 0) x += 1440; return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; })() : ''; add('生活', `今夜は${late && bt ? bt + 'まで' : 'いつもより30分早く'}に寝る`, [`睡眠は平均${sl.avgHours}時間（目安${need}時間）${sl.avgBedtime ? `で、寝る時刻は${sl.avgBedtime}ごろです` : 'です'}`, dry >= 3 || acne ? `寝不足は${acne ? 'ニキビ' : ''}${acne && dry >= 3 ? 'や' : ''}${dry >= 3 ? '乾燥' : ''}を悪くしやすくなります` : '肌は寝ている間に回復します'], ['睡眠', dry >= 3 || acne ? '肌' : '']); }
-  else if (!hasSleep) add('生活', '睡眠を記録する', ['寝た時刻と起きた時刻を入れると、肌との関係も合わせて提案できます'], ['睡眠']);
+  else if (!hasSleep) { const LN = skinLean(d);
+    if (LN.acne) add('生活', '0時までに寝る', ['睡眠不足は、皮脂やニキビを増やしやすいと言われています', '肌は寝ている間に回復します'], ['睡眠']);
+    else if (LN.dry || LN.sens) add('生活', '寝室を加湿して、寝る1時間前にぬるめのお風呂', ['乾燥・赤みが出やすい肌は、寝ている間に水分が逃げやすいです', '体が温まって、寝つきも良くなります'], ['睡眠']);
+    else add('生活', '毎日同じ時刻に起きる', ['体内時計が整うと深く眠れて、肌も回復しやすくなります'], ['睡眠']);
+    add('生活', '睡眠を記録する', ['寝た時刻と起きた時刻を入れると、あなたの睡眠に合わせた内容に変わります'], ['睡眠']); }
   if ((acne || oil >= 3) && snack) add('生活', '甘い間食をナッツ・ヨーグルトに替える', [acne ? `この1週間で間食した日が${ml.snackDays}日あり、ニキビが${acne}個できています` : `この1週間で間食した日が${ml.snackDays}日あり、テカリも強めです`, '甘い物が多いと、皮脂やニキビが増えることがあります'], ['食事', '肌']);
   if (protLow) add('生活', '毎食、卵・納豆・魚などを手のひら1枚分とる', [`たんぱく質が1日${ml.avgProtein}gで、目安（${ml.proteinGoal}g）より少なめです`, '肌をつくる材料になります'], ['食事']);
   else if ((dull || uvHi || inflamed) && (vitCLow || vegLow)) add('生活', 'キウイ・ブロッコリーなどビタミンCを1品', [vitCLow ? `ビタミンCの多い物を食べた日は${ml.vitCDays}日` : `野菜が1日${ml.avgVeg}g`, dull ? 'くすみ・ニキビ跡のケアにも役立ちます' : uvHi ? '紫外線が強い日は特に大切です' : ''], ['食事', dull || inflamed ? '肌' : '', uvHi ? '天気' : '']);
   else if (dry >= 3 && hasMeal) add('生活', '鮭・さば・くるみなど良い脂をとる', ['肌の乾燥が強めです', '肌のうるおいを保つ脂質の材料になります'], ['食事', '肌']);
-  else if (!hasMeal) add('生活', '食事を記録する', ['食べた物を入れると、足りない栄養と肌の関係を合わせて提案できます'], ['食事']);
+  else if (!hasMeal) { const LN = skinLean(d);
+    if (LN.acne) add('生活', '納豆・卵・まぐろでビタミンB群をとる', ['皮脂のバランスに関わるビタミンB2・B6が多い食べ物です', '甘い物・揚げ物が続くと、ニキビが悪化しやすいと言われています'], ['食事']);
+    else if (LN.dull) add('生活', 'キウイ・ブロッコリーなどビタミンCを1品', ['ニキビ跡・くすみのケアには、コラーゲンづくりを助けるビタミンCが役立ちます'], ['食事']);
+    else if (LN.dry) add('生活', '鮭・さば・くるみなど良い脂をとる', ['乾燥しやすい肌は、うるおいを保つ脂質の材料が大切です'], ['食事']);
+    else add('生活', '毎食、野菜とたんぱく質（卵・魚・大豆）を1品ずつ', ['肌の材料になるたんぱく質と、ビタミンがそろいます'], ['食事']);
+    add('生活', '食事を記録する', ['食べた物を入れると、足りない栄養に合わせた内容に変わります'], ['食事']); }
   if (hasEx && ex.activeDays && (acne || oil >= 3)) add('生活', '運動で汗をかいたら、すぐ洗顔と保湿', [`この1週間の運動は${ex.activeDays}日・合計${ex.totalMin}分です`, '汗や皮脂をそのままにすると、ニキビができやすくなります'], ['運動', '肌']);
   else if (hasEx && ex.activeDays < 2 && (short || dull)) add('生活', '10分の散歩をする', [`この1週間で運動した日は${ex.activeDays}日です`, short ? '体を動かすと寝つきが良くなります' : '血のめぐりが良くなり、顔色が明るく見えます', uvMid ? '日中なら日焼け止めを塗ってから出かけましょう' : ''], ['運動', short ? '睡眠' : '肌', uvMid ? '天気' : '']);
-  else if (!hasEx) add('生活', '運動を記録する', ['運動した日を入れると、肌との関係も合わせて提案できます'], ['運動']);
+  else if (!hasEx) { const LN = skinLean(d);
+    if (LN.acne) add('生活', '運動で汗をかいたら、すぐ洗顔と保湿', ['汗や皮脂をそのままにすると、ニキビができやすくなります'], ['運動']);
+    else add('生活', '10分の散歩をする', ['血のめぐりが良くなり、顔色が明るく見えます', uvMid ? '日中なら日焼け止めを塗ってから' : ''], ['運動']);
+    add('生活', '運動を記録する', ['運動した日を入れると、あなたの運動に合わせた内容に変わります'], ['運動']); }
   // 問題がないときも、続けるとよいことを1つずつ出す
   if (hasSleep && !short && !late) add('生活', `今の睡眠（平均${sl.avgHours}時間）を続ける`, ['寝る時刻と長さが足りています', '肌は寝ている間に回復します'], ['睡眠']);
   if (hasMeal && !items.some(x => x.src.includes('食事'))) add('生活', '毎食、野菜とたんぱく質（卵・魚・大豆）を1品ずつ', ['今の食事に大きな問題は見つかりませんでした', '続けることで肌の材料がそろいます'], ['食事']);
@@ -11434,8 +11513,9 @@ function careTodayHtml() {
     // 肌の朝・夜のケアの順番は「ケア管理」にまとめた（ここでは重ねて出さない）
     if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span></h3>${chips}</section>`;
     const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
-      : ask.length ? `<p class="ct2-none no-ph">${esc(ask[0].why)}</p>` : chips ? '' : '<p class="ct2-none">今日は特にありません。</p>';
-    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}</section>`;
+      : chips || ask.length ? '' : '<p class="ct2-none">今日は特にありません。</p>';
+    const askH = ask.length ? `<div class="ct2-ask"><p class="no-ph">${esc(ask[0].why)}</p><button type="button" class="btn btn-ghost btn-sm" data-action="life-part" data-id="${({睡眠:'sleep', 食事:'meal', 運動:'exercise'})[c] || 'sleep'}">${icon('plus')}${esc(ask[0].title)}</button></div>` : '';
+    return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}${askH}</section>`;
   };
   // 肌・運動・睡眠・食事は、それぞれ別のカードにして見やすくする
   return `<div class="ct2-wrap" id="care-today"><div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
@@ -11445,6 +11525,18 @@ function careTodayHtml() {
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
 const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
 const VITC_RE = /ブロッコリー|キウイ|いちご|苺|みかん|オレンジ|グレープフルーツ|パプリカ|ピーマン|トマト|キャベツ|じゃがいも|ポテト|柿|レモン|ほうれん草|小松菜|カリフラワー|芽キャベツ|アセロラ|フルーツ|果物|野菜ジュース|サラダ/;
+// 記録がまだない角度（睡眠・食事・運動）も、肌質・肌悩み・肌の記録から、その人に合わせる
+function skinLean(d) {
+  const dg = diagNow() || {}, ck = new Set([...(dg.priority || []), ...concernKeysNow()]), sk = (d && d.skin) || {};
+  let ff = {conc:{}, acne:{total:0}, days:0, marks:0}; try { ff = faceFindings(7); } catch (e) { /* 何もしない */ }
+  const lv = c => (ff.conc[c] || {}).max || 0;
+  return {
+    acne:ck.has('acne') || (ff.days ? ff.acne.total : (sk.acneTotal || 0)) > 0 || ['oily', 'combo'].includes(dg.main) || ck.has('oily') || Math.max(lv('テカリ'), sk.oil || 0) >= 3,
+    dry:['dry', 'innerdry'].includes(dg.main) || ck.has('dry') || Math.max(lv('乾燥'), sk.dryness || 0) >= 3,
+    sens:!!dg.sensitive || ck.has('sensitive') || ck.has('redness') || Math.max(lv('赤み'), lv('肌あれ'), sk.redness || 0) >= 3,
+    dull:ck.has('dull') || ck.has('acnemark') || ck.has('spot') || lv('くすみ') >= 3 || !!ff.marks,
+  };
+}
 function adviceLocal(d) {
   const sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal, need = d.profile.sleepNeedHours;
   // 使っている化粧品に入っている成分（成分辞典で見つかったもの）
@@ -11477,18 +11569,27 @@ function adviceLocal(d) {
   else skin = {title:'守りのケアを続ける', text:`${sk.cond != null && sk.condPrevWeek != null && sk.cond > sk.condPrevWeek ? `調子は上向き（${sk.condPrevWeek}→${sk.cond}）。` : '大きなトラブルはありません。'}日焼け止めと保湿を続けましょう。`, good:['セラミド', '日焼け止め（毎朝）', 'ビタミンC誘導体'], avoid:[]};
   // ② 睡眠
   let sleep;
-  if (!sl.days) sleep = {title:'睡眠も記録を', text:'記録すると、睡眠と肌の関係がわかります。', good:['毎日同じ時刻に起きる', '寝る1時間前にお風呂'], avoid:['寝る前のスマホ', '夜のカフェイン']};
+  const LN = skinLean(d);
+  if (!sl.days) sleep = LN.acne ? {title:'ニキビ・皮脂には睡眠が大切', text:'睡眠不足は皮脂やニキビを増やしやすいと言われています。記録すると、あなたの睡眠に合わせて変わります。', good:['0時までに寝る', '寝る1時間前にお風呂'], avoid:['寝る前のスマホ', '夜のカフェイン']}
+    : LN.dry || LN.sens ? {title:'寝ている間の乾燥を防ぐ', text:'乾燥・赤みが出やすい肌は、寝ている間に水分が逃げやすいです。記録すると、あなたの睡眠に合わせて変わります。', good:['寝室を加湿する', 'ぬるめの入浴'], avoid:['寝る前のスマホ', '夜更かし']}
+    : {title:'睡眠も記録を', text:'記録すると、睡眠と肌の関係がわかります。', good:['毎日同じ時刻に起きる', '寝る1時間前にお風呂'], avoid:['寝る前のスマホ', '夜のカフェイン']};
   else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間（目安${need}時間）。まず30分早く寝ましょう。`, good:['寝る1時間前にお風呂', '毎日同じ時刻に起きる'], avoid:['寝る前のスマホ', '夜のカフェイン']};
   else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻が平均${sl.avgBedtime}ごろ。0時までに寝る日を増やしましょう。`, good:['0時までに寝る', '朝に日光を浴びる'], avoid:['寝る前のスマホ']};
   else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間。この調子で続けましょう。`, good:['今のリズムを続ける'], avoid:['寝る前のスマホ']};
   // ③ 運動
   let move;
-  if (!ex.recordedDays) move = {title:'運動も記録を', text:'記録すると、運動と肌の関係がわかります。', good:['10分の散歩', 'ストレッチ'], avoid:['汗をそのままにする']};
+  if (!ex.recordedDays) move = LN.acne ? {title:'運動のあとの汗に気をつける', text:'汗と皮脂をそのままにすると、ニキビができやすくなります。記録すると、あなたの運動に合わせて変わります。', good:['10分の散歩', '運動後すぐの洗顔・保湿'], avoid:['汗をそのままにする', '顔を触る']}
+    : LN.dry || LN.sens ? {title:'肌にやさしい運動を', text:'乾燥・赤みが出やすい肌は、強い日差しの中の運動で荒れやすくなります。記録すると、あなたの運動に合わせて変わります。', good:['ストレッチ', '10分の散歩'], avoid:['日差しの強い時間の屋外運動']}
+    : {title:'運動も記録を', text:'記録すると、運動と肌の関係がわかります。', good:['10分の散歩', 'ストレッチ'], avoid:['汗をそのままにする']};
   else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日。10分の散歩からで大丈夫です。`, good:['10分の散歩', 'ストレッチ', '階段を使う'], avoid:['長時間座りっぱなし']};
   else move = {title:'運動を続けよう', text:`1週間で${ex.activeDays}日・${ex.totalMin}分。汗をかいたら早めに洗顔を。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
   // ④ 食事（足りない栄養と、おすすめの食べ物）
   let meal;
-  if (!ml.days) meal = {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:['納豆', '鮭', 'ブロッコリー'], avoid:['菓子パン', '炭酸ジュース']};
+  if (!ml.days) meal = LN.acne ? {title:'ビタミンB群でニキビ予防', text:'皮脂のバランスに関わるビタミンB2・B6を意識しましょう。記録すると、足りない栄養に合わせて変わります。', good:['納豆', '卵', 'まぐろ', 'バナナ'], avoid:['菓子パン', '炭酸ジュース', 'ポテトチップス']}
+    : LN.dull ? {title:'ビタミンCで跡・くすみのケア', text:'コラーゲンづくりを助けるビタミンCを毎日少しずつ。記録すると、足りない栄養に合わせて変わります。', good:['キウイ', 'ブロッコリー', 'パプリカ', 'トマト'], avoid:['炭酸ジュース', '菓子パン']}
+    : LN.dry ? {title:'良い脂でうるおいを', text:'乾燥しやすい肌は、うるおいを保つ脂質とビタミンAが大切です。記録すると、足りない栄養に合わせて変わります。', good:['鮭', 'ナッツ', 'にんじん', 'ほうれん草'], avoid:['お酒', 'ポテトチップス']}
+    : LN.sens ? {title:'腸を整えて肌あれ予防', text:'腸内環境を整える食べ物は、肌あれしにくい体づくりを助けます。記録すると、足りない栄養に合わせて変わります。', good:['ヨーグルト', '納豆', '鮭', 'ブロッコリー'], avoid:['辛い物', 'お酒']}
+    : {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:['納豆', '鮭', 'ブロッコリー'], avoid:['菓子パン', '炭酸ジュース']};
   else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）。毎食、手のひら1枚分を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:['菓子パン', 'カップ麺']};
   else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`ビタミンCの多い物を食べた日は${ml.vitCDays}日。毎日少しずつとりましょう。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:['炭酸ジュース', 'ポテトチップス']};
   else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日${ml.avgVeg}g（目安350g）。あと1品足しましょう。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:['ラーメン単品', 'ポテトチップス']};
@@ -12746,7 +12847,7 @@ function reportBodyHtml() {
    ・サーバーにあるのは「メールアドレス」と「契約状況」だけです
    ・有料機能の本当の判定は、サーバー側（AIの関数）で行います。画面の判定は表示用です
    ========================================================= */
-const acct = {status:'idle', client:null, user:null, sub:null, subLoaded:false, price:null, priceErr:'', busy:false, mode:'login', confirm:false, recovery:false, msg:'', polling:false};
+const acct = {status:'idle', client:null, user:null, sub:null, grant:null, subLoaded:false, plan:'month', refCode:'', refBusy:false, price:null, priceErr:'', busy:false, mode:'login', confirm:false, recovery:false, msg:'', polling:false};
 function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = true; el.onload = res; el.onerror = () => rej(new Error('load')); document.head.appendChild(el); });
 }
@@ -13111,12 +13212,33 @@ async function refreshSub() {
   try {
     const {data, error} = await acct.client.from('subscriptions').select('*').eq('user_id', acct.user.id).maybeSingle();
     if (!error) acct.sub = data || null;
+    const g = await acct.client.from('premium_grants').select('trial_until,bonus_until').eq('user_id', acct.user.id).maybeSingle();
+    if (!g.error) acct.grant = g.data || null;
   } catch (e) { /* 読み込めなくても画面は動かす */ }
+  try { refAutoRedeem(); } catch (e) { /* 何もしない */ }
   acct.subLoaded = true; rerenderAcct();
 }
-function isPremium() {
-  const s = acct.sub;
-  return !!(acct.user && s && ['active','trialing'].includes(s.status) && (!s.current_period_end || new Date(s.current_period_end) > new Date()));
+const paidPremium = () => { const s = acct.sub; return !!(acct.user && s && ['active','trialing'].includes(s.status) && (!s.current_period_end || new Date(s.current_period_end) > new Date())); };
+// お試し（登録から1週間）・お友だち紹介の無料期間：今いちばん遅く終わるもの
+function grantInfo() {
+  const g = acct.grant; if (!acct.user || !g) return null;
+  const L = [['trial', g.trial_until], ['bonus', g.bonus_until]].filter(x => x[1]).map(([k, t]) => ({kind:k, end:new Date(t)})).sort((a, b) => b.end - a.end);
+  return L[0] || null;
+}
+const grantActive = () => { const g = grantInfo(); return !!(g && g.end > new Date()); };
+function isPremium() { return paidPremium() || grantActive(); }
+const fmtEnd = d => `${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+const daysLeft = d => Math.max(0, Math.ceil((d - new Date()) / 86400000));
+// 無料期間がもうすぐ終わる（2日以内）・終わったばかり（3日以内）のお知らせ（ホームの上）
+function trialBannerHtml() {
+  if (!acct.user || paidPremium()) return '';
+  const g = grantInfo(); if (!g) return '';
+  const left = g.end - new Date(), key = 'nk_trial_seen_' + g.end.getTime();
+  let seen = false; try { seen = localStorage.getItem(key) === '1'; } catch (e) { /* 何もしない */ }
+  const name = g.kind === 'trial' ? 'プレミアムのお試し' : 'お友だち紹介の無料期間';
+  if (left > 0 && left <= 2 * 86400000) return `<div class="notice warn trial-bn"><b class="nt-h">${name}は、${fmtEnd(g.end)}に終わります</b>終わると無料プランに戻ります（自動で料金がかかることはありません）。続けて使うときは、プランの画面から申し込めます。<div class="page-actions" style="margin-top:10px"><a class="btn btn-primary btn-sm" href="#/plan">プランを見る</a></div></div>`;
+  if (left <= 0 && left > -3 * 86400000 && !seen) return `<div class="notice trial-bn"><b class="nt-h">${name}が終わりました</b>無料プランに戻りました。記録はそのまま残っています。${PREMIUM_NAME}の機能を続けて使うときは、プランの画面から申し込めます。<div class="page-actions" style="margin-top:10px"><a class="btn btn-primary btn-sm" href="#/plan">プランを見る</a><button type="button" class="btn btn-ghost btn-sm" data-action="trial-seen" data-id="${g.end.getTime()}">閉じる</button></div></div>`;
+  return '';
 }
 // 写真読み取り（プレミアム）：写真をサーバーの関数「vision」に送り、AIの推定結果を受け取る
 async function callVision(mode, image, payload) {
@@ -13186,13 +13308,14 @@ function openPremiumSheet(feature) {
   const el = document.createElement('div'); el.id = 'prem-sheet'; el.className = 'ps-wrap';
   el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
     <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
-    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b><span class="ps-cancel">いつでも解約できます。</span></p>
+    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>月額1,200円（税込）</b><span class="ps-cancel">年額なら12,000円（2か月分お得）。いつでも解約できます。</span></p>
     <ul class="ps-list"><li>顔の写真を撮るだけで、今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養を自動で計算</li><li>記録から、あなた専用のケアと献立を提案</li></ul>
-    ${logged ? '' : `<div class="ps-auth"><p class="small ps-note">申し込むには、先にアカウントを作ってください（無料・登録済みの人はログイン）</p>
+    ${logged ? '' : `<div class="ps-auth"><p class="small ps-note"><b>新しく登録すると、7日間${PREMIUM_NAME}を無料で試せます</b>（カードの登録はいりません。終わると自動で無料プランに戻ります）。登録済みの人はログインしてください。</p>
       <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
     <form id="ps-form" novalidate ${logged ? '' : 'hidden'}>
       ${logged ? `<p class="small muted ps-me">${esc(acct.user.email || '')} で申し込みます</p>` : ''}
-      <label class="ps-agree"><input type="checkbox" name="agree"> <span><a href="#/terms" target="_blank">利用規約</a>・<a href="#/privacy" target="_blank">プライバシーポリシー</a>・<a href="#/law" target="_blank">特定商取引法の表記</a>を確認し、毎月自動で更新されること（解約はアカウントからいつでも可能）に同意します</span></label>
+      <div class="plan-pick ps-pick" role="radiogroup" aria-label="支払いの期間"><label class="pp-opt"><input type="radio" name="plan" value="month" checked><b>月額</b><span>1,200円／月</span></label><label class="pp-opt"><input type="radio" name="plan" value="year"><b>年額</b><span>12,000円／年</span><em>2か月分お得</em></label></div>
+      <label class="ps-agree"><input type="checkbox" name="agree"> <span><a href="#/terms" target="_blank">利用規約</a>・<a href="#/privacy" target="_blank">プライバシーポリシー</a>・<a href="#/law" target="_blank">特定商取引法の表記</a>を確認し、選んだ期間（1か月または1年）ごとに自動で更新されること（解約はアカウントからいつでも可能）に同意します</span></label>
       <button type="submit" class="btn btn-primary ps-go">申し込む（カードの入力へ）</button>
       <p class="small muted ps-foot">クレジットカード・デビットカード・Apple Pay・Google Payで支払えます。支払いは、決済サービスStripeの安全な画面で行い、カード番号はナカカラモには保存されません。</p>
     </form></div>`;
@@ -13217,7 +13340,7 @@ function openPremiumSheet(feature) {
       for (let i = 0; i < 20 && !acct.client; i++) await new Promise(r => setTimeout(r, 300));
       if (!acct.client) throw new Error('サーバーに接続できませんでした。インターネットの接続を確認してください。');
       btn.textContent = 'お支払いの画面へ移動しています…';
-      const d = await callBilling('checkout'); goExternal(d.url);
+      const d = await callBilling('checkout', {plan:f.elements.plan && f.elements.plan.value === 'year' ? 'year' : 'month'}); goExternal(d.url);
     } catch (err) { toast(err && /^[　-鿿]/.test(err.message || '') ? err.message : authErrMsg(err), 'error'); btn.disabled = false; btn.textContent = '申し込む（カードの入力へ）'; }
   };
 }
@@ -13238,8 +13361,8 @@ function extBack() {
 window.addEventListener('pageshow', e => { if (e.persisted) { extLeaving = extLeaving || 1; extBack(); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && extLeaving && Date.now() - extLeaving > 800) extBack(); });
 window.addEventListener('focus', () => { if (extLeaving && Date.now() - extLeaving > 800) extBack(); });
-async function callBilling(action) {
-  const {data, error} = await withTO(acct.client.functions.invoke('billing', {body:{action}}), 30000);
+async function callBilling(action, extra) {
+  const {data, error} = await withTO(acct.client.functions.invoke('billing', {body:Object.assign({action}, extra || {})}), 30000);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
     try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* 何もしない */ }
@@ -13271,7 +13394,7 @@ function planTable() {
     ${PLAN_ROWS.map(r => r.length === 1 ? `<tr class="pt-sec"><th colspan="3">${esc(r[0])}</th></tr>` : `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function priceText() {
-  if (acct.price && acct.price.amount != null) return `月額 ${yen(acct.price.amount)}（税込）${CLOUD.testMode ? '・テスト用の仮の価格' : ''}`;
+  if (acct.price && acct.price.amount != null) return acct.plan === 'year' && acct.price.year ? `年額 ${yen(acct.price.year.amount)}（税込）` : `月額 ${yen(acct.price.amount)}（税込）${CLOUD.testMode ? '・テスト用の仮の価格' : ''}`;
   if (acct.priceErr) return `<span style="color:var(--danger)">料金を読み込めませんでした（${esc(acct.priceErr)}）</span>`;
   return '<span class="muted">読み込み中…</span>';
 }
@@ -13320,31 +13443,40 @@ function viewPlan(query) {
   if (EMBED) {
     // プラン → メールアドレス → 状態 → 契約内容の確認 の順に、1つの枠にまとめる
     const end = s && s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '';
-    const stateTxt = !acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? (ownerFree ? '有効（運営者の確認用・無料）' : s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み（${esc(end)}で終了）</span>` : `有効${end ? `（次回の更新日：${esc(end)}）` : ''}`)
+    const gi = grantInfo();
+    const stateTxt = !acct.subLoaded ? '<span class="muted">読み込み中…</span>' : !paidPremium() && grantActive() ? `${gi.kind === 'trial' ? '無料お試し中' : 'お友だち紹介で無料'}（${fmtEnd(gi.end)}まで・あと${daysLeft(gi.end)}日）` : isPremium() ? (ownerFree ? '有効（運営者の確認用・無料）' : s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み（${esc(end)}で終了）</span>` : `有効${end ? `（次回の更新日：${esc(end)}）` : ''}`)
       : s && ['past_due','unpaid','incomplete'].includes(s.status) ? '<span style="color:var(--danger)">お支払いを確認できていません</span>' : '未契約';
     html += `<div class="card"><dl class="kv"><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>状態</dt><dd>${stateTxt}</dd></dl>
-      ${s && !ownerFree ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
+      ${s && !ownerFree && s.stripe_customer_id ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
       <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd></dl>
     <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   if (isDev()) html += diagCardHtml(); // サーバーの設定の診断は、運営者だけ（?dev=1 で開いた端末）に出す
   if (!acct.subLoaded) return done(html);
-  if (isPremium() && EMBED) return done(html);
-  if (isPremium() && ownerFree) return done(html + `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2></div><p class="small">運営者の確認用として、無料で有効になっています。</p></div>`);
-  if (isPremium()) {
+  if (!acct.refCode && !acct.refBusy && !acct.refErr) setTimeout(refLoad, 0);
+  if (!acct.price && !acct.priceBusy && !acct.priceErr) { acct.priceBusy = true; setTimeout(async () => { try { acct.price = await callBilling('price'); } catch (e) { acct.priceErr = e.message; } acct.priceBusy = false; rerenderAcct(); }, 0); }
+  const refCard = refCardHtml();
+  if (paidPremium() && EMBED) return done(html + refCard);
+  if (paidPremium() && ownerFree) return done(html + refCard + `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2></div><p class="small">運営者の確認用として、無料で有効になっています。</p></div>`);
+  if (paidPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
     html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2></div>
       <dl class="kv"><dt>状態</dt><dd>${s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み：${esc(end)}で終了します（それまでは使えます）</span>` : `有効（次回の更新日：${esc(end)}）`}</dd></dl>
       <button class="btn btn-ghost" style="margin-top:14px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button>
-      <p class="hint">Stripe（決済サービス）の画面が開きます。解約すると、次回の更新日以降は請求されません。</p></div>`;
-    return done(html);
+      <p class="hint">Stripe（決済サービス）の画面が開きます。月額と年額の切り替え・解約もここからできます。解約すると、次回の更新日以降は請求されません。</p></div>`;
+    return done(html + refCard);
   }
   if (s && ['past_due','unpaid','incomplete'].includes(s.status)) {
     html += `<div class="notice red">お支払いを確認できていません。カード情報を確認してください。</div><button class="btn btn-primary" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・カード変更</button>`;
     return done(html);
   }
   if (acct.polling) return done(html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>');
+  const gi2 = grantInfo(), yr = acct.price && acct.price.year, mo = acct.price && acct.price.amount;
+  const planPick = yr ? `<div class="plan-pick" role="radiogroup" aria-label="支払いの期間">${[['month', '月額', mo != null ? yen(mo) + '／月' : ''], ['year', '年額', `${yen(yr.amount)}／年`]].map(([k, l, v]) => `<button type="button" role="radio" aria-checked="${acct.plan === k}" class="pp-opt${acct.plan === k ? ' on' : ''}" data-action="plan-pick" data-id="${k}"><b>${l}</b><span>${v}</span>${k === 'year' && mo ? `<em>${Math.round(12 - yr.amount / mo)}か月分お得</em>` : ''}</button>`).join('')}</div>` : '';
+  const yearSel = acct.plan === 'year' && yr;
   html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
+    ${gi2 && grantActive() ? `<div class="notice green" style="margin:0 0 12px"><b class="nt-h">今は${gi2.kind === 'trial' ? '無料のお試し' : 'お友だち紹介の特典'}で、${PREMIUM_NAME}を使えています（${fmtEnd(gi2.end)}まで）</b>終わると自動で無料プランに戻り、料金はかかりません。続けて使うときだけ申し込んでください（申し込んだ日から料金がかかります）。</div>` : ''}
+    ${planPick}
     <p class="small">食事の写真から商品名と栄養成分表示を、化粧品の写真から商品名・全成分の文字を、写真から読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
@@ -13352,17 +13484,56 @@ function viewPlan(query) {
         <dt>サービス</dt><dd>${esc(SERVICE)} ${PREMIUM_NAME}</dd>
         <dt>料金</dt><dd>${priceText()}</dd>
         <dt>支払い方法</dt><dd>クレジットカード・デビットカード・Apple Pay・Google Pay（次のStripeの画面で選びます）</dd>
-        <dt>支払いの時期</dt><dd>申し込み時に1か月分をお支払いいただき、以降は毎月、申し込み日と同じ日に自動でお支払いいただきます</dd>
-        <dt>契約期間</dt><dd>1か月ごとの自動更新です。解約するまで続きます</dd>
+        <dt>支払いの時期</dt><dd>${yearSel ? '申し込み時に1年分をお支払いいただき、以降は毎年、申し込み日と同じ日に自動でお支払いいただきます' : '申し込み時に1か月分をお支払いいただき、以降は毎月、申し込み日と同じ日に自動でお支払いいただきます'}</dd>
+        <dt>契約期間</dt><dd>${yearSel ? '1年ごと' : '1か月ごと'}の自動更新です。解約するまで続きます</dd>
         <dt>解約の方法</dt><dd>このページの「契約内容の確認・解約」から、いつでも手続きできます。解約後も、お支払い済みの期間の終わりまで使えます</dd>
-        <dt>返金</dt><dd>月の途中で解約しても、日割りでの返金はありません<span class="small muted">（※仮の内容。本番前に確定します）</span></dd>
+        <dt>返金</dt><dd>期間の途中で解約しても、日割りでの返金はありません</dd>
       </dl>
       <p class="small" style="margin-top:8px"><a href="#/law" target="_blank" rel="noopener">特定商取引法に基づく表記</a></p>
       <label class="check agree-line" style="margin-top:14px"><input type="checkbox" id="acct-agree"><span>上記の内容と、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
       <div class="stack-actions" style="margin-top:14px"><button class="btn btn-primary" data-action="acct-checkout" ${acct.busy || !acct.price ? 'disabled' : ''}>同意して、決済画面へ進む</button><button class="btn btn-ghost" data-action="acct-confirm-cancel">やめる</button></div>
       <p class="hint">次の画面（Stripe）でカード情報を入力し、ボタンを押すと申し込みが確定します。</p>`}
     </div>`;
-  return done(html);
+  return done(html + refCard);
+}
+// ===== お友だち紹介 =====
+const REF_KEY = 'nk_ref', REF_DONE = 'nk_ref_done';
+const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* 何もしない */ } };
+const refLink = () => acct.refCode ? `${location.origin}${location.pathname}?ref=${encodeURIComponent(acct.refCode)}` : '';
+// 紹介リンク（?ref=コード）から開いたら、コードを覚えておく（ログインしたら自動で使う）
+(() => { try { const m = (location.search + location.hash).match(/[?&]ref=([A-Za-z0-9]{4,12})/); if (m && !lsGet(REF_DONE)) lsSet(REF_KEY, m[1].toUpperCase()); } catch (e) { /* 何もしない */ } })();
+const newAccount = () => !!(acct.user && acct.user.created_at && Date.now() - Date.parse(acct.user.created_at) < 14 * 86400000);
+async function refLoad() {
+  if (!acct.user || acct.refBusy || acct.refCode) return;
+  acct.refBusy = true;
+  try { const d = await callBilling('ref_code'); acct.refCode = d.code || ''; acct.refErr = ''; } catch (e) { acct.refErr = e.message || 'err'; }
+  acct.refBusy = false; rerenderAcct();
+}
+async function refRedeem(code, manual) {
+  if (!acct.user || acct.refRedeeming) return; acct.refRedeeming = true;
+  try {
+    const d = await callBilling('ref_redeem', {code});
+    lsSet(REF_DONE, '1'); lsSet(REF_KEY, null);
+    await refreshSub();
+    const g = grantInfo();
+    toast(d.reward === 'credit' ? '紹介コードを使いました。次の請求から1か月分が引かれます' : `紹介コードを使いました。${PREMIUM_NAME}が${g ? fmtEnd(g.end) + 'まで' : '1か月'}無料になりました`);
+  } catch (e) {
+    if (!manual) lsSet(REF_KEY, null); // 使えないコードは、もう自動では使わない
+    if (/1人1回/.test(e.message || '')) lsSet(REF_DONE, '1');
+    if (manual || /見つかりません|自分の/.test(e.message || '')) toast(e.message, 'error');
+  }
+  acct.refRedeeming = false; rerenderAcct();
+}
+function refAutoRedeem() { const c = lsGet(REF_KEY); if (c && acct.user && !lsGet(REF_DONE) && newAccount()) refRedeem(c, false); else if (c && acct.user && !newAccount()) lsSet(REF_KEY, null); }
+function refCardHtml() {
+  if (!acct.user) return '';
+  const canUse = newAccount() && !lsGet(REF_DONE);
+  return `<div class="card ref-card"><div class="card-h"><h2>お友だち紹介</h2></div>
+    <p class="small">あなたの紹介コードで友だちが登録すると、<b>2人とも${PREMIUM_NAME}が1か月無料</b>になります。${PREMIUM_NAME}を契約中の人は、次の請求から1か月分が引かれます。</p>
+    <div class="ref-row"><span class="ref-code">${acct.refCode ? esc(acct.refCode) : acct.refErr ? '—' : '…'}</span><button type="button" class="btn btn-primary btn-sm" data-action="ref-copy" ${acct.refCode ? '' : 'disabled'}>紹介リンクを送る</button></div>
+    ${canUse ? `<div class="divider"></div><p class="small" style="margin:0 0 8px">友だちから紹介コードをもらった場合（登録から14日以内・1回だけ）</p><div class="ref-row"><input class="input" id="ref-in" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="紹介コード" value="${esc(lsGet(REF_KEY))}"><button type="button" class="btn btn-ghost btn-sm" data-action="ref-redeem" ${acct.refRedeeming ? 'disabled' : ''}>使う</button></div>` : ''}
+    <p class="hint">紹介した人がもらえる特典は、1年に12回までです。</p></div>`;
 }
 // ===== Googleでログイン（Supabase で Google を設定したあと、CLOUD.google を true にすると表示） =====
 const googleBtnHtml = () => CLOUD.google ? `<button type="button" class="btn btn-ghost google-btn" data-action="google-login"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.5z"/><path fill="#34A853" d="M12 23.5c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.4 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v3a11.5 11.5 0 0 0 10.2 6.3z"/><path fill="#FBBC05" d="M5.6 14.2a6.9 6.9 0 0 1 0-4.4v-3H1.8a11.5 11.5 0 0 0 0 10.4z"/><path fill="#EA4335" d="M12 4.6c1.7 0 3.2.6 4.4 1.7l3.3-3.3A11.5 11.5 0 0 0 1.8 6.8l3.8 3C6.5 6.6 9 4.6 12 4.6z"/></svg>Googleで続ける</button><p class="g-note">Googleで続けると、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意したことになります。</p><p class="or-line"><span>または</span></p>` : '';
@@ -13430,7 +13601,7 @@ const LEGAL = {
   updated: '2026年11月15日',  // 最終改定日
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
-  price: '月額1,200円（税込）'
+  price: '月額1,200円（税込）または年額12,000円（税込）'
 };
 function legalWrap(title, body) {
   const contact = LEGAL.email ? `<a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a>` : '（準備中）';
@@ -13450,19 +13621,21 @@ function viewTerms() {
 <h3>第2条（料金プラン）</h3>
 <ol><li>本サービスには、無料で使える「無料プラン」と、有料の「${P}プラン」（以下「有料プラン」）があります。各プランで使える機能は、アプリ内のプラン表示のとおりです。</li>
 <li>有料プランの料金は、申し込み画面に表示する金額とします（${esc(LEGAL.price)}）。</li>
-<li>有料プランの利用にはアカウント登録が必要です。無料プランはアカウント登録なしで利用できます。</li></ol>
+<li>有料プランの利用にはアカウント登録が必要です。無料プランはアカウント登録なしで利用できます。</li>
+<li>新しくアカウントを登録した利用者は、登録から7日間、有料プランの機能を無料で利用できます（以下「お試し期間」）。お試し期間が終わると自動で無料プランに戻り、料金は発生しません。お試し期間は1つのアカウントにつき1回です。</li>
+<li>利用者が自分の紹介コードで別の方を紹介し、その方が登録から14日以内に紹介コードを使った場合、紹介した利用者と紹介された方の両方に、有料プランの1か月分の特典を付与します。特典は、有料プランを契約していない方には30日間の無料期間として、契約中の方には次回以降の請求から1か月分の料金を差し引く形で付与します。紹介した利用者への付与は1年に12回までとします。同じ人による複数のアカウントの作成など、不正な利用が分かった場合は、特典を取り消すことがあります。</li></ol>
 <h3>第3条（アカウント）</h3>
 <ol><li>利用者は、正確なメールアドレスを登録し、パスワードを自分の責任で管理するものとします。</li>
 <li>アカウントの第三者への貸与・譲渡・共有はできません。</li>
 <li>アカウントが第三者に使われたことによる損害について、運営者に故意または重大な過失がある場合を除き、運営者は責任を負いません。</li></ol>
 <h3>第4条（有料プランの支払い・更新）</h3>
 <ol><li>支払いは、決済代行会社Stripe（ストライプ）を通じて、クレジットカード・デビットカード・Apple Pay・Google Payで行います。カード情報は運営者のサーバーには保存されません。</li>
-<li>有料プランは1か月ごとの自動更新です。申し込み日を基準に毎月同じ日に料金が請求され、解約しない限り自動で更新されます。</li>
+<li>有料プランには、1か月ごとに更新する月額プランと、1年ごとに更新する年額プランがあります。申し込み日を基準に、月額プランは毎月、年額プランは毎年同じ日に料金が請求され、解約しない限り自動で更新されます。月額と年額の切り替えは、アプリ内の契約内容の画面からできます。</li>
 <li>支払いが確認できない場合、有料プランの機能を停止することがあります。</li></ol>
 <h3>第5条（解約・返金）</h3>
 <ol><li>利用者は、アプリ内の「アカウント」画面から、いつでも解約の手続きができます。</li>
 <li>解約した場合も、すでに支払った期間の終了日までは有料プランを利用できます。次の更新日以降は料金が発生しません。</li>
-<li>月の途中で解約した場合の日割り計算による返金は行いません。ただし、法令により返金が必要な場合や、運営者の責任でサービスを提供できなかった場合はこの限りではありません。</li></ol>
+<li>契約期間の途中で解約した場合の日割り計算による返金は行いません。ただし、法令により返金が必要な場合や、運営者の責任でサービスを提供できなかった場合はこの限りではありません。</li></ol>
 <h3>第6条（データの保存）</h3>
 <ol><li>肌の記録・写真・食事などのデータは、原則として利用者の端末のブラウザ内に保存されます。ブラウザのデータ削除や端末の故障などによりデータが失われた場合、運営者は復元できません。利用者は必要に応じてバックアップを保存してください。</li>
 <li>個人情報の取り扱いは、別に定める「プライバシーポリシー」によります。</li></ol>
@@ -13504,7 +13677,9 @@ function viewPrivacy() {
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
 <li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」「顔を撮って自動で記録」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
-<li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li></ol>
+<li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li>
+<li><b>エラーの情報</b>：本サービスの画面で不具合（エラー）が起きたとき、エラーの内容・起きた画面の種類・ブラウザの種類・ログインしているかどうか。肌の記録・写真・メールアドレスなどは含みません。不具合を直すためだけに使い、30日で自動で消します。</li>
+<li><b>お試し・お友だち紹介の情報</b>：無料のお試し期間・紹介の特典の期間、紹介コード、だれの紹介で登録したか（紹介した人・された人のアカウントの組み合わせ）。</li></ol>
 <h3>3. 利用目的</h3>
 <ol><li>本サービス（有料プランを含む）の提供・本人確認・ログイン</li>
 <li>料金の請求、契約状況の管理、解約・アカウント削除の手続き</li>
@@ -13521,6 +13696,7 @@ function viewPrivacy() {
 <div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
 ${row('Supabase（Supabase Inc.・サーバーは東京）', 'メールアドレス、パスワード、ログイン状態、契約状況', 'アカウントと有料プランの管理。ログイン・プラン画面を使ったときだけ')}
 ${row('Supabase（自動バックアップ・東京）', '肌の記録・Myアイテム・設定などの記録と写真（現在地を除く）', 'データの消失を防ぐためのバックアップと、別の端末での復元。ログインしているときに、記録を保存・変更した数秒後')}
+${row('Supabase（エラーの記録・東京）', 'エラーの内容、起きた画面の種類、ブラウザの種類、ログインしているかどうか', '不具合を見つけて直すため。画面でエラーが起きたときだけ（30日で自動で削除）')}
 ${row('Supabase（お知らせ・東京）', '通知の宛先、お知らせの時刻、最後に肌を記録した日、化粧品の名前と使用期限の目安の日付', '記録のお知らせ・使用期限のお知らせの送信。設定でお知らせをオンにした場合だけ')}
 ${row('Apple・Google・Mozilla（各ブラウザの通知の配信）', 'お知らせの文面（化粧品の名前を含むことがあります）', 'お知らせを端末に届けるため。お知らせをオンにした場合だけ')}
 ${row('Resend（Resend, Inc.）', 'メールアドレス、送るメールの内容（確認コード・ログイン用のリンク）', '登録・ログイン・パスワード再設定の確認メールの送信。メールを送るときだけ')}
@@ -13571,7 +13747,8 @@ ${r('メールアドレス', '{CONTACT}<br><span class="small muted">氏名・�
 ${r('販売価格', `${P}プラン：${esc(LEGAL.price)}<br>申し込み画面に表示する金額が優先します`)}
 ${r('商品代金以外の必要料金', 'インターネット接続に必要な通信料は、利用者の負担となります')}
 ${r('支払方法', 'クレジットカード・デビットカード・Apple Pay・Google Pay（決済代行：Stripe）')}
-${r('支払時期', '申し込み時に初回分を支払い、以後は1か月ごとに、申し込み日と同じ日に自動で請求されます')}
+${r('支払時期', '申し込み時に初回分を支払い、以後は月額プランは1か月ごと、年額プランは1年ごとに、申し込み日と同じ日に自動で請求されます')}
+${r('無料のお試し', '新しく登録した方は、登録から7日間、有料プランを無料で利用できます。終わると自動で無料プランに戻り、料金は発生しません')}
 ${r('サービスの提供時期', '決済の完了後、すぐに利用できます')}
 ${r('解約・キャンセル', 'アプリ内の「アカウント」画面から、いつでも解約できます。解約後も、支払い済みの期間の終了日まで利用でき、次回以降の請求は発生しません')}
 ${r('返品・返金', 'デジタルサービスの性質上、支払い済みの料金の返金（日割りを含む）はできません。ただし、法令により返金が必要な場合、または運営者の責任でサービスを提供できなかった場合を除きます')}
@@ -14257,9 +14434,13 @@ const actions = {
     if (!cb || !cb.checked) { toast('内容を確認し、同意のチェックを入れてください', 'error'); return; }
     if (acct.busy) return;
     acct.busy = true; render();
-    try { const d = await callBilling('checkout'); goExternal(d.url); }
+    try { const d = await callBilling('checkout', {plan:acct.plan}); goExternal(d.url); }
     catch (e) { toast(e.message, 'error'); acct.busy = false; render(); }
   },
+  'plan-pick': id => { acct.plan = id === 'year' ? 'year' : 'month'; render(); },
+  'trial-seen': id => { try { localStorage.setItem('nk_trial_seen_' + id, '1'); } catch (e) { /* 何もしない */ } render(); },
+  'ref-copy': async () => { const u = refLink(); if (!u) return; try { if (navigator.share) { await navigator.share({title:SERVICE, text:`肌の記録アプリ「${SERVICE}」の紹介です。登録してこのコード（${acct.refCode}）を使うと、${PREMIUM_NAME}が1か月無料になります。`, url:u}); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(u); toast('紹介リンクをコピーしました'); } catch (e) { toast('コピーできませんでした。コードを伝えてください', 'error'); } },
+  'ref-redeem': async () => { const i = $('#ref-in'); const code = i ? i.value.trim() : ''; if (!code) { toast('紹介コードを入れてください', 'error'); return; } await refRedeem(code, true); },
   'acct-portal': async () => {
     if (acct.busy) return;
     acct.busy = true; render();
@@ -14267,7 +14448,7 @@ const actions = {
     catch (e) { toast(e.message, 'error'); acct.busy = false; render(); }
   },
   'acct-delete': async () => {
-    const warn = isPremium() ? '\n・ご契約中のプレミアムプランは、ただちに解約されます（日割りの返金はありません）' : '';
+    const warn = paidPremium() ? '\n・ご契約中のプレミアムプランは、ただちに解約されます（日割りの返金はありません）' : '';
     if (!await confirmDialog(`アカウントを削除しますか？\n・メールアドレスと契約状況がサーバーから削除されます${warn}\n・この端末の中の肌の記録などは削除されません\n・元に戻せません`, {ok:'アカウントを削除する', title:'アカウントの削除'})) return;
     acct.busy = true; render();
     try { await photoDeleteAll(); try { const sub = pushSupported() ? await pushSub() : null; if (sub) { await callPush('unsubscribe', {endpoint:sub.endpoint}); await sub.unsubscribe(); } } catch (e) { /* 何もしない */ } await callBilling('delete_account'); try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; toast('アカウントを削除しました'); }
