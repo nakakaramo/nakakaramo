@@ -13147,6 +13147,7 @@ function syncApply(row) {
   state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
   try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); localStorage.setItem(SYNC_SIG_KEY, recSig(row.data || {})); } catch (e) {}
   SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
+  try { if (localStorage.getItem('nk_relogin')) { localStorage.removeItem('nk_relogin'); const c = notifyCfg(); if (c.on && pushSupported() && Notification.permission === 'granted') notifySend(c).catch(() => {}); } } catch (e) { /* 何もしない */ } // ログアウトで止めたお知らせを、また届くようにする
   setTimeout(() => photoRestore(row.data && row.data.photoRefs), 300); // この端末にない写真も読み込む
 }
 // ===== 写真のバックアップ：ログインしている人の写真を、本人だけが見られる保存場所（Supabase Storage の photos）に入れる =====
@@ -13204,6 +13205,47 @@ async function photoRestore(refs) {
   if (n) { photoMapSet(m); save(); render(); toast(`写真を${n}枚もどしました`); }
 }
 // アカウントを削除するとき：保存場所の写真も消す
+// ===== ログアウト：クラウドへの保存が終わったのを確かめてから、この端末の記録・写真・名前・アイコンを消す（もう一度ログインすれば、クラウドから戻る） =====
+const LOGOUT_KEYS = () => [STORE_KEY, STORE_KEY + '_broken_backup', STORE_KEY + '_before_restore', 'nakakaramo_sync_at', SYNC_SIG_KEY, PHOTO_MAP_KEY, RECO_KEY, CARE_AI_KEY, ADVICE_KEY, MENU_KEY, RECIPE_KEY, HIST_KEY, 'nk_notify_sig', 'nk_wxnow', 'hadatomo_widget'];
+const waitMs = ms => new Promise(r => setTimeout(r, ms));
+function logoutUnsaved() { // まだクラウドに保存していない記録・写真の数（0なら全部保存済み）
+  let n = 0;
+  try { const last = localStorage.getItem(SYNC_SIG_KEY) || ''; if (!last || recSig(syncPayload()) !== last) n++; } catch (e) { n++; }
+  if (!PHOTO.off) { const m = photoMap(); photoWalk(state, (k, v) => { if (!photoPathOf(v, m)) n++; }); }
+  return n;
+}
+async function logoutAndWipe() {
+  if (acct.busy) return;
+  let saved = true;
+  if (syncOn()) {
+    acct.busy = true; ui.logoutMsg = 'クラウドに保存しています…'; render();
+    saved = false;
+    try {
+      for (let i = 0; i < 6; i++) { // 写真が多いときは何回かに分けて送る
+        while (SYNC.busy) await waitMs(300);
+        await syncPush(); while (SYNC.busy) await waitMs(300);
+        clearTimeout(SYNC.timer); SYNC.pending = false;
+        if (SYNC.err) break;
+        if (!logoutUnsaved()) { saved = true; break; }
+      }
+    } catch (e) { saved = false; }
+    acct.busy = false; ui.logoutMsg = ''; render();
+  }
+  if (!saved) {
+    if (!await confirmDialog('クラウドにまだ保存できていない記録（または写真）があります。\n電波のよい場所で、もう一度ログアウトしてください。\n\nこのままログアウトすると、保存できていない分は消えて、元に戻せません。', {ok:'保存せずにログアウト', title:'まだ保存されていません'})) return;
+  } else if (!await confirmDialog('ログアウトすると、この端末から記録・写真・名前・アイコンが消えます。\nもう一度ログインすれば、クラウドから元に戻ります。', {ok:'ログアウト', danger:false, title:'ログアウト'})) return;
+  acct.busy = true; render();
+  const upTo = (pr, ms) => Promise.race([pr, waitMs(ms)]); // 電波が悪くても、止まらずに進む
+  try { await upTo((async () => { const sub = pushSupported() ? await pushSub() : null; if (sub) await callPush('unsubscribe', {endpoint:sub.endpoint}); })(), 5000); } catch (e) { /* 何もしない */ } // このアカウントのお知らせを、この端末に送らない
+  try { await upTo(acct.client.auth.signOut(), 5000); } catch (e) { /* 何もしない */ }
+  acct.user = null; acct.sub = null; acct.confirm = false;
+  clearTimeout(SYNC.timer); SYNC.pending = false;
+  try { LOGOUT_KEYS().forEach(k => localStorage.removeItem(k)); Object.keys(localStorage).filter(k => /^nk_trial_seen_/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('nk_relogin', '1'); } catch (e) { /* 何もしない */ }
+  try { if (PH_DB.db) await new Promise(res => { const tx = PH_DB.db.transaction('p', 'readwrite'); tx.objectStore('p').clear(); tx.oncomplete = tx.onerror = tx.onabort = () => res(); }); } catch (e) { /* 何もしない */ }
+  try { state = freshState(); localStorage.setItem(STORE_KEY, stateJSON()); } catch (e) { /* 何もしない */ }
+  try { history.replaceState(null, '', location.pathname + location.search + '#/home'); } catch (e) { /* 何もしない */ }
+  location.reload(); // 画面に残った記録も消すため、開き直す
+}
 async function photoDeleteAll() {
   try { if (!acct.client || !acct.user) return; const {data} = await acct.client.storage.from('photos').list(acct.user.id, {limit:1000}); if (data && data.length) await acct.client.storage.from('photos').remove(data.map(o => `${acct.user.id}/${o.name}`)); localStorage.removeItem(PHOTO_MAP_KEY); } catch (e) { /* 何もしない */ }
 }
@@ -13683,9 +13725,9 @@ function viewPlan(query) {
       : s && ['past_due','unpaid','incomplete'].includes(s.status) ? '<span style="color:var(--danger)">お支払いを確認できていません</span>' : '未契約';
     html += `<div class="card"><dl class="kv"><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>状態</dt><dd>${stateTxt}</dd></dl>
       ${s && !ownerFree && s.stripe_customer_id ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
-      <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
+      <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout" ${acct.busy ? 'disabled' : ''}>${ui.logoutMsg ? esc(ui.logoutMsg) : 'ログアウト'}</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `${PREMIUM_NAME}プラン` : '無料プラン'}</dd></dl>
-    <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
+    <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout" ${acct.busy ? 'disabled' : ''}>${ui.logoutMsg ? esc(ui.logoutMsg) : 'ログアウト'}</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   if (isDev()) html += diagCardHtml(); // サーバーの設定の診断は、運営者だけ（?dev=1 で開いた端末）に出す
   if (!acct.subLoaded) return done(html);
   if (!acct.refCode && !acct.refBusy && !acct.refErr) setTimeout(refLoad, 0);
@@ -14690,7 +14732,7 @@ const actions = {
   'pf-color': id => { avDraft = {t:'emoji', v:avDraft && avDraft.t === 'emoji' ? avDraft.v : AVATAR_EMOJI[0], c:id}; pfPaint(); },
   'pf-reset': () => { avDraft = null; pfPaint(); },
   'pf-save': () => { const n = document.getElementById('pf-name'); if (n) state.settings.nickname = n.value.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); state.settings.avatar = avDraft; if (save()) { closeModal(); toast('保存しました'); render(); } },
-  'acct-logout': async () => { try { await acct.client.auth.signOut(); } catch (e) { /* 何もしない */ } acct.user = null; acct.sub = null; acct.confirm = false; toast('ログアウトしました'); render(); gateSync(); },
+  'acct-logout': () => logoutAndWipe(),
   'acct-confirm': async () => {
     acct.confirm = true; render();
     if (!acct.price) { try { acct.price = await callBilling('price'); acct.priceErr = ''; } catch (e) { acct.priceErr = e.message; } render(); }
