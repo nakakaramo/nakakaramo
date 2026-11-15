@@ -1355,7 +1355,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
 .own-th .thumb{width:100%;height:100%;aspect-ratio:auto}.own-th .thumb .ph{font-size:0;gap:0}.own-th .thumb svg{width:100%;height:100%;display:block}
 .my-photo{position:relative;width:132px;margin:0 auto 4px}.my-photo .thumb{border-radius:18px}.my-photo .thumb svg{width:100%;height:100%;display:block}
-.my-photo-b{display:flex;justify-content:center;gap:8px;margin:0 0 6px}.my-photo-b label{cursor:pointer}
+.my-ph-ed{position:absolute;right:-6px;bottom:-6px;width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--green-d);cursor:pointer;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.08)}.my-ph-ed svg{width:16px;height:16px}
+.my-photo{margin-bottom:14px!important}
 .ir-t{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pop-item.ir.ir-pr{grid-template-columns:64px minmax(0,1fr) 12px;border-color:#CFE0D3;background:#F7FBF8}.ir-brand{font-size:11px;color:var(--muted);font-weight:600}.ir-note{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
@@ -2210,11 +2211,13 @@ img{image-rendering:auto}
 .ai-link{text-decoration:none!important;flex:none;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer;font-size:14px}
 
 /* アカウント情報：アイコンを少し小さく、全体を上に */
-.ai-hero{margin:0 0 4px!important}
+.ai-hero{margin:-50px 0 0!important;pointer-events:none}.ai-hero .ai-av{pointer-events:auto}
 .ai-av>i{width:26px!important;height:26px!important;right:-2px!important;bottom:0!important}
 .ai-av>i svg{width:13px!important;height:13px!important}
 .ai-sec{margin:12px 4px 8px!important}
 .ai-link{font-size:13px!important;font-weight:500!important}
+.ai-prof{padding-top:2px!important;padding-bottom:2px!important}.ai-prof .ai-row{padding:6px 0}.ai-prof .ai-row b{font-size:15px;margin-top:0}
+.ai-sec:first-of-type{margin-top:6px!important}
 
 /* お知らせ（通知） */
 .nt-sw{flex:none;appearance:none;-webkit-appearance:none;width:46px;height:28px;margin:0;border-radius:99px;background:#D9D4CC;position:relative;cursor:pointer;transition:background .2s;border:0}
@@ -7071,8 +7074,7 @@ function viewMyDetail(id) {
     ${p.ng ? `<a class="card ng-banner" href="#/trouble">${icon('alert')}<span><b>肌に合わなかった（${fmtShort(p.ng.date)}）</b><small>${esc(p.ng.sym.join('・') || '症状は未記録')}</small></span><i>›</i></a>` : ''}
     <div class="card detail-top">
       <div>
-        <div class="my-photo">${myThumb(p)}</div>
-        <div class="my-photo-b"><label class="btn btn-ghost btn-sm">${icon('camera')}${p.image || (cat && (cat.image || cat.imageUrl)) ? '写真を変える' : '写真を付ける'}<input type="file" accept="image/*" data-myphoto="${esc(p.id)}" class="vh"></label>${p.image ? `<button type="button" class="btn btn-ghost btn-sm" data-myphoto-del="${esc(p.id)}">写真を外す</button>` : ''}</div>
+        <div class="my-photo">${myThumb(p)}<button type="button" class="my-ph-ed" data-action="my-photo-menu" data-id="${esc(p.id)}" aria-label="写真を変える">${icon('edit')}</button><input type="file" accept="image/*" id="myph-in" data-myphoto="${esc(p.id)}" class="vh" tabindex="-1" aria-hidden="true"></div>
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
         <dl class="kv" style="margin-top:12px">
           ${!isRx && p.brand ? `<dt>ブランド</dt><dd>${esc(p.brand)}</dd>` : ''}
@@ -9408,7 +9410,10 @@ function rtPaneHtml(slot) {
   const ownLinkText = (t, s) => esc(t).replace(/「([^」]{1,40})」/g, (all, q) => { const pre = q.replace(/(…|\.\.\.)$/, '');
     const pr = state.myProducts.find(p => !p.demo && (esc(p.name) === pre || (pre.length >= 4 && esc(p.name).startsWith(pre)))); if (!pr) return all;
     const own = P.steps.flatMap(z => z.own || []).find(o => !o.drug && o.pids.includes(pr.id)); if (!own) return all;
-    return `<button type="button" class="care-link" data-owned="${esc(own.name)}" data-pids="${esc(own.pids.join(','))}">${esc(own.name)}</button>`; });
+    return `<button type="button" class="care-link" data-owned="${esc(own.name)}" data-pids="${esc(own.pids.join(','))}">${esc(own.name)}</button>`; })
+    // 文章の中の皮膚科の薬の名前（「 」なし）も、押すと薬の説明が出るリンクにする
+    .split(/(<[^>]+>[^<]*<\/button>)/).map(part => part.startsWith('<') ? part : state.myProducts.filter(q => !q.demo && isRxP(q) && q.status === '使用中').map(q => ({name:truncate(q.name, 18), pids:[q.id]})).filter((o, i, a) => o.name && a.findIndex(y => y.name === o.name) === i).sort((a, b) => b.name.length - a.name.length)
+      .reduce((t, o) => { const en = esc(o.name); return t.includes(en) ? t.split(en).join(`<button type="button" class="care-link" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${en}</button>`) : t; }, part)).join('');
   // 持っている商品で、今は控えるもの（併用注意の薬などと同じ時間に使わない）：青い枠で出し、押すと理由が出る
   const aoChips = s => (s.avoidOwn || []).map(a => { const k = `${slot}|${s.k}|${a.p.id}`, nm = ingFromName(a.p.name) || truncate(a.p.name, 16); AVOID_OWN.set(k, Object.assign({nm}, a)); return `<button type="button" class="cm-c own cm-ing-b" data-avoidown="${esc(k)}">${icon('bottle')}${esc(nm)}<i>›</i></button>`; }).join('');
   const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}<i>›</i></button>`).join('');
@@ -13927,7 +13932,7 @@ function viewAccountMe() {
   return `<a class="back" href="#/account">← アカウント</a>
     <div class="ai-hero"><button type="button" class="ai-av" data-action="acc-profile" aria-label="アイコンを変える">${avatarHtml(80)}<i aria-hidden="true">${icon('edit')}</i></button></div>
     <h3 class="ai-sec">プロフィール</h3>
-    <div class="card ai-list"><div class="ai-row"><span><small>表示名</small><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '未設定'}</b></span><button type="button" class="link ai-link" data-action="acc-name">編集する</button></div></div>
+    <div class="card ai-list ai-prof"><div class="ai-row"><span><small>表示名</small><b class="${nm ? '' : 'muted'}">${nm ? esc(nm) : '未設定'}</b></span><button type="button" class="link ai-link" data-action="acc-name">編集する</button></div></div>
     <h3 class="ai-sec">プラン・ログイン</h3>
     ${embedView(() => viewPlan({}))}`;
 }
@@ -14492,6 +14497,10 @@ const actions = {
     try { const d = await callBilling('checkout', {plan:acct.plan}); goExternal(d.url); }
     catch (e) { toast(e.message, 'error'); acct.busy = false; render(); }
   },
+  'my-photo-menu': id => { const p = getMy(id); if (!p) return; const inp = document.getElementById('myph-in');
+    if (!p.image) { if (inp) inp.click(); return; } // 自分の写真がまだないときは、すぐに写真を選ぶ
+    openModal({title:'写真', size:'small', dismissable:true, body:`<div class="stack-actions"><label class="btn btn-primary" for="myph-in">${icon('image')}写真を選ぶ</label><button type="button" class="btn btn-ghost" data-myphoto-del="${esc(id)}">写真を外す</button></div>`});
+    document.querySelectorAll('#modal-root label[for="myph-in"],#modal-root [data-myphoto-del]').forEach(b => b.addEventListener('click', () => setTimeout(() => closeModal(true), 50))); },
   'plan-pick': id => { acct.plan = id === 'year' ? 'year' : 'month'; render(); },
   'trial-seen': id => { try { localStorage.setItem('nk_trial_seen_' + id, '1'); } catch (e) { /* 何もしない */ } render(); },
   'ref-copy': async () => { const u = refLink(); if (!u) return; try { if (navigator.share) { await navigator.share({title:SERVICE, text:`肌の記録アプリ「${SERVICE}」の紹介です。登録してこのコード（${acct.refCode}）を使うと、${PREMIUM_NAME}が1か月無料になります。`, url:u}); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(u); toast('紹介リンクをコピーしました'); } catch (e) { toast('コピーできませんでした。コードを伝えてください', 'error'); } },
