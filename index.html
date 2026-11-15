@@ -12866,6 +12866,9 @@ function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n ===
 // 写真（肌写真・化粧品の写真）はクラウドに送らない（この端末の中だけ）
 const SYNC = {busy:false, timer:null, at:'', err:'', pending:false};
 const SYNC_ARRAYS = ['catalog', 'myProducts', 'skinLogs', 'lifeLogs', 'customFoods'];
+// 記録の中身の目印（写真は中身ではなく有無だけ）：クラウドとこの端末で、記録が本当に違うかを比べる
+const SYNC_SIG_KEY = 'nk_sync_sig';
+function recSig(d) { try { return phHash(JSON.stringify(SYNC_ARRAYS.map(k => (d && d[k]) || []))); } catch (e) { return ''; } }
 const isDataImg = v => typeof v === 'string' && v.startsWith('data:');
 function syncPayload() {
   const d = JSON.parse(JSON.stringify(state));
@@ -12892,9 +12895,10 @@ async function syncPush() {
   try {
     const more = await photoUpload(); if (more) SYNC.pending = true; // 先に写真を送る（送れた写真だけ目印をつける）
     const now = new Date().toISOString();
-    const {error} = await acct.client.from('user_data').upsert({user_id:acct.user.id, data:syncPayload(), updated_at:now});
+    const payload = syncPayload();
+    const {error} = await acct.client.from('user_data').upsert({user_id:acct.user.id, data:payload, updated_at:now});
     if (error) throw error;
-    SYNC.at = now; try { localStorage.setItem('nakakaramo_sync_at', now); } catch (e) {}
+    SYNC.at = now; try { localStorage.setItem('nakakaramo_sync_at', now); localStorage.setItem(SYNC_SIG_KEY, recSig(payload)); } catch (e) {}
   } catch (e) { SYNC.err = 'クラウドに保存できませんでした（電波のよい場所で自動でやり直します）'; }
   SYNC.busy = false; syncPaint();
   if (SYNC.pending) { SYNC.pending = false; syncSoon(); }
@@ -12908,17 +12912,20 @@ async function syncPull(ask) {
     if (error) throw error;
     if (!data) { syncPush(); return; } // まだクラウドに何もない → この端末のデータを保存
     const last = (() => { try { return localStorage.getItem('nakakaramo_sync_at') || ''; } catch (e) { return ''; } })();
-    const localNewer = (state.savedAt || 0) > Date.parse(last || 0) + 1000; // 最後にクラウドに保存したあと、この端末で変更した
+    // 最後にクラウドと合わせたあと、この端末で記録（肌・生活・化粧品）を変えたか。天気の読み込みなど、自動で変わる物は数えない
+    const nowSig = recSig(syncPayload()), lastSig = (() => { try { return localStorage.getItem(SYNC_SIG_KEY) || ''; } catch (e) { return ''; } })();
+    const localNewer = lastSig ? nowSig !== lastSig : (state.savedAt || 0) > Date.parse(last || 0) + 1000;
+    const sameRecs = nowSig === recSig(data.data || {}); // 記録の中身がクラウドと同じなら、聞かずにそのまま合わせる
     if (data.updated_at <= last && localNewer) { syncPush(); return; }
     if (data.updated_at <= last) return; // 同じ
-    if (ask && hasRecords(state) && localNewer) { syncAsk(data); return; } // 両方に新しい記録がある → どちらを使うか聞く
+    if (ask && hasRecords(state) && localNewer && !sameRecs) { syncAsk(data); return; } // 両方に新しい記録がある → どちらを使うか聞く
     syncApply(data);
   } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); }
 }
 function syncApply(row) {
   const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace;
   state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
-  try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
+  try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); localStorage.setItem(SYNC_SIG_KEY, recSig(row.data || {})); } catch (e) {}
   SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
   setTimeout(() => photoRestore(row.data && row.data.photoRefs), 300); // この端末にない写真も読み込む
 }
