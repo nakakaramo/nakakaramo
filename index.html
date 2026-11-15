@@ -3599,6 +3599,7 @@ function normalize(d) {
       source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '',
       offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 公式情報を調べた日・調べたページ
       keyIngs:String(p.keyIngs || '').slice(0, 300), // 主な成分（商品名・成分から探したときの成分）
+      offV:Number(p.offV) || 0, ingUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.ingUrl || '')) ? String(p.ingUrl) : '', ingSite:String(p.ingSite || '').slice(0, 40), // 全成分を調べた方法の版・全成分が載っていたページ
       offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
   }) : [];
   // 第1版からの移行時だけ、新しく追加したサンプル商品を補う（削除済みのサンプルは第2版以降は復活させない）
@@ -3611,6 +3612,7 @@ function normalize(d) {
     purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : [],
     order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null, // 長押しで並べ替えた順番
     offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
+    offV:Number(p.offV) || 0, ingUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.ingUrl || '')) ? String(p.ingUrl) : '', ingSite:String(p.ingSite || '').slice(0, 40),
     ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300)} : null, // 肌に合わなかった記録
     image:safeImg(p.image) // 自分で付けた写真
   })) : [];
@@ -6150,6 +6152,9 @@ function pcardHtml(p) {
 }
 // ---------- 商品の公式情報：空の項目は、メーカー公式サイトの情報を自動で調べて入れる。公式が出していなければ「未公開」 ----------
 const offBusy = {};
+// 全成分の調べ方の版。2＝公式になければ、通販・ドラッグストアの商品ページなども探す（前の版で「見つからない」だった物は、もう一度調べる）
+const OFF_V = 2;
+const offDone = p => !!p.offChecked && (Number(p.offV) >= OFF_V || !!String(p.ingredients || '').trim());
 function offVal(p, v) {
   if (String(v || '').trim()) return esc(v);
   if (offBusy[p.id]) return '<span class="muted">公式サイトの情報を調べています…</span>';
@@ -6157,21 +6162,30 @@ function offVal(p, v) {
   if (p.offErr) return `<span class="muted">${esc(p.offErr)}</span>`;
   return '<span class="muted">未確認</span>';
 }
+// 全成分が公式以外（通販・ドラッグストアなどの商品ページ）で見つかったときの出典
+function ingSrcHtml(p, alone) {
+  if (!p || !p.ingUrl || (p.offUrl && p.ingUrl === p.offUrl && /公式/.test(p.ingSite || '公式'))) return '';
+  let host = ''; try { host = new URL(p.ingUrl).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
+  const site = p.ingSite && !/^公式$/.test(p.ingSite) ? p.ingSite : host;
+  return `${alone ? '' : '<br>'}全成分は「<a href="${esc(p.ingUrl)}" target="_blank" rel="noopener noreferrer">${esc(site)}</a>」の商品ページの表示です。`;
+}
 function offInfoNote(p) {
   if (offBusy[p.id]) return '<div class="notice" style="margin-top:12px">メーカーの公式サイトで、特徴・使用方法・全成分・注意事項を調べています（10〜30秒）。</div>';
-  if (p.offChecked) return `<p class="small muted" style="margin:12px 0 0">特徴・使用方法・全成分・注意事項は、メーカー公式の情報です${p.offUrl ? `（<a href="${esc(p.offUrl)}" target="_blank" rel="noopener noreferrer">公式ページ</a>・${esc(fmtShort(p.offChecked))}確認）` : `（${esc(fmtShort(p.offChecked))}確認）`}。記載がない項目は「未公開」と表示しています。</p>`;
+  if (p.offChecked) return `<p class="small muted" style="margin:12px 0 0">${ingSrcHtml(p) ? '特徴・使用方法・注意事項' : '特徴・使用方法・全成分・注意事項'}は、メーカー公式の情報です${p.offUrl ? `（<a href="${esc(p.offUrl)}" target="_blank" rel="noopener noreferrer">公式ページ</a>・${esc(fmtShort(p.offChecked))}確認）` : `（${esc(fmtShort(p.offChecked))}確認）`}。記載がない項目は「未公開」と表示しています。${ingSrcHtml(p)}</p>`;
   if (!acct.user) return '<p class="small muted" style="margin:12px 0 0">ログインすると、空の項目をメーカー公式サイトの情報で自動で埋めます。</p>';
   return '';
 }
 async function offFetch(p) {
-  if (!p || p.isSample || p.offChecked || offBusy[p.id] || p.offTried || !acct.user) return;
+  if (!p || p.isSample || offDone(p) || offBusy[p.id] || p.offTried || !acct.user) return;
   if (['features', 'usage', 'ingredients', 'caution'].every(k => String(p[k] || '').trim())) return;
   offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id)) || location.hash.includes(p.id)) render();
   try {
     const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:p.jan, volume:p.volume})).info || {};
     const c = getCat(p.id); if (!c) return;
+    const hadIng = !!String(c.ingredients || '').trim();
     ['features', 'usage', 'ingredients', 'caution'].forEach(k => { if (!String(c[k] || '').trim() && r[k]) c[k] = r[k]; }); // 自分で入れた内容は上書きしない
-    c.offChecked = todayStr(); if (r.url) c.offUrl = r.url; delete c.offErr;
+    if (!hadIng && r.ingredients && r.ing_url) { c.ingUrl = String(r.ing_url); c.ingSite = String(r.ing_site || '').slice(0, 40); }
+    c.offChecked = todayStr(); c.offV = OFF_V; if (r.url) c.offUrl = r.url; delete c.offErr;
     save();
   } catch (e) { const c = getCat(p.id); if (c) c.offErr = String(e.message || e).slice(0, 80); }
   delete offBusy[p.id];
@@ -6179,12 +6193,12 @@ async function offFetch(p) {
 }
 // Myアイテム：全成分が空なら、メーカー公式サイトの全成分を自動で調べて入れる（自分で入れた内容は上書きしない）
 async function myOffFetch(p) {
-  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(fullIngsOfMy(p)).trim() || p.offChecked || offBusy[p.id] || p.offTried || !acct.user) return;
+  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(fullIngsOfMy(p)).trim() || offDone(p) || offBusy[p.id] || p.offTried || !acct.user) return;
   const cat = getCat(p.catalogId); if (cat) { await offFetch(cat); if (String(fullIngsOfMy(p)).trim()) { comboRefreshAfterIngs(); return; } }
   offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id))) render();
   try {
     const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:(cat || {}).jan || '', volume:(cat || {}).volume || ''})).info || {};
-    const m = getMy(p.id); if (m) { if (!String(m.ingredients || '').trim() && r.ingredients) m.ingredients = String(r.ingredients).slice(0, 4000); m.offChecked = todayStr(); if (r.url) m.offUrl = r.url; save(); comboRefreshAfterIngs(); }
+    const m = getMy(p.id); if (m) { if (!String(m.ingredients || '').trim() && r.ingredients) { m.ingredients = String(r.ingredients).slice(0, 4000); if (r.ing_url) { m.ingUrl = String(r.ing_url); m.ingSite = String(r.ing_site || '').slice(0, 40); } } m.offChecked = todayStr(); m.offV = OFF_V; if (r.url) m.offUrl = r.url; save(); comboRefreshAfterIngs(); }
   } catch (e) { const m = getMy(p.id); if (m) m.offErr = String(e.message || e).slice(0, 80); }
   delete offBusy[p.id];
   if (parseRoute().name === 'my') render();
@@ -6193,7 +6207,7 @@ function comboRefreshAfterIngs() { /* 成分が入ったら、組み合わせの
 // 使用中のMyアイテムで全成分が空のものを、少しずつ（1つずつ順番に）公式で調べる
 async function myOffFillAll() {
   if (!acct.user || myOffFillAll.busy) return; myOffFillAll.busy = true;
-  try { for (const p of state.myProducts.filter(x => x.status !== '使用終了' && !String(fullIngsOfMy(x)).trim() && !x.offChecked && x.category !== '皮膚科の塗り薬').slice(0, 5)) await myOffFetch(p); }
+  try { for (const p of state.myProducts.filter(x => x.status !== '使用終了' && !String(fullIngsOfMy(x)).trim() && !offDone(x) && x.category !== '皮膚科の塗り薬').slice(0, 5)) await myOffFetch(p); }
   finally { myOffFillAll.busy = false; }
 }
 // 併用に注意する成分：この商品に入っている成分と、組み合わせの注意（ルール）を照らし合わせる。使用中の化粧品と重なれば、その商品名も出す
@@ -6248,7 +6262,7 @@ function viewProduct(id) {
       <div class="card"><div class="card-h"><h2>使用方法</h2></div><p class="prose">${offVal(p, p.usage)}</p></div>
     </div>
     <div class="card mt"><div class="card-h"><h2>全成分</h2><span class="small muted">${ings.length ? ings.length + '成分（緑色は解説あり）' : ''}</span></div>
-      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `${(() => { const ks = splitIngs(keyIngsOf({name:p.name, category:p.category, catalogId:p.id})); return ks.length ? `<p class="small muted" style="margin:0 0 8px">主な成分（商品名・探した成分から）</p><div class="ing-list" style="margin-bottom:10px">${ks.map(s => { const e = ingEntryOf(s); return e && e.key && ING_DB.includes(e) ? `<a href="#/ingredients/${e.key}">${esc(s)}</a>` : `<span>${esc(s)}</span>`; }).join('')}</div><p class="small muted" style="margin:0">全成分：</p>` : ''; })()}<p class="na">${offVal(p, '')}</p>`}</div>
+      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `${(() => { const ks = splitIngs(keyIngsOf({name:p.name, category:p.category, catalogId:p.id})); return ks.length ? `<p class="small muted" style="margin:0 0 8px">主な成分（商品名・探した成分から）</p><div class="ing-list" style="margin-bottom:10px">${ks.map(s => { const e = ingEntryOf(s); return e && e.key && ING_DB.includes(e) ? `<a href="#/ingredients/${e.key}">${esc(s)}</a>` : `<span>${esc(s)}</span>`; }).join('')}</div><p class="small muted" style="margin:0">全成分：</p>` : ''; })()}<p class="na">${p.offChecked && Number(p.offV) >= OFF_V && !offBusy[p.id] ? '<span class="muted">非公開（公式サイト・通販サイトなどにも記載が見つかりませんでした）</span>' : offVal(p, '')}</p>`}</div>
     ${known.length ? `<div class="card"><div class="card-h"><h2>成分の解説</h2><span class="chip">一般的な情報</span></div>
       ${known.map(k => ingCard(k.entry, k.items)).join('')}
       <p class="small muted pg-foot" style="margin-top:12px">成分が含まれていることは、効果を保証するものではありません。濃度・処方・使用頻度・個人差によって、感じ方は異なります。</p></div>` : ''}
@@ -7134,7 +7148,7 @@ function viewMyDetail(id) {
             return (known.length ? `<p style="margin:0">${known.map(k => lk(k, k.entry.name)).join('、')}</p>` : '') + ingHtml;
           })()}</dd>
         </dl>
-        ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : ''}
+        ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : (() => { const sp = p.ingredients ? p : getCat(p.catalogId); const h = sp && fullIngsOfMy(p) ? ingSrcHtml(sp, true) : ''; return h ? `<p class="small muted" style="margin-top:10px">${h}</p>` : !fullIngsOfMy(p) && offBusy[p.id] ? '<p class="small muted" style="margin-top:10px">全成分を調べています（10〜30秒）…</p>' : ''; })()}
         ${isRx ? '' : `<div class="page-actions" style="margin-top:14px">
           <button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>
         </div>`}
