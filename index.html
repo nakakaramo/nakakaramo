@@ -386,6 +386,7 @@ label.btn{position:relative}
 .mitem .thumb .ph{font-size:0}
 .thumb .tag{position:absolute;left:8px;top:8px}
 .detail-top{display:grid;gap:20px}
+.my-dt{position:relative}.my-dt>.back.in-card{position:absolute;top:14px;left:14px;margin:0;z-index:2}
 @media(min-width:720px){.detail-top{grid-template-columns:260px 1fr}}
 .detail-top .thumb{border-radius:var(--radius-s)}
 @media(max-width:719px){.detail-top>.thumb{width:60%;margin:0 auto}}
@@ -7226,10 +7227,7 @@ function viewMyDetail(id) {
     const use = isRx ? rxUseOf(p.name) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
     const fEd = (k, l) => `<button type="button" class="kv-ed" data-action="my-field" data-id="${esc(p.id)}|${k}" aria-label="${l}を編集">${icon('edit')}</button>`;
     const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
-    return `<a class="back" href="#/my">← Myアイテム</a>
-    ${p.ng ? '' : (() => { const h = ngWarnFor(p); return h.length ? `<div class="card ngw-card">${ngWarnHtml(h, true)}</div>` : ''; })()}
-    ${p.ng ? `<a class="card ng-banner" href="#/trouble">${icon('alert')}<span><b>肌に合わなかった（${fmtShort(p.ng.date)}）</b><small>${esc(p.ng.sym.join('・') || '症状は未記録')}</small></span><i>›</i></a>` : ''}
-    <div class="card detail-top">
+    return `<div class="card detail-top my-dt"><a class="back in-card" href="#/my" data-incard-back="1">← Myアイテム</a>
       <div>
         <div class="my-photo">${myThumb(p)}<button type="button" class="my-ph-ed" data-action="my-photo-menu" data-id="${esc(p.id)}" aria-label="写真を変える">${icon('edit')}</button><input type="file" accept="image/*" id="myph-in" data-myphoto="${esc(p.id)}" class="vh" tabindex="-1" aria-hidden="true"></div>
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
@@ -7254,6 +7252,8 @@ function viewMyDetail(id) {
         </div>
       </div>
     </div>
+    ${p.ng ? '' : (() => { const h = ngWarnFor(p); return h.length ? `<div class="card ngw-card mt">${ngWarnHtml(h, true)}</div>` : ''; })()}
+    ${p.ng ? `<a class="card ng-banner mt" href="#/trouble">${icon('alert')}<span><b>肌に合わなかった（${fmtShort(p.ng.date)}）</b><small>${esc(p.ng.sym.join('・') || '症状は未記録')}</small></span><i>›</i></a>` : ''}
     <div class="mt"><div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div></div>
     <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2>${fEd('memo', 'メモ')}</div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
   }
@@ -12977,7 +12977,29 @@ function openTipSheet(word, stepK) {
   setTimeout(() => { MODAL_REOPEN = () => openTipSheet(word, stepK); }, 0);
   const t = TIP_INFO.find(x => x[0].test(word));
   const rows = t ? [['やり方', t[2]], ['なぜ？', t[3]], ['ポイント', t[4], 'warn']] : [['やり方', '朝・夜のケアの手順の説明どおりに行います。']];
-  openModal({title:esc(t ? t[1] : chipText(word)), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl">${rows.map(([h, d, c]) => `<div class="ing-b ${c || ''}"><b>${h}</b><p>${esc(d)}</p></div>`).join('')}</div></div>`});
+  const towel = !!t && /タオル/.test(t[1]);
+  openModal({title:esc(t ? t[1] : chipText(word)), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl">${rows.map(([h, d, c]) => `<div class="ing-b ${c || ''}"><b>${h}</b><p>${esc(d)}</p></div>`).join('')}</div>
+    ${towel ? `<h3 class="ing-h">顔用ペーパータオルの人気ランキング</h3><p class="small muted" style="margin:0 0 8px">楽天市場でレビューの多い順です<span class="pr-tag" style="margin-left:6px">PR</span></p><div id="tip-pop">${skelHtml(3, {label:'商品を探しています'})}</div>` : ''}</div>`});
+  if (towel) tipTowelRank();
+}
+let TOWEL_RANK = null;
+async function tipTowelRank() {
+  try {
+    if (!TOWEL_RANK) {
+      const qs = ['使い捨て フェイスタオル', 'フェイスタオル 使い捨て 洗顔', 'クレンジングタオル 使い捨て'], L = [];
+      const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'popular'})));
+      res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.forEach(x => { const n = String(x.name || '');
+        if (!/使い捨て|ペーパー|ディスポ|クリーンタオル|フェイシャルタオル|クレンジングタオル/.test(n) || /今治|綿100|コットン100|ガーゼタオル|バスタオル|エアーかおる|ペット|おしりふき/.test(n)) return; // 顔をふく、使い捨ての物だけ
+        if (/yahoo/i.test(x.site || x.url || '') ? !affSite('yahoo') : !affSite('rakuten')) return;
+        const key = tidyName(n).replace(/\s/g, '').replace(/[0-9０-９]+(枚|個|箱|セット).*/,'').slice(0, 12);
+        if (!L.some(y => sameProduct({name:y.name}, {name:x.name}) || tidyName(y.name).replace(/\s/g, '').replace(/[0-9０-９]+(枚|個|箱|セット).*/,'').slice(0, 12) === key)) L.push(x); }); });
+      TOWEL_RANK = L.slice(0, 10);
+    }
+    const box = document.getElementById('tip-pop'); if (!box) return;
+    box.innerHTML = TOWEL_RANK.length ? `<div class="irk-list">${TOWEL_RANK.map((x, i) => `<button type="button" class="pop-item ir" data-tippick="${i}"><span class="pop-r ir-n${i < 3 ? ' top' + (i + 1) : ''}">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>`
+      : '<p class="small muted">今は商品を見つけられませんでした。時間をおいて、もう一度お試しください。</p>';
+    box.onclick = ev => { const b = ev.target.closest('[data-tippick]'); if (!b) return; const x = TOWEL_RANK[Number(b.dataset.tippick)]; if (!x) return; ui.shopItem = Object.assign({}, x, {fromIng:'顔用ペーパータオル', ingRank:Number(b.dataset.tippick) + 1}); sheetGo('#/shop'); };
+  } catch (e) { const box = document.getElementById('tip-pop'); if (box) box.innerHTML = '<p class="small muted">通信できませんでした。電波のよい場所で、もう一度お試しください。</p>'; }
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-tip]'); if (!b) return; hapticTick(); openTipSheet(b.dataset.tip, b.dataset.tipstep); });
 function openStepSheet(k) {
@@ -13241,7 +13263,7 @@ function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n ===
 // ===== クラウド保存（ログインして「クラウドに保存する」をオンにした人だけ） =====
 // 記録・化粧品・設定をSupabaseに保存し、機種変更やブラウザのデータ削除のあとでも続きから使えるようにする
 // 写真（肌写真・化粧品の写真）はクラウドに送らない（この端末の中だけ）
-const SYNC = {busy:false, timer:null, at:'', err:'', pending:false};
+const SYNC = {busy:false, timer:null, at:'', err:'', pending:false, pulledFor:''};
 const SYNC_ARRAYS = ['catalog', 'myProducts', 'skinLogs', 'lifeLogs', 'customFoods'];
 // 記録の中身の目印（写真は中身ではなく有無だけ）：クラウドとこの端末で、記録が本当に違うかを比べる
 const SYNC_SIG_KEY = 'nk_sync_sig';
@@ -13266,6 +13288,8 @@ const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lif
 function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncPush, 2500); }
 async function syncPush() {
   if (!syncOn()) return;
+  // ログインしたばかりで、まだクラウドのデータを読み込んでいないときは送らない（空のデータでクラウドを上書きしないため）
+  if (SYNC.pulledFor !== acct.user.id) { SYNC.pending = true; return; }
   await PHOTO_READY; // 写真を読み込み終わってから送る（読み込み前に送ると、写真の目印が抜けるため）
   if (SYNC.busy) { SYNC.pending = true; return; }
   SYNC.busy = true; SYNC.err = '';
@@ -13283,25 +13307,33 @@ async function syncPush() {
 // 起動・ログインのとき：クラウドのほうが新しければ、この端末のデータを置き換える（写真は残す）
 async function syncPull(ask) {
   if (!syncOn()) return;
+  const uid0 = acct.user.id, done = () => { if (acct.user && acct.user.id === uid0) { SYNC.pulledFor = uid0; if (SYNC.pending) { SYNC.pending = false; syncSoon(); } } };
+  if (await syncPull0(ask, done)) done(); // 読み込めなかったとき（電波など）は、次に読めるまで送らない
+}
+async function syncPull0(ask, done) {
   await PHOTO_READY;
   try {
     const {data, error} = await acct.client.from('user_data').select('data, updated_at').eq('user_id', acct.user.id).maybeSingle();
     if (error) throw error;
-    if (!data) { syncPush(); return; } // まだクラウドに何もない → この端末のデータを保存
+    if (!data) { done(); syncPush(); return true; } // まだクラウドに何もない → この端末のデータを保存
     const last = (() => { try { return localStorage.getItem('nakakaramo_sync_at') || ''; } catch (e) { return ''; } })();
     // 最後にクラウドと合わせたあと、この端末で記録（肌・生活・化粧品）を変えたか。天気の読み込みなど、自動で変わる物は数えない
     const nowSig = recSig(syncPayload()), lastSig = (() => { try { return localStorage.getItem(SYNC_SIG_KEY) || ''; } catch (e) { return ''; } })();
     const localNewer = lastSig ? nowSig !== lastSig : (state.savedAt || 0) > Date.parse(last || 0) + 1000;
     const sameRecs = nowSig === recSig(data.data || {}); // 記録の中身がクラウドと同じなら、聞かずにそのまま合わせる
-    if (data.updated_at <= last && localNewer) { syncPush(); return; }
-    if (data.updated_at <= last) return; // 同じ
-    if (ask && hasRecords(state) && localNewer && !sameRecs) { syncAsk(data); return; } // 両方に新しい記録がある → どちらを使うか聞く
+    if (data.updated_at <= last && localNewer) { done(); syncPush(); return true; }
+    if (data.updated_at <= last) return true; // 同じ
+    if (ask && hasRecords(state) && localNewer && !sameRecs) { syncAsk(data); return false; } // どちらを使うか決まるまで送らない // 両方に新しい記録がある → どちらを使うか聞く
     syncApply(data);
-  } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); }
+  } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); return false; }
+  return true;
 }
 function syncApply(row) {
-  const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace;
+  const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace, keepName = state.settings.nickname, keepAv = state.settings.avatar;
   state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
+  // 表示名・アイコン：クラウドに無くて、この端末にあれば、この端末の物を残す（ログインする前に決めた名前・アイコンが消えないように）
+  let prof = false; if (!state.settings.nickname && keepName) { state.settings.nickname = keepName; prof = true; } if (!state.settings.avatar && keepAv) { state.settings.avatar = keepAv; prof = true; }
+  if (prof) setTimeout(() => { save(); }, 0);
   try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); localStorage.setItem(SYNC_SIG_KEY, recSig(row.data || {})); } catch (e) {}
   SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
   try { if (localStorage.getItem('nk_relogin')) { localStorage.removeItem('nk_relogin'); const c = notifyCfg(); if (c.on && pushSupported() && Notification.permission === 'granted') notifySend(c).catch(() => {}); } } catch (e) { /* 何もしない */ } // ログアウトで止めたお知らせを、また届くようにする
@@ -13639,7 +13671,8 @@ function gateSync() {
     document.body.appendChild(el); document.body.classList.add('gated');
   } else if (!need && g) { g.remove(); document.body.classList.remove('gated');
     // ログインしたあと：はじめての人には、はじめの質問を出す（クラウドから記録を読み込む時間を少し待つ）
-    setTimeout(() => { if (acct.user && !state.settings.onboarded && !$('#modal-root').innerHTML) openSetupWizard(); }, 1500); }
+    (async () => { for (let i = 0; i < 40 && acct.user && SYNC.pulledFor !== acct.user.id; i++) await new Promise(r => setTimeout(r, 250)); // クラウドの読み込みが終わってから（戻ったデータに肌質診断の答えがあれば、出さない）
+      setTimeout(() => { if (acct.user && !state.settings.onboarded && !$('#modal-root').innerHTML) openSetupWizard(); }, 300); })(); }
 }
 async function refreshSub() {
   if (!acct.client || !acct.user) { acct.sub = null; acct.subLoaded = true; rerenderAcct(); return; }
@@ -14802,8 +14835,8 @@ const actions = {
   'wx-save': () => { const f = document.getElementById('f_wxPref'); state.settings.wxPref = f ? f.value : ''; state.wxFetched = ''; state.wxGeoAt = ''; save(); dismissModal(); hapticSaved(); render(); if (state.settings.wxPref) wxFetch(true, state.settings.wxPref === '現在地'); },
   'wx-geo-retry': () => { dismissModal(); setTimeout(() => actions['wx-geo'](), 250); },
   'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); wxFetch(true, true); const b = document.getElementById('top-wx'); if (b) b.innerHTML = '<span class="twx-load">現在地を確認中…</span>'; toast('位置情報の確認が出たら「許可」を押してください'); },
-  'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
-  'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
+  'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (acct.user) SYNC.pulledFor = acct.user.id; if (r) syncApply(r); },
+  'sync-use-local': () => { dismissModal(); if (acct.user) SYNC.pulledFor = acct.user.id; syncPush(); toast('この端末のデータをクラウドに保存します'); },
   'reco-view': id => { const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (x) prodOpenFrom(x, g.items); },
   'net-view': i => { const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (x) prodOpenFrom(x, ui.net.items); },
   'research-on': async () => {
@@ -15556,10 +15589,10 @@ function render() {
   else try { html = (views[r.name] || viewHome)(); }
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
   // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
-  if (r.name !== 'home' && !(['log', 'routine', 'my', 'search', 'stores', 'favorites', 'account'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
+  if (r.name !== 'home' && !(['log', 'routine', 'my', 'search', 'stores', 'favorites', 'account'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html) && !html.includes('data-incard-back')) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
   // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
   const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
-  html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
+  html = html.replace(/<a class="back( in-card)?" href="([^"]*)"(?: data-incard-back="1")?>([^<]*)<\/a>/g, (m, ic, href, label) => `<a class="back${ic || ''}" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
