@@ -9077,6 +9077,29 @@ function careIngHtml() {
   return h;
 }
 // プレミアム：AIが、ここまでの判定の理由を、あなた向けの文章で説明する（判定そのものは変えない）
+// 文章の中の成分名（レチノール・ピーリング・ナイアシンアミドなど）を、押すと成分の説明が出る緑の下線にする
+// 成分辞典の名前・別名から自動で作るので、これから増える成分も同じように下線になる。同じ文の中で同じ成分は1回だけ
+const ING_LINK_EXTRA = {'ピーリング':'AHA', '角質ケア':'AHA', 'ビタミンA':'レチノール', 'CICA':'CICA', 'シカ':'CICA'};
+const ING_LINK_SKIP = /^(保湿|保湿成分|日焼け止め|水|オイル|洗顔|クリーム|乳液|化粧水|美容液|成分|エキス)$/;
+let ING_LINK_RE = null;
+function ingLinkRe() {
+  if (ING_LINK_RE) return ING_LINK_RE;
+  const set = new Set(Object.keys(ING_LINK_EXTRA));
+  ING_DB.forEach(e => [e.name.replace(/（.*?）|\(.*?\)/g, '').replace(/類$/, '')].concat(e.aliases || []).forEach(a => { a = String(a).trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,（(]/.test(a)) set.add(a); }));
+  try { ING_MASTER.forEach(m => { const a = String(m.ja || '').replace(/（.*?）/g, '').trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,]/.test(a)) set.add(a); }); } catch (e) { /* 何もしない */ }
+  const terms = [...set].sort((a, b) => b.length - a.length).map(t => esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  ING_LINK_RE = new RegExp('(' + terms.join('|') + ')', 'g');
+  return ING_LINK_RE;
+}
+// html：エスケープ済みの文。ボタンなどのタグの中は変えない。seen：同じ手順の中で、もう下線にした成分
+function ingLinkHtml(html, seen) {
+  seen = seen || new Set();
+  return String(html).split(/(<button[^>]*>[\s\S]*?<\/button>|<[^>]+>)/).map(part => part.startsWith('<') ? part : part.replace(ingLinkRe(), (w) => {
+    const raw = w.replace(/&amp;/g, '&'), word = ING_LINK_EXTRA[raw] || raw, e = ingEntryOf(word); if (!e) return w;
+    const k = e.key || e.name; if (seen.has(k)) return w; seen.add(k);
+    return `<button type="button" class="care-link" data-ingsheet="${esc(word)}">${w}</button>`;
+  })).join('');
+}
 // プレミアムのAI分析：無料の人には「見本」を出して、下のほうをぼかす。押すとプレミアムの申し込み画面を開く
 function premTeaserHtml(lines, feature) {
   return `<div class="ptz" role="button" tabindex="0" data-psheet="${esc(feature)}" aria-label="${esc(feature)}の見本。押すとプレミアムプランの案内を開きます">
@@ -9608,6 +9631,15 @@ function rtPaneHtml(slot) {
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
+  // 同じことを言っているメモは1つにする（例：日焼け止めの「薬の注意：毎朝塗る」と「天気から：短い外出でも塗る」）
+  const bg = t => { const x = String(t).replace(/[、。・\s「」（）]/g, ''), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
+  const sim = (a, b) => { const A = bg(a), B = bg(b); let n = 0; A.forEach(x => { if (B.has(x)) n++; }); return n / Math.max(1, Math.min(A.size, B.size)); };
+  P.steps.forEach(st => {
+    const L = st.today.filter(x => !(st.fixed && x.src === '薬')), keep = [];
+    L.forEach(x => { if (keep.some(y => sim(x.t, y.t) >= 0.6)) return; keep.push(x); });
+    if (st.k === 'sunscreen' && keep.some(x => x.src === '薬')) for (let i = keep.length - 1; i >= 0; i--) if (keep[i].src === '天気' && !/塗り直|SPF|PA|時間ごと|帽子|日傘|汗/.test(keep[i].t)) keep.splice(i, 1);
+    st.today = st.today.filter(x => (st.fixed && x.src === '薬') || keep.includes(x));
+  });
   // 今は控える持ち物に入っている、はたらきの強い成分
   const PAUSED = new Set(); P.steps.forEach(st => (st.avoidOwn || []).forEach(a => { try { masterIngsOf(ingsOfMy(a.p)).filter(e => (e.act || 0) >= 1).forEach(e => PAUSED.add(e.k)); const nm = ingFromName(a.p.name); if (nm) masterIngsOf(nm).forEach(e => PAUSED.add(e.k)); } catch (e) { /* 何もしない */ } }));
   const ownsIng = w => state.myProducts.some(q => !q.demo && q.status !== '使用終了' && normIng(ingsOfMy(q) + ' ' + q.name).includes(normIng(w)));
@@ -9618,8 +9650,8 @@ function rtPaneHtml(slot) {
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
-      <p class="cm-how no-ph">${esc(s.how)}</p>
-      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ownLinkText(x.t, s)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
+      <p class="cm-how no-ph">${ingLinkHtml(esc(s.how), s._lk = new Set())}</p>
+      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(x.t, s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${s.k === 'serum' || s.k === 'toner' || s.k.startsWith('spot:') || s === drugStep ? 'おすすめ成分' : 'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
       ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
@@ -9642,7 +9674,7 @@ function rtPaneHtml(slot) {
   let h = '';
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
-  if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${esc(t)}</p>`).join('')}</div>`;
+  if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${ingLinkHtml(esc(t))}</p>`).join('')}</div>`;
   if (!P.hasProd) h += `<div class="card cm-hint"><p class="small no-ph">使っている化粧品を「Myアイテム」に登録すると、それぞれの順番に商品名が入ります。</p><a class="link small" href="#/my">Myアイテムを開く →</a></div>`;
   h += `<p class="small muted rt-foot no-ph">肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てた目安です。皮膚科の塗り薬は、医師の指示を優先してください。</p>`;
   return h;
@@ -11791,7 +11823,7 @@ function careTodayData() {
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
-  const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${esc(x.title)}</b><p class="no-ph">${esc(x.why)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
+  const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(x.title), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(x.why), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
   const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'run', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'meal', '食事', '食事']];
   let AP = {ai:null, pts:[]}; try { AP = advicePts(); } catch (e) { /* 何もしない */ }
   const ptOf = a => AP.pts.find(x => x && x.area === a) || AP.pts[ADVICE_AREAS.indexOf(a)];
