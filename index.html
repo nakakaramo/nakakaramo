@@ -9608,10 +9608,13 @@ function rtPaneHtml(slot) {
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
+  // 今は控える持ち物に入っている、はたらきの強い成分
+  const PAUSED = new Set(); P.steps.forEach(st => (st.avoidOwn || []).forEach(a => { try { masterIngsOf(ingsOfMy(a.p)).filter(e => (e.act || 0) >= 1).forEach(e => PAUSED.add(e.k)); const nm = ingFromName(a.p.name); if (nm) masterIngsOf(nm).forEach(e => PAUSED.add(e.k)); } catch (e) { /* 何もしない */ } }));
+  const ownsIng = w => state.myProducts.some(q => !q.demo && q.status !== '使用終了' && normIng(ingsOfMy(q) + ' ' + q.name).includes(normIng(w)));
   // ニキビが続いていて、ニキビの薬を登録していない人：夜の美容成分の手順の「おすすめ成分」に、塗り薬の成分も出す（市販薬はランキング、処方薬は説明だけ）
   const drugStep = slot === 'pm' && P.acne && !P.hasAcneRx ? (P.steps.find(st => st.k === 'serum') || P.steps.find(st => st.k.startsWith('spot:')) || P.steps.find(st => !st.fixed && /保湿/.test(st.name)) || null) : null;
-  const retPause = P.steps.some(st => (st.avoid || []).some(v => /^レチノ/.test(chipText(v)) && !/併用|と/.test(chipText(v)))); // 赤みなどでレチノールを控える日は、レチノールの仲間（アダパレン）も出さない
-  const dChips = s => s === drugStep ? Object.entries(ACNE_DRUG_ING).filter(([k]) => !(k === 'ada' && retPause)).map(([k, x]) => `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name)}<small class="cm-dtag ${x.kind}">${x.kind === 'otc' ? '市販薬' : '皮膚科で処方'}</small><i>›</i></button>`).join('') : '';
+  const retPause = P.steps.some(st => (st.avoid || []).some(v => /^レチノ/.test(chipText(v)) && !/併用|と/.test(chipText(v))) || (st.avoidOwn || []).some(a => /レチノ|レチナ/.test(ingsOfMy(a.p) + a.p.name))); // 赤みなどでレチノールを控える日は、レチノールの仲間（アダパレン）も出さない
+  const dChips = s => s === drugStep ? Object.entries(ACNE_DRUG_ING).filter(([k, x]) => !(k === 'ada' && retPause) && !ownsIng(x.name)).map(([k, x]) => `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name)}<small class="cm-dtag ${x.kind}">${x.kind === 'otc' ? '市販薬' : '皮膚科で処方'}</small><i>›</i></button>`).join('') : '';
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
@@ -9634,6 +9637,8 @@ function rtPaneHtml(slot) {
     // ほかの手順と同じで消えて「控えたい」だけになった手順にも、おすすめを入れる（まだ出していない物を優先）
     const FB = {moist:['セラミド', 'スクワラン', 'グリセリン', 'ヒアルロン酸'], toner:['グリセリン', 'ヒアルロン酸', 'パンテノール'], serum:['ナイアシンアミド', 'パンテノール'], water:['32℃くらいのぬるま湯', 'やわらかいタオルで押さえる']};
     P.steps.forEach(st => { if (st.fixed || st.good.length || st.own.length || !FB[st.k]) return; const fresh = FB[st.k].filter(v => !sg.has(key(v)) && !st.avoid.some(a => chipText(a) === v)); st.good = (fresh.length ? fresh : FB[st.k]).slice(0, 2); }); }
+  // 持っている商品を「今は控える」と言っている成分は、ほかの手順でもおすすめしない（「控えて」と「おすすめ」が同じ成分にならないように）
+  P.steps.forEach(st => { st.good = st.good.filter(v => { let ks = []; try { ks = masterIngsOf(chipText(v)).map(e => e.k); } catch (e) { ks = []; } return !ks.some(k => PAUSED.has(k)); }); });
   let h = '';
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
