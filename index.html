@@ -1767,6 +1767,12 @@ a.au-go.sp-mail{text-decoration:none;gap:8px}.sp-mail svg{width:20px;height:20px
 .used-tile:active,.used-tile:active .thumb{transform:none!important;opacity:1!important} /* 使ったアイテムは押しても沈まない。選ぶと枠だけ緑になる */
 /* 下のバー：指でなぞっても、バーごと画面が動かないようにする */
 .bottom-nav{touch-action:none;overscroll-behavior:none}
+/* 上の帯とタブ：Xと同じように、下へスクロールすると指に合わせて隠れ、上へ戻すとすぐ出てくる（スマホの幅だけ） */
+@media (max-width:959px){
+  .topbar{position:sticky;top:0;-webkit-transform:translate3d(0,var(--hy,0px),0);transform:translate3d(0,var(--hy,0px),0);will-change:transform}
+  #main .home-tabs{top:var(--tbh,0px);-webkit-transform:translate3d(0,var(--hy,0px),0);transform:translate3d(0,var(--hy,0px),0)}
+  html.hdr-snap .topbar,html.hdr-snap #main .home-tabs{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+}
 /* iPhoneで速くスクロールしたとき、下のバー・上の帯が画面からずれて遅れてついてくることがあるので、別の層にして画面に固定する */
 .bottom-nav,body::before{-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 body::before{transform:translate3d(0,var(--vv-top,0px),0)}
@@ -9371,7 +9377,7 @@ function rtPaneHtml(slot) {
     const pr = state.myProducts.find(p => !p.demo && (esc(p.name) === pre || (pre.length >= 4 && esc(p.name).startsWith(pre)))); if (!pr) return all;
     const own = P.steps.flatMap(z => z.own || []).find(o => !o.drug && o.pids.includes(pr.id)); if (!own) return all;
     return `<button type="button" class="care-link" data-owned="${esc(own.name)}" data-pids="${esc(own.pids.join(','))}">${esc(own.name)}</button>`; });
-  const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}</button>`).join('');
+  const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}<i>›</i></button>`).join('');
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
   const shortName = s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^皮膚科の/, '').replace(/^仕上げの/, '');
@@ -12553,7 +12559,7 @@ function viewMycare() {
   const G = careGoods();
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${careLinkHtml(x, G)}</li>`).join('')}</ul></div>
-      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}</button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
+      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}<i>›</i></button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
   if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
   if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みはありません。記録を続けてください。</p></div>`;
@@ -15030,6 +15036,23 @@ window.addEventListener('resize', () => { if (document.querySelector('.home-tabs
 // 左上：ホームでは「ナカカラモ」、肌の記録・Myアイテム・商品検索・アカウントでは、その画面の名前を出す
 // 上の帯の高さを測って、タブのバーをそのすぐ下にくっつける
 function setTbh() { const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px'); }
+// 上の帯（とタブ）を、Xのようにスクロールに合わせて隠す・出す。下へ動かした分だけ隠れ、上へ動かした分だけ出てくる。止まったときに半分なら、近いほうへそろえる
+(function hideHeaderOnScroll() {
+  const root = document.documentElement; let lastY = Math.max(0, window.scrollY), hy = 0, raf = 0, snapT = 0;
+  const parts = () => { const tb = document.querySelector('.topbar'), tabs = document.querySelector('#main .home-tabs'); const on = tb && getComputedStyle(tb).position === 'sticky'; return on ? tb.offsetHeight + (tabs ? tabs.offsetHeight : 0) : 0; };
+  const set = v => { if (Math.round(v) === Math.round(hy) && root.style.getPropertyValue('--hy')) return; hy = v; root.style.setProperty('--hy', Math.round(hy) + 'px'); };
+  const snap = () => { const maxH = parts(); if (!maxH || hy >= 0 || hy <= -maxH) return; root.classList.add('hdr-snap'); set(hy < -maxH / 2 && lastY > maxH ? -maxH : 0); setTimeout(() => root.classList.remove('hdr-snap'), 260); };
+  const tick = () => {
+    raf = 0; const maxH = parts(); if (!maxH) { if (hy) set(0); return; }
+    const max = Math.max(0, root.scrollHeight - window.innerHeight), y = Math.min(Math.max(window.scrollY, 0), max); // 上下の端でゴムのように伸びた分は数えない
+    const d = y - lastY; lastY = y;
+    root.classList.remove('hdr-snap');
+    if (y <= 0) set(0); else set(Math.max(-maxH, Math.min(0, hy - d), -y)); // いちばん上の近くでは、スクロールした分より多くは隠さない
+    clearTimeout(snapT); snapT = setTimeout(snap, 150);
+  };
+  window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(tick); }, {passive:true});
+  window.addEventListener('hashchange', () => { lastY = Math.max(0, window.scrollY); root.classList.remove('hdr-snap'); set(0); });
+})();
 window.addEventListener('resize', setTbh); window.addEventListener('orientationchange', () => setTimeout(setTbh, 300));
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
