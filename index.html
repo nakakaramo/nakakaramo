@@ -3598,6 +3598,7 @@ function normalize(d) {
       jan:/^(\d{8}|\d{13})$/.test(String(p.jan||'')) ? String(p.jan) : '',
       source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '',
       offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 公式情報を調べた日・調べたページ
+      keyIngs:String(p.keyIngs || '').slice(0, 300), // 主な成分（商品名・成分から探したときの成分）
       offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
   }) : [];
   // 第1版からの移行時だけ、新しく追加したサンプル商品を補う（削除済みのサンプルは第2版以降は復活させない）
@@ -3770,7 +3771,33 @@ const lifeInRange = (s, e) => state.lifeLogs.filter(l => l.date >= s && l.date <
 const productEnd = p => p.status === '使用終了' && p.endDate ? p.endDate : todayStr();
 const isUsedType = p => p.status !== STOCK;
 const productsDuring = (s, e) => state.myProducts.filter(p => isUsedType(p) && p.startDate <= e && productEnd(p) >= s);
-const ingsOfMy = p => p.ingredients || ((getCat(p.catalogId) || {}).ingredients) || '';
+// 全成分（自分で入れた物 → 商品の情報）。主な成分は入れない
+const fullIngsOfMy = p => p.ingredients || ((getCat(p.catalogId) || {}).ingredients) || '';
+// 全成分がないときは、商品名・成分から探したときの成分を「主な成分」として使う
+const ingsOfMy = p => fullIngsOfMy(p) || keyIngsOf(p);
+function keyIngsOf(p) {
+  if (!p || p.category === '皮膚科の塗り薬') return '';
+  const c = getCat(p.catalogId) || {};
+  const a = String(p.keyIngs || c.keyIngs || '').split('、').filter(Boolean);
+  ingsInName(`${p.name || ''} ${c.name || ''}`).forEach(x => { if (!a.includes(x)) a.push(x); });
+  return a.join('、');
+}
+// 商品名に書かれている成分（成分辞典・成分表にある名前だけ。短すぎる名前は見間違いが多いので使わない）
+const ING_NAME_C = new Map();
+function ingsInName(text) {
+  const t = normIng(String(text || '').replace(/[【\[].*?[】\]]/g, ' ')); if (!t) return [];
+  if (ING_NAME_C.has(t)) return ING_NAME_C.get(t);
+  const hits = [];
+  const add = (k, nm, id) => { if (!t.includes(k) || hits.some(h => h.k.includes(k) || h.id === id)) return; nm = String(nm).replace(/（.*?）/g, '').trim(); if (nm) hits.push({k, nm, id}); };
+  const ks = [];
+  ING_DB.forEach(e => e.aliases.forEach(a => { const k = normIng(a); if (k.length >= 3) ks.push([k, a, e.key]); }));
+  try { ING_M_INDEX.forEach((e, k) => { if (k.length < 3) return; const d = ING_INDEX.get(normIng(String(e.ja).replace(/（.*?）/g, ''))); ks.push([k, d ? (d.aliases[0] || d.name) : e.ja, d ? d.key : 'm:' + e.k]); }); } catch (e) { /* 何もしない */ }
+  [['シカ', 'ツボクサエキス'], ['cica', 'ツボクサエキス'], ['txa', 'トラネキサム酸'], ['ヒアルロン', 'ヒアルロン酸'], ['ハトムギ', 'ハトムギ種子エキス'], ['ビタミンc', 'ビタミンC誘導体']].forEach(([w, nm]) => { const d = ING_INDEX.get(normIng(nm)); ks.push([normIng(w), nm, d ? d.key : 'x:' + nm]); });
+  ks.sort((x, y) => y[0].length - x[0].length).forEach(([k, nm, id]) => add(k, nm, id));
+  hits.sort((x, y) => t.indexOf(x.k) - t.indexOf(y.k)); // 商品名に出てくる順
+  const out = hits.map(h => h.nm).filter(nm => !/^(水|精製水|エキス|オイル|エタノール|香料|グリセリン|BG|アクア)$/i.test(nm)).slice(0, 8);
+  ING_NAME_C.set(t, out); return out;
+}
 const areaName = id => (AREAS.find(a => a.id === id) || {}).name || id;
 function allPurchases() {
   const out = [];
@@ -3904,7 +3931,7 @@ function comboReport(products) {
   const hasUV = items.some(x => x.p.category === '日焼け止め' || x.groups.has('uvfilter') || x.groups.has('uvscatter'));
   const byIng = {};
   items.forEach(x => x.known.forEach(k => { (byIng[k.entry.key] = byIng[k.entry.key] || {entry:k.entry, products:[]}).products.push(x.p); }));
-  return {items, alerts, uvNote:needsUV && !hasUV, byIng:Object.values(byIng).sort((a,b) => b.products.length - a.products.length), missing:items.filter(x => !x.ings)};
+  return {items, alerts, uvNote:needsUV && !hasUV, byIng:Object.values(byIng).sort((a,b) => b.products.length - a.products.length), missing:items.filter(x => !fullIngsOfMy(x.p))};
 }
 
 /* ---------- 共通UI ---------- */
@@ -5499,6 +5526,12 @@ function netToCat(x, others) {
   const g = guessFromName(p.name); if (g && g.brand) p.brand = g.brand; if (g && g.purposes && g.purposes.length) p.purposes = g.purposes.filter(v => PURPOSES.includes(v));
   if (!p.brand) p.brand = (findState && findState.brandHint) || brandOrCompany(x.name, x.shop); // ブランド名も自動で入れる（カメラで読んだブランド名があればそれを使う）
   p.name = compactName(p.name, p.brand) || p.name; // 検索用の言葉が並んだ長い名前を短くする
+  { // 主な成分：成分から探したときの成分＋お店の商品名（短くする前）に書かれている成分
+    const k = [], f = String(x.fromIng || '').replace(/（.*?）|\(.*?\)/g, '').trim();
+    if (f && !/日焼け止め|クレンジング|洗顔|市販/.test(f) && ingEntryOf(f)) k.push(f);
+    ingsInName(x.name).forEach(v => { if (!k.some(y => normIng(y) === normIng(v) || ingEntryOf(y) && ingEntryOf(y) === ingEntryOf(v))) k.push(v); });
+    if (k.length) p.keyIngs = k.slice(0, 8).join('、');
+  }
   state.catalog.push(p);
   if (!save()) { state.catalog.pop(); return null; }
   pickCleanImage(p, x, others || []);
@@ -6145,8 +6178,8 @@ async function offFetch(p) {
 }
 // Myアイテム：全成分が空なら、メーカー公式サイトの全成分を自動で調べて入れる（自分で入れた内容は上書きしない）
 async function myOffFetch(p) {
-  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(ingsOfMy(p)).trim() || p.offChecked || offBusy[p.id] || p.offTried || !acct.user) return;
-  const cat = getCat(p.catalogId); if (cat) { await offFetch(cat); if (String(ingsOfMy(p)).trim()) { comboRefreshAfterIngs(); return; } }
+  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(fullIngsOfMy(p)).trim() || p.offChecked || offBusy[p.id] || p.offTried || !acct.user) return;
+  const cat = getCat(p.catalogId); if (cat) { await offFetch(cat); if (String(fullIngsOfMy(p)).trim()) { comboRefreshAfterIngs(); return; } }
   offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id))) render();
   try {
     const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:(cat || {}).jan || '', volume:(cat || {}).volume || ''})).info || {};
@@ -6159,7 +6192,7 @@ function comboRefreshAfterIngs() { /* 成分が入ったら、組み合わせの
 // 使用中のMyアイテムで全成分が空のものを、少しずつ（1つずつ順番に）公式で調べる
 async function myOffFillAll() {
   if (!acct.user || myOffFillAll.busy) return; myOffFillAll.busy = true;
-  try { for (const p of state.myProducts.filter(x => x.status !== '使用終了' && !String(ingsOfMy(x)).trim() && !x.offChecked && x.category !== '皮膚科の塗り薬').slice(0, 5)) await myOffFetch(p); }
+  try { for (const p of state.myProducts.filter(x => x.status !== '使用終了' && !String(fullIngsOfMy(x)).trim() && !x.offChecked && x.category !== '皮膚科の塗り薬').slice(0, 5)) await myOffFetch(p); }
   finally { myOffFillAll.busy = false; }
 }
 // 併用に注意する成分：この商品に入っている成分と、組み合わせの注意（ルール）を照らし合わせる。使用中の化粧品と重なれば、その商品名も出す
@@ -6214,7 +6247,7 @@ function viewProduct(id) {
       <div class="card"><div class="card-h"><h2>使用方法</h2></div><p class="prose">${offVal(p, p.usage)}</p></div>
     </div>
     <div class="card mt"><div class="card-h"><h2>全成分</h2><span class="small muted">${ings.length ? ings.length + '成分（緑色は解説あり）' : ''}</span></div>
-      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `<p class="na">${offVal(p, '')}</p>`}</div>
+      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `${(() => { const ks = splitIngs(keyIngsOf({name:p.name, category:p.category, catalogId:p.id})); return ks.length ? `<p class="small muted" style="margin:0 0 8px">主な成分（商品名・探した成分から）</p><div class="ing-list" style="margin-bottom:10px">${ks.map(s => { const e = ingEntryOf(s); return e && e.key && ING_DB.includes(e) ? `<a href="#/ingredients/${e.key}">${esc(s)}</a>` : `<span>${esc(s)}</span>`; }).join('')}</div><p class="small muted" style="margin:0">全成分：</p>` : ''; })()}<p class="na">${offVal(p, '')}</p>`}</div>
     ${known.length ? `<div class="card"><div class="card-h"><h2>成分の解説</h2><span class="chip">一般的な情報</span></div>
       ${known.map(k => ingCard(k.entry, k.items)).join('')}
       <p class="small muted pg-foot" style="margin-top:12px">成分が含まれていることは、効果を保証するものではありません。濃度・処方・使用頻度・個人差によって、感じ方は異なります。</p></div>` : ''}
@@ -7092,7 +7125,7 @@ function viewMyDetail(id) {
           <dt>使用タイミング</dt><dd class="kv-e"><span>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}</span>${fEd('timing', '使用タイミング')}</dd>
           <dt>使用頻度</dt><dd class="kv-e"><span>${esc(p.frequency)}</span>${fEd('frequency', '使用頻度')}</dd>
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd class="kv-e"><span>${fmtDate(p.startDate)}</span>${fEd('startDate', '使用開始日')}</dd>
-          <dt>成分</dt><dd>${(() => { // 成分は1回だけ。解説のある成分は緑の下線（押すと成分の説明へ）
+          <dt>${!isRx && ing && !fullIngsOfMy(p) ? '主な成分' : '成分'}</dt><dd>${(() => { // 成分は1回だけ。解説のある成分は緑の下線（押すと成分の説明へ）
             const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || e.includes(w)); }) : null; };
             const lk = (k, t) => `<a class="care-link" href="#/ingredients/${k.entry.key}">${esc(t)}</a>`;
             if (!ing) return '<span class="muted">未登録</span>';
@@ -8160,7 +8193,7 @@ const isRxP = p => p.category === '皮膚科の塗り薬';
 function prodInfo(p) {
   const cat = getCat(p.catalogId) || {};
   const text = ingsOfMy(p), ings = masterIngsOf(text), name = `${p.brand || ''} ${p.name || ''}`;
-  const src = !text ? 'none' : isRxP(p) ? 'rx' : cat.verify === 'verified' ? 'verified' : 'entered';
+  const src = !text ? 'none' : isRxP(p) ? 'rx' : !fullIngsOfMy(p) ? 'main' : cat.verify === 'verified' ? 'verified' : 'entered';
   const groups = new Set(ings.map(e => e.grp));
   const rk = isRxP(p) ? rxKindOf(p.name) : '';
   if (rk && /ステロイド/.test(rk) && !/アトピー/.test(rk)) groups.add('steroid');
@@ -8584,7 +8617,7 @@ function comboEval(A, B) {
 function prodComboItem(x) {
   if (x.rx) { const d = RX_DRUGS.find(z => z[1] === x.p.name); if (d) return Object.assign(rxComboItem(d[1], d[0], d[2], 'p:' + x.p.id), {label:truncate(x.p.name, 18)}); }
   const tags = new Set(x.ings.flatMap(e => e.tags));
-  const list = splitIngsX(ingsOfMy(x.p)), top3 = list.slice(0, 3).map(s => normIng(s));
+  const list = splitIngsX(fullIngsOfMy(x.p)), top3 = list.slice(0, 3).map(s => normIng(s));
   // アルコールは、成分表示の最初の3つに入っているときだけ「多く入っている」とみなす（配合量は表示からはわからない）
   if (tags.has('ethanol') && !top3.some(n => n === normIng('エタノール') || n === normIng('Alcohol') || n === normIng('変性アルコール'))) tags.delete('ethanol');
   if (/スクラブ|scrub/i.test(x.name)) tags.add('scrub');
