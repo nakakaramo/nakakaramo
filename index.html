@@ -7056,13 +7056,18 @@ function viewMyDetail(id) {
         <div class="my-photo">${myThumb(p)}</div>
         <div class="my-photo-b"><label class="btn btn-ghost btn-sm">${icon('camera')}${p.image || (cat && (cat.image || cat.imageUrl)) ? '写真を変える' : '写真を付ける'}<input type="file" accept="image/*" data-myphoto="${esc(p.id)}" class="vh"></label>${p.image ? `<button type="button" class="btn btn-ghost btn-sm" data-myphoto-del="${esc(p.id)}">写真を外す</button>` : ''}</div>
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
-        <div class="chips" style="margin:10px 0 14px"><span class="chip">${esc(p.category)}</span>${(isRx ? (use ? [use] : []) : p.purposes).map(x => `<span class="chip green">${esc(x)}</span>`).join('')}</div>
-        <dl class="kv">
+        <dl class="kv" style="margin-top:12px">
           ${!isRx && p.brand ? `<dt>ブランド</dt><dd>${esc(p.brand)}</dd>` : ''}
           ${use ? `<dt>使用目的</dt><dd>${esc(use)}</dd>` : ''}
           <dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}（${esc(p.frequency)}）</dd>
           <dt>使用開始日</dt><dd>${fmtDate(p.startDate)}</dd>
-          <dt>成分</dt><dd>${isRx || ing.length <= 60 ? ingHtml : ''}${known.length ? `<div class="ing-list" style="margin-top:${isRx || ing.length <= 60 ? 6 : 0}px">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : ''}${!isRx && ing.length > 60 ? ingHtml : ''}</dd>
+          <dt>成分</dt><dd>${(() => { // 成分は1回だけ。解説のある成分は緑の下線（押すと成分の説明へ）
+            const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || e.includes(w)); }) : null; };
+            const lk = (k, t) => `<a class="care-link" href="#/ingredients/${k.entry.key}">${esc(t)}</a>`;
+            if (!ing) return '<span class="muted">未登録</span>';
+            if (isRx || ing.length <= 60) return ing.split(/[、,，・]/).map(t => t.trim()).filter(Boolean).map(t => { const k = kOf(t); return k ? lk(k, t) : esc(t); }).join('、');
+            return (known.length ? `<p style="margin:0">${known.map(k => lk(k, k.entry.name)).join('、')}</p>` : '') + ingHtml;
+          })()}</dd>
         </dl>
         ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : ''}
         <div class="page-actions" style="margin-top:14px">
