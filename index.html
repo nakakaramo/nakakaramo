@@ -2532,7 +2532,8 @@ html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A
 .pc-ln{padding:8px 0;border-top:1px solid var(--line)}.pc-ln:first-of-type{border-top:0}.pc-ln b{font-size:13.5px}.pc-ln p{margin:2px 0 0;font-size:13.5px;line-height:1.65}.pc-ln.st b{color:var(--green-d)}
 .care-link:active{transform:none!important;opacity:.7}
 .care-link{display:inline;padding:0;margin:0;border:0;background:none;font:inherit;color:var(--green-d);text-decoration:underline;text-decoration-color:var(--green);text-underline-offset:3px;text-decoration-thickness:1.5px;cursor:pointer}
-.pc-mini{display:block;color:var(--ink)}.pc-mini-h{color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px}.pc-mini-h i{font-style:normal;color:var(--muted)}
+.pc-mini{display:block;color:var(--ink)}.pc-mini-s{font-size:11.5px;font-weight:500;color:var(--muted);margin-left:2px}
+.pc-mini-h{color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px}.pc-mini-h i{font-style:normal;color:var(--muted)}
 html[data-theme="dark"] .pc-tr.up,html[data-theme="dark"] .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}html[data-theme="dark"] .pc-tr.down,html[data-theme="dark"] .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}html[data-theme="dark"] .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pc-tr.up,:root:not([data-theme="light"]) .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}:root:not([data-theme="light"]) .pc-tr.down,:root:not([data-theme="light"]) .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}:root:not([data-theme="light"]) .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}}
 html[data-theme="dark"] button.cm-c.good{box-shadow:inset 0 0 0 1px rgba(120,180,140,.35)}html[data-theme="dark"] button.cm-c.bad{box-shadow:inset 0 0 0 1px rgba(230,130,100,.35);color:#F0A58E}
@@ -11883,15 +11884,15 @@ function careTodayHtml() {
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
     // 肌の朝・夜のケアの順番は「ケア管理」にまとめた（ここでは重ねて出さない）
-    if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${recBtn(c)}</h3>${chips}</section>`;
+    if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${recBtn(c)}</h3>${D.lead && !/^大きな問題は見つかりません|そろうと/.test(D.lead) ? `<p class="ct2-lead no-ph">${ingLinkHtml(esc(D.lead))}</p>` : ''}${chips}</section>`; // 伝えることがある日だけ、今日の肌のひとこと
     const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
       : chips || ask.length ? '' : '<p class="ct2-none">今日は特にありません。</p>';
     const askH = ask.length ? `<div class="ct2-ask"><p class="no-ph">${esc(ask[0].why)}</p></div>` : '';
     return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${recBtn(c)}${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}${askH}</section>`;
   };
   // 肌・運動・睡眠・食事は、それぞれ別のカードにして見やすくする
-  return `<div class="ct2-wrap" id="care-today"><div class="card ct2"><div class="card-h"><h2>今日のおすすめケア</h2></div>
-    <p class="ct2-lead no-ph">${esc(D.lead)}</p><div class="advice"><div class="adv-foot">${adviceFoot(AP.ai)}</div></div></div>
+  // 「今日のおすすめケア」のまとめのカードはなくした（いちばん大事なことは上の「今日のポイント」に出す。AIの分析は自動で行う）
+  return `<div class="ct2-wrap" id="care-today">${adviceBusy || adviceErr ? `<div class="card ct2"><div class="adv-foot">${adviceFoot(AP.ai)}</div></div>` : ''}
     ${CATS.map(c => `<div class="card ct2 ct2-c">${sec(c)}</div>`).join('')}</div>`;
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
@@ -13015,11 +13016,28 @@ function openStepSheet(k) {
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-stepsheet]'); if (!b) return; hapticTick(); openStepSheet(b.dataset.stepsheet); });
 // おすすめケアの上に出す、短いまとめ（くわしくは「あなたの肌の分析」へ）
+// 今日のポイント：今日いちばん大事なことを3つ（今日の肌・天気・睡眠などの記録と、今週の分析から選ぶ）
 function mycareMiniHtml() {
-  let A = null; try { A = personalAnalysis(); } catch (e) { return ''; }
-  if (!A.week.length && !A.ask.length) return '';
-  const G = careGoods();
-  return `<div class="card pc-mini"><a class="pc-mini-h" href="#/mycare">${icon('spark')}<b>今週いちばん大事なこと</b><i>›</i></a>${A.week.length ? `<ol class="pc-ol">${A.week.map(w => `<li>${careLinkHtml(w, G)}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</div>`;
+  let A = null, D = null; try { A = personalAnalysis(); } catch (e) { A = {week:[], ask:[]}; } try { D = careTodayData(); } catch (e) { D = null; }
+  const G = careGoods(), cand = [];
+  const push = (html, txt, pr) => cand.push({html, txt, pr});
+  if (D) {
+    const m = D.m || {}, w = D.w || {};
+    D.items.forEach(x => {
+      if (/を記録する$/.test(x.title) || /^今の睡眠|を続ける$/.test(x.title)) return; // 記録のお願い・続けることは、ここには出さない
+      const real = x.src.some(c => c === '肌' || c === '天気') || /時間|g|日/.test(x.why);
+      let pr = /お休み/.test(x.title) ? 100 : /触らない|つぶさない/.test(x.title) ? 70 : x.when === '朝' && /UV/.test(x.title) ? (w.uv >= 6 ? 75 : 20) : x.cat === '肌' ? 60 : real ? 50 : 10;
+      if (D.calm && /クリーム|うるおい|ふた/.test(x.title)) pr += 15;
+      push(ingLinkHtml(esc(x.title)), x.title, pr);
+    });
+  }
+  (A.week || []).forEach((t, i) => push(careLinkHtml(t, G), t, /薬/.test(t) ? 90 : 55 - i));
+  // 同じようなことは1つに
+  const bg = t => { const x = String(t).replace(/[、。・\s「」（）]/g, ''), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
+  const sim = (a, b) => { const A0 = bg(a), B0 = bg(b); let n = 0; A0.forEach(x => { if (B0.has(x)) n++; }); return n / Math.max(1, Math.min(A0.size, B0.size)); };
+  const top = []; cand.sort((a, b) => b.pr - a.pr).forEach(c => { if (top.length < 3 && !top.some(t => sim(t.txt, c.txt) >= 0.5)) top.push(c); });
+  if (!top.length && !(A.ask || []).length) return '';
+  return `<div class="card pc-mini"><a class="pc-mini-h" href="#/mycare">${icon('spark')}<b>今日のポイント</b><small class="pc-mini-s">いちばん大事なこと3つ</small><i>›</i></a>${top.length ? `<ol class="pc-ol">${top.map(c => `<li>${c.html}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</div>`;
 }
 
 function viewCharts() {
