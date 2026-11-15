@@ -3574,7 +3574,7 @@ function normFood(x) {
   return {id:String(x.id || uid()), meal:FOOD_MEAL_KEYS.includes(x.meal) ? x.meal : 'snack', name:String(x.name).slice(0, 40), qty:clamp(num(x.qty, 1), 0.1, 10),
     kcal:r(x.kcal, 5000), p:r(x.p, 500), f:r(x.f, 500), c:r(x.c, 1000), veg:r(x.veg, 2000),
     ...(x.salt != null && x.salt !== '' ? {salt:r(x.salt, 100)} : {}),
-    ...(['表示', '公式', '推定'].includes(x.basis) ? {basis:x.basis} : {}),
+    ...(['表示', '公式', '販売', '推定'].includes(x.basis) ? {basis:x.basis} : {}),
     ...(x.maker ? {maker:String(x.maker).slice(0, 30)} : {}),
     ...(x.series ? {series:String(x.series).slice(0, 30)} : {}),
     ...(x.size ? {size:String(x.size).slice(0, 20)} : {}),
@@ -3623,18 +3623,18 @@ async function officialFill(items) {
   const need = (items || []).filter(x => x.needOfficial); if (!need.length) return [];
   let got = [];
   try { got = ((await callVision('official', null, {items:need.map(x => ({name:x.name, maker:x.maker, series:x.series, size:x.size, amount:x.amount}))})).result || {}).items || []; } catch (e) { /* 見つからなければ目安のまま */ }
-  return need.map((x, i) => got[i] && got[i].basis === '公式' ? Object.assign({}, got[i], {veg:x.veg || 0}) : Object.assign({}, x, {needOfficial:false}));
+  return need.map((x, i) => got[i] && (got[i].basis === '公式' || got[i].basis === '販売') ? Object.assign({}, got[i], {veg:x.veg || 0}) : Object.assign({}, x, {needOfficial:false}));
 }
 function aiFoodToRec(x, meal) {
   // 数字を使えるのは、パッケージの表示を読めたもの・メーカー公式で確認できたものだけ
-  if (!['表示', '公式', '推定'].includes(x.basis) || x.kcal == null) return null;
+  if (!['表示', '公式', '販売', '推定'].includes(x.basis) || x.kcal == null) return null;
   return {id:uid(), meal, qty:1, name:String(x.name).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg || 0, salt:x.salt,
     basis:x.basis, unit:x.unit || '', src:x.source || '', srcUrl:x.sourceUrl || '', checked:x.checkedAt || '', maker:x.maker || '', series:x.series || '', size:x.size || '', diff:x.diff || ''};
 }
-const AI_BASIS_LABEL = {表示:'パッケージの表示', 公式:'メーカー公表', 推定:'目安', '確認できません':'確認できません'};
+const AI_BASIS_LABEL = {表示:'パッケージの表示', 公式:'メーカー公表', 販売:'販売ページの表示', 推定:'目安', '確認できません':'確認できません'};
 // メーカー・シリーズ・内容量（読めたものだけ）
 const aiProdLine = x => [x.maker, x.series, x.size].filter(Boolean).map(esc).join('・');
-const aiBasisTag = x => x.basis ? ` <span class="ai-basis b-${({表示:'l', 公式:'p', 推定:'e', '確認できません':'n'})[x.basis] || 'e'}">${esc(AI_BASIS_LABEL[x.basis] || x.basis)}</span>` : '';
+const aiBasisTag = x => x.basis ? ` <span class="ai-basis b-${({表示:'l', 公式:'p', 販売:'p', 推定:'e', '確認できません':'n'})[x.basis] || 'e'}">${esc(AI_BASIS_LABEL[x.basis] || x.basis)}</span>` : '';
 function normalize(d) {
   const samples = Object.fromEntries(sampleCatalog().map(s => [s.id, s]));
   const out = {version:2, catalog:[], myProducts:[], skinLogs:[], lifeLogs:[], customFoods:[], settings:{monthlyBudget:0}};
@@ -11131,7 +11131,7 @@ function openLifeForm(id, part, forDate) {
           + fav.map(n => `<button type="button" class="fq-chip" data-ffav="${m.k}" data-n="${esc(n)}">＋${esc(truncate(n, 12))}</button>`).join('');
         qb.hidden = !qb.innerHTML;
       }
-      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}${x.basis === '表示' || x.basis === '公式' ? `<small class="fr-src">${x.srcUrl ? `<a href="${esc(x.srcUrl)}" target="_blank" rel="noopener noreferrer">${esc(AI_BASIS_LABEL[x.basis])}</a>` : esc(AI_BASIS_LABEL[x.basis])}${x.unit ? `・${esc(x.unit)}` : ''}${x.checked ? `・${esc(fmtShort(x.checked))}確認` : ''}${aiProdLine(x) ? `<br>${aiProdLine(x)}` : ''}${x.diff ? `<br><span style="color:#b45309">${esc(x.diff)}</span>` : ''}</small>` : ''}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
+      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}${x.basis === '表示' || x.basis === '公式' || x.basis === '販売' ? `<small class="fr-src">${x.srcUrl ? `<a href="${esc(x.srcUrl)}" target="_blank" rel="noopener noreferrer">${esc(AI_BASIS_LABEL[x.basis])}</a>` : esc(AI_BASIS_LABEL[x.basis])}${x.unit ? `・${esc(x.unit)}` : ''}${x.checked ? `・${esc(fmtShort(x.checked))}確認` : ''}${aiProdLine(x) ? `<br>${aiProdLine(x)}` : ''}${x.diff ? `<br><span style="color:#b45309">${esc(x.diff)}</span>` : ''}</small>` : ''}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
       // 閉じているときも、食べたものがまとめて見えるようにする
       const sm = $(`[data-msum="${m.k}"]`, form), ate = form.elements['ate_' + m.k];
       if (sm) sm.innerHTML = fs.length ? `<span class="ms-n">${esc(fs.map(x => x.name.replace(/（.*?）/g, '')).join('・'))}</span><span class="ms-k">${Math.round(fs.reduce((a, x) => a + x.kcal * x.qty, 0))}kcal</span>` : (ate && ate.checked ? '記録あり' : '未記録');
