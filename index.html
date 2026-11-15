@@ -1001,6 +1001,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .care-lock ul.care-lock-l{list-style:none;text-align:left;margin:0 auto 18px;max-width:320px;padding:14px 16px;background:var(--green-l,#E5F2EA);border-radius:14px;font-size:13px;line-height:1.55;display:grid;gap:10px}
 .care-lock ul.care-lock-l li{display:flex;gap:8px;align-items:flex-start}.care-lock ul.care-lock-l li svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--green-d)}
 .care-lock .cl-note{margin:12px 0 0}
+.term-ings{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.term-ings .cm-c{font-size:12.5px}.term-plain{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
 :root[data-theme="dark"] .care-lock-l{background:var(--green-s)}
 .ptz{position:relative;display:block;padding:12px 14px 52px;border:1px solid var(--line);border-radius:14px;background:var(--surface2,#FAF8F4);cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .ptz:active{transform:scale(.99)}
@@ -9118,12 +9119,42 @@ function careIngHtml() {
 // プレミアム：AIが、ここまでの判定の理由を、あなた向けの文章で説明する（判定そのものは変えない）
 // 文章の中の成分名（レチノール・ピーリング・ナイアシンアミドなど）を、押すと成分の説明が出る緑の下線にする
 // 成分辞典の名前・別名から自動で作るので、これから増える成分も同じように下線になる。同じ文の中で同じ成分は1回だけ
-const ING_LINK_EXTRA = {'ピーリング':'AHA', '角質ケア':'AHA', 'ビタミンA':'レチノール', 'CICA':'CICA', 'シカ':'CICA'};
+const ING_LINK_EXTRA = {'ビタミンA':'レチノール', 'CICA':'CICA', 'シカ':'CICA'};
+// 初めての人にはわかりにくい言葉：押すと、意味と「主にどんな成分か」を出す。[見出し, 意味, 主な成分（押すと成分の説明）, ポイント]
+const TERM_INFO = {
+  '角質ケア': ['角質ケア', '肌の表面にたまった古い角質（はがれ落ちる前の皮ふ）を、やさしく取りのぞくケアです。ざらつき・ごわつき・毛穴のつまり・くすみが気になるときに使います。', ['AHA', 'BHA', 'PHA', 'パパイン', 'スクラブ'], 'やりすぎると肌が薄くなり、赤み・ヒリヒリの原因になります。週1〜2回から。肌があれているときや、皮ふ科の薬を使っているときは休みます。'],
+  'ピーリング': ['ピーリング', '酸の力で古い角質をゆるめて落とす角質ケアです。拭き取り化粧水・洗顔料・美容液などに入っています。', ['AHA', 'BHA', 'PHA'], '使った日は肌が紫外線に弱くなるので、日焼け止めを必ず塗ります。レチノールや皮ふ科の薬と同じ日に使うと刺激が強くなります。'],
+  '酵素洗顔': ['酵素洗顔', 'たんぱく質を分解する「酵素」で、毛穴の汚れや古い角質を落とす洗顔料です。粉のタイプが多いです。', ['パパイン', 'プロテアーゼ'], '毎日使うと乾燥しやすいので、週1〜2回がめやすです。'],
+  'スクラブ': ['スクラブ', '細かい粒で、こすって古い角質を落とすタイプの洗顔料・パックです。', ['スクラブ'], 'こすりすぎると肌に小さな傷がつきます。ニキビ・赤みがあるときは使いません。'],
+  '角栓': ['角栓', '毛穴につまった、皮脂（肌のあぶら）と古い角質のかたまりです。鼻の黒いポツポツの正体です。', ['BHA', 'パパイン', 'カオリン'], '指や毛穴パックで無理に押し出すと、毛穴が広がったり傷ついたりします。'],
+  'クレイ': ['クレイ（泥）', '泥の成分で、余分な皮脂や汚れを吸着して落とします。パックや洗顔料に使われます。', ['カオリン', 'ベントナイト'], '乾燥しやすいので、乾燥肌の人は短い時間・少ない回数で。'],
+  '角質': ['角質', '肌のいちばん外側にある、とても薄い層です。うるおいを守り、外からの刺激を防ぐ「壁」の役目をしています。', ['セラミド', 'ヒアルロン酸'], 'こすったり洗いすぎたりすると傷つきます。やさしく扱うのが基本です。'],
+  'バリア機能': ['バリア機能', '肌のうるおいを逃がさず、外からの刺激（乾燥・ほこり・菌など）を防ぐ、肌の守る力です。弱くなると、乾燥・赤み・かゆみが出やすくなります。', ['セラミド', 'ヒアルロン酸', 'スクワラン', 'ナイアシンアミド'], '洗いすぎ・こすりすぎ・熱いお湯・睡眠不足で弱くなります。'],
+  'ターンオーバー': ['ターンオーバー', '肌が新しく生まれ変わるサイクルです。20代でおよそ28日、年齢とともに長くなります。乱れると、くすみ・ごわつき・ニキビ跡が残りやすくなります。', ['レチノール', 'ナイアシンアミド'], '睡眠・食事・紫外線対策で整います。'],
+  'インナードライ': ['インナードライ', '表面はベタつくのに、肌の内側は乾いている状態です。乾燥を補おうとして皮脂が増えています。', ['セラミド', 'ヒアルロン酸'], 'あぶら取りや洗いすぎより、保湿を増やすほうが落ち着きます。'],
+  '皮脂': ['皮脂', '肌から出るあぶらです。うるおいを守る役目がありますが、多すぎるとテカリ・毛穴づまり・ニキビの原因になります。', ['ナイアシンアミド', 'ビタミンC誘導体'], '取りすぎると、かえって皮脂が増えることがあります。'],
+  '美白': ['美白', '化粧品でいう「美白」は、肌を白くすることではなく、「メラニンができるのをおさえて、シミ・そばかすを防ぐ」ことです。', ['トラネキサム酸', 'ビタミンC誘導体', 'ナイアシンアミド', 'アルブチン'], 'できてしまったシミを消すものではありません。日焼け止めと一緒に使います。'],
+  '色素沈着': ['色素沈着', 'ニキビや傷・日焼けのあとに、茶色っぽい跡が残ることです。', ['トラネキサム酸', 'ビタミンC誘導体', 'ナイアシンアミド'], '紫外線で濃くなるので、日焼け止めが大切です。数か月かけて薄くなることが多いです。'],
+  'ニキビ跡': ['ニキビ跡', 'ニキビが治ったあとに残る、赤み・茶色いしみ・へこみのことです。', ['ビタミンC誘導体', 'トラネキサム酸', 'ナイアシンアミド'], 'へこみ（クレーター）は化粧品では治りにくいので、気になるときは皮ふ科へ。'],
+  '抗炎症': ['抗炎症', '赤み・はれ・熱っぽさ（炎症）をしずめる働きです。ニキビや肌あれ用の化粧品・医薬部外品に入っています。', ['グリチルリチン酸2K', 'アラントイン', 'CICA'], ''],
+  '炎症': ['炎症', '肌が刺激やニキビ菌などに反応して、赤み・はれ・熱・痛みが出ている状態です。', ['グリチルリチン酸2K', 'アラントイン', 'CICA'], '炎症があるときは、角質ケアやレチノールなど刺激の強いケアを休みます。'],
+  '鎮静': ['鎮静', 'ほてりや赤みなど、高ぶった肌を落ち着かせることです。', ['CICA', 'グリチルリチン酸2K', 'アラントイン'], ''],
+  'くすみ': ['くすみ', '肌が暗く、つやがなく見える状態です。古い角質・乾燥・血行不良・日焼けなどが原因です。', ['ビタミンC誘導体', 'ナイアシンアミド', 'AHA'], ''],
+  '敏感肌': ['敏感肌', 'ふつうの人は平気な化粧品や環境の変化で、ヒリヒリ・赤み・かゆみが出やすい肌です。', ['セラミド', 'アラントイン'], '新しい化粧品は、腕の内側などで試してから顔に使うと安心です（パッチテスト）。'],
+  'パッチテスト': ['パッチテスト', '新しい化粧品を、腕の内側など目立たないところに少し塗って、1〜2日ようすを見ることです。赤み・かゆみが出たら顔には使いません。', [], ''],
+  'ノンコメドジェニック': ['ノンコメドジェニック', '「ニキビのもと（コメド）ができにくいか」をテストした化粧品という意味です。', [], '「ニキビができない」という意味ではありません。'],
+  '紫外線吸収剤': ['紫外線吸収剤', '紫外線を吸収して、肌に届かないようにする日焼け止めの成分です。白浮きしにくく、のびがよいです。', ['メトキシケイヒ酸エチルヘキシル', 'ビスエチルヘキシルオキシフェノールメトキシフェニルトリアジン'], '肌が敏感な人は、しみることがあります。'],
+  '紫外線散乱剤': ['紫外線散乱剤', '紫外線を、肌の表面ではね返す日焼け止めの成分です。刺激が少なめです。', ['酸化チタン', '酸化亜鉛'], '白浮きしやすいことがあります。'],
+  'ノンケミカル': ['ノンケミカル', '紫外線吸収剤を使わず、紫外線散乱剤だけで作った日焼け止めのことです。', ['酸化チタン', '酸化亜鉛'], '敏感肌の人や子ども向けによく使われます。'],
+  'ダブル洗顔': ['ダブル洗顔', 'クレンジングでメイクを落としたあとに、洗顔料でもう一度洗うことです。', [], '「W洗顔不要」と書いてあるクレンジングなら、洗顔料はいりません。'],
+  '弱酸性': ['弱酸性', '健康な肌と同じくらいの、やや酸性の性質です。洗い上がりがやさしい洗顔料によく書かれています。', [], ''],
+};
+const TERM_KEYS = Object.keys(TERM_INFO);
 const ING_LINK_SKIP = /^(保湿|保湿成分|日焼け止め|水|オイル|洗顔|クリーム|乳液|化粧水|美容液|成分|エキス)$/;
 let ING_LINK_RE = null;
 function ingLinkRe() {
   if (ING_LINK_RE) return ING_LINK_RE;
-  const set = new Set(Object.keys(ING_LINK_EXTRA));
+  const set = new Set(Object.keys(ING_LINK_EXTRA).concat(TERM_KEYS));
   ING_DB.forEach(e => [e.name.replace(/（.*?）|\(.*?\)/g, '').replace(/類$/, '')].concat(e.aliases || []).forEach(a => { a = String(a).trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,（(]/.test(a)) set.add(a); }));
   try { ING_MASTER.forEach(m => { const a = String(m.ja || '').replace(/（.*?）/g, '').trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,]/.test(a)) set.add(a); }); } catch (e) { /* 何もしない */ }
   const terms = [...set].sort((a, b) => b.length - a.length).map(t => esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
@@ -9134,7 +9165,9 @@ function ingLinkRe() {
 function ingLinkHtml(html, seen) {
   seen = seen || new Set();
   return String(html).split(/(<button[^>]*>[\s\S]*?<\/button>|<[^>]+>)/).map(part => part.startsWith('<') ? part : part.replace(ingLinkRe(), (w) => {
-    const raw = w.replace(/&amp;/g, '&'), word = ING_LINK_EXTRA[raw] || raw, e = ingEntryOf(word); if (!e) return w;
+    const raw = w.replace(/&amp;/g, '&');
+    if (TERM_INFO[raw]) { if (seen.has('t:' + raw)) return w; seen.add('t:' + raw); return `<button type="button" class="care-link" data-term="${esc(raw)}">${w}</button>`; }
+    const word = ING_LINK_EXTRA[raw] || raw, e = ingEntryOf(word); if (!e) return w;
     const k = e.key || e.name; if (seen.has(k)) return w; seen.add(k);
     return `<button type="button" class="care-link" data-ingsheet="${esc(word)}">${w}</button>`;
   })).join('');
@@ -12973,7 +13006,7 @@ function careLinkHtml(text, G) {
   ];
   const re = new RegExp(map.map(m => m[0].source).join('|'), 'g'), used = new Set();
   // 「」の中（商品名）はリンクにしない
-  return esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join('');
+  return ingLinkHtml(esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join(''));
 }
 // 「保湿」「化粧水」「美容液」を押したとき：その人に合う、その工程の成分を並べる（押すと成分の説明とおすすめ商品）
 const STEP_T = {moist:['保湿（乳液・クリーム）', 'おすすめ成分'], toner:['化粧水', 'おすすめ成分'], serum:['美容液', 'おすすめ成分']};
@@ -13010,6 +13043,16 @@ async function tipTowelRank() {
     box.onclick = ev => { const b = ev.target.closest('[data-tippick]'); if (!b) return; const x = TOWEL_RANK[Number(b.dataset.tippick)]; if (!x) return; ui.shopItem = Object.assign({}, x, {fromIng:'顔用ペーパータオル', ingRank:Number(b.dataset.tippick) + 1}); sheetGo('#/shop'); };
   } catch (e) { const box = document.getElementById('tip-pop'); if (box) box.innerHTML = '<p class="small muted">通信できませんでした。電波のよい場所で、もう一度お試しください。</p>'; }
 }
+// むずかしい言葉を押したとき：意味と、主にどんな成分か（成分を押すと成分の説明）
+function openTermSheet(k) {
+  const t = TERM_INFO[k]; if (!t) return;
+  setTimeout(() => { MODAL_REOPEN = () => openTermSheet(k); }, 0);
+  const ings = t[2].filter(x => ingEntryOf(x) || ING_LINK_EXTRA[x]);
+  openModal({title:esc(t[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>どういう意味？</b><p>${esc(t[1])}</p></div>
+    ${t[2].length ? `<div class="ing-b"><b>主な成分</b><div class="term-ings">${t[2].map(x => ings.includes(x) ? `<button type="button" class="cm-c good" data-ingsheet="${esc(ING_LINK_EXTRA[x] || x)}">${esc(x)}<i>›</i></button>` : `<span class="cm-c term-plain">${esc(x)}</span>`).join('')}</div>${ings.length ? '<p class="small muted" style="margin:6px 0 0">成分を押すと、説明が見られます</p>' : ''}</div>` : ''}
+    ${t[3] ? `<div class="ing-b warn"><b>ポイント</b><p>${esc(t[3])}</p></div>` : ''}</div></div>`});
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-term]'); if (!b) return; hapticTick(); openTermSheet(b.dataset.term); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-tip]'); if (!b) return; hapticTick(); openTipSheet(b.dataset.tip, b.dataset.tipstep); });
 function openStepSheet(k) {
   setTimeout(() => { MODAL_REOPEN = () => openStepSheet(k); }, 0);
