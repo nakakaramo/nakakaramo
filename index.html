@@ -3738,6 +3738,10 @@ function normalize(d) {
   out.careLogs = {}; if (d.careLogs && typeof d.careLogs === 'object') Object.entries(d.careLogs).forEach(([k, v]) => { if (isValidYmd(k) && v && k >= addDays(todayStr(), -60)) out.careLogs[k] = {am:!!v.am, pm:!!v.pm, ids:strArr(v.ids)}; }); // 朝・夜のいつものケア（ワンタップ）
   out.routineLogs = {}; if (d.routineLogs && typeof d.routineLogs === 'object') Object.entries(d.routineLogs).forEach(([k, v]) => { if (isValidYmd(k) && v && k >= addDays(todayStr(), -60)) out.routineLogs[k] = {am:Object.fromEntries(strArr(Object.keys(v.am || {})).map(x => [x, true])), pm:Object.fromEntries(strArr(Object.keys(v.pm || {})).map(x => [x, true]))}; }); // 朝・夜のケアで「やった」にした工程
   out.savedAt = Number(d.savedAt) || 0; // 最後に保存した時刻（クラウドとどちらが新しいかを比べる）
+  // 記録ごとの「最後に変えた時刻」と「消した時刻」（2台で使ったとき、記録を1つずつ合わせるため）
+  const numMap = v => { const o = {}; if (v && typeof v === 'object') Object.keys(v).forEach(k => { const n = Number(v[k]); if (n > 0) o[k] = n; }); return o; };
+  out.recT = numMap(d.recT); out.recDel = numMap(d.recDel);
+  if (d._recH && typeof d._recH === 'object') out._recH = d._recH;
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
 }
@@ -3755,7 +3759,7 @@ function load() {
 }
 function save() {
   if (!storageOK) return false;
-  state.savedAt = Date.now();
+  state.savedAt = Date.now(); try { recStamp(); } catch (e) { /* 何もしない */ }
   try { localStorage.setItem(STORE_KEY, stateJSON()); widgetSoon(); setTimeout(syncSoon, 0); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 0); return true; }
   catch (e) { toast('保存できませんでした。容量が不足している可能性があります（写真を減らしてください）。', 'error'); return false; }
 }
@@ -13357,7 +13361,7 @@ function syncPayload() {
   const d = JSON.parse(JSON.stringify(state));
   const m = photoMap(), refs = {};
   photoWalk(d, (key, v, set) => { const p = photoPathOf(v, m); if (p) refs[key] = p; set(null); }); // 写真そのものは入れず、保存場所の目印だけ入れる
-  d.photoRefs = refs;
+  d.photoRefs = refs; delete d._recH;
   if (d.settings) { delete d.settings.wxLoc; delete d.settings.wxPlace; } // 今いる場所はクラウドに送らない（端末の中だけ）
   return d;
 }
@@ -13369,6 +13373,41 @@ function syncKeepPhotos(remote) {
 }
 const syncOn = () => !!(acct.client && acct.user); // ログインしていれば、登録したメールアドレスのアカウントに自動でバックアップする（オン・オフはなし）
 const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lifeLogs || []).some(l => !l.demo) || (s.myProducts || []).some(p => !p.isSample)));
+// ---------- 記録ごとに「いつ変えたか」「いつ消したか」を残す（2台で使っても、どちらかを選ばずに自動で合わせるため） ----------
+const recItemHash = x => phHash(JSON.stringify(x, (k, v) => isDataImg(v) ? 'img' : v));
+function recStamp() {
+  const first = !state._recH, H = state._recH || {}, T = state.recT || (state.recT = {}), D = state.recDel || (state.recDel = {}), now = Date.now(), seen = {};
+  SYNC_ARRAYS.forEach(k => (state[k] || []).forEach(x => { if (!x || !x.id) return; const key = k + '|' + x.id, h = recItemHash(x); seen[key] = 1;
+    if (H[key] !== h) { H[key] = h; if (!first) { T[key] = now; delete D[key]; } } }));
+  if (!first) Object.keys(H).forEach(key => { if (!seen[key]) { delete H[key]; delete T[key]; D[key] = now; } }); // 消した記録
+  Object.keys(D).forEach(key => { if (now - D[key] > 400 * 86400000) delete D[key]; }); // 古い「消した」目印は消す
+  state._recH = H;
+}
+function recRebase() { delete state._recH; recStamp(); } // 読み込んだデータを、今の状態として覚え直す（時刻はつけない）
+// この端末とクラウドの記録を、1つずつ合わせる（同じ記録は、あとで変えたほう。片方にしかない記録は残す。消した記録は戻さない）
+function syncMerge(loc, rem) {
+  const lT = loc.recT || {}, rT = rem.recT || {}, lD = loc.recDel || {}, rD = rem.recDel || {};
+  const base = (Number(loc.savedAt) || 0) > (Number(rem.savedAt) || 0) ? loc : rem; // 設定などは、あとで保存したほう
+  const out = Object.assign({}, base, {photoRefs:rem.photoRefs || {}});
+  const T = Object.assign({}, rT), D = Object.assign({}, rD);
+  Object.keys(lT).forEach(k => { T[k] = Math.max(T[k] || 0, lT[k]); }); Object.keys(lD).forEach(k => { D[k] = Math.max(D[k] || 0, lD[k]); });
+  SYNC_ARRAYS.forEach(k => {
+    const L = new Map((loc[k] || []).filter(x => x && x.id).map(x => [x.id, x])), R = new Map((rem[k] || []).filter(x => x && x.id).map(x => [x.id, x]));
+    let res = [];
+    [...new Set([...R.keys(), ...L.keys()])].forEach(id => {
+      const key = k + '|' + id, l = L.get(id), r = R.get(id), lt = lT[key] || 0, rt = rT[key] || 0;
+      const x = l && r ? (lt > rt ? l : r) : l ? ((rD[key] || 0) > lt ? null : l) : ((lD[key] || 0) > rt ? null : r);
+      if (x) { res.push(x); if ((D[key] || 0) <= (T[key] || 0)) delete D[key]; } else delete T[key];
+    });
+    if (k === 'skinLogs' || k === 'lifeLogs') { // 同じ日の記録が2つになったら、あとで変えたほうだけ
+      const byDate = new Map(); res.forEach(x => { const o = byDate.get(x.date); if (!o || (T[k + '|' + x.id] || 0) > (T[k + '|' + o.id] || 0)) byDate.set(x.date, x); });
+      res = res.filter(x => byDate.get(x.date) === x);
+    }
+    out[k] = JSON.parse(JSON.stringify(res));
+  });
+  out.recT = T; out.recDel = D; out.savedAt = Date.now(); delete out._recH;
+  return out;
+}
 function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncPush, 2500); }
 async function syncPush() {
   if (!syncOn()) return;
@@ -13407,19 +13446,24 @@ async function syncPull0(ask, done) {
     const sameRecs = nowSig === recSig(data.data || {}); // 記録の中身がクラウドと同じなら、聞かずにそのまま合わせる
     if (data.updated_at <= last && localNewer) { done(); syncPush(); return true; }
     if (data.updated_at <= last) return true; // 同じ
-    if (ask && hasRecords(state) && localNewer && !sameRecs) { syncAsk(data); return false; } // どちらを使うか決まるまで送らない // 両方に新しい記録がある → どちらを使うか聞く
+    if (hasRecords(state) && localNewer && !sameRecs) { // 両方に新しい記録がある → 聞かずに、記録を1つずつ合わせてクラウドにも保存する
+      syncApply({data:syncMerge(state, data.data || {}), updated_at:data.updated_at}, true); SYNC.pending = true;
+      try { localStorage.setItem(SYNC_SIG_KEY, recSig(data.data || {})); } catch (e) { /* 何もしない */ } // 合わせた記録をまだ送れていない目印（送れなかったら次に開いたときに送る）
+      return true;
+    }
     syncApply(data);
   } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); return false; }
   return true;
 }
-function syncApply(row) {
+function syncApply(row, merged) {
   const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace, keepName = state.settings.nickname, keepAv = state.settings.avatar;
   state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
   // 表示名・アイコン：クラウドに無くて、この端末にあれば、この端末の物を残す（ログインする前に決めた名前・アイコンが消えないように）
   let prof = false; if (!state.settings.nickname && keepName) { state.settings.nickname = keepName; prof = true; } if (!state.settings.avatar && keepAv) { state.settings.avatar = keepAv; prof = true; }
   if (prof) setTimeout(() => { save(); }, 0);
   try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); localStorage.setItem(SYNC_SIG_KEY, recSig(row.data || {})); } catch (e) {}
-  SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
+  try { recRebase(); localStorage.setItem(STORE_KEY, stateJSON()); } catch (e) { /* 何もしない */ }
+  SYNC.at = row.updated_at; toast(merged ? 'この端末とクラウドの記録を合わせました' : 'クラウドのデータを読み込みました'); render();
   try { if (localStorage.getItem('nk_relogin')) { localStorage.removeItem('nk_relogin'); const c = notifyCfg(); if (c.on && pushSupported() && Notification.permission === 'granted') notifySend(c).catch(() => {}); } } catch (e) { /* 何もしない */ } // ログアウトで止めたお知らせを、また届くようにする
   setTimeout(() => photoRestore(row.data && row.data.photoRefs), 300); // この端末にない写真も読み込む
 }
