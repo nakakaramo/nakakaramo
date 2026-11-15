@@ -994,6 +994,23 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .ref-row{display:flex;gap:10px;align-items:center;margin-top:10px}.ref-row .input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.12em}
 .ref-code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.16em;padding:8px 12px;border-radius:12px;background:var(--surface2);text-align:center}
 .trial-bn .page-actions{gap:8px}
+.pl-cards{display:flex;flex-direction:column;gap:12px;margin:14px 0 12px}
+.pl-c{position:relative;display:grid;grid-template-columns:22px minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:12px;row-gap:2px;width:100%;padding:15px 16px;border:1.5px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background-color .15s}
+.pl-c input{position:absolute;opacity:0;pointer-events:none}
+.pl-dot{grid-row:1/3;width:20px;height:20px;border-radius:50%;border:2px solid var(--line2,#ccc);box-sizing:border-box;transition:border .15s}
+.pl-n{font-weight:700;font-size:15.5px}.pl-s{grid-column:2;font-size:12.5px;color:var(--ink2);line-height:1.45}
+.pl-p{grid-column:3;grid-row:1/3;font-size:22px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}.pl-p small{font-size:12px;font-weight:600;color:var(--muted);margin-left:1px}
+.pl-badge{position:absolute;top:-10px;right:14px;padding:3px 10px;border-radius:999px;background:var(--green);color:#fff;font-size:11px;font-weight:700}
+.pl-c.on,.pl-c:has(input:checked){border-color:var(--green);background:var(--green-l,#E5F2EA)}
+.pl-c.on .pl-dot,.pl-c:has(input:checked) .pl-dot{border:6px solid var(--green)}
+.pl-c:has(input:focus-visible){outline:2px solid var(--green-d);outline-offset:2px}
+.pf{margin:0 0 14px;padding:12px 14px 8px;background:var(--green-l,#E5F2EA);border-radius:14px}
+.pf-l{margin:0;padding:0 0 0 20px;font-size:13.5px;line-height:1.75}
+.pf:not(.open) .pf-h{filter:blur(3px);opacity:.75;user-select:none;pointer-events:none}
+.pf:not(.open) .pf-h+.pf-h{filter:blur(4px);opacity:.45}
+.pf:not(.open) .pf-x{display:none}
+.pf-more{display:block;margin:6px auto 0;padding:6px 14px;border:0;border-radius:999px;background:var(--surface);color:var(--green-d);font:inherit;font-size:12.5px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);cursor:pointer}
+.pf.open .pf-more{display:none}
 .ps-list{margin:0 0 14px;padding:12px 14px 12px 32px;background:var(--green-l,#E5F2EA);border-radius:14px;font-size:13.5px;line-height:1.7}
 #ps-form{display:flex;flex-direction:column;gap:10px}.ps-note,.ps-me{margin:0}
 .ps-agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6}.ps-agree input{margin-top:3px;width:18px;height:18px;flex:none}
@@ -1718,7 +1735,9 @@ body.gated #bottom-nav{visibility:hidden}
 
 /* ダークモード：明るい背景のまま文字が読めなくなっていた箱を直す */
 :root[data-theme="dark"] .ir-pr{background:var(--green-p);border-color:#2E4535}
-:root[data-theme="dark"] .ps-list{background:var(--green-s);color:var(--ink)}
+:root[data-theme="dark"] .ps-list,:root[data-theme="dark"] .pf{background:var(--green-s);color:var(--ink)}
+:root[data-theme="dark"] .pl-c.on,:root[data-theme="dark"] .pl-c:has(input:checked){background:var(--green-s)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pf{background:var(--green-s);color:var(--ink)}:root:not([data-theme="light"]) .pl-c.on,:root:not([data-theme="light"]) .pl-c:has(input:checked){background:var(--green-s)}}
 :root[data-theme="dark"] .pp-opt.on,:root[data-theme="dark"] .pp-opt:has(input:checked){background:var(--green-s)}
 :root[data-theme="dark"] .au-info{background:var(--green-s)}
 :root[data-theme="dark"] .adv-box.good{background:#1E2C22}
@@ -4063,6 +4082,14 @@ function swAnimAll() { $$(SW_GROUPS).forEach((g, i) => swPlace(g, i)); }
 document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('.rt-mode,.ct,.tab'); if (!t) return; const g = t.closest(SW_GROUPS); if (!g) return; setTimeout(() => { if (document.body.contains(g)) { const i = $$(SW_GROUPS).indexOf(g); swPlace(g, i); } }, 0); }, true);
 window.addEventListener('resize', () => { clearTimeout(swAnimAll.t); swAnimAll.t = setTimeout(() => { swLast.clear(); swAnimAll(); }, 150); });
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
+// 保存・削除のボタンは、どこにあっても押したときに「コツッ」と鳴らす（見えないスイッチを重ねていないボタンだけ。重ねたボタンはスイッチが鳴る）
+const HAP_SAVE_DEL = /保存|削除|消す/, HAP_SKIP = /取り消す|保存されていません/;
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('button,[role="button"],a.btn'); if (!b || b.disabled || b.closest('.hap-wrap,.hap-keep')) return;
+  const t = (b.textContent || b.getAttribute('aria-label') || '').trim();
+  if (!HAP_SAVE_DEL.test(t) || HAP_SKIP.test(t) || Date.now() - hapticAt < 300) return;
+  hapticTick();
+}, true);
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
   if (!btn || !btn.parentNode || btn.closest('.hap-wrap,.hap-keep') || btn.tagName === 'LABEL' || btn.disabled || !btn.offsetParent) return;
@@ -5185,20 +5212,25 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
     const eye = id => `<button type="button" class="au-eye" data-eye="${id}" aria-label="パスワードを表示">${EYE_ON}</button>`;
     let first = true;
     const paint = (dir) => {
-      const up = st.mode === 'signup', s1 = st.step === 'email';
+      const up = st.mode === 'signup', s1 = !up || st.step === 'email'; // ログインは、メールアドレスとパスワードを同じ画面で入れる
       const title = up ? 'アカウントを作る' : 'ログイン';
       let body = '';
-      if (s1) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
+      const sso = CLOUD.google ? `<p class="au-or">または以下の方法でも${up ? '登録' : 'ログイン'}できます</p>
+        <button type="button" class="au-sso" data-au="google">${GICON}<span>Googleで続行</span></button>
+        ${up ? '<p class="au-fine">Googleで続行すると、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意したことになります。</p>' : ''}` : '';
+      if (!up) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
+        <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="username" maxlength="254" value="${esc(st.email)}">
+        <label class="au-lbl" for="au-pw" style="margin-top:14px">パスワード</label>
+        <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72">${eye('au-pw')}</div>
+        <button type="button" class="au-go" data-au="login" ${st.busy ? 'disabled' : ''}>${st.busy ? 'ログインしています…' : 'ログイン'}</button>
+        <button type="button" class="au-link" data-au="forgot">パスワードを忘れた場合</button>
+        ${sso}`;
+      else if (s1) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
         <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(st.email)}">
         <button type="button" class="au-go" data-au="next">続行</button>
         ${CLOUD.google ? `<p class="au-or">または以下の方法でも${up ? '登録' : 'ログイン'}できます</p>
         <button type="button" class="au-sso" data-au="google">${GICON}<span>Googleで続行</span></button>
         ${up ? '<p class="au-fine">Googleで続行すると、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意したことになります。</p>' : ''}` : ''}`;
-      else if (!up) body = `<p class="au-who">${esc(st.email)}<button type="button" class="au-chg" data-au="back">変更</button></p>
-        <label class="au-lbl" for="au-pw">パスワード</label>
-        <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72">${eye('au-pw')}</div>
-        <button type="button" class="au-go" data-au="login" ${st.busy ? 'disabled' : ''}>${st.busy ? 'ログインしています…' : 'ログイン'}</button>
-        <button type="button" class="au-link" data-au="forgot">パスワードを忘れた場合</button>`;
       else body = `<p class="au-who">${esc(st.email)}<button type="button" class="au-chg" data-au="back">変更</button></p>
         <label class="au-lbl" for="au-pw">パスワード</label>
         <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="new-password" maxlength="72">${eye('au-pw')}</div>
@@ -5217,7 +5249,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       Object.keys(keep).forEach(id => { const i = ov.querySelector('#' + id); if (i) { if (i.type === 'checkbox') i.checked = keep[id]; else i.value = keep[id]; } });
       if (first) { first = false; requestAnimationFrame(() => ov.classList.add('in')); }
       else if (dir) ov.querySelectorAll('.au-body,.au-foot,.au-head h2').forEach(el => el.classList.add(dir === 'fwd' ? 'au-in-r' : dir === 'back' ? 'au-in-l' : 'au-in-f'));
-      const f = ov.querySelector(s1 ? '#au-email' : '#au-pw'); if (f && !st.busy) setTimeout(() => { try { f.focus({preventScroll:true}); } catch (e) { /* 何もしない */ } }, 260);
+      const f = ov.querySelector(s1 && !(!up && st.email) ? '#au-email' : '#au-pw'); if (f && !st.busy) setTimeout(() => { try { f.focus({preventScroll:true}); } catch (e) { /* 何もしない */ } }, 260);
       ov.querySelectorAll('.au-go,.au-sso').forEach(b => { try { hapticize(b); } catch (e) { /* 何もしない */ } });
     };
     const setErr = m => { st.err = m || ''; const e = ov.querySelector('.au-err'); if (e) { e.hidden = !m; e.textContent = m || ''; } };
@@ -5236,6 +5268,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       }
       if (a === 'forgot') {
         setErr('');
+        if (ov.querySelector('#au-email')) { const em = pv('#au-email').trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('パスワードを再設定するメールアドレスを入力してください'); st.email = em; }
         try { const c = await client(); const {error} = await withTO(c.auth.resetPasswordForEmail(st.email, {redirectTo:appUrl()})); if (error) throw error; st.info = `${st.email} にパスワード再設定のメールを送りました。メールのボタンを押して、新しいパスワードを決めてください。`; paint(); }
         catch (e) { setErr(authErrMsg(e)); }
         return;
@@ -5243,6 +5276,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       if (st.busy) return;
       const pw = pv('#au-pw');
       if (a === 'login') {
+        if (ov.querySelector('#au-email')) { const em = pv('#au-email').trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください'); st.email = em; }
         if (!pw) return setErr('パスワードを入力してください');
         st.busy = true; st.err = ''; paint();
         try {
@@ -13496,7 +13530,7 @@ async function refreshSub() {
   acct.subLoaded = true; rerenderAcct();
 }
 const paidPremium = () => { const s = acct.sub; return !!(acct.user && s && ['active','trialing'].includes(s.status) && (!s.current_period_end || new Date(s.current_period_end) > new Date())); };
-// お試し（登録から1週間）・お友だち紹介の無料期間：今いちばん遅く終わるもの
+// お試し（登録から3日間）・お友だち紹介の無料期間：今いちばん遅く終わるもの
 function grantInfo() {
   const g = acct.grant; if (!acct.user || !g) return null;
   const L = [['trial', g.trial_until], ['bonus', g.bonus_until]].filter(x => x[1]).map(([k, t]) => ({kind:k, end:new Date(t)})).sort((a, b) => b.end - a.end);
@@ -13575,6 +13609,26 @@ async function runVisionDiag() {
 const VISION_VERSION = '2026-11-07-quota'; // サーバーの関数 vision の最新の版
 const AI_NOTE = '自動で読み取った推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
+// ===== 月額・年額の選び方と、プレミアムの機能（少しだけ見せて、下はぼかす） =====
+const PREM_FEATS = ['顔の写真を撮るだけで、今日の肌を記録', '化粧品をカメラで登録（パッケージ・バーコード）', '食事の写真から栄養を自動で計算', '記録から、あなた専用のケアと献立を提案', 'くわしい分析・成分相性マップ', 'AIサポートにいつでも相談', '広告が表示されない'];
+function premFeatsHtml() {
+  return `<div class="pf" data-pf><ul class="pf-l">${PREM_FEATS.map((t, i) => `<li${i >= 4 ? ' class="pf-x"' : i >= 2 ? ' class="pf-h"' : ''}>${esc(t)}</li>`).join('')}</ul><button type="button" class="pf-more" data-pfmore>すべての機能を見る（${PREM_FEATS.length}つ）▾</button></div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-pfmore]'); if (!b) return; const w = b.closest('[data-pf]'); if (w) w.classList.add('open'); });
+// mode：'radio'（申し込みの窓）／'btn'（アカウントの画面）
+function planCardsHtml(sel, mo, yr, mode) {
+  const save = mo && yr ? Math.round(12 - yr / mo) : 0, per = yr ? Math.round(yr / 12) : 0;
+  const card = (k, name, price, unit, sub, badge) => {
+    const on = sel === k, inner = `${badge ? `<span class="pl-badge">${badge}</span>` : ''}<i class="pl-dot" aria-hidden="true"></i><span class="pl-n">${name}</span><span class="pl-s">${sub}</span><span class="pl-p">${price}<small>${unit}</small></span>`;
+    return mode === 'btn' ? `<button type="button" role="radio" aria-checked="${on}" class="pl-c${on ? ' on' : ''}" data-action="plan-pick" data-id="${k}">${inner}</button>`
+      : `<label class="pl-c"><input type="radio" name="plan" value="${k}" ${on ? 'checked' : ''}>${inner}</label>`;
+  };
+  return `<div class="pl-cards" role="radiogroup" aria-label="支払いの期間">
+    ${card('month', '月額プラン', mo != null ? Number(mo).toLocaleString() + '円' : '—', '／月', 'いつでも解約できます', '')}
+    ${yr ? card('year', '年額プラン', Number(yr).toLocaleString() + '円', '／年', `月あたり${per.toLocaleString()}円`, save > 0 ? `${save}か月分お得` : '') : ''}
+  </div>`;
+}
+let PS_PLAN = 'month';
 // ===== かんたん申し込み：プレミアムの機能を押したら、その場で（ログイン→）申し込みまで進める =====
 // 入力中の記録を消さないように、ふつうの画面（モーダル）とは別の窓で出す
 function openPremiumSheet(feature) {
@@ -13585,13 +13639,13 @@ function openPremiumSheet(feature) {
   const el = document.createElement('div'); el.id = 'prem-sheet'; el.className = 'ps-wrap';
   el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
     <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
-    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>月額1,200円（税込）</b><span class="ps-cancel">年額なら12,000円（2か月分お得）。いつでも解約できます。</span></p>
-    <ul class="ps-list"><li>顔の写真を撮るだけで、今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養を自動で計算</li><li>記録から、あなた専用のケアと献立を提案</li></ul>
-    ${logged ? '' : `<div class="ps-auth"><p class="small ps-note"><b>新しく登録すると、7日間${PREMIUM_NAME}を無料で試せます</b>（カードの登録はいりません。終わると自動で無料プランに戻ります）。登録済みの人はログインしてください。</p>
+    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><span class="ps-cancel">料金はすべて税込です</span></p>
+    ${planCardsHtml(PS_PLAN, (acct.price && acct.price.amount) || 1200, (acct.price && acct.price.year && acct.price.year.amount) || 12000, 'radio')}
+    ${premFeatsHtml()}
+    ${logged ? '' : `<div class="ps-auth"><p class="small ps-note"><b>新しく登録すると、3日間${PREMIUM_NAME}を無料で試せます</b>（カードの登録はいりません。終わると自動で無料プランに戻ります）。登録済みの人はログインしてください。</p>
       <div class="auth-entry"><button type="button" class="btn btn-primary" data-psauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-psauth="login">ログイン</button></div></div>`}
     <form id="ps-form" novalidate ${logged ? '' : 'hidden'}>
       ${logged ? `<p class="small muted ps-me">${esc(acct.user.email || '')} で申し込みます</p>` : ''}
-      <div class="plan-pick ps-pick" role="radiogroup" aria-label="支払いの期間"><label class="pp-opt"><input type="radio" name="plan" value="month" checked><b>月額</b><span>1,200円／月</span></label><label class="pp-opt"><input type="radio" name="plan" value="year"><b>年額</b><span>12,000円／年</span><em>2か月分お得</em></label></div>
       <label class="ps-agree"><input type="checkbox" name="agree"> <span><a href="#/terms" target="_blank">利用規約</a>・<a href="#/privacy" target="_blank">プライバシーポリシー</a>・<a href="#/law" target="_blank">特定商取引法の表記</a>を確認し、選んだ期間（1か月または1年）ごとに自動で更新されること（解約はアカウントからいつでも可能）に同意します</span></label>
       <button type="submit" class="btn btn-primary ps-go">申し込む（カードの入力へ）</button>
       <p class="small muted ps-foot">クレジットカード・デビットカード・Apple Pay・Google Payで支払えます。支払いは、決済サービスStripeの安全な画面で行い、カード番号はナカカラモには保存されません。</p>
@@ -13599,6 +13653,7 @@ function openPremiumSheet(feature) {
   document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
   const close = () => { el.classList.remove('on'); setTimeout(() => el.remove(), 220); };
   el.querySelectorAll('[data-ps="close"]').forEach(b => b.onclick = close);
+  el.querySelectorAll('input[name="plan"]').forEach(i => i.onchange = () => { PS_PLAN = i.value; hapticTick(); });
   el.querySelectorAll('[data-psauth]').forEach(b => b.onclick = async () => {
     if (!(await openAuth(b.dataset.psauth))) return;
     for (let i = 0; i < 10 && !acct.user; i++) await new Promise(r => setTimeout(r, 200));
@@ -13617,7 +13672,7 @@ function openPremiumSheet(feature) {
       for (let i = 0; i < 20 && !acct.client; i++) await new Promise(r => setTimeout(r, 300));
       if (!acct.client) throw new Error('サーバーに接続できませんでした。インターネットの接続を確認してください。');
       btn.textContent = 'お支払いの画面へ移動しています…';
-      const d = await callBilling('checkout', {plan:f.elements.plan && f.elements.plan.value === 'year' ? 'year' : 'month'}); goExternal(d.url);
+      const d = await callBilling('checkout', {plan:PS_PLAN === 'year' ? 'year' : 'month'}); goExternal(d.url);
     } catch (err) { toast(err && /^[　-鿿]/.test(err.message || '') ? err.message : authErrMsg(err), 'error'); btn.disabled = false; btn.textContent = '申し込む（カードの入力へ）'; }
   };
 }
@@ -13749,12 +13804,12 @@ function viewPlan(query) {
   }
   if (acct.polling) return done(html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>');
   const gi2 = grantInfo(), yr = acct.price && acct.price.year, mo = acct.price && acct.price.amount;
-  const planPick = yr ? `<div class="plan-pick" role="radiogroup" aria-label="支払いの期間">${[['month', '月額', mo != null ? yen(mo) + '／月' : ''], ['year', '年額', `${yen(yr.amount)}／年`]].map(([k, l, v]) => `<button type="button" role="radio" aria-checked="${acct.plan === k}" class="pp-opt${acct.plan === k ? ' on' : ''}" data-action="plan-pick" data-id="${k}"><b>${l}</b><span>${v}</span>${k === 'year' && mo ? `<em>${Math.round(12 - yr.amount / mo)}か月分お得</em>` : ''}</button>`).join('')}</div>` : '';
+  const planPick = yr ? planCardsHtml(acct.plan === 'year' ? 'year' : 'month', mo, yr.amount, 'btn') : '';
   const yearSel = acct.plan === 'year' && yr;
   html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
     ${gi2 && grantActive() ? `<div class="notice green" style="margin:0 0 12px"><b class="nt-h">今は${gi2.kind === 'trial' ? '無料のお試し' : 'お友だち紹介の特典'}で、${PREMIUM_NAME}を使えています（${fmtEnd(gi2.end)}まで）</b>終わると自動で無料プランに戻り、料金はかかりません。続けて使うときだけ申し込んでください（申し込んだ日から料金がかかります）。</div>` : ''}
     ${planPick}
-    <p class="small">食事の写真から商品名と栄養成分表示を、化粧品の写真から商品名・全成分の文字を、写真から読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
+    ${premFeatsHtml()}
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
       <dl class="kv">
@@ -13899,7 +13954,7 @@ function viewTerms() {
 <ol><li>本サービスには、無料で使える「無料プラン」と、有料の「${P}プラン」（以下「有料プラン」）があります。各プランで使える機能は、アプリ内のプラン表示のとおりです。</li>
 <li>有料プランの料金は、申し込み画面に表示する金額とします（${esc(LEGAL.price)}）。</li>
 <li>有料プランの利用にはアカウント登録が必要です。無料プランはアカウント登録なしで利用できます。</li>
-<li>新しくアカウントを登録した利用者は、登録から7日間、有料プランの機能を無料で利用できます（以下「お試し期間」）。お試し期間が終わると自動で無料プランに戻り、料金は発生しません。お試し期間は1つのアカウントにつき1回です。</li>
+<li>新しくアカウントを登録した利用者は、登録から3日間、有料プランの機能を無料で利用できます（以下「お試し期間」）。お試し期間が終わると自動で無料プランに戻り、料金は発生しません。お試し期間は1つのアカウントにつき1回です。</li>
 <li>利用者が自分の紹介コードで別の方を紹介し、その方が登録から14日以内に紹介コードを使った場合、紹介した利用者と紹介された方の両方に、有料プランの1か月分の特典を付与します。特典は、有料プランを契約していない方には30日間の無料期間として、契約中の方には次回以降の請求から1か月分の料金を差し引く形で付与します。紹介した利用者への付与は1年に12回までとします。同じ人による複数のアカウントの作成など、不正な利用が分かった場合は、特典を取り消すことがあります。</li></ol>
 <h3>第3条（アカウント）</h3>
 <ol><li>利用者は、正確なメールアドレスを登録し、パスワードを自分の責任で管理するものとします。</li>
@@ -14025,7 +14080,7 @@ ${r('販売価格', `${P}プラン：${esc(LEGAL.price)}<br>申し込み画面�
 ${r('商品代金以外の必要料金', 'インターネット接続に必要な通信料は、利用者の負担となります')}
 ${r('支払方法', 'クレジットカード・デビットカード・Apple Pay・Google Pay（決済代行：Stripe）')}
 ${r('支払時期', '申し込み時に初回分を支払い、以後は月額プランは1か月ごと、年額プランは1年ごとに、申し込み日と同じ日に自動で請求されます')}
-${r('無料のお試し', '新しく登録した方は、登録から7日間、有料プランを無料で利用できます。終わると自動で無料プランに戻り、料金は発生しません')}
+${r('無料のお試し', '新しく登録した方は、登録から3日間、有料プランを無料で利用できます。終わると自動で無料プランに戻り、料金は発生しません')}
 ${r('サービスの提供時期', '決済の完了後、すぐに利用できます')}
 ${r('解約・キャンセル', 'アプリ内の「アカウント」画面から、いつでも解約できます。解約後も、支払い済みの期間の終了日まで利用でき、次回以降の請求は発生しません')}
 ${r('返品・返金', 'デジタルサービスの性質上、支払い済みの料金の返金（日割りを含む）はできません。ただし、法令により返金が必要な場合、または運営者の責任でサービスを提供できなかった場合を除きます')}
