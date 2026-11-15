@@ -173,7 +173,10 @@ button{font-family:inherit}
 .topbar #top-menu,.topbar .hap-keep:has(#top-menu){display:none!important}
 .topbar{min-height:calc(65px + var(--sat))} /* 上の帯の高さは、どの画面でも同じにする */
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
-main{max-width:1100px;margin:0 auto;padding:20px 16px calc(92px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
+main{max-width:1100px;margin:0 auto;padding:20px 16px calc(92px + env(safe-area-inset-bottom))}
+/* タブレット・パソコン：画面の幅に合わせて、読みやすい幅（スマホを少し広げたくらい）で真ん中にそろえる */
+@media (min-width:720px){main{max-width:780px;padding-left:24px;padding-right:24px}.t3-fc .t3-stage{max-width:380px;margin-left:auto;margin-right:auto}}
+@media (min-width:960px){main{max-width:860px}} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
 html.no-press a:active,html.no-press button:active,html.no-press label:active,html.no-press .btn:active,html.no-press .tab:active,html.no-press [data-action]:active,html.no-press .seg-opt span:active,html.no-press .used-tile:active,html.no-press .mrow:active,html.no-press .pcard:active,html.no-press .sc-opt:active,html.no-press .ls-main:active,html.no-press .acc-row:active,html.no-press .mb-col:active,html.no-press .icon-btn:active,html.no-press .ac-item:active{transform:none!important;opacity:1!important;transition:none!important}
 /* 指を離したあと、押して縮んだ形から元に戻る動き（0.15秒）をなくす。iPhoneは画面を移るときの見た目を写して、なぞって戻るときに見せるため、戻る途中の形が写ると「戻ったときにボタンが動く」ように見える */
