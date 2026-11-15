@@ -14028,9 +14028,9 @@ function viewPlan(query) {
   if (CLOUD.testMode) notes += `<div class="notice warn"><b class="nt-h">現在はテスト中です。実際の請求は発生しません。</b>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
   notes += `<div class="notice green">ログインすると、肌の記録・化粧品・設定が、登録したメールアドレスのアカウントに自動でバックアップされます（機種変更しても戻せます）。写真もあなただけが見られる場所にバックアップされます。有料プランのカード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
   const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
-    <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（写真の読み取りは1日15回まで）。</p></div>`;
+    <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です。結果は必ず確認・修正してからお使いください（顔・食事の写真の読み取りは1日15回まで）。</p></div>`;
   // アカウントの画面の中では、プランの比較は一番下に、押すと開く形で出す
-  const cmpFold = `<details class="fold acc-cmp"><summary>プランの比較</summary>${planTable()}<p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です（写真の読み取りは1日15回まで）。</p></details>`;
+  const cmpFold = `<details class="fold acc-cmp"><summary>プランの比較</summary>${planTable()}<p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、自動で読み取った推定です（顔・食事の写真の読み取りは1日15回まで）。</p></details>`;
   if (!EMBED) html += notes;
   const done = h => EMBED ? h + notes + cmpFold : h;
   if (!EMBED) html += cmpCard;
