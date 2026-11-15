@@ -1178,7 +1178,8 @@ a.used-tile{color:inherit;text-decoration:none}
 @keyframes pgPush{from{opacity:.4;transform:translateX(42%)}to{opacity:1;transform:none}}
 @keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
 #main.pg-push{animation:pgPush .54s cubic-bezier(.22,.7,.2,1) both!important}#main.pg-pop{animation:pgPop .54s cubic-bezier(.22,.7,.2,1) both!important} /* ホームの「今日の記録⇄おすすめケア」と同じ速さ */
-.my-del-btn{width:100%;justify-content:center;gap:6px;margin-top:10px}.my-del-btn svg{width:16px;height:16px}
+.my-del-btn{justify-content:center;gap:6px}.my-del-btn svg{width:16px;height:16px}
+.my-acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:16px}.my-acts>*{min-width:0;display:flex}.my-acts .btn{width:100%;justify-content:center;white-space:nowrap}
 .fade-once{animation:fadeOnce .7s ease both}
 @keyframes fadeOnce{from{opacity:0}to{opacity:1}}
 .kt{display:inline-block;opacity:0;transform:translateY(.55em);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
@@ -2807,6 +2808,9 @@ function fillAds() {
 /* プラン：無料＝手動入力、プレミアム（有料）＝写真から読み取り（AI） */
 const PREMIUM_NAME = 'プレミアム';
 const NG_SYMS = ['赤み', 'かゆみ', 'ヒリヒリ', 'ニキビ', '乾燥', 'ブツブツ', '腫れ', 'その他']; // 肌に合わなかったときの症状
+const NG_WHEN = ['使ってすぐ', '数時間後', '翌日', '数日〜1週間後', '2週間以上たってから']; // 症状が出た時期
+const NG_LEVEL = ['軽い', '中くらい', '強い'];
+const NG_WHERE = ['おでこ', '目のまわり', 'ほほ', '鼻', '口まわり', 'あご', 'フェイスライン', '顔全体'];
 const PREMIUM_READY = true; // 写真読み取り（AI）は関数「vision」で提供
 const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、ここも直す）。1列だけの行は見出し
   ['どちらのプランでも使える'],
@@ -3613,7 +3617,9 @@ function normalize(d) {
     order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null, // 長押しで並べ替えた順番
     offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
     offV:Number(p.offV) || 0, ingUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.ingUrl || '')) ? String(p.ingUrl) : '', ingSite:String(p.ingSite || '').slice(0, 40),
-    ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300)} : null, // 肌に合わなかった記録
+    ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300),
+      when:NG_WHEN.includes(p.ng.when) ? p.ng.when : '', level:NG_LEVEL.includes(p.ng.level) ? p.ng.level : '', where:strArr(p.ng.where, NG_WHERE), newOther:!!p.ng.newOther, // 肌に合わなかったときのアンケート
+      snap:ngSnapClean(p.ng.snap), rid:/^[a-z0-9]{6,24}$/.test(String(p.ng.rid || '')) ? String(p.ng.rid) : '', sentH:String(p.ng.sentH || '').slice(0, 20)} : null, // 肌に合わなかった記録（記録したときの肌質など・研究に送った印）
     image:safeImg(p.image) // 自分で付けた写真
   })) : [];
   out.skinLogs = Array.isArray(d.skinLogs) ? d.skinLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
@@ -6960,13 +6966,30 @@ function myMenuOpen() {
 window.addEventListener('hashchange', () => { const m = document.querySelector('.my-pop'); if (m) m.remove(); const b = document.getElementById('my-menu'); if (b) b.classList.remove('x'); });
 function openNgForm(id, date) {
   const p = getMy(id); if (!p) return;
-  const cur = p.ng || {date:date || todayStr(), sym:[], note:''};
+  const cur = Object.assign({date:date || todayStr(), sym:[], note:'', when:'', level:'', where:[], newOther:false}, p.ng || {});
+  const chips = (name, arr, sel, multi) => `<div class="ng-syms">${arr.map(x => `<label class="ng-sym"><input type="${multi ? 'checkbox' : 'radio'}" name="${name}" value="${x}" ${(multi ? sel.includes(x) : sel === x) ? 'checked' : ''}><span>${x}</span></label>`).join('')}</div>`;
+  const isRx = p.category === '皮膚科の塗り薬';
   openModal({title:'肌に合わなかった', body:`<p class="small" style="margin:0 0 12px"><b>${esc(p.name)}</b></p>
     <div class="field"><label class="lbl" for="ng-date">気づいた日</label><input type="date" class="input" id="ng-date" value="${esc(cur.date)}" max="${todayStr()}"></div>
-    <div class="field"><span class="lbl">出た症状</span><div class="ng-syms">${NG_SYMS.map(x => `<label class="ng-sym"><input type="checkbox" value="${x}" ${cur.sym.includes(x) ? 'checked' : ''}><span>${x}</span></label>`).join('')}</div></div>
+    <div class="field"><span class="lbl">出た症状<span class="opt">いくつでも</span></span>${chips('ng-sym', NG_SYMS, cur.sym, true)}</div>
+    <div class="field"><span class="lbl">使い始めてから、出るまで</span>${chips('ng-when', NG_WHEN, cur.when)}</div>
+    <div class="field"><span class="lbl">出た場所<span class="opt">いくつでも</span></span>${chips('ng-where', NG_WHERE, cur.where, true)}</div>
+    <div class="field"><span class="lbl">強さ</span>${chips('ng-level', NG_LEVEL, cur.level)}</div>
+    <label class="check" style="margin-bottom:12px"><input type="checkbox" id="ng-other" ${cur.newOther ? 'checked' : ''}>同じころに、ほかの新しい物も使い始めた</label>
     <div class="field"><label class="lbl" for="ng-note">メモ<span class="opt">任意</span></label><textarea class="input" id="ng-note" rows="3" maxlength="300" placeholder="例：つけた次の日、あごに赤いブツブツ">${esc(cur.note)}</textarea></div>
-    ${p.status === '使用中' ? '<label class="check"><input type="checkbox" id="ng-stop" checked>使うのをやめる（停止中にする）</label>' : ''}`,
+    ${p.status === '使用中' ? `<label class="check"><input type="checkbox" id="ng-stop" ${isRx ? '' : 'checked'}>使うのをやめる（停止中にする）</label>` : ''}
+    ${isRx ? '<p class="hint" style="margin-top:10px">処方された薬は、自分の判断でやめずに、まず処方した医師か薬剤師に相談してください。</p>' : ''}`,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="ng-save" data-id="${esc(p.id)}">保存する</button>`});
+}
+// 合わなかったときの肌質など（記録したときの状態を取っておく。あとで肌質が変わっても、当時の状態でくらべられる）
+function ngSnapNow() {
+  const st = state.settings, d = typeof diagNow === 'function' ? diagNow() : null;
+  return {skinType:st.skinType || '', sensitive:!!st.sensitive, ageBand:st.ageBand || '', gender:st.gender || '', concerns:(typeof concernKeysNow === 'function' ? concernKeysNow() : st.concernKeys || []).slice(0, 14), diag:d ? String(typeLabel(d) || '').slice(0, 30) : ''};
+}
+function ngSnapClean(x) {
+  if (!x || typeof x !== 'object') return null;
+  return {skinType:String(x.skinType || '').slice(0, 10), sensitive:!!x.sensitive, ageBand:String(x.ageBand || '').slice(0, 10), gender:String(x.gender || '').slice(0, 4),
+    concerns:Array.isArray(x.concerns) ? x.concerns.map(String).filter(v => /^[a-z]{2,12}$/.test(v)).slice(0, 14) : [], diag:String(x.diag || '').slice(0, 30)};
 }
 // 化粧品／塗り薬を切り替えたとき、下の線を前の位置からすべらせる
 // ===== Myアイテム：使用中／停止中のスイッチ（本物のスイッチなので、iPhoneでも押すと「コツッ」と鳴る） =====
@@ -7149,10 +7172,10 @@ function viewMyDetail(id) {
           })()}</dd>
         </dl>
         ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : (() => { const sp = p.ingredients ? p : getCat(p.catalogId); const h = sp && fullIngsOfMy(p) ? ingSrcHtml(sp, true) : ''; return h ? `<p class="small muted" style="margin-top:10px">${h}</p>` : !fullIngsOfMy(p) && offBusy[p.id] ? '<p class="small muted" style="margin-top:10px">全成分を調べています（10〜30秒）…</p>' : ''; })()}
-        ${isRx ? '' : `<div class="page-actions" style="margin-top:14px">
-          <button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>
-        </div>`}
-        <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
+        <div class="my-acts">
+          <button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>
+          <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
+        </div>
       </div>
     </div>
     <div class="mt"><div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div></div>
@@ -13901,7 +13924,7 @@ function viewPrivacy() {
 <h3>4. 第三者への提供</h3>
 <p>運営者は、法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。ただし、次の「5. 外部に送信される情報」に記載した、サービスの提供に必要な委託先への送信は除きます。</p>
 <h3>4-2. 研究への協力（任意）</h3>
-<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、使っている皮膚科の薬の種類（「ニキビ」「ステロイド（強い）」などの区分だけで、薬の名前は含みません）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差、その成分が入っていた商品の種類）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。</p>
+<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、使っている皮膚科の薬の種類（「ニキビ」「ステロイド（強い）」などの区分だけで、薬の名前は含みません）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差、その成分が入っていた商品の種類）と、「肌に合わなかった」と記録したときのアンケート（症状・出るまでの時期・場所・強さ、使った期間、その商品の種類・入っていた成分の種類・皮膚科の薬の区分、記録したときの肌質など。商品名・薬の名前・日付・メモは含みません）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。</p>
 <p>受け取った統計は、スキンケアの研究と本サービスの改善に使い、<b>5人以上をまとめた集計結果</b>の形で、化粧品会社などの研究開発のために第三者に提供（有償の場合を含む）することがあります。特定の個人の記録が分かる形では提供しません。利用者は設定からいつでも協力をやめることができ、やめた時点で、受け取った統計（過去に受け取った分を含みます）を削除します。</p>
 <h3>5. 外部に送信される情報（電気通信事業法に基づく公表）</h3>
 <p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
@@ -13923,7 +13946,7 @@ ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', '�
 ${row('cdnjs（Cloudflare）', 'IPアドレス、ブラウザの情報', '3D表示の部品（three.js）の読み込み。3Dの顔を表示したとき')}
 ${row('Open Food Facts', '食事の写真に写っていたバーコードの数字（JANコード）だけ', '食品の栄養成分表示を調べるため。バーコードが写っていたときだけ')}
 ${row('Google（Gemini API）', '「写真から読み取る」「顔を撮って自動で記録」で選んだ写真（食事・化粧品のパッケージ・顔）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
-${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（区分だけ）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
+${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（区分だけ）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、肌に合わなかったときのアンケート（症状・時期・場所・強さ・成分の種類）、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
 <h3>5-2. 広告について（Google AdSense）</h3>
@@ -14241,8 +14264,34 @@ function researchSummary() {
     base:vec(logs), concerns:Object.fromEntries(Object.entries(conc).map(([c, n]) => [c, r2(n / Math.max(1, logs.length))])), ings:ings.slice(0, 80)};
 }
 const strHash = t => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+// 肌に合わなかった記録（アンケート）：研究に協力中の人だけ、1件ずつ送る（商品名・日付・メモは送らない）
+const rsCid = r => { if (!r.cid) { r.cid = (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16))); save(); } return r.cid; };
+function ngPayload(p) {
+  const n = p.ng, isRx = p.category === '皮膚科の塗り薬', full = !!String(fullIngsOfMy(p)).trim(), sn = n.snap || ngSnapNow();
+  return {v:1, cat:RS_CAT[p.category] || 'other', rx:isRx ? (rxKindOf(p.name) || '薬（種類不明）') : '',
+    ings:knownIngs(ingsOfMy(p)).map(k => k.entry.key).slice(0, 60), isrc:isRx ? 'rx' : full ? 'full' : ingsOfMy(p) ? 'main' : 'none',
+    sym:n.sym, when:n.when || '', level:n.level || '', where:n.where || [], newOther:!!n.newOther, stopped:p.status !== '使用中',
+    days:Math.max(0, Math.min(3650, diffDays(p.startDate, n.date))), timing:p.timing, freq:p.frequency,
+    skin:{type:sn.skinType || null, sensitive:!!sn.sensitive, age:sn.ageBand || null, gender:sn.gender || null, concerns:sn.concerns || [], diag:sn.diag || null}};
+}
+async function researchNgSync() {
+  const r = researchState(); if (!r || !r.on || !r.adult || researchNgSync.busy) return;
+  researchNgSync.busy = true;
+  try {
+    for (const p of state.myProducts.filter(x => x.ng && !x.demo && x.ng.rid)) {
+      const pl = ngPayload(p), h = strHash(JSON.stringify(pl)); if (p.ng.sentH === h) continue;
+      const res = await fetch(`${CLOUD.url}/rest/v1/rpc/research_ng_submit`, {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({cid:rsCid(r), rid:p.ng.rid, payload:pl})}).catch(() => null);
+      if (res && res.ok) { p.ng.sentH = h; save(); } else break;
+    }
+  } finally { researchNgSync.busy = false; }
+}
+async function researchNgDelete(rid) {
+  const r = researchState(); if (!r || !r.cid || !rid) return;
+  try { await fetch(`${CLOUD.url}/rest/v1/rpc/research_ng_delete`, {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({cid:r.cid, rid})}); } catch (e) { /* 何もしない */ }
+}
 async function researchSend(force) {
   const r = researchState(); if (!r.on) return false;
+  researchNgSync();
   const sm = researchSummary(); if (sm.n.logs < RESEARCH_MIN_LOGS) return false;
   const body = JSON.stringify(sm), h = strHash(body);
   if (!force && r.lastHash === h) return true;
@@ -14255,7 +14304,7 @@ async function researchSend(force) {
 }
 async function researchWithdraw() {
   const r = researchState(), cid = r.cid;
-  r.on = false; r.lastHash = ''; r.lastSent = ''; save();
+  r.on = false; r.lastHash = ''; r.lastSent = ''; state.myProducts.forEach(p => { if (p.ng) p.ng.sentH = ''; }); save();
   if (!cid) return true;
   try { const res = await fetch(`${CLOUD.url}/rest/v1/rpc/research_withdraw`, {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({cid})}); if (!res.ok) throw new Error(); r.cid = ''; save(); return true; }
   catch (e) { return false; }
@@ -14282,7 +14331,7 @@ function researchCardHtml() {
   return `<div class="card"><div class="card-h"><h2>研究への協力</h2><span class="chip ${r.on ? 'green' : ''}">${r.on ? '協力中' : 'オフ'}</span></div>
     <p class="small" style="margin:0 0 8px">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます。協力は任意で、いつでもやめられます。</p>
     <details class="fold"><summary>送る内容・送らない内容</summary>
-      <div class="rs-box"><b class="rs-h ok">送るもの</b><ul><li>肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）</li><li>皮膚科の薬の種類（「ニキビ」などの区分だけ）</li><li>記録の日数と、肌の状態の平均</li><li>成分ごとの「使った日と使わなかった日の肌の差」</li><li>使い始める前と後の肌の差</li></ul></div>
+      <div class="rs-box"><b class="rs-h ok">送るもの</b><ul><li>肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）</li><li>皮膚科の薬の種類（「ニキビ」などの区分だけ）</li><li>記録の日数と、肌の状態の平均</li><li>成分ごとの「使った日と使わなかった日の肌の差」</li><li>肌に合わなかったときのアンケート（症状・出るまでの時期・場所・強さ、その商品の種類と成分の種類、そのときの肌質など）</li><li>使い始める前と後の肌の差</li></ul></div>
       <div class="rs-box"><b class="rs-h ng">送らないもの</b><ul><li>日付・メモ・写真</li><li>商品名・ブランド名・薬の名前</li><li>食事の内容・メールアドレス・名前・位置</li></ul></div>
       <div class="rs-box"><b class="rs-h">しくみ</b><ul><li>送り先は、運営者のデータベース（Supabase・東京）です</li><li>端末ごとのランダムな番号で区別し、アカウントとはつなげません</li><li>5人以上をまとめた統計にしてから、化粧品会社などの研究開発に提供することがあります。一人ひとりの記録が分かる形では出しません</li><li>やめると、送ったデータも削除されます</li></ul></div>
       <div class="set-sub"><h3>送る内容のプレビュー（あなたの記録）</h3>${researchPreviewHtml()}</div>
@@ -14468,11 +14517,15 @@ const actions = {
   'ng-save': id => {
     const p = getMy(id); if (!p) return;
     const d = (document.getElementById('ng-date') || {}).value;
-    p.ng = {date:isValidYmd(d) && d <= todayStr() ? d : todayStr(), sym:[...document.querySelectorAll('.ng-sym input:checked')].map(i => i.value), note:String((document.getElementById('ng-note') || {}).value || '').trim().slice(0, 300)};
+    const pick = n => [...document.querySelectorAll(`#modal-root input[name="${n}"]:checked`)].map(i => i.value);
+    const old = p.ng || {};
+    p.ng = {date:isValidYmd(d) && d <= todayStr() ? d : todayStr(), sym:pick('ng-sym'), note:String((document.getElementById('ng-note') || {}).value || '').trim().slice(0, 300),
+      when:pick('ng-when')[0] || '', level:pick('ng-level')[0] || '', where:pick('ng-where'), newOther:!!(document.getElementById('ng-other') || {}).checked,
+      snap:old.snap || ngSnapNow(), rid:old.rid || uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20).padEnd(8, '0'), sentH:old.sentH || ''};
     const st = document.getElementById('ng-stop'); if (st && st.checked && p.status === '使用中') p.status = '一時停止';
-    save(); closeModal(); toast('記録しました'); render();
+    save(); closeModal(); toast('記録しました'); render(); researchNgSync();
   },
-  'ng-clear': id => { const p = getMy(id); if (!p || !p.ng) return; p.ng = null; save(); render(); toast('記録を消しました'); },
+  'ng-clear': id => { const p = getMy(id); if (!p || !p.ng) return; const rid = p.ng.rid; p.ng = null; save(); render(); toast('記録を消しました'); if (rid) researchNgDelete(rid); },
   'delete-my': async id => {
     const p = getMy(id); if (!p) return;
     if (!await confirmDialog(`「${p.name}」をMyアイテムから削除しますか？`, {ok:'削除する'})) return;
