@@ -15759,12 +15759,12 @@ function ptrRepaint() {
   const fix = () => {
     raf = 0;
     const bd = document.querySelector('#modal-root .modal-backdrop:not(.closing)'), a = document.activeElement;
-    const kb = !!(bd && a && bd.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !/^(checkbox|radio|button|file|range)$/.test(a.type || '') && window.innerHeight - vv.height > 120 && window.innerWidth < 640);
+    const kb = !!(bd && a && bd.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !/^(checkbox|radio|button|file|range)$/.test(a.type || '') && window.innerWidth < 640 && matchMedia('(pointer:coarse)').matches);
     if (cur && cur !== bd) { cur.classList.remove('kb'); cur.style.top = cur.style.height = ''; cur = null; }
     const root = document.documentElement.style;
     if (!kb) { if (cur) { cur.classList.remove('kb'); cur.style.top = cur.style.height = ''; cur = null; root.removeProperty('--kb-top'); } return; }
     cur = bd; bd.classList.add('kb');
-    bd.style.top = Math.round(vv.offsetTop) + 'px'; bd.style.height = Math.round(vv.height) + 'px';
+    bd.style.top = Math.round(vv.offsetTop - 300) + 'px'; bd.style.height = Math.round(vv.height + 300) + 'px'; // 上は少し余分におおう（ずれても後ろのページが見えないように）。下はキーボードの上ぴったり
     root.setProperty('--kb-top', Math.round(vv.offsetTop) + 'px'); root.setProperty('--kb-h', Math.round(vv.height) + 'px');
   };
   const q = () => { if (!raf) raf = requestAnimationFrame(fix); };
