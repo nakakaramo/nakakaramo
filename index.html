@@ -2726,7 +2726,7 @@ const CLOUD = {
   url:'https://qrcgdukoptqhprhksfou.supabase.co',          // Supabase の Project URL
   key:'sb_publishable_xtJnC2PNzWSlbUGFLWcwWQ_DhntVy35',      // Supabase の Publishable key（公開用）
   sdk:'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js',
-  testMode:true,                                             // 本番に切り替えたら false にします
+  testMode:false,                                            // 本番に切り替えたら false にします
   storageKey:'hadatomo-auth',
   google:true                                                // Supabase で Google ログインを設定したら true にします
 };
@@ -12694,137 +12694,61 @@ function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n ===
 const SYNC = {busy:false, timer:null, at:'', err:'', pending:false};
 const SYNC_ARRAYS = ['catalog', 'myProducts', 'skinLogs', 'lifeLogs', 'customFoods'];
 const isDataImg = v => typeof v === 'string' && v.startsWith('data:');
-function syncPayload(src) {
-  const d = JSON.parse(JSON.stringify(src || state));
+function syncPayload() {
+  const d = JSON.parse(JSON.stringify(state));
   const m = photoMap(), refs = {};
   photoWalk(d, (key, v, set) => { const p = photoPathOf(v, m); if (p) refs[key] = p; set(null); }); // 写真そのものは入れず、保存場所の目印だけ入れる
   d.photoRefs = refs;
   if (d.settings) { delete d.settings.wxLoc; delete d.settings.wxPlace; } // 今いる場所はクラウドに送らない（端末の中だけ）
   return d;
 }
-// クラウドのデータを使うとき、この端末にだけある写真は残す（食事の写真のような1段の入れ子も）
+// クラウドのデータを使うとき、この端末にだけある写真は残す
 function syncKeepPhotos(remote) {
   SYNC_ARRAYS.forEach(k => { const loc = new Map((state[k] || []).map(x => [x.id, x]));
-    (remote[k] || []).forEach(x => { const l = loc.get(x.id); if (!l) return; Object.keys(l).forEach(f => {
-      const v = l[f];
-      if (isDataImg(v)) { if (!x[f]) x[f] = v; }
-      else if (v && typeof v === 'object' && !Array.isArray(v)) Object.keys(v).forEach(g => { if (isDataImg(v[g])) { if (!x[f] || typeof x[f] !== 'object') x[f] = {}; if (!x[f][g]) x[f][g] = v[g]; } });
-    }); }); });
+    (remote[k] || []).forEach(x => { const l = loc.get(x.id); if (l) Object.keys(l).forEach(f => { if (isDataImg(l[f]) && !x[f]) x[f] = l[f]; }); }); });
   return remote;
 }
 const syncOn = () => !!(acct.client && acct.user); // ログインしていれば、登録したメールアドレスのアカウントに自動でバックアップする（オン・オフはなし）
 const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lifeLogs || []).some(l => !l.demo) || (s.myProducts || []).some(p => !p.isSample)));
-function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncNow, 2500); }
-
-// ===== 記録の合体：どの端末で記録しても、アカウントに全部残す =====
-// 肌・生活の記録は「日付ごと」、化粧品などは「1つずつ」、設定は「項目ごと」に比べて合体する。
-// 前回クラウドと合わせたときの中身（目印）を覚えておき、
-//   ・片方だけで変わったもの → 変わったほうを使う
-//   ・片方で消したもの（もう片方で変えていない） → 消す
-//   ・両方で同じものを別々に変えたとき（ほとんどない） → あとから保存したほうを使う
-const SYNC_KEYED = {skinLogs:'date', lifeLogs:'date', myProducts:'id', catalog:'id', customFoods:'id'};
-const SYNC_MAPS = ['settings', 'careLogs', 'routineLogs', 'weather'];
-const SYNC_SKIP = ['savedAt', 'version', 'photoRefs'];
-const SYNC_BASE_KEY = 'nk_sync_base';
-// 中身の目印（空の欄・null は「なし」として同じに扱う）
-const syncH = v => v === undefined ? undefined : phHash(JSON.stringify(v, (k, x) => (x === null || x === '') ? undefined : x) || '');
-const syncKeyOf = (n, x) => x && x[SYNC_KEYED[n]] ? String(x[SYNC_KEYED[n]]) : '';
-const syncIsObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
-function syncHashes(d) {
-  const o = {};
-  Object.keys(d || {}).forEach(n => { if (SYNC_SKIP.includes(n)) return; const v = d[n];
-    if (SYNC_KEYED[n] && Array.isArray(v)) { const m = {}; v.forEach(x => { const k = syncKeyOf(n, x); if (k && !(k in m)) m[k] = syncH(x); }); o[n] = m; }
-    else if (SYNC_MAPS.includes(n) && syncIsObj(v)) { const m = {}; Object.keys(v).forEach(k => { m[k] = syncH(v[k]); }); o[n] = m; }
-    else o[n] = syncH(v); });
-  return o;
-}
-function syncBaseGet() { try { const b = JSON.parse(localStorage.getItem(SYNC_BASE_KEY) || 'null'); return b && b.uid && b.h ? b : null; } catch (e) { return null; } }
-function syncBaseSet(d) { try { localStorage.setItem(SYNC_BASE_KEY, JSON.stringify({uid:acct.user.id, h:syncHashes(d)})); } catch (e) { /* 何もしない */ } }
-// 1つの項目を、前回の中身（b）・この端末（lv）・クラウド（rv）から決める。undefined は「消す」
-function syncPick(b, lv, rv, preferLocal) {
-  const hasL = lv !== undefined, hasR = rv !== undefined;
-  if (hasL && hasR) { const hl = syncH(lv), hr = syncH(rv); if (hl === hr) return lv; if (b !== undefined && hl === b) return rv; if (b !== undefined && hr === b) return lv; return preferLocal ? lv : rv; }
-  if (hasL) return b !== undefined && syncH(lv) === b ? undefined : lv; // クラウドで消した（この端末では変えていない）→ 消す。前回なかった → この端末で追加した
-  if (hasR) return b !== undefined && syncH(rv) === b ? undefined : rv; // この端末で消した → 消す。前回なかった → ほかの端末で追加した
-  return undefined;
-}
-function syncMerge(base, L, R, preferLocal) {
-  const out = {};
-  new Set(Object.keys(L).concat(Object.keys(R))).forEach(n => {
-    if (SYNC_SKIP.includes(n)) return;
-    const b = base ? base[n] : undefined, lv = L[n], rv = R[n];
-    if (SYNC_KEYED[n] && (Array.isArray(lv) || Array.isArray(rv))) {
-      const lm = new Map(), rm = new Map(), bm = syncIsObj(b) ? b : {};
-      (Array.isArray(lv) ? lv : []).forEach(x => { const k = syncKeyOf(n, x); if (k && !lm.has(k)) lm.set(k, x); });
-      (Array.isArray(rv) ? rv : []).forEach(x => { const k = syncKeyOf(n, x); if (k && !rm.has(k)) rm.set(k, x); });
-      const res = [];
-      Array.from(lm.keys()).concat(Array.from(rm.keys()).filter(k => !lm.has(k))).forEach(k => { const v = syncPick(bm[k], lm.get(k), rm.get(k), preferLocal); if (v !== undefined) res.push(v); });
-      out[n] = res;
-    } else if (SYNC_MAPS.includes(n) && (syncIsObj(lv) || syncIsObj(rv))) {
-      const lo = syncIsObj(lv) ? lv : {}, ro = syncIsObj(rv) ? rv : {}, bm = syncIsObj(b) ? b : {}, res = {};
-      new Set(Object.keys(lo).concat(Object.keys(ro))).forEach(k => { const v = syncPick(bm[k], lo[k], ro[k], preferLocal); if (v !== undefined) res[k] = v; });
-      out[n] = res;
-    } else { const v = syncPick(typeof b === 'string' ? b : undefined, lv, rv, preferLocal); if (v !== undefined) out[n] = v; }
-  });
-  out.photoRefs = Object.assign({}, R.photoRefs || {}, L.photoRefs || {}); // 写真の目印は両方あわせる
-  return out;
-}
-const syncSame = (a, b) => syncH(Object.assign({}, a, {savedAt:0})) === syncH(Object.assign({}, b, {savedAt:0}));
-// クラウドと合わせる（起動したとき・アプリに戻ったとき・記録を保存したとき）
-async function syncNow() {
+function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncPush, 2500); }
+async function syncPush() {
   if (!syncOn()) return;
-  await PHOTO_READY; // 写真を読み込み終わってから（読み込み前に送ると、写真の目印が抜けるため）
+  await PHOTO_READY; // 写真を読み込み終わってから送る（読み込み前に送ると、写真の目印が抜けるため）
   if (SYNC.busy) { SYNC.pending = true; return; }
   SYNC.busy = true; SYNC.err = '';
-  let pulled = false;
   try {
     const more = await photoUpload(); if (more) SYNC.pending = true; // 先に写真を送る（送れた写真だけ目印をつける）
-    const uid = acct.user.id;
-    for (let tries = 0; tries < 4; tries++) {
-      const sv = state.savedAt;
-      const {data:row, error} = await acct.client.from('user_data').select('data, updated_at').eq('user_id', uid).maybeSingle();
-      if (error) throw error;
-      const L = syncPayload(state);
-      let M, R = null;
-      if (row && row.data) {
-        R = syncPayload(normalize(row.data)); R.photoRefs = (row.data && row.data.photoRefs) || {};
-        const base = syncBaseGet();
-        if (base && base.uid !== uid) M = R; // 別のアカウントでログインした → そのアカウントのデータを使う
-        else M = syncMerge(base && base.h, L, R, (state.savedAt || 0) > Date.parse(row.updated_at || 0));
-      } else M = L;
-      M.savedAt = Date.now();
-      let at = row && row.updated_at;
-      if (!R || !syncSame(M, R)) { // クラウドに足りないものがある → 保存する（ほかの端末が同時に保存していたら、やり直す）
-        const now = new Date().toISOString();
-        if (!row) { const {error:e2} = await acct.client.from('user_data').insert({user_id:uid, data:M, updated_at:now}); if (e2) { if (String(e2.code) === '23505') continue; throw e2; } }
-        else { const {data:upd, error:e2} = await acct.client.from('user_data').update({data:M, updated_at:now}).eq('user_id', uid).eq('updated_at', row.updated_at).select('user_id'); if (e2) throw e2; if (!upd || !upd.length) continue; }
-        at = now;
-      }
-      syncBaseSet(M);
-      SYNC.at = at || ''; try { localStorage.setItem('nakakaramo_sync_at', SYNC.at); } catch (e) { /* 何もしない */ }
-      if (state.savedAt !== sv) { SYNC.pending = true; break; } // 合わせている間にこの端末で記録した → もう一度合わせる
-      if (R && !syncSame(Object.assign({}, M, {photoRefs:0}), Object.assign({}, L, {photoRefs:0}))) { // ほかの端末の記録を取り込む
-        const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace, keepAt = state.savedAt;
-        const ns = normalize(syncKeepPhotos(JSON.parse(JSON.stringify(M))));
-        ns.settings.cloudSync = keepSync; ns.settings.wxLoc = keepLoc; ns.settings.wxPlace = keepPlace; ns.savedAt = keepAt;
-        state = ns; try { localStorage.setItem(STORE_KEY, stateJSON()); } catch (e) { /* 何もしない */ }
-        pulled = true; render();
-      }
-      if (R) setTimeout(() => photoRestore(M.photoRefs), 300); // この端末にない写真も読み込む
-      break;
-    }
-  } catch (e) { SYNC.err = 'クラウドと同期できませんでした（電波のよい場所で自動でやり直します）'; }
+    const now = new Date().toISOString();
+    const {error} = await acct.client.from('user_data').upsert({user_id:acct.user.id, data:syncPayload(), updated_at:now});
+    if (error) throw error;
+    SYNC.at = now; try { localStorage.setItem('nakakaramo_sync_at', now); } catch (e) {}
+  } catch (e) { SYNC.err = 'クラウドに保存できませんでした（電波のよい場所で自動でやり直します）'; }
   SYNC.busy = false; syncPaint();
-  if (pulled) toast('ほかの端末の記録を取り込みました');
   if (SYNC.pending) { SYNC.pending = false; syncSoon(); }
 }
-// これまでの呼び方も、すべて「合わせる」にする（「どちらのデータを使いますか？」は出さない）
-function syncPush() { return syncNow(); }
-function syncPull() { return syncNow(); }
-function syncApply(row) { syncNow(); }
-// アプリに戻ってきたとき（ほかの端末で記録したあと）・電波が戻ったときにも合わせる
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && syncOn()) syncNow(); });
-window.addEventListener('online', () => { if (syncOn()) syncSoon(); });
+// 起動・ログインのとき：クラウドのほうが新しければ、この端末のデータを置き換える（写真は残す）
+async function syncPull(ask) {
+  if (!syncOn()) return;
+  await PHOTO_READY;
+  try {
+    const {data, error} = await acct.client.from('user_data').select('data, updated_at').eq('user_id', acct.user.id).maybeSingle();
+    if (error) throw error;
+    if (!data) { syncPush(); return; } // まだクラウドに何もない → この端末のデータを保存
+    const last = (() => { try { return localStorage.getItem('nakakaramo_sync_at') || ''; } catch (e) { return ''; } })();
+    const localNewer = (state.savedAt || 0) > Date.parse(last || 0) + 1000; // 最後にクラウドに保存したあと、この端末で変更した
+    if (data.updated_at <= last && localNewer) { syncPush(); return; }
+    if (data.updated_at <= last) return; // 同じ
+    if (ask && hasRecords(state) && localNewer) { syncAsk(data); return; } // 両方に新しい記録がある → どちらを使うか聞く
+    syncApply(data);
+  } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); }
+}
+function syncApply(row) {
+  const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace;
+  state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
+  try { localStorage.setItem(STORE_KEY, stateJSON()); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
+  SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
+  setTimeout(() => photoRestore(row.data && row.data.photoRefs), 300); // この端末にない写真も読み込む
+}
 // ===== 写真のバックアップ：ログインしている人の写真を、本人だけが見られる保存場所（Supabase Storage の photos）に入れる =====
 // 記録のバックアップ（user_data）には写真そのものは入れず、「どの写真か」の目印（photoRefs）だけを入れる
 const PHOTO = {off:false, busy:false};
@@ -14561,7 +14485,7 @@ document.addEventListener('change', async e => {
   const on = e.target.checked;
   state.settings.cloudSync = on; save(); hapticSaved();
   if (on) { toast('クラウドに保存します'); await syncPull(true); syncPush(); }
-  else { clearTimeout(SYNC.timer); try { if (acct.client && acct.user) await acct.client.from('user_data').delete().eq('user_id', acct.user.id); localStorage.removeItem('nakakaramo_sync_at'); localStorage.removeItem(SYNC_BASE_KEY); } catch (err) {} SYNC.at = ''; toast('クラウドのデータを消しました（この端末のデータは残ります）'); }
+  else { clearTimeout(SYNC.timer); try { if (acct.client && acct.user) await acct.client.from('user_data').delete().eq('user_id', acct.user.id); localStorage.removeItem('nakakaramo_sync_at'); } catch (err) {} SYNC.at = ''; toast('クラウドのデータを消しました（この端末のデータは残ります）'); }
   syncPaint();
 });
 // 設定の肌悩み：押したらすぐ保存
