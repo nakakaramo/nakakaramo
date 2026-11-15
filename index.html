@@ -15769,7 +15769,7 @@ function ptrRepaint() {
   };
   const q = () => { if (!raf) raf = requestAnimationFrame(fix); };
   vv.addEventListener('scroll', q); vv.addEventListener('resize', q); window.addEventListener('scroll', q, {passive:true});
-  document.addEventListener('focusin', () => { q(); setTimeout(q, 120); setTimeout(q, 400); });
+  document.addEventListener('focusin', () => { q(); [120, 300, 500, 800, 1200].forEach(t => setTimeout(q, t)); }); // キーボードが出きるまで何回か合わせ直す
   document.addEventListener('focusout', () => setTimeout(q, 80));
 })();
 (function lockBottomNav() { const nav = document.getElementById('bottom-nav'); if (nav) nav.addEventListener('touchmove', e => { if (e.cancelable) e.preventDefault(); }, {passive:false}); })();
