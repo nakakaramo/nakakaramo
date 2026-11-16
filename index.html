@@ -1492,7 +1492,8 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y;position:relative}
-.ld-card .ld-top{position:absolute;top:10px;right:10px;left:auto;margin:0;z-index:6}
+.ld-card .ld-top{position:absolute;top:calc(21px + 190px - 40px);right:10px;left:auto;margin:0;z-index:6} /* 3D⇄写真とカレンダーは、顔の下の両はし（顔に重ならないように） */
+.ld-card .ld-vsw{top:calc(21px + 190px - 30px)}
 .ld-card .ld-cal{right:0;left:auto}
 /* 3Dの顔⇄顔写真の切り替え（左上の小さなスイッチ。押すたびに切り替わる） */
 .ld-vsw{position:absolute;top:14px;left:14px;z-index:6;display:grid;grid-template-columns:1fr 1fr;padding:2px;background:var(--bg);border-radius:999px;border:1px solid var(--line);font:inherit;cursor:pointer}
@@ -10373,8 +10374,8 @@ function logDayList() { return logsDesc().slice().reverse(); } // 古い順
 function logDayIdx(list) { let i = list.findIndex(l => l.date === ui.logDay); if (i < 0) i = list.length - 1; return i; }
 function logDayInfoHtml(list, i) {
   const l = list[i]; if (!l) return '';
-  const life = lifeMap()[l.date], sm = life ? sleepMin(life) : null;
-  return `<div class="ld-date"><b>${fmtMD(l.date)}</b></div><div class="ld-sleep small muted">睡眠 ${sm != null ? esc(fmtHM(sm)) : "未記録"}</div>
+
+  return `<div class="ld-date"><b>${fmtMD(l.date)}</b></div>
     <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
 }
 // その日の記録の詳しい内容（記録一覧にあった情報を、ここにまとめて表示）
