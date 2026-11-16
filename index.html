@@ -12470,6 +12470,10 @@ document.addEventListener('touchstart', () => {}, {passive:true});
 const ROOT_R = ['home', 'log', 'routine', 'my', 'account'];
 const isRootHash = h => { if (!h || h === '#' || h === '#/') return true; const m = /^#\/([a-z]+)\/?$/.exec(h); return !!(m && ROOT_R.includes(m[1])); };
 let NAV_D = 0, REWIND = null, NAV_PASS = false;
+// 履歴の深さごとの画面（DEPTH_H[d]）。同じ画面にもう一度進むときは、新しく積まずにそこまで巻き戻す
+// （A→B→A→B…と積み重なって、戻るボタンで行ったり来たりのループになるのを防ぐ）
+const DEPTH_H = [];
+const navHashKey = h => (!h || h === '#' || h === '#/') ? '#/home' : h;
 try {
   const st = history.state;
   if (st && typeof st.d === 'number') NAV_D = st.d;
@@ -12479,24 +12483,30 @@ try {
     history.replaceState({d:0}, '', root); history.pushState({d:1}, '', here); NAV_D = 1;
   }
 } catch (e) { /* 何もしない */ }
+DEPTH_H[NAV_D] = navHashKey(location.hash); if (NAV_D === 1 && !DEPTH_H[0]) { const m = /^#\/([a-z]+)/.exec(location.hash); DEPTH_H[0] = m && ROOT_R.includes(m[1]) ? '#/' + m[1] : '#/home'; }
 const finishRewind = () => {
   const t = REWIND; if (!t) return; REWIND = null; clearTimeout(t.timer);
-  try { history.replaceState({d:0}, '', t.to); } catch (e) { /* 何もしない */ }
-  NAV_D = 0; NAV_PASS = true; window.dispatchEvent(new HashChangeEvent('hashchange'));
+  const d = t.d || 0;
+  try { history.replaceState({d}, '', t.to); } catch (e) { /* 何もしない */ }
+  NAV_D = d; DEPTH_H.length = d + 1; DEPTH_H[d] = navHashKey(t.to); NAV_PASS = true; window.dispatchEvent(new HashChangeEvent('hashchange'));
 };
 window.addEventListener('popstate', () => { if (REWIND) setTimeout(finishRewind, 0); });
 window.addEventListener('hashchange', e => {
   if (NAV_PASS) { NAV_PASS = false; return; }
   if (REWIND) { e.stopImmediatePropagation(); return; } // 巻き戻している途中の画面は出さない
   const st = history.state;
-  if (st && typeof st.d === 'number') { NAV_D = st.d; return; } // 戻る・進む
+  if (st && typeof st.d === 'number') { NAV_D = st.d; DEPTH_H[NAV_D] = navHashKey(location.hash); return; } // 戻る・進む
   if (isRootHash(location.hash)) { // 主なページへ移るとき：新しく積まずに、一番下の主なページと入れ替える
     e.stopImmediatePropagation();
-    REWIND = {to:location.hash, timer:setTimeout(finishRewind, 700)};
+    REWIND = {to:location.hash, d:0, timer:setTimeout(finishRewind, 700)};
     history.go(-(NAV_D + 1));
     return;
   }
-  NAV_D += 1; try { history.replaceState({d:NAV_D}, '', location.href); } catch (err) { /* 何もしない */ }
+  { // 今の履歴の中にすでにある画面へ進むとき：そこまで巻き戻す（同じ画面を2回積まない＝戻るでループしない）
+    const k = navHashKey(location.hash), i = DEPTH_H.lastIndexOf(k);
+    if (i >= 1 && i <= NAV_D) { e.stopImmediatePropagation(); REWIND = {to:location.hash, d:i, timer:setTimeout(finishRewind, 700)}; history.go(-(NAV_D + 1 - i)); return; }
+  }
+  NAV_D += 1; DEPTH_H.length = NAV_D + 1; DEPTH_H[NAV_D] = navHashKey(location.hash); try { history.replaceState({d:NAV_D}, '', location.href); } catch (err) { /* 何もしない */ }
 });
 const NAV_SRC = {bar:0, back:0};
 // 画面の中を押さずに履歴が戻った（iPhoneの左の端からなぞる・ブラウザの戻る）ときを見分ける
@@ -15949,9 +15959,8 @@ window.addEventListener('hashchange', () => {
   if (navStack.length > 50) navStack.splice(0, navStack.length - 50);
 });
 function goBack(fallback) {
-  if (NAV_D > 0 && navStack.length > 1) { history.back(); return; } // 本当に1つ前の履歴へ戻る（なぞって戻るのと同じ）
-  if (navStack.length > 1) { const to = navStack[navStack.length - 2]; location.hash = to; }
-  else location.hash = fallback || '#/home';
+  if (NAV_D > 0) { history.back(); return; } // 本当に1つ前の履歴へ戻る（なぞって戻るのと同じ。同じ画面は2回積まないので、ループしない）
+  if (!isRootHash(location.hash)) location.hash = fallback || '#/home'; // いちばん下の履歴：リンク先（主なページ）へ。主なページにいるときは何もしない（前に見た画面へ進んでしまわないように）
 }
 // 画面にある「← ○○」の戻るリンクも、来た画面に戻る（来た画面がなければ、リンク先へ）
 document.addEventListener('click', e => {
