@@ -2592,6 +2592,7 @@ html[data-theme="dark"] button.cm-c.own{background:rgba(80,130,180,.18);color:#A
 .care-link{display:inline;padding:0;margin:0;border:0;background:none;font:inherit;color:var(--green-d);text-decoration:underline;text-decoration-color:var(--green);text-underline-offset:3px;text-decoration-thickness:1.5px;cursor:pointer}
 .pc-mini{display:block;color:var(--ink)}.pc-mini-s{font-size:11.5px;font-weight:500;color:var(--muted);margin-left:2px}
 .pc-mini-h{color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;margin-bottom:8px}.pc-mini-h svg{width:18px;height:18px;color:var(--green-d)}.pc-mini-h b{flex:1;font-size:15px;white-space:nowrap}.pc-mini-s{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pc-mini-h i{font-style:normal;color:var(--muted)}
+/* 「›」は見出しの文字と同じ高さ・細い線（戻るの「<」と同じ形） */.pc-mini-chev{flex:none;width:calc(15px * 24 / 14);height:calc(15px * 24 / 14);margin-right:-4px;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat}
 html[data-theme="dark"] .pc-tr.up,html[data-theme="dark"] .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}html[data-theme="dark"] .pc-tr.down,html[data-theme="dark"] .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}html[data-theme="dark"] .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pc-tr.up,:root:not([data-theme="light"]) .pc-v.review{background:rgba(230,130,100,.16);color:#F0A58E}:root:not([data-theme="light"]) .pc-tr.down,:root:not([data-theme="light"]) .pc-v.keep{background:rgba(90,150,110,.16);color:#9FD0AE}:root:not([data-theme="light"]) .pc-v.cut{background:rgba(200,160,60,.16);color:#E8C77A}}
 html[data-theme="dark"] button.cm-c.good{box-shadow:inset 0 0 0 1px rgba(120,180,140,.35)}html[data-theme="dark"] button.cm-c.bad{box-shadow:inset 0 0 0 1px rgba(230,130,100,.35);color:#F0A58E}
@@ -4193,8 +4194,14 @@ function hapticizeKeep(btn) {
   wrap.style.gridColumn = cs.gridColumn; wrap.style.gridRow = cs.gridRow;
   if (full) wrap.style.width = '100%';
   if (cs.flexGrow !== '0') { wrap.style.flexGrow = cs.flexGrow; wrap.style.flexBasis = cs.flexBasis; wrap.style.minWidth = '0'; } // flex:1 のボタンは、包んだあとも同じ幅に並ぶように
+  const r0 = btn.getBoundingClientRect();
   btn.parentNode.insertBefore(wrap, btn); wrap.appendChild(btn);
   if (full || cs.gridColumn !== 'auto') btn.style.width = '100%';
+  // 包んだことでボタンの位置がずれたら（右寄せの margin-left:auto など）、包む箱に同じ寄せ方をつける
+  if (Math.abs(btn.getBoundingClientRect().left - r0.left) > 2) {
+    for (const [k, v] of [['marginLeft', 'auto'], ['marginRight', 'auto'], ['marginLeft', cs.marginLeft]]) { wrap.style.marginLeft = wrap.style.marginRight = ''; wrap.style[k] = v; if (Math.abs(btn.getBoundingClientRect().left - r0.left) <= 2) break; }
+    if (Math.abs(btn.getBoundingClientRect().left - r0.left) > 2) { wrap.style.marginLeft = wrap.style.marginRight = ''; }
+  }
   const lb = document.createElement('label'); lb.className = 'hap-ov'; lb.setAttribute('aria-hidden', 'true');
   const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
   lb.appendChild(ip); wrap.appendChild(lb);
@@ -13268,12 +13275,14 @@ function mycareMiniHtml() {
     if (topics(txt).some(k => used.has(k))) {
       const rest = txt.split(/[、。]/).map(x => x.trim()).filter(x => x && !topics(x).some(k => used.has(k)));
       if (!rest.length || rest.join('').length < 6) return;
-      txt = endFix(rest.join('、')); html = careLinkHtml(txt, G);
+      txt = endFix(rest.join('、'));
+      if (!/(る|う|す|く|つ|ぶ|む|ぐ|ない|だけ|よう|ず|まで)$/.test(txt)) return; // 文の途中で切れた（例：「化粧水のあと」）ときは出さない
+      html = careLinkHtml(txt, G);
     }
     topics(txt).forEach(k => used.add(k)); top.push({html, txt});
   });
   if (!top.length && !(A.ask || []).length) return '';
-  return `<div class="card pc-mini"><a class="pc-mini-h" href="#/mycare">${icon('spark')}<b>今日のポイント</b><small class="pc-mini-s">いちばん大事なこと3つ</small><i>›</i></a>${top.length ? `<ol class="pc-ol">${top.map(c => `<li>${c.html}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</div>`;
+  return `<div class="card pc-mini"><a class="pc-mini-h" href="#/mycare">${icon('spark')}<b>今日のポイント</b><span class="pc-mini-chev" aria-hidden="true"></span></a>${top.length ? `<ol class="pc-ol">${top.map(c => `<li>${c.html}</li>`).join('')}</ol>` : `<p class="small">${esc(A.ask[0].t)}</p>`}</div>`;
 }
 
 function viewCharts() {
