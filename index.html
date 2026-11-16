@@ -2916,7 +2916,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
   ['自動バックアップ（ログインした場合）', '○', '○'],
   [`${PREMIUM_NAME}で増える`],
   ['今日のおすすめケア（記録・天気・あなたの肌の学習から）', '—', '○'],
-  ['ケア管理（朝・夜の順番、おすすめ成分・控えたい成分）', '—', '○'],
+  ['ケア管理（朝・夜の順番、おすすめ成分・控えたいもの）', '—', '○'],
   ['顔を撮って、肌を自動で記録（ガイド付きの撮影）', '—', '○'],
   ['化粧品のパッケージ・成分表示を写真から読み取り', '—', '○'],
   ['食事の写真・栄養成分表示から読み取り', '—', '○'],
@@ -9284,7 +9284,7 @@ const careLocked = () => PREMIUM_LOCK && !isPremium() && !careLockLoading();
 function careLockHtml(what) {
   return `<div class="card care-lock">${icon('lock')}<h2><span>${esc(what)}は</span><span>${PREMIUM_NAME}の機能です</span></h2>
     <p class="small cl-lead"><span>肌の記録・天気・使っている化粧品から、</span><span>あなたに合うケアを作ります。</span></p>
-    <ul class="care-lock-l">${['朝・夜のケアの順番', 'おすすめ成分・控えたい成分', '今日のおすすめ（肌・睡眠・食事・運動）', '今日のポイント・献立の提案・AIの分析'].map(t => `<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${t}</span></li>`).join('')}</ul>
+    <ul class="care-lock-l">${['朝・夜のケアの順番', 'おすすめ成分・控えたいもの', '今日のおすすめ（肌・睡眠・食事・運動）', '今日のポイント・献立の提案・AIの分析'].map(t => `<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${t}</span></li>`).join('')}</ul>
     <button type="button" class="btn btn-primary" data-psheet="${esc(what)}" style="width:100%;justify-content:center">${PREMIUM_NAME}プランを見る</button>
     <p class="small muted cl-note">新しく登録すると、3日間無料で使えます。</p></div>`;
 }
@@ -9847,7 +9847,7 @@ function rtPaneHtml(slot) {
       <p class="cm-how no-ph">${ingLinkHtml(esc(s.how), s._lk = new Set())}</p>
       ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(x.t, s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${s.k === 'serum' || s.k === 'toner' || s.k.startsWith('spot:') || s === drugStep ? 'おすすめ成分' : 'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
-      ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい成分</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
+      ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
     </div></li>`;
   // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
   const nk = v => normIng(chipText(v));
@@ -9866,7 +9866,7 @@ function rtPaneHtml(slot) {
   // 持っている商品を「今は控える」と言っている成分は、ほかの手順でもおすすめしない（「控えて」と「おすすめ」が同じ成分にならないように）
   P.steps.forEach(st => { st.good = st.good.filter(v => { let ks = []; try { ks = masterIngsOf(chipText(v)).map(e => e.k); } catch (e) { ks = []; } return !ks.some(k => PAUSED.has(k)); }); });
   let h = '';
-  if (quick) h += `<p class="small muted rt-qnote">時短：${slot === 'am' ? '洗う・保湿・日焼け止め' : '落とす・保湿'}${P.steps.some(s => s.k.startsWith('rx:')) ? '・皮膚科の薬' : ''}だけにしています${cut.length ? `（${[...new Set(cut.map(s => s.name.replace(/[（(].*?[）)]/g, '')))].join('・')}は省いています）` : ''}。</p>`;
+  if (quick && cut.length) h += `<p class="small muted rt-qnote">${[...new Set(cut.map(s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^部分用$/, '部分用のケア')))].join('・')}を省いています。</p>`; // 時短：省いた手順だけを短く書く
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${ingLinkHtml(esc(t))}</p>`).join('')}</div>`;
@@ -12136,7 +12136,7 @@ function adviceLocal(d) {
   return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
 }
 // おすすめ・控えたいもののラベル（角度ごと）
-const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい成分'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
+const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
 // 説明を短く：最初の1文（短すぎるときは2文）だけにする
 // 成分の説明と効果（簡潔に）：成分マスター（作用・効果）を優先し、なければ辞典の説明から、産地などのどうでもいい文は外す
 // 成分マスターの元のデータ（作用・効果・副作用）を名前で探す
@@ -13195,7 +13195,7 @@ function openStepSheet(k) {
   def.forEach(v => { if (good.length < 4 && !good.includes(v)) good.push(v); });
   const T = STEP_T[k] || [k, 'おすすめの成分'];
   openModal({title:esc(T[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><h3 class="ing-h" style="margin-top:0">${esc(T[1])}</h3><div class="pc-ings">${good.map(v => `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(v)}" data-avoid="${esc(JSON.stringify(avoid))}">${esc(chipText(v))}<i>›</i></button>`).join('')}</div>
-    ${avoid.length ? `<h3 class="ing-h">控えたい成分</h3><div class="pc-ings">${avoid.map(v => `<button type="button" class="cm-c bad cm-ing-b" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>`).join('')}</div>` : ''}
+    ${avoid.length ? `<h3 class="ing-h">控えたい</h3><div class="pc-ings">${avoid.map(v => `<button type="button" class="cm-c bad cm-ing-b" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>`).join('')}</div>` : ''}
     <p class="small muted" style="margin-top:10px">成分を押すと、説明とおすすめの商品が見られます。</p></div>`});
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-stepsheet]'); if (!b) return; hapticTick(); openStepSheet(b.dataset.stepsheet); });
