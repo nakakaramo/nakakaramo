@@ -287,6 +287,11 @@ label.btn{position:relative}
 .back{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:0;line-height:0;text-decoration:none;margin-bottom:12px;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}
 .back::before{content:"";width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E") center/contain no-repeat}
 .back:active{transform:scale(.92)}
+/* 戻るボタンは画面の中に出さず、上の見出しの前の「＜」にまとめる（見出しごと押すと戻る） */
+#main .back{display:none!important}
+.top-title.tt-back{cursor:pointer;display:inline-flex;align-items:center;gap:2px;margin-left:-6px;-webkit-tap-highlight-color:transparent}
+.top-title.tt-back:active{opacity:.6}
+.tt-chev{width:24px;height:24px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E") center/contain no-repeat}
 .back-btn{background:none;border:0;padding:4px 0;font-family:inherit;cursor:pointer}
 .empty{text-align:center;padding:24px 12px}
 .empty .em-icon{width:56px;height:56px;border-radius:50%;background:var(--green-p);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
@@ -15805,6 +15810,16 @@ window.addEventListener('resize', () => { if (document.querySelector('.home-tabs
 // 上の帯の高さを測って、タブのバーをそのすぐ下にくっつける
 function setTbh() { const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px'); }
 window.addEventListener('resize', setTbh); window.addEventListener('orientationchange', () => setTimeout(setTbh, 300));
+// 上の見出しの前に「＜」を付ける（画面の中に戻るボタンがあるときだけ）。押すと、その戻るボタンを押したことにする
+function topBack() {
+  const h = document.querySelector('.topbar .top-title'), bk = document.querySelector('#main .back');
+  if (!h) return;
+  const on = !!bk; h.classList.toggle('tt-back', on);
+  if (on) { h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-label', `戻る（${h.dataset.t || ''}）`); if (!h.querySelector('.tt-chev')) h.insertAdjacentHTML('afterbegin', '<span class="tt-chev" aria-hidden="true"></span>'); }
+  else { h.removeAttribute('role'); h.removeAttribute('tabindex'); h.removeAttribute('aria-label'); const c = h.querySelector('.tt-chev'); if (c) c.remove(); }
+}
+document.addEventListener('click', e => { const h = e.target.closest && e.target.closest('.topbar .top-title.tt-back'); if (!h) return; const bk = document.querySelector('#main .back'); if (bk) { hapticTick(); bk.click(); } });
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.topbar .top-title.tt-back')) { e.preventDefault(); e.target.click(); } });
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
@@ -15862,6 +15877,7 @@ function render() {
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
   setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'account' && /^(body|settings|privacy)\/\d+$/.test(r.id) ? ((accItems(r.id.split('/')[0])[Number(r.id.split('/')[1])] || {}).t || '') : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  topBack(); // 画面の中の戻るボタンは出さずに、上の見出しの前に「＜」を付けて、見出しごと押すと戻る
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
