@@ -13932,8 +13932,19 @@ function gateSync() {
     (async () => { for (let i = 0; i < 40 && acct.user && SYNC.pulledFor !== acct.user.id; i++) await new Promise(r => setTimeout(r, 250)); // クラウドの読み込みが終わってから（戻ったデータに肌質診断の答えがあれば、出さない）
       setTimeout(() => { if (acct.user && !state.settings.onboarded && !$('#modal-root').innerHTML) openSetupWizard(); }, 300); })(); }
 }
+// 端末ID（ランダムな番号。同じ端末でアカウントを作り直して、無料お試し・紹介の特典をくり返し受けられないようにする）
+function deviceId() {
+  try { let d = localStorage.getItem('nk_devid'); if (!/^[0-9a-f-]{36}$/.test(d || '')) { d = crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); localStorage.setItem('nk_devid', d); } return d; } catch (e) { return ''; }
+}
+let DEVICE_CHECKED = '';
+async function deviceCheck() {
+  if (!acct.user || DEVICE_CHECKED === acct.user.id) return; DEVICE_CHECKED = acct.user.id;
+  const device = deviceId(); if (!device) return;
+  try { const d = await callBilling('device', {device}); if (d && d.trialCut) setTimeout(() => toast('この端末では、すでに別のアカウントで無料お試しを使っているため、お試しは終了しました'), 600); } catch (e) { DEVICE_CHECKED = ''; }
+}
 async function refreshSub() {
   if (!acct.client || !acct.user) { acct.sub = null; acct.subLoaded = true; rerenderAcct(); return; }
+  try { await Promise.race([deviceCheck(), new Promise(r => setTimeout(r, 5000))]); } catch (e) { /* 何もしない（5秒で先に進む） */ }
   try {
     const {data, error} = await acct.client.from('subscriptions').select('*').eq('user_id', acct.user.id).maybeSingle();
     if (!error) acct.sub = data || null;
@@ -14261,7 +14272,7 @@ async function refLoad() {
 async function refRedeem(code, manual) {
   if (!acct.user || acct.refRedeeming) return; acct.refRedeeming = true;
   try {
-    const d = await callBilling('ref_redeem', {code});
+    const d = await callBilling('ref_redeem', {code, device:deviceId()});
     lsSet(REF_DONE, '1'); lsSet(REF_KEY, null);
     await refreshSub();
     const g = grantInfo();
@@ -14346,7 +14357,7 @@ const SNS_ICON = {
   x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'};
 const LEGAL = {
   draft: false,              // 下書きのあいだは true（画面に「下書き」と表示）。2026-11-15 に正式に公開
-  updated: '2026年11月15日',  // 最終改定日
+  updated: '2026年11月16日',  // 最終改定日
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額600円（税込）または年額6,000円（税込）'
@@ -14427,7 +14438,7 @@ function viewPrivacy() {
 <li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」「顔を撮って自動で記録」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
 <li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li>
 <li><b>エラーの情報</b>：本サービスの画面で不具合（エラー）が起きたとき、エラーの内容・起きた画面の種類・ブラウザの種類・ログインしているかどうか。肌の記録・写真・メールアドレスなどは含みません。不具合を直すためだけに使い、30日で自動で消します。</li>
-<li><b>お試し・お友だち紹介の情報</b>：無料のお試し期間・紹介の特典の期間、紹介コード、だれの紹介で登録したか（紹介した人・された人のアカウントの組み合わせ）。</li></ol>
+<li><b>お試し・お友だち紹介の情報</b>：無料のお試し期間・紹介の特典の期間、紹介コード、だれの紹介で登録したか（紹介した人・された人のアカウントの組み合わせ）。また、同じ端末でアカウントを作り直して無料お試し・紹介の特典をくり返し受けることを防ぐため、この端末で作ったランダムな番号（端末ID。名前や機種などの個人の情報は含みません）と、その端末で最初に使ったアカウントの組み合わせ。</li></ol>
 <h3>3. 利用目的</h3>
 <ol><li>本サービス（有料プランを含む）の提供・本人確認・ログイン</li>
 <li>料金の請求、契約状況の管理、解約・アカウント削除の手続き</li>
