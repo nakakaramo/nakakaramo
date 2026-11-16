@@ -1500,9 +1500,9 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 /* 3Dの顔⇄顔写真の切り替え（左上の小さなスイッチ。押すたびに切り替わる） */
 .ld-vsw{position:absolute;top:14px;left:14px;z-index:6;display:grid;grid-template-columns:1fr 1fr;padding:2px;background:var(--bg);border-radius:999px;border:1px solid var(--line);font:inherit;cursor:pointer}
 .ld-vsw::before{content:"";position:absolute;top:2px;bottom:2px;left:2px;width:calc(50% - 2px);border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .22s cubic-bezier(.3,.7,.3,1)}
-.ld-vsw.ph::before{transform:translateX(100%)}
-.ld-vsw span{position:relative;font-size:10.5px;font-weight:700;color:var(--muted);padding:3px 8px;min-width:30px;text-align:center;transition:color .2s}
-.ld-vsw:not(.ph) span:first-child,.ld-vsw.ph span:last-child{color:var(--ink)}
+.ld-vsw.is-ph::before{transform:translateX(100%)} /* 「ph」は写真の一覧の箱と同じ名前で、幅が変わってしまうので is-ph にする */
+.ld-vsw span{position:relative;font-size:10.5px;font-weight:700;color:var(--muted);padding:3px 6px;min-width:0;text-align:center;transition:color .2s;white-space:nowrap}
+.ld-vsw:not(.is-ph) span:first-child,.ld-vsw.is-ph span:last-child{color:var(--ink)}
 .ld-photo{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;background:var(--surface);z-index:3}
 .ld-photo{overflow:hidden}.ld-photo img{position:absolute;display:block;max-width:none;max-height:none;opacity:0;transition:opacity .15s}.ld-photo img.fit{opacity:1}
 .ld-photo p{margin:0;padding:0 8px}
@@ -10407,7 +10407,7 @@ function logDayDetailHtml(list, i) {
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
   return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="肌の調子カレンダー">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
-    <div role="button" tabindex="0" class="ld-vsw ${ui.ldView === 'photo' ? 'ph' : ''}" data-action="ld-view" aria-label="3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）"><span>3D</span><span>写真</span><label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>
+    <div role="button" tabindex="0" class="ld-vsw ${ui.ldView === 'photo' ? 'is-ph' : ''}" data-action="ld-view" aria-label="3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）"><span>3D</span><span>写真</span><label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>
     <div class="f3-stage ld-stage ${ui.ldView === 'photo' ? 'ld-ph-on' : ''}" id="ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div><div class="ld-photo" id="ld-photo">${ldPhotoHtml(list[i])}</div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
@@ -15097,7 +15097,7 @@ const actions = {
   'ld-view': () => { // どこを押しても、3D⇄写真を切り替える
     ui.ldView = ui.ldView === 'photo' ? '3d' : 'photo'; if (Date.now() - hapticAt > 300) hapticTick(); // 重ねたスイッチで鳴らしていなければ鳴らす
     const sg = document.getElementById('ld-stage'); if (!sg) { render(); return; } sg.classList.toggle('ld-ph-on', ui.ldView === 'photo'); ldFitAll();
-    const b = document.querySelector('.ld-vsw'); if (b) { b.classList.toggle('ph', ui.ldView === 'photo'); b.setAttribute('aria-label', `3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）`); } },
+    const b = document.querySelector('.ld-vsw'); if (b) { b.classList.toggle('is-ph', ui.ldView === 'photo'); b.setAttribute('aria-label', `3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）`); } },
   'sc-range': v => { if (v !== 'week' && locked()) { openPremiumSheet('肌の変化'); return; } const from = SC_RANGES.findIndex(x => x[0] === (ui.scRange || 'week')); if (ui.scRange === v || (!ui.scRange && v === 'week')) return; if (Date.now() - hapticAt > 300) hapticTick(); ui.scAnim = {from}; ui.scRange = v; render(); },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); swScrollTop(); },
   'log-day-step': v => logDayStep(Number(v)),
