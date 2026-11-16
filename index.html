@@ -2924,7 +2924,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
   [`${PREMIUM_NAME}で増える`],
   ['今日のおすすめケア（記録・天気・あなたの肌の学習から）', '—', '○'],
   ['ケア管理（朝・夜の順番、おすすめ成分・控えたいもの）', '—', '○'],
-  ['顔を撮って、肌を自動で記録（ガイド付きの撮影）', '—', '○'],
+  ['顔の写真を日付ごとに残して見比べる（ガイド付きの撮影）', '—', '○'],
   ['化粧品のパッケージ・成分表示を写真から読み取り', '—', '○'],
   ['食事の写真・栄養成分表示から読み取り', '—', '○'],
   ['AIによるケアの分析と、くわしい説明', '—', '○'],
@@ -10798,7 +10798,7 @@ function openLogForm(id) {
       <p class="fp-sumline" id="fp-sumline"></p>
       <p class="fp-gest">1本の指で回す／2本の指で広げると拡大。</p>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
-    <div class="field face-ai"><span class="lbl">カメラで記録</span><p class="hint face-ai-d" style="margin:-2px 0 8px">明るい場所で撮ると、今日の肌を自動で入れます</p><div class="meal-photo-top mpt-even">${isPremium()
+    <div class="field face-ai"><span class="lbl">顔の写真</span><p class="hint face-ai-d" style="margin:-2px 0 8px">顔を枠に合わせて撮ると、日付ごとに残して見比べられます</p><div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div><div id="faceai-info"></div></div>
     <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
@@ -11096,42 +11096,18 @@ function openLogForm(id) {
     $('#modal-root').dataset.dirty = '1'; fpSync();
   };
   let aiLast = null;
-  const faceAi = async file => {
-    const box = $('#faceai-info', form); if (!file || !box) return;
-    let img; try { img = await readImage(file, 1024, 0.82); } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; return; }
-    pendingPhoto = await readImage(file, 800, 0.8).catch(() => img); pendingFace = nextFace; nextFace = null; renderPhoto();
-    faceAiRun(img);
-  };
-  // 顔を回して撮った3枚（正面・右頬・左頬）をまとめて読む。保存する写真は正面の1枚
-  const faceAiShots = res => { pendingPhoto = res.photo; renderPhoto(); faceAiRun(res.ai[0], res.ai); };
-  const faceAiRun = async (img, images) => {
-    const box = $('#faceai-info', form); if (!box) return;
-    box.innerHTML = skelHtml(3, {dots:true, label:'顔の写真を読み取り中', note:images ? '3方向の写真から肌の状態を読み取っています（10〜20秒ほどかかります）' : '肌の状態を読み取っています（10秒ほどかかります）'});
-    try {
-      const r = (await callVision('skin', img, images ? {images} : null)).result || {};
-      if (!r.face) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">顔の肌をうまく読み取れませんでした。${esc(r.note || '明るい場所で、顔の正面がはっきり写るように撮り直してください。')}</div>`; return; }
-      aiApply(r); if (r.box && faceBoxOk(r.box)) pendingFace = faceBoxOk(r.box); // 写真の中の顔の位置（表示の切り取りに使う）
-      const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
-      aiLast = {acne:n, zones:(r.zones || []).map(x => ({z:x.zone, c:x.concern, l:x.level})), note:r.note || '', shots:images ? 3 : 1}; // 記録と一緒に保存して、「あなたの肌の分析」で使う
-      box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>写真から今日の記録を入れました</b>${r.note ? `<br>${esc(r.note)}` : ''}<br><span class="small">ニキビ ${n}個${(r.zones || []).length ? '・' + [...new Set(r.zones.map(x => x.concern))].join('・') : ''}</span>
-        <p class="small muted" style="margin:6px 0 0">写真の読み取りは、そこまで正確ではありません。細かいところや、抜けているところは、顔を押して自分で直してから「記録する」を押してください。</p></div>`;
-
-    } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
-  };
+  // 顔の写真から、AIで肌の状態を判定して記録に入れる仕組みはやめた（精度を確かめられないため。2026-11-16）。写真は日付ごとに残して見比べる
   // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
   // 顔を回して3方向から撮る方法は手間なのでやめて、顔の枠に合わせて1枚撮るだけにする
-  const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openGuideCam(url => (async res => {
-    if (res.ai) { faceAiShots(res); setTimeout(() => { const el = $('#faceai-info', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80); return; }
+  const camShot = () => !isPremium() ? openPremiumSheet('顔の写真') : openGuideCam(url => (async res => {
     const url = res.url;
-    if (isPremium()) { const bl = await (await fetch(url)).blob(); nextFace = GUIDE_FACE; faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
-    else { form._setPhoto(url, GUIDE_FACE); toast('写真を付けました。顔を押して今日の肌を記録してください'); }
-    setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
+    form._setPhoto(url, GUIDE_FACE); toast('写真を付けました。顔を押して今日の肌を記録してください'); // 写真から肌の状態をAIで判定して入れるのはやめた（精度を確かめられないため。2026-11-16）
+    setTimeout(() => { const el = $('#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
   })({photo:url, ai:null, url}), {w:1024, noGhost:!!ex, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    if (isPremium()) { faceAi(f); return; }
     try { form._setPhoto(await readImage(f, 800, 0.8)); toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
-  $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => openPremiumSheet('カメラで肌を記録'); lk.onclickOld = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
+  $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => openPremiumSheet('顔の写真'); lk.onclickOld = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
     e.preventDefault();
     const fe = form.elements, date = fe.date.value;
@@ -14101,7 +14077,7 @@ const VISION_VERSION = '2026-11-07-quota'; // サーバーの関数 vision の�
 const AI_NOTE = '自動で読み取った推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 // ===== 月額・年額の選び方と、プレミアムの機能（少しだけ見せて、下はぼかす） =====
-const PREM_FEATS = ['顔写真で、毎日の肌を自動記録', 'カメラで化粧品を簡単登録', '食事写真から栄養を自動計算', '記録をもとに、肌ケアと献立を提案', '詳細分析・成分相性マップ', 'AIにいつでも相談', '広告なし'];
+const PREM_FEATS = ['顔写真で、肌の変化を見比べ', 'カメラで化粧品を簡単登録', '食事写真から栄養を自動計算', '記録をもとに、肌ケアと献立を提案', '詳細分析・成分相性マップ', 'AIにいつでも相談', '広告なし'];
 function premFeatsHtml() {
   return `<div class="pf open" data-pf><ul class="pf-l">${PREM_FEATS.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
 }
@@ -14499,7 +14475,7 @@ function viewPrivacy() {
 <h3>2. 取得する情報</h3>
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
-<li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」「顔を撮って自動で記録」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
+<li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
 <li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li>
 <li><b>エラーの情報</b>：本サービスの画面で不具合（エラー）が起きたとき、エラーの内容・起きた画面の種類・ブラウザの種類・ログインしているかどうか。肌の記録・写真・メールアドレスなどは含みません。不具合を直すためだけに使い、30日で自動で消します。</li>
 <li><b>お試し・お友だち紹介の情報</b>：無料のお試し期間・紹介の特典の期間、紹介コード、だれの紹介で登録したか（紹介した人・された人のアカウントの組み合わせ）。また、同じ端末でアカウントを作り直して無料お試し・紹介の特典をくり返し受けることを防ぐため、この端末で作ったランダムな番号（端末ID。名前や機種などの個人の情報は含みません）と、その端末で最初に使ったアカウントの組み合わせ。</li></ol>
@@ -14533,7 +14509,7 @@ ${row('Stripe（Stripe, Inc.）', '支払いに必要な情報（カード情報
 ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', 'ログイン機能の部品の読み込み。プラン・アカウント画面を開いたとき')}
 ${row('cdnjs（Cloudflare）', 'IPアドレス、ブラウザの情報', '3D表示の部品（three.js）の読み込み。3Dの顔を表示したとき')}
 ${row('Open Food Facts', '食事の写真に写っていたバーコードの数字（JANコード）だけ', '食品の栄養成分表示を調べるため。バーコードが写っていたときだけ')}
-${row('Google（Gemini API）', '「写真から読み取る」「顔を撮って自動で記録」で選んだ写真（食事・化粧品のパッケージ・顔）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
+${row('Google（Gemini API）', '「写真から読み取る」で選んだ写真（食事・化粧品のパッケージ）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
 ${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（区分だけ）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、肌に合わなかったときのアンケート（症状・時期・場所・強さ・成分の種類）、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
@@ -14988,7 +14964,7 @@ ${NATIVE_APP ? '' : '</template>'}
         <li><b>お知らせ（通知）</b>：設定でオンにした場合だけ、通知の宛先（ブラウザが作る送り先の情報）、お知らせの時刻、最後に肌を記録した日、化粧品の名前と使用期限の目安の日付をサーバーに保存し、決めた時刻にお知らせを送ります。記録の中身は送りません。オフにすると削除します。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
-        <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」「顔を撮って自動で記録」を使ったときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理・文字・肌の状態の目安を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
+        <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を使ったときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理・文字を読み取ります。顔の写真はAIに送りません。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコンをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
         <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>まとめだけ</b>（睡眠時間の平均、ニキビの数、食べた物の名前と回数、使っている化粧品の種類と主な成分の名前など。商品名・メモ・写真は送りません）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
         <li><b>外部リンク</b>：通販サイトなどのリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
