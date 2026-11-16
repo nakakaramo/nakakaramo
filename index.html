@@ -290,7 +290,8 @@ label.btn{position:relative}
 /* 戻るボタンは画面の中に出さず、上の見出しの前の「＜」にまとめる（見出しごと押すと戻る） */
 #main .back{display:none!important}
 /* 上の見出しは、どの画面でも真ん中に。「＜」は左はしに置く */
-.topbar .top-title{position:absolute;left:60px;right:60px;top:var(--sat);bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
+:root{--title-fs:15px} /* 上の見出しは「まだ〇〇が登録されていません」と同じ大きさ */
+.topbar .top-title{font-size:var(--title-fs);position:absolute;left:60px;right:60px;top:var(--sat);bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
 .top-title.tt-back{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .top-title.tt-back:active,.tt-bk:active{opacity:.6;transform:none!important} /* 押しても動かない（動くと指から外れて、押したことにならないため） */
 .topbar .tt-bk{position:absolute;left:6px;top:var(--sat);bottom:0;margin:auto 0;transform:none!important;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border:0;background:none;padding:0;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -299,7 +300,7 @@ label.btn{position:relative}
 .empty{text-align:center;padding:24px 12px}
 .empty .em-icon{width:56px;height:56px;border-radius:50%;background:var(--green-p);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
 .empty .em-icon svg{width:26px;height:26px}
-.empty h3{font-size:15px;margin-bottom:4px}
+.empty h3{font-size:var(--title-fs);margin-bottom:4px}
 .empty p{font-size:13px;color:var(--muted);margin-bottom:14px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:14px;margin:0}
 .kv dt{color:var(--muted)}
