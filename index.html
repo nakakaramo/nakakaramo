@@ -961,6 +961,8 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .rt-qsw .sc-tab svg{width:15px;height:15px;flex:none}
 .rt-qnote{margin:0 0 10px;text-align:center}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
+.sc-grid{gap:10px;margin:4px 0 6px}.sc-grid span{padding:12px 4px 10px;gap:2px;justify-content:center}.sc-grid small{font-size:12px}.sc-grid b{font-size:24px;line-height:1.2}.sc-grid small.sc-sub,.sc-grid small.wr-up,.sc-grid small.wr-down,.sc-grid small.wr-eq{font-size:11px}
+.sc-card .sc-ch{margin-top:18px}.sc-card .sc-ch-h{display:flex;align-items:baseline;justify-content:space-between;font-size:14px;margin-bottom:6px}.sc-card .sc-ch-h small{margin-left:8px;white-space:nowrap}
 .wr-grid small{font-size:11px;color:var(--muted);white-space:nowrap}.wr-grid small.wr-up,.wr-grid small.wr-down,.wr-grid small.wr-eq{font-size:10.5px}
 .wr-grid b{font-size:20px;line-height:1.3}
 .wr-grid b i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted);margin-left:1px}
@@ -4228,12 +4230,23 @@ let lockedY = null;
 // 画面を開いている間、うしろのページが動かないようにする。
 // スマホでは overflow:hidden を使わない（iPhoneで上のタブ〈朝のケア・夜のケアなど〉の固定が外れて、上がおかしくなるため）。
 // 代わりに、開いた画面の中のスクロールできる所以外では、指でのスクロールを止める
+// 入力欄の上を指でなぞったときや、スクロールできる所の端まで来たときも、うしろのページに動きが伝わらないようにする
+let lockTouchY = 0, lockTouchX = 0;
+document.addEventListener('touchstart', e => { if (e.touches[0]) { lockTouchY = e.touches[0].clientY; lockTouchX = e.touches[0].clientX; } }, {passive:true, capture:true});
 function lockTouchGuard(e) {
   if (lockedY == null || e.touches.length > 1) return;
-  const t = e.target; if (t.closest && t.closest('input,textarea,select,canvas,[data-allow-touch]')) return;
+  const t = e.target; if (t.closest && t.closest('canvas,[data-allow-touch]')) return;
+  const y = e.touches[0].clientY, x = e.touches[0].clientX, dy = y - lockTouchY, dx = x - lockTouchX, vert = Math.abs(dy) >= Math.abs(dx);
+  lockTouchY = y; lockTouchX = x; // 指の向きは、ひとつ前の位置から見る（途中で向きを変えても正しく止める）
+  if (!vert && t.closest && t.closest('input,textarea')) return; // 入力欄の中で横に動かす（文字の位置を動かす）のは止めない
   for (let el = t; el && el !== document.body; el = el.parentElement) {
     const cs = getComputedStyle(el);
-    if ((/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) || (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1)) return;
+    if (vert && /(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) {
+      // まだその方向にスクロールできるときだけ動かす（端まで来たら、うしろのページに伝わらないように止める）
+      if ((dy > 0 && el.scrollTop > 0) || (dy < 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1)) return;
+      break;
+    }
+    if (!vert && /(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1) return;
   }
   if (e.cancelable) e.preventDefault();
 }
@@ -8040,11 +8053,12 @@ function skinChangeHtml() {
   const days = k === 'week' ? 7 : k === 'month' ? 30 : 365, start = addDays(t, -(days - 1)), pStart = addDays(start, -days), pEnd = addDays(start, -1);
   const cur = real.filter(l => l.date >= start && l.date <= t), prev = real.filter(l => l.date >= pStart && l.date <= pEnd);
   const c1 = avgOf(cur, l => l.condition), c0 = avgOf(prev, l => l.condition), a1 = avgOf(cur, l => l.acneCount || 0), a0 = avgOf(prev, l => l.acneCount || 0);
-  const prevName = k === 'week' ? '前の週' : k === 'month' ? '前の月' : '前の年';
-  const cmp = (v, p, good) => p == null || v == null ? `<small class="wr-eq">${prevName}の記録なし</small>` : r1(v) === r1(p) ? `<small class="wr-eq">${prevName}と同じ</small>` : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">${prevName}より ${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
-  const grid = `<div class="wr-grid sc-grid"><span><small>記録した日</small><b>${cur.length}<i>/${days}日</i></b></span>
-      <span><small>肌の調子（平均）</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1, c0, true)}</span>
-      <span><small>ニキビ（1日平均）</small><b>${a1 == null ? '－' : r1(a1)}<i>個</i></b>${cmp(a1, a0, false)}</span></div>`;
+  // 3つの数字：見出しは短く。前とくらべるのは、前の記録があるときだけ（ないときは何も出さない）
+  const prevName = k === 'week' ? '先週' : k === 'month' ? '先月' : '前年';
+  const cmp = (v, p, good) => p == null || v == null ? '' : r1(v) === r1(p) ? `<small class="wr-eq">${prevName}と同じ</small>` : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">${prevName}より${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
+  const grid = `<div class="wr-grid sc-grid"><span><small>記録</small><b>${cur.length}<i>日</i></b><small class="sc-sub">${days}日中</small></span>
+      <span><small>肌の調子</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1, c0, true) || '<small class="sc-sub">平均</small>'}</span>
+      <span><small>ニキビ</small><b>${a1 == null ? '－' : r1(a1)}<i>個</i></b>${cmp(a1, a0, false) || '<small class="sc-sub">1日平均</small>'}</span></div>`;
   // グラフ：週間・月間は1日ごと、年間は1か月ごとの平均
   let dates, cond, acne, xFmt;
   if (k === 'year') {
@@ -8058,12 +8072,12 @@ function skinChangeHtml() {
   }
   const aMax = Math.max(4, ...acne.filter(v => v != null)), aTop = Math.ceil(aMax / 2) * 2;
   const unit = k === 'year' ? '1か月の平均' : '1日ごと';
-  const charts = `<div class="sc-ch"><p class="sc-ch-h">肌の調子<small>${unit}・1=とても悪い〜5=とても良い</small></p>
+  const charts = `<div class="sc-ch"><p class="sc-ch-h">肌の調子<small>${unit}・5が良い</small></p>
       ${chartSlot('sc-cond-' + k, w => lineChart(w, {dates, height:140, yMin:1, yMax:5, yTicks:[1, 3, 5], xFmt, label:'肌の調子の変化', series:[{name:'肌の調子', color:'#5A8A69', values:cond}]}))}</div>
     <div class="sc-ch"><p class="sc-ch-h">ニキビの数<small>${unit}</small></p>
       ${chartSlot('sc-acne-' + k, w => lineChart(w, {dates, height:120, yMin:0, yMax:aTop, yTicks:[0, aTop / 2, aTop], xFmt, label:'ニキビの数の変化', series:[{name:'ニキビ', color:'#C9785F', values:acne}]}))}</div>`;
   const span = k === 'year' ? `${fmtShort(start)}〜今日（直近12か月）` : `${fmtShort(start)}〜${fmtShort(t)}（直近${days}日）`;
-  return head + `<div class="sc-body ${an ? (an.from < idx ? 'in-r' : 'in-l') : ''}"><p class="small muted sc-span">${span}</p>` + grid + charts + `<p class="small muted" style="margin:6px 0 0">記録した日だけの平均です。</p></div></div>`;
+  return head + `<div class="sc-body ${an ? (an.from < idx ? 'in-r' : 'in-l') : ''}"><p class="small muted sc-span">${span}</p>` + grid + charts + `</div></div>`;
 }
 function weekReviewHtml() {
   const t = todayStr(), ws = weekStart(t), pws = addDays(ws, -7), pwe = addDays(ws, -1);
