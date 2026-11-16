@@ -945,7 +945,12 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 @media (prefers-reduced-motion:reduce){.sc-ind.go,.sc-body.in-r,.sc-body.in-l{animation:none}}
 .sc-lock svg{width:12px;height:12px;display:block}
 .sc-span{margin:0 0 8px}
-.rt-qsw{grid-template-columns:repeat(2,1fr);max-width:220px;margin:0 auto 10px}.rt-qsw .sc-ind{width:calc((100% - 6px) / 2)}.rt-qsw .sc-tab{padding:6px 0;font-size:13px}
+/* 通常⇄時短：選んでいるほうを緑で塗って、ひと目でわかるように */
+.rt-qsw{grid-template-columns:repeat(2,1fr);max-width:240px;margin:2px auto 10px;background:var(--surface);border:1px solid var(--line2);border-radius:999px;padding:3px}
+.rt-qsw .sc-ind{width:calc((100% - 6px) / 2);border-radius:999px;background:var(--green-d);box-shadow:0 1px 4px rgba(46,90,64,.25)}
+.rt-qsw .sc-tab{padding:8px 0;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px}
+.rt-qsw .sc-tab.on{color:#fff}
+.rt-qsw .sc-tab svg{width:15px;height:15px;flex:none}
 .rt-qnote{margin:0 0 10px;text-align:center}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
 .wr-grid small{font-size:11px;color:var(--muted);white-space:nowrap}.wr-grid small.wr-up,.wr-grid small.wr-down,.wr-grid small.wr-eq{font-size:10.5px}
@@ -9907,7 +9912,7 @@ function viewRoutine() {
   const tabs = `<nav class="home-tabs rt-tabs" role="tablist" aria-label="朝と夜">${[['am', 'sun', '朝のケア'], ['pm', 'moon', '夜のケア']].map(([k, ic, l]) => `<button type="button" class="ht ${slot === k ? 'active' : ''}" role="tab" aria-selected="${slot === k}" data-action="rt-tab" data-id="${k}">${icon(ic)}<span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 通常⇄時短の切り替え（時短：落とす・皮膚科の薬・保湿・日焼け止めだけにする）
   const quick = rtSettings().mode === 'quick';
-  const sw = `<div class="sc-tabs rt-qsw" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常'], ['quick', '時短']].map(([k, l]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
+  const sw = `<div class="sc-tabs rt-qsw" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常', 'menu'], ['quick', '時短', 'clock']].map(([k, l, ic]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${icon(ic)}${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
   ui.rtQAnim = false;
   return tabs + `<div class="home-pane">${sw}${rtPaneHtml(slot)}</div>`;
 }
