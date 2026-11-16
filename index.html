@@ -9941,7 +9941,7 @@ function viewRoutine() {
   const quick = rtSettings().mode === 'quick';
   const sw = `<div class="sc-tabs rt-qsw" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常', 'menu'], ['quick', '時短', 'clock']].map(([k, l, ic]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${icon(ic)}${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
   ui.rtQAnim = false;
-  return tabs + `<div class="home-pane">${sw}${rtPaneHtml(slot)}</div>`;
+  return tabs + sw + `<div class="home-pane">${rtPaneHtml(slot)}</div>`; // 通常⇄時短は朝・夜で共通なので、横にスワイプしても動かさない（中身の外に置く）
 }
 // 成分辞典：肌悩みで絞り込み・成分マスターの詳細
 function ingMasterDetail(e) {
