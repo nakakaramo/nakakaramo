@@ -870,11 +870,11 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .ai-basis.b-e{background:var(--surface2);color:var(--muted)}
 .ai-basis.b-n{background:#FBE9E4;color:#B04A32}
 .meal-photo-top.mpt-even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.meal-photo-top>.mpt-locked{flex-direction:column;min-height:52px;border-radius:999px;padding:4px 12px;gap:0}
+.meal-photo-top>.mpt-locked{flex-direction:row;min-height:52px;border-radius:999px;padding:4px 12px;gap:0}
 .mpt-blk.meal-photo-top>.mpt-locked{min-height:44px}
 .mpt-blk{margin-top:8px}
 .mpt-blk .mpt-btn{min-height:44px;font-size:13px}
-.mpt-blk .mpt-locked{min-height:64px}
+.mpt-blk .mpt-locked{min-height:44px}
 .health-btn{justify-self:start;margin-top:-4px}
 .health-note{font-size:12px;color:var(--muted);margin:-6px 0 0;padding:8px 12px;background:var(--surface2);border-radius:12px}
 .meal-now{display:none;margin-left:6px;font-size:11px;font-weight:600;color:#fff;background:var(--green-d);border-radius:999px;padding:2px 8px}
@@ -888,10 +888,9 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .food-sug-i:last-child{border-bottom:0}
 .mpt-btn{min-height:52px;justify-content:center;gap:6px;flex-wrap:wrap;position:relative}
 .mpt-btn .badge-premium{font-size:11px}
-.mpt-mid,.mpt-locked{background:var(--green-d);border-color:var(--green-d);color:#fff}
-.mpt-locked .mpt-l svg{color:#fff}
+.mpt-mid{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .mpt-mid svg{color:#fff}
-.mpt-locked{flex-direction:column;gap:6px;min-height:76px;border-radius:18px;padding:10px 8px}
+.mpt-locked{flex-direction:row;gap:0;flex-wrap:nowrap}
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
 .photo-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .photo-pick .input{flex:1 1 180px}
@@ -1710,7 +1709,9 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .food-pick .select,.food-pick .input{min-height:40px;font-size:16px;padding:6px 10px;min-width:0}
 .food-pick .select{padding-right:30px;background-position:right 10px center}
 @media(max-width:420px){.food-pick{grid-template-columns:1fr 1fr}.food-pick > :first-child{grid-column:1/-1}}
-.btn.has-prem,.mpt-locked,.tab:has(.prem-sub){flex-direction:column;gap:0;line-height:1.25}
+.prem-lock{display:inline-flex;align-items:center;margin-left:5px;color:var(--muted);vertical-align:-1px;flex:none}.prem-lock svg{width:13px;height:13px;display:block}
+.is-locked,.mpt-locked{color:var(--muted)!important}.is-locked svg,.mpt-locked svg{color:var(--muted)!important}
+.btn.is-locked,.mpt-locked{background:var(--surface2)!important;border-color:var(--line)!important;box-shadow:none!important}
 .add-opt b .prem-sub{display:table;margin-top:3px}
 .badge-premium,.prem-sub{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.06em;white-space:nowrap;
   background:linear-gradient(180deg,#F6ECD6 0%,#EBD9B3 100%);color:#6B4A1C!important;border:1.5px solid #D8C08F;box-shadow:inset 0 1px 0 rgba(255,255,255,.65)}
@@ -2899,6 +2900,8 @@ function fillAds() {
 }
 /* プラン：無料＝手動入力、プレミアム（有料）＝写真から読み取り（AI） */
 const PREMIUM_NAME = 'プレミアム';
+// プレミアムの機能の印：文字ではなく南京錠のマーク（肌の変化の「月間🔒」と同じ）。押せるけれど使えないものは、薄く表示する
+const premLock = () => `<span class="prem-lock" role="img" aria-label="${PREMIUM_NAME}の機能">${icon('lock')}</span>`;
 const NG_SYMS = ['赤み', 'かゆみ', 'ヒリヒリ', 'ニキビ', '乾燥', 'ブツブツ', '腫れ', 'その他']; // 肌に合わなかったときの症状
 const NG_WHEN = ['使ってすぐ', '数時間後', '翌日', '数日〜1週間後', '2週間以上たってから']; // 症状が出た時期
 const NG_LEVEL = ['軽い', '中くらい', '強い'];
@@ -2931,7 +2934,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
 const PREMIUM_LOCK = true;
 const locked = () => PREMIUM_LOCK && !isPremium();
 function lockCard(title, desc) {
-  return `<div class="card lock-card"><div class="card-h"><h2>${esc(title)}</h2><span class="badge-premium">${PREMIUM_NAME}</span></div><p class="small" style="color:var(--ink2)">${esc(desc)}</p>
+  return `<div class="card lock-card"><div class="card-h"><h2>${esc(title)}</h2>${premLock()}</div><p class="small" style="color:var(--ink2)">${esc(desc)}</p>
     <p class="small muted" style="margin-top:6px">肌の記録や成分の注意点など、基本の機能と安全に関わる情報は、無料プランでも使えます。</p>
     <a class="btn btn-primary btn-sm" style="margin-top:12px" href="#/plan" data-psheet="${esc(title)}">${PREMIUM_NAME}にする</a></div>`;
 }
@@ -4900,7 +4903,7 @@ function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
     <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
-    <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="商品名で探す（例：アヌア レチノール）" aria-label="商品名で探す" autocomplete="off" enterkeyhint="search"></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">何も入れていないときは、人気ランキング（毎日自動で入れ替わります）を出します。Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>` : ''}`});
+    <button class="add-opt main${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `${premLock()}`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="商品名で探す（例：アヌア レチノール）" aria-label="商品名で探す" autocomplete="off" enterkeyhint="search"></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">何も入れていないときは、人気ランキング（毎日自動で入れ替わります）を出します。Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>` : ''}`});
   if (my) popularMount();
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
@@ -6898,7 +6901,7 @@ function viewScan() {
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別する機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
       <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}選ぶ<input type="file" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
-      ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm has-prem" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'}${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
+      ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm has-prem${isPremium() ? '' : ' is-locked'}" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'}${isPremium() ? '' : `${premLock()}`}</button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
         ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字を読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogle（Gemini）に送り、保存しません。</p>` : ''}
       <p class="hint">${hasBD ? 'バーコードが写っていれば、数字を自動で読み取ります。' : 'このブラウザは、バーコードの自動読み取りに対応していません（iPhoneのSafariなど）。下の欄に、バーコードの下の数字を入力してください。'}撮影した写真は、新しく登録するときに商品画像として使えます。</p>
@@ -7681,7 +7684,7 @@ function comboMap(r) {
   };
   let pairs = '';
   items.forEach((a, i) => items.slice(i + 1).forEach(b => { const n = pairNote(a, b); if (!n.includes('muted')) pairs += `<tr><td>${esc(truncate(a.p.name, 18))} × ${esc(truncate(b.p.name, 18))}</td><td>${n}</td></tr>`; }));
-  return `<div class="card"><div class="card-h"><h2>成分相性マップ</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
+  return `<div class="card"><div class="card-h"><h2>成分相性マップ</h2>${premLock()}</div>
     <p class="small muted" style="margin-bottom:8px">商品ごとに、注意が必要になりやすい成分の種類が入っているかを並べています（濃度や配合の目的はわかりません）。</p>
     ${items.map(x => { const has = cols.filter(c => x.groups.has(c[0])); return `<div class="map-row"><b>${esc(truncate(x.p.name, 26))}</b><small>${esc(x.p.timing)}</small><div class="chips">${has.length ? has.map(c => `<span class="chip ${['retinoid', 'acid'].includes(c[0]) ? 'warn' : ''}">${esc(c[1])}</span>`).join('') : '<span class="chip gray">該当なし</span>'}</div></div>`; }).join('')}
     <p class="small muted" style="margin-top:8px">商品どうしの注意は、「成分の組み合わせ」の最初の画面で見られます。成分名だけで判定しています。</p></div>`;
@@ -9327,7 +9330,7 @@ const PTZ_MENU = ['夜：鮭の塩焼き・ほうれん草のおひたし・豆�
   '明日の朝：ゆで卵・納豆・キウイ・ヨーグルト'];
 function careAiHtml(d, S) {
   const c = careAiCache();
-  if (!isPremium()) return `<div class="card"><div class="card-h"><h2>くわしい説明</h2><span class="chip beige">プレミアム</span></div><p class="small muted">プレミアムでは、あなたの肌質・商品・記録をふまえて、なぜこの成分とケアなのかを文章でくわしく説明します。</p><a class="link small" href="#/plan">プランを見る →</a></div>`;
+  if (!isPremium()) return `<div class="card"><div class="card-h"><h2>くわしい説明</h2>${premLock()}</div><p class="small muted">プレミアムでは、あなたの肌質・商品・記録をふまえて、なぜこの成分とケアなのかを文章でくわしく説明します。</p><a class="link small" href="#/plan">プランを見る →</a></div>`;
   return `<div class="card" id="care-ai"><div class="card-h"><h2>くわしい説明</h2></div>${c && c.text ? `<p style="white-space:pre-line">${esc(c.text)}</p><p class="small muted">上の判定結果をもとに書いた説明です。内容は目安です。</p>` : '<p class="small muted">上の判定結果を、文章でくわしく説明します。</p>'}<button type="button" class="btn btn-soft btn-sm" data-action="care-ai">${c && c.text ? 'もう一度説明してもらう' : 'くわしく説明してもらう'}</button>${ui.careAiErr ? `<p class="small" style="color:var(--danger)">${esc(ui.careAiErr)}</p>` : ''}</div>`;
 }
 const CARE_AI_KEY = 'skinwise_care_ai';
@@ -10757,9 +10760,9 @@ function openLogForm(id) {
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
     <div class="field face-ai"><span class="lbl">カメラで記録</span><p class="hint face-ai-d" style="margin:-2px 0 8px">明るい場所で撮ると、今日の肌を自動で入れます</p><div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div><div id="faceai-info"></div></div>
     <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
-      <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `<span class="prem-sub" style="margin-left:4px">${PREMIUM_NAME}</span>`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
+      <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm${isPremium() ? '' : ' is-locked'}" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `${premLock()}`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
       <div id="photo-area"></div>
     </div>
     <div class="fp-hidden" aria-hidden="true">
@@ -11198,7 +11201,7 @@ function openLifeForm(id, part, forDate) {
 </div>
     ${part === 'meal' && m.k === slot0 ? '' : `<div class="meal-photo-top mpt-blk mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div>`}
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>`}
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="food-list" data-mfoods="${m.k}"></div>
@@ -11239,7 +11242,7 @@ function openLifeForm(id, part, forDate) {
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
-      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div>
+      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
     <div class="nut-card" id="nut-total"></div>
@@ -11282,7 +11285,7 @@ function openLifeForm(id, part, forDate) {
   };
   const renderPhoto = k => {
     const box = $(`[data-mprev="${k}"]`, form);
-    const pbtn = `<button type="button" class="btn btn-soft btn-sm has-prem" data-premium="${k}">写真から読み取る${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</button>`;
+    const pbtn = `<button type="button" class="btn btn-soft btn-sm has-prem${isPremium() ? '' : ' is-locked'}" data-premium="${k}">写真から読み取る${isPremium() ? '' : `${premLock()}`}</button>`;
     if (pending[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${pending[k]}" alt="選んだ写真"><div><label class="check"><input type="checkbox" data-mpsave="${k}"> このブラウザ内に保存する</label><div class="btn-pair" style="margin-top:6px"><button type="button" class="btn btn-ghost btn-sm" data-mpcancel="${k}">取り消す</button>${pbtn}</div></div></div>`;
     else if (saved[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${saved[k]}" alt="保存済みの写真"><div class="btn-pair" style="margin-top:6px"><button type="button" class="btn btn-danger-ghost btn-sm" data-mpdel="${k}">写真を削除</button>${pbtn}</div></div>`;
     else box.innerHTML = '';
@@ -12365,7 +12368,7 @@ function storePlans(meal, d) {
 }
 function menuCache() { try { return JSON.parse(localStorage.getItem(MENU_KEY) || 'null'); } catch (e) { return null; } }
 function menuHtml() {
-  const head = `<div class="card-h"><h3 style="margin:0">献立の提案</h3>${isPremium() ? `<button class="btn btn-ghost btn-sm" data-action="menu-ai" ${menuBusy ? 'disabled' : ''}>別の献立にする</button>` : '<span class="badge-premium">プレミアム</span>'}</div>`;
+  const head = `<div class="card-h"><h3 style="margin:0">献立の提案</h3>${isPremium() ? `<button class="btn btn-ghost btn-sm" data-action="menu-ai" ${menuBusy ? 'disabled' : ''}>別の献立にする</button>` : premLock()}</div>`;
   if (!isPremium()) return head + `<p class="small muted" style="margin:0">今日食べたものと肌の状態から、昼・夜（夜まで食べたら明日の朝）の献立を自動で作ります。</p><a class="link small" style="display:inline-block;margin-top:8px" href="#/plan">プランを見る →</a>`;
   const d = menuInput(), sig = adviceSig(d), c = menuCache(); let res = c && c.sig === sig && c.res && (c.res.meals || []).every(m => Array.isArray(m.plans)) ? c.res : null; // 前の形（1パターン）の結果は使わない
   if (menuBusy) return head + skelHtml(3, {dots:true, label:'献立を作成中', note:'和食・洋食の献立を考えています（30秒ほど）'});
@@ -13266,7 +13269,7 @@ function viewCharts() {
   const map = logMap(), lm = lifeMap();
   const inRange = dates.filter(d => map[d]);
   let html = pageHead('肌の変化', '過去の記録をグラフで確認します。') +
-    `<div class="tabs">${[7,14,30,90].map(r => `<button class="tab ${ui.chartRange === r ? 'active' : ''}" data-action="chart-range" data-id="${r}">${r}日間${r === 90 && locked() ? `<span class="prem-sub">${PREMIUM_NAME}</span>` : ''}</button>`).join('')}</div>`;
+    `<div class="tabs">${[7,14,30,90].map(r => `<button class="tab ${ui.chartRange === r ? 'active' : ''}${r === 90 && locked() ? ' is-locked' : ''}" data-action="chart-range" data-id="${r}">${r}日間${r === 90 && locked() ? `${premLock()}` : ''}</button>`).join('')}</div>`;
   if (!state.skinLogs.length) return html + `<div class="card">${emptyBox('chart', '記録が増えると変化を確認できます', '肌の記録をつけると、ここに推移がグラフで表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-log">記録する</button>')}</div>`;
   if (inRange.length < 5) html += `<div class="notice">記録が増えると変化を確認できます（この期間の記録：${inRange.length}日）。5日以上の記録があると、傾向を見比べやすくなります。</div>`;
   const vals = k => dates.map(d => map[d] ? map[d][k] : null);
