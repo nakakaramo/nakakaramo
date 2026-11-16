@@ -289,8 +289,11 @@ label.btn{position:relative}
 .back:active{transform:scale(.92)}
 /* 戻るボタンは画面の中に出さず、上の見出しの前の「＜」にまとめる（見出しごと押すと戻る） */
 #main .back{display:none!important}
-.top-title.tt-back{cursor:pointer;display:inline-flex;align-items:center;gap:2px;margin-left:-6px;-webkit-tap-highlight-color:transparent}
-.top-title.tt-back:active{opacity:.6}
+/* 上の見出しは、どの画面でも真ん中に。「＜」は左はしに置く */
+.topbar .top-title{position:absolute;left:60px;right:60px;top:var(--sat);bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
+.top-title.tt-back{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.top-title.tt-back:active,.tt-bk:active{opacity:.6}
+.topbar .tt-bk{position:absolute;left:10px;top:calc(var(--sat) + 50% - var(--sat) / 2);transform:translateY(-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:none;padding:0;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .tt-chev{width:24px;height:24px;flex:none;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E") center/contain no-repeat}
 .back-btn{background:none;border:0;padding:4px 0;font-family:inherit;cursor:pointer}
 .empty{text-align:center;padding:24px 12px}
@@ -15814,11 +15817,12 @@ window.addEventListener('resize', setTbh); window.addEventListener('orientationc
 function topBack() {
   const h = document.querySelector('.topbar .top-title'), bk = document.querySelector('#main .back');
   if (!h) return;
-  const on = !!bk; h.classList.toggle('tt-back', on);
-  if (on) { h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-label', `戻る（${h.dataset.t || ''}）`); if (!h.querySelector('.tt-chev')) h.insertAdjacentHTML('afterbegin', '<span class="tt-chev" aria-hidden="true"></span>'); }
-  else { h.removeAttribute('role'); h.removeAttribute('tabindex'); h.removeAttribute('aria-label'); const c = h.querySelector('.tt-chev'); if (c) c.remove(); }
+  const on = !!bk, tb = h.parentElement; h.classList.toggle('tt-back', on);
+  let c = tb.querySelector(':scope > .tt-bk');
+  if (on) { h.setAttribute('role', 'button'); h.tabIndex = 0; h.setAttribute('aria-label', `戻る（${h.dataset.t || ''}）`); if (!c) tb.insertAdjacentHTML('beforeend', '<button type="button" class="tt-bk" aria-label="戻る"><span class="tt-chev" aria-hidden="true"></span></button>'); }
+  else { h.removeAttribute('role'); h.removeAttribute('tabindex'); h.removeAttribute('aria-label'); if (c) c.remove(); }
 }
-document.addEventListener('click', e => { const h = e.target.closest && e.target.closest('.topbar .top-title.tt-back'); if (!h) return; const bk = document.querySelector('#main .back'); if (bk) { hapticTick(); bk.click(); } });
+document.addEventListener('click', e => { const h = e.target.closest && e.target.closest('.topbar .top-title.tt-back, .topbar .tt-bk'); if (!h) return; const bk = document.querySelector('#main .back'); if (bk) { hapticTick(); bk.click(); } });
 document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.topbar .top-title.tt-back')) { e.preventDefault(); e.target.click(); } });
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
