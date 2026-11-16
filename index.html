@@ -4167,7 +4167,11 @@ function swAnimAll() { swGroupsAll().forEach((g, i) => swPlace(g, i)); }
 // 画面を描き直さない切り替え（押したらクラスだけ変わるもの）にも対応する
 document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('.rt-mode,.ct,.tab'); if (!t) return; const g = swGroupOf(t); if (!g) return; setTimeout(() => { if (document.body.contains(g)) { const i = swGroupsAll().indexOf(g); swPlace(g, i); } }, 0); }, true);
 window.addEventListener('resize', () => { clearTimeout(swAnimAll.t); swAnimAll.t = setTimeout(() => { swLast.clear(); swAnimAll(); }, 150); });
-function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
+function hapticizeTargets() {
+  $$(HAPTIC_TARGETS).forEach(hapticizeKeep);
+  // 「保存」のボタンは、どこにあってもバイブを鳴らす（iPhoneは指で押したスイッチだけが鳴るので、見えないスイッチを重ねる）
+  $$('button, a.btn, [role="button"]').forEach(b => { const t = (b.textContent || b.getAttribute('aria-label') || '').trim(); if (t.length <= 24 && /保存/.test(t) && !HAP_SKIP.test(t)) hapticizeKeep(b); });
+}
 // 保存・削除のボタンは、どこにあっても押したときに「コツッ」と鳴らす（見えないスイッチを重ねていないボタンだけ。重ねたボタンはスイッチが鳴る）
 const HAP_SAVE_DEL = /保存|削除|消す/, HAP_SKIP = /取り消す|保存されていません/;
 document.addEventListener('click', e => {
@@ -4214,7 +4218,7 @@ function hapticizeSegs(root) {
 }
 // 画面やシートが描き直されたら、新しく出た選ぶボタンにも付ける
 let hapSegQueued = false;
-new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requestAnimationFrame(() => { hapSegQueued = false; hapticizeSegs(); hapticizeTargets(); }); }).observe(document.documentElement, {childList:true, subtree:true});
+new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requestAnimationFrame(() => { hapSegQueued = false; hapticizeSegs(); hapticizeTargets(); }); }).observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['disabled']});
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
 // シートを開いている間は、下の画面を動かさない（体の位置を固定して戻す方法だと、閉じたときに一瞬いちばん上が見えてチカチカするので、スクロールだけ止める）
