@@ -1501,7 +1501,7 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-vsw span{position:relative;font-size:10.5px;font-weight:700;color:var(--muted);padding:3px 8px;min-width:30px;text-align:center;transition:color .2s}
 .ld-vsw:not(.ph) span:first-child,.ld-vsw.ph span:last-child{color:var(--ink)}
 .ld-photo{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;background:var(--surface);z-index:3}
-.ld-photo img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;display:block}
+.ld-photo{overflow:hidden}.ld-photo img{position:absolute;display:block;max-width:none;max-height:none;opacity:0;transition:opacity .15s}.ld-photo img.fit{opacity:1}
 .ld-photo p{margin:0;padding:0 8px}
 .ld-ph-on .ld-photo{display:flex}
 .ld-ph-on canvas,.ld-ph-on .f3-load{visibility:hidden} /* 写真のときは3Dの顔（はみ出す首も）を出さない */
@@ -3733,6 +3733,7 @@ function normalize(d) {
     areaNotes:(() => { const o = {}; if (l.areaNotes && typeof l.areaNotes === 'object') AREAS.forEach(a => { const v = strArr(l.areaNotes[a.id], AREA_CONCERNS); if (v.length) o[a.id] = v; }); return o; })(),
     areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts).filter(id => out.myProducts.some(p => p.id === id)), usageRecorded:!!l.usageRecorded,
     memo:String(l.memo||''), photo:safeImg(l.photo), demo:!!l.demo,
+    faceBox:faceBoxOk(l.faceBox), // 写真の中の顔の位置（0〜1。顔の写真を同じ大きさに切り取って見せるため）
     aiPhoto:(() => { const a = l.aiPhoto; if (!a || typeof a !== 'object') return null; // 写真の読み取り結果（分析で使う）
       return {acne:clamp(Math.round(num(a.acne)), 0, 99), zones:(Array.isArray(a.zones) ? a.zones : []).filter(z => z && AREA_CONCERNS.includes(z.c)).slice(0, 40).map(z => ({z:String(z.z || '').slice(0, 8), c:z.c, l:clamp(Math.round(num(z.l, 1)), 1, 5)})), note:String(a.note || '').slice(0, 80), shots:a.shots === 3 ? 3 : 1}; })()
   })) : [];
@@ -10458,9 +10459,27 @@ function logDaySet(date) {
   const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { face3dShowLog(st, logFaceData(l)); if (st.auto) { st.auto = false; st.target = {yaw:0, pitch:0.05}; } st.dirty = true; } // 矢印で日付を変えたら自動で回すのはやめる（自動で回るのは最初に出る直近の記録だけ）
 }
 // 3Dの顔と、その日の顔写真を切り替える（写真がない日は、写真がないことを出す）
+// 顔写真は、撮るときの枠（楕円）の中の顔が、3Dの顔とちょうど重なる大きさ・位置に切り取って見せる（毎回同じ大きさ）
+// 顔の位置：写真の読み取り（AI）で分かったときはそれを使い、分からないときは撮るときの枠の位置（ガイド付きで撮った写真と同じ）
+const GUIDE_FACE = {x:72 / 300, y:80 / 400, w:156 / 300, h:210 / 400}; // 撮るときの枠（300×400の中の楕円 cx150 cy185 rx78 ry105）
+const LD_FACE = {top:0.025, h:0.865}; // 3Dの顔が、表示する枠の中で占める位置（上から2.5%〜高さの86.5%）
+function faceBoxOk(b) { if (!b || typeof b !== 'object') return null; const v = ['x', 'y', 'w', 'h'].map(k => Number(b[k]));
+  if (v.some(n => !isFinite(n)) || v[2] < 0.05 || v[3] < 0.05 || v[0] < -0.2 || v[1] < -0.2 || v[0] + v[2] > 1.2 || v[1] + v[3] > 1.2) return null;
+  return {x:Math.round(v[0] * 1000) / 1000, y:Math.round(v[1] * 1000) / 1000, w:Math.round(v[2] * 1000) / 1000, h:Math.round(v[3] * 1000) / 1000}; }
+function ldFitPhoto(img) {
+  const st = img && img.closest('.ld-stage'); if (!st || !img.naturalWidth) return;
+  const W = st.clientWidth, H = st.clientHeight; if (!W || !H) return;
+  const fb = faceBoxOk(img.dataset.fb ? JSON.parse(img.dataset.fb) : null) || GUIDE_FACE;
+  const dh = H * LD_FACE.h / fb.h, dw = dh * img.naturalWidth / img.naturalHeight; // 顔の高さを3Dの顔の高さに合わせる
+  Object.assign(img.style, {width:dw + 'px', height:dh + 'px', left:(W / 2 - (fb.x + fb.w / 2) * dw) + 'px', top:(H * LD_FACE.top - fb.y * dh) + 'px'});
+  img.classList.add('fit');
+}
+function ldFitAll() { document.querySelectorAll('.ld-photo img').forEach(i => { if (i.complete) ldFitPhoto(i); else i.onload = () => ldFitPhoto(i); }); }
+window.addEventListener('resize', () => ldFitAll());
 function ldPhotoHtml(l) {
   const src = l && safeImg(l.photo);
-  return src ? `<img src="${src}" alt="${esc(fmtMD(l.date))}の顔写真">` : `<p class="small muted">この日の顔写真はありません<br><span style="font-size:11px">肌の記録で写真を撮ると、ここで見られます</span></p>`;
+  setTimeout(ldFitAll, 0);
+  return src ? `<img src="${src}" alt="${esc(fmtMD(l.date))}の顔写真" data-fb='${l.faceBox ? esc(JSON.stringify(l.faceBox)) : ''}'>` : `<p class="small muted">この日の顔写真はありません<br><span style="font-size:11px">肌の記録で写真を撮ると、ここで見られます</span></p>`;
 }
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
@@ -11031,23 +11050,23 @@ function openLogForm(id) {
   const syncUseAll = () => { if (!useAll) return; const all = usedBoxes().length && usedBoxes().every(i => i.checked); useAll.textContent = all ? 'すべてクリア' : 'すべて選ぶ'; useAll.setAttribute('aria-pressed', all); };
   if (useAll) useAll.onclick = () => { const all = usedBoxes().every(i => i.checked); usedBoxes().forEach(i => { i.checked = !all; }); $('#modal-root').dataset.dirty = '1'; syncUseAll(); };
   usedBoxes().forEach(i => i.addEventListener('change', syncUseAll)); syncUseAll();
-  let pendingPhoto = null;
+  let pendingPhoto = null, pendingFace = null, nextFace = null; // pendingFace：写真の中の顔の位置（ガイドの枠・AIの読み取り）
   const renderPhoto = () => {
     const area = $('#photo-area'), pf = $('#photo-field', form); if (pf) pf.hidden = !(pendingPhoto || photo); // 「カメラで記録」で撮った写真があるときだけ出す
     if (pendingPhoto) {
       area.innerHTML = `<div class="photo-prev pp-box"><img src="${pendingPhoto}" alt="撮った肌の写真"><div><p class="pp-ok">${icon('check')}肌の写真を付けました</p><p class="small muted" style="margin:2px 0 8px">「記録する」を押すと、記録と一緒に保存されます</p><button type="button" class="btn btn-danger-ghost btn-sm" id="photo-cancel">写真を削除</button></div></div>`;
-      $('#photo-cancel').onclick = () => { pendingPhoto = null; $('#f_photo').value = ''; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
+      $('#photo-cancel').onclick = () => { pendingPhoto = null; pendingFace = null; $('#f_photo').value = ''; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
     } else if (photo) {
       area.innerHTML = `<div class="photo-prev pp-box"><img src="${photo}" alt="保存した肌の写真"><div><p class="pp-ok">${icon('check')}肌の写真を保存しました</p><p class="small muted" style="margin:2px 0 8px">削除すると「肌写真」からも消えます（記録は残ります）</p><button type="button" class="btn btn-danger-ghost btn-sm" id="photo-remove">写真を削除</button></div></div>`;
       $('#photo-remove').onclick = () => { photo = null; renderPhoto(); $('#modal-root').dataset.dirty = '1'; toast('「保存する」を押すと写真が削除されます'); };
     } else area.innerHTML = '';
   };
   renderPhoto();
-  form._setPhoto = url => { pendingPhoto = url; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
-  $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url), {noGhost:!!ex}); };
+  form._setPhoto = (url, fb) => { pendingPhoto = url; pendingFace = fb || null; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
+  $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url, GUIDE_FACE), {noGhost:!!ex}); };
   $('#f_photo').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
-    try { pendingPhoto = await readImage(file, 800, 0.8); renderPhoto(); }
+    try { pendingPhoto = await readImage(file, 800, 0.8); pendingFace = null; renderPhoto(); }
     catch (err) { toast(err.message, 'error'); e.target.value = ''; }
   };
   // ---- 顔の写真から、AIで今日の肌の記録を自動で入れる（プレミアム）----
@@ -11080,7 +11099,7 @@ function openLogForm(id) {
   const faceAi = async file => {
     const box = $('#faceai-info', form); if (!file || !box) return;
     let img; try { img = await readImage(file, 1024, 0.82); } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; return; }
-    pendingPhoto = await readImage(file, 800, 0.8).catch(() => img); renderPhoto();
+    pendingPhoto = await readImage(file, 800, 0.8).catch(() => img); pendingFace = nextFace; nextFace = null; renderPhoto();
     faceAiRun(img);
   };
   // 顔を回して撮った3枚（正面・右頬・左頬）をまとめて読む。保存する写真は正面の1枚
@@ -11091,7 +11110,7 @@ function openLogForm(id) {
     try {
       const r = (await callVision('skin', img, images ? {images} : null)).result || {};
       if (!r.face) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">顔の肌をうまく読み取れませんでした。${esc(r.note || '明るい場所で、顔の正面がはっきり写るように撮り直してください。')}</div>`; return; }
-      aiApply(r);
+      aiApply(r); if (r.box && faceBoxOk(r.box)) pendingFace = faceBoxOk(r.box); // 写真の中の顔の位置（表示の切り取りに使う）
       const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
       aiLast = {acne:n, zones:(r.zones || []).map(x => ({z:x.zone, c:x.concern, l:x.level})), note:r.note || '', shots:images ? 3 : 1}; // 記録と一緒に保存して、「あなたの肌の分析」で使う
       box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>写真から今日の記録を入れました</b>${r.note ? `<br>${esc(r.note)}` : ''}<br><span class="small">ニキビ ${n}個${(r.zones || []).length ? '・' + [...new Set(r.zones.map(x => x.concern))].join('・') : ''}</span>
@@ -11104,8 +11123,8 @@ function openLogForm(id) {
   const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openGuideCam(url => (async res => {
     if (res.ai) { faceAiShots(res); setTimeout(() => { const el = $('#faceai-info', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80); return; }
     const url = res.url;
-    if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
-    else { form._setPhoto(url); toast('写真を付けました。顔を押して今日の肌を記録してください'); }
+    if (isPremium()) { const bl = await (await fetch(url)).blob(); nextFace = GUIDE_FACE; faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
+    else { form._setPhoto(url, GUIDE_FACE); toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
   })({photo:url, ai:null, url}), {w:1024, noGhost:!!ex, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
@@ -11138,7 +11157,7 @@ function openLogForm(id) {
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
       factors:$$('input[name="factors"]:checked', form).map(i => i.value).concat(PERIOD_ON || !ex ? [] : (ex.factors || []).filter(f => /生理/.test(f))), // 画面に出していない生理の記録は、前のまま残す
       areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed || !!(ex && ex.usageRecorded),
-      memo:fe.memo.value.trim(), photo:(pendingPhoto || photo) || null, aiPhoto:aiLast || (ex && ex.aiPhoto) || null};
+      memo:fe.memo.value.trim(), photo:(pendingPhoto || photo) || null, faceBox:pendingPhoto ? pendingFace : (ex && ex.faceBox) || null, aiPhoto:aiLast || (ex && ex.aiPhoto) || null};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); }
     else state.skinLogs.push(Object.assign({id:uid(), demo:false}, data));
@@ -15091,7 +15110,7 @@ const actions = {
   'life-day': v => { const [date, part] = String(v).split('|'); const l = getLife(date); openLifeForm(l ? l.id : null, part, date); },
   'ld-view': () => { // どこを押しても、3D⇄写真を切り替える
     ui.ldView = ui.ldView === 'photo' ? '3d' : 'photo'; if (Date.now() - hapticAt > 300) hapticTick(); // 重ねたスイッチで鳴らしていなければ鳴らす
-    const sg = document.getElementById('ld-stage'); if (!sg) { render(); return; } sg.classList.toggle('ld-ph-on', ui.ldView === 'photo');
+    const sg = document.getElementById('ld-stage'); if (!sg) { render(); return; } sg.classList.toggle('ld-ph-on', ui.ldView === 'photo'); ldFitAll();
     const b = document.querySelector('.ld-vsw'); if (b) { b.classList.toggle('ph', ui.ldView === 'photo'); b.setAttribute('aria-label', `3Dの顔と顔写真を切り替える（今：${ui.ldView === 'photo' ? '写真' : '3D'}）`); } },
   'sc-range': v => { if (v !== 'week' && locked()) { openPremiumSheet('肌の変化'); return; } const from = SC_RANGES.findIndex(x => x[0] === (ui.scRange || 'week')); if (ui.scRange === v || (!ui.scRange && v === 'week')) return; if (Date.now() - hapticAt > 300) hapticTick(); ui.scAnim = {from}; ui.scRange = v; render(); },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htSlide = 0; ui.hpNoSlide = true; /* 記録のタブは、切り替えるときに動かさない */ ui.ltFrom = ui.logTab; ui.logTab = v; render(); swScrollTop(); },
