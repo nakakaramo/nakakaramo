@@ -9866,7 +9866,7 @@ function rtPaneHtml(slot) {
   // 持っている商品を「今は控える」と言っている成分は、ほかの手順でもおすすめしない（「控えて」と「おすすめ」が同じ成分にならないように）
   P.steps.forEach(st => { st.good = st.good.filter(v => { let ks = []; try { ks = masterIngsOf(chipText(v)).map(e => e.k); } catch (e) { ks = []; } return !ks.some(k => PAUSED.has(k)); }); });
   let h = '';
-  if (quick && cut.length) h += `<p class="small muted rt-qnote">${[...new Set(cut.map(s => s.name.replace(/[（(].*?[）)]/g, '').replace(/^部分用$/, '部分用のケア')))].join('・')}を省いています。</p>`; // 時短：省いた手順だけを短く書く
+  void cut; // 時短：説明の文は出さない（切り替えのボタンだけで伝える）
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${ingLinkHtml(esc(t))}</p>`).join('')}</div>`;
