@@ -1492,8 +1492,10 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y;position:relative}
-.ld-card .ld-top{position:absolute;top:calc(21px + 190px - 40px);right:10px;left:auto;margin:0;z-index:6} /* 3D⇄写真とカレンダーは、顔の下の両はし（顔に重ならないように） */
-.ld-card .ld-vsw{top:calc(21px + 190px - 30px)}
+.ld-card .ld-top{position:absolute;top:calc(21px + 190px + 36px);right:14px;left:auto;margin:0;z-index:6} /* 3D⇄写真とカレンダーは、肌の調子（「普通」など）と同じ高さの両はし。位置は ldAlignBtns で合わせる */
+.ld-card .ld-vsw{top:calc(21px + 190px + 36px)}
+/* カレンダーのボタンも、3D⇄写真と同じ枠で囲む */
+.ld-card .ld-calbtn{width:auto;height:auto;min-height:0;padding:6px 12px;border:1px solid var(--line);background:var(--bg);border-radius:999px;box-shadow:none}.ld-card .ld-calbtn svg{width:16px;height:16px}
 .ld-card .ld-cal{right:0;left:auto}
 /* 3Dの顔⇄顔写真の切り替え（左上の小さなスイッチ。押すたびに切り替わる） */
 .ld-vsw{position:absolute;top:14px;left:14px;z-index:6;display:grid;grid-template-columns:1fr 1fr;padding:2px;background:var(--bg);border-radius:999px;border:1px solid var(--line);font:inherit;cursor:pointer}
@@ -10445,11 +10447,18 @@ function logDayFind(date) {
   if (m) { m.hidden = false; m.innerHTML = `<b>${esc(fmtMD(date))}</b><br>記録されていません。`; }
 }
 // 日付を変える（3Dの顔は作り直さず、色だけ塗り替える＝軽い）
+// 3D⇄写真とカレンダーのボタンを、肌の調子（「普通」など）と同じ高さにそろえる
+function ldAlignBtns() {
+  const cd = document.getElementById('log-day-card'), b = cd && cd.querySelector('.ld-info .t-cond'); if (!b) return;
+  const y = b.getBoundingClientRect().top + b.offsetHeight / 2 - cd.getBoundingClientRect().top;
+  [cd.querySelector('.ld-vsw'), cd.querySelector('.ld-top')].forEach(el => { if (el) el.style.top = Math.round(y - el.offsetHeight / 2) + 'px'; });
+}
+window.addEventListener('resize', () => ldAlignBtns());
 function logDaySet(date) {
   const list = logDayList(); if (!list.length) return;
   ui.logDay = date; const i = logDayIdx(list), l = list[i]; ui.logDay = l.date;
   const info = document.getElementById('ld-info'), det = document.getElementById('ld-detail');
-  if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
+  if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); ldAlignBtns(); }
   if (det) det.innerHTML = logDayDetailHtml(list, i);
   const ms = document.getElementById('ld-miss'); if (ms) ms.hidden = true;
   const cd = document.getElementById('log-day-card'); if (cd) cd.classList.remove('ld-none');
@@ -12636,7 +12645,7 @@ async function drawFace3d(opts) {
   // ほかの画面に3秒以上いてから戻ってきたときは、顔を正面に戻す（すぐ戻ったとき・同じ画面で日にちを変えたときは、向きをそのままにする）
   let pv = FACE3D.view[vk]; if (pv && !pv.auto && pv.t && Date.now() - pv.t >= 3000) { delete FACE3D.view[vk]; pv = null; }
   const st = FACE3D.st = {gridInfo, renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.34, 14, 12), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
-    yaw:pv ? pv.yaw : 0, pitch:pv ? pv.pitch : 0.05, phase:pv && pv.auto ? pv.phase : 0, auto:opts.auto !== false && (firstTime || !!(pv && pv.auto)), dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null, viewKey:vk, born:performance.now()};
+    yaw:pv ? pv.yaw : 0, pitch:pv ? pv.pitch : 0.05, phase:pv && pv.auto ? pv.phase : 0, auto:false, /* 3Dの顔は、開いたときに自動で回さない（2026-11-16） */ dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null, viewKey:vk, born:performance.now()};
   if (pv && pv.z && !opts.full) { cam.position.z = pv.z; }
   opts.ready(st);
   if (opts.canvas === 'face3d-home') { st.alignTop = () => t3AlignTop(st, cv); st.alignTop(); } // ホーム：左の「ニキビ」の上を、頭のてっぺんの高さにそろえる
@@ -15985,7 +15994,7 @@ function render() {
   }
   fillAds();
   if (r.name === 'charts') drawFace3d();
-  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
+  else if (r.name === 'log' && document.getElementById('face3d-log')) { ldAlignBtns(); const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
   else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { face3dSaveView(); FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
