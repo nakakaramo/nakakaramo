@@ -4134,7 +4134,11 @@ function hapticize(btn) {
 const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 // ===== 切り替え（タブ・モード・期間など）に動きをつける =====
 // 選んでいる印（色の板）が、前に選んでいた場所から新しい場所へすべって動く。下の中身も、動いた向きからふわっと入れかわる
-const SW_GROUPS = '.rt-modes,.ct-tabs,.tabs,.map-tabs,.chips:has(> .tab.active),.chips:has(> .hap-keep > .tab.active)';
+// 動くしるしを付ける切り替えのまとまり（古いiPhone・ブラウザは :has() を使えずエラーになるので、.chips は自分で確かめる）
+const SW_BASE = '.rt-modes,.ct-tabs,.tabs,.map-tabs', SW_ANY = SW_BASE + ',.chips';
+const swIsGroup = g => !g.matches('.chips') || g.matches(SW_BASE) || Array.from(g.children).some(c => c.matches('.tab.active') || (c.matches('.hap-keep') && Array.from(c.children).some(x => x.matches('.tab.active'))));
+const swGroupsAll = () => $$(SW_ANY).filter(swIsGroup);
+const swGroupOf = t => { let g = t.closest(SW_ANY); while (g && !swIsGroup(g)) g = g.parentElement && g.parentElement.closest(SW_ANY); return g; };
 const swLast = new Map();
 function swKey(g, i) { let n = ''; try { n = parseRoute().name; } catch (e) { n = location.hash; } return n + '|' + String(g.className || '').replace(/\s*sw-grp/, '') + '|' + i; } // 画面の種類ごと（#/care/… のタブを移っても、前の場所から動く）
 function swActive(g) { return g.querySelector('.rt-mode.on,.ct.on,.tab.active'); }
@@ -4159,9 +4163,9 @@ function swPlace(g, i) {
   } else { ind.style.transition = 'none'; put(r); void ind.offsetWidth; ind.style.transition = ''; }
   swLast.set(k, {r, idx});
 }
-function swAnimAll() { $$(SW_GROUPS).forEach((g, i) => swPlace(g, i)); }
+function swAnimAll() { swGroupsAll().forEach((g, i) => swPlace(g, i)); }
 // 画面を描き直さない切り替え（押したらクラスだけ変わるもの）にも対応する
-document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('.rt-mode,.ct,.tab'); if (!t) return; const g = t.closest(SW_GROUPS); if (!g) return; setTimeout(() => { if (document.body.contains(g)) { const i = $$(SW_GROUPS).indexOf(g); swPlace(g, i); } }, 0); }, true);
+document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('.rt-mode,.ct,.tab'); if (!t) return; const g = swGroupOf(t); if (!g) return; setTimeout(() => { if (document.body.contains(g)) { const i = swGroupsAll().indexOf(g); swPlace(g, i); } }, 0); }, true);
 window.addEventListener('resize', () => { clearTimeout(swAnimAll.t); swAnimAll.t = setTimeout(() => { swLast.clear(); swAnimAll(); }, 150); });
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // 保存・削除のボタンは、どこにあっても押したときに「コツッ」と鳴らす（見えないスイッチを重ねていないボタンだけ。重ねたボタンはスイッチが鳴る）
