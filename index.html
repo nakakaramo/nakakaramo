@@ -2927,7 +2927,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
   [`${PREMIUM_NAME}で増える`],
   ['今日のおすすめケア（記録・天気・あなたの肌の学習から）', '—', '○'],
   ['ケア管理（朝・夜の順番、おすすめ成分・控えたいもの）', '—', '○'],
-  ['顔の写真を日付ごとに残して見比べる（ガイド付きの撮影）', '—', '○'],
+  ['顔の写真を日付ごとに残して見比べる（ガイド付きの撮影）', '○', '○'],
   ['化粧品のパッケージ・成分表示を写真から読み取り', '—', '○'],
   ['食事の写真・栄養成分表示から読み取り', '—', '○'],
   ['AIによるケアの分析と、くわしい説明', '—', '○'],
@@ -4141,7 +4141,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], .ct2-rec, .empty [data-action="new-log"], .empty [data-action="life-part"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '#ld-calbtn, .care-btn, .life-btns .btn, .t3-side [data-action="new-log"], .ct2-rec, .empty [data-action="new-log"], .empty [data-action="life-part"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 // ===== 切り替え（タブ・モード・期間など）に動きをつける =====
 // 選んでいる印（色の板）が、前に選んでいた場所から新しい場所へすべって動く。下の中身も、動いた向きからふわっと入れかわる
 // 動くしるしを付ける切り替えのまとまり（古いiPhone・ブラウザは :has() を使えずエラーになるので、.chips は自分で確かめる）
@@ -10808,11 +10808,9 @@ function openLogForm(id) {
       <p class="fp-sumline" id="fp-sumline"></p>
       <p class="fp-gest">1本の指で回す／2本の指で広げると拡大。</p>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
-    <div class="field face-ai"><span class="lbl">顔の写真</span><p class="hint face-ai-d" style="margin:-2px 0 8px">顔を枠に合わせて撮ると、日付ごとに残して見比べられます</p><div class="meal-photo-top mpt-even">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div><div id="faceai-info"></div></div>
+    <div class="field face-ai"><span class="lbl">顔の写真</span><p class="hint face-ai-d" style="margin:-2px 0 8px">顔を枠に合わせて撮ると、日付ごとに残して見比べられます</p><div class="meal-photo-top mpt-even">${`<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`}</div><div id="faceai-info"></div></div>
     <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
-      <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm${isPremium() ? '' : ' is-locked'}" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `${premLock()}`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
+      <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
       <div id="photo-area"></div>
     </div>
     <div class="fp-hidden" aria-hidden="true">
@@ -11073,7 +11071,7 @@ function openLogForm(id) {
   };
   renderPhoto();
   form._setPhoto = (url, fb) => { pendingPhoto = url; pendingFace = fb || null; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
-  $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url, GUIDE_FACE), {noGhost:!!ex}); };
+  $('#photo-guide').onclick = () => { openGuideCam(url => form._setPhoto(url, GUIDE_FACE), {noGhost:!!ex}); };
   $('#f_photo').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     try { pendingPhoto = await readImage(file, 800, 0.8); pendingFace = null; renderPhoto(); }
@@ -11109,7 +11107,7 @@ function openLogForm(id) {
   // 顔の写真から、AIで肌の状態を判定して記録に入れる仕組みはやめた（精度を確かめられないため。2026-11-16）。写真は日付ごとに残して見比べる
   // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
   // 顔を回して3方向から撮る方法は手間なのでやめて、顔の枠に合わせて1枚撮るだけにする
-  const camShot = () => !isPremium() ? openPremiumSheet('顔の写真') : openGuideCam(url => (async res => {
+  const camShot = () => openGuideCam(url => (async res => { // 顔の写真は無料（2026-11-16）
     const url = res.url;
     form._setPhoto(url, GUIDE_FACE); toast('写真を付けました。顔を押して今日の肌を記録してください'); // 写真から肌の状態をAIで判定して入れるのはやめた（精度を確かめられないため。2026-11-16）
     setTimeout(() => { const el = $('#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
@@ -14087,7 +14085,7 @@ const VISION_VERSION = '2026-11-07-quota'; // サーバーの関数 vision の�
 const AI_NOTE = '自動で読み取った推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 // ===== 月額・年額の選び方と、プレミアムの機能（少しだけ見せて、下はぼかす） =====
-const PREM_FEATS = ['顔写真で、肌の変化を見比べ', 'カメラで化粧品を簡単登録', '食事写真から栄養を自動計算', '記録をもとに、肌ケアと献立を提案', '詳細分析・成分相性マップ', 'AIにいつでも相談', '広告なし'];
+const PREM_FEATS = ['カメラで化粧品を簡単登録', '食事写真から栄養を自動計算', '記録をもとに、肌ケアと献立を提案', '詳細分析・成分相性マップ', 'AIにいつでも相談', '広告なし'];
 function premFeatsHtml() {
   return `<div class="pf open" data-pf><ul class="pf-l">${PREM_FEATS.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
 }
