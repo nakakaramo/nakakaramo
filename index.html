@@ -2637,6 +2637,7 @@ html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-the
 .acc-me .am-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .acc-me .am-row b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-me .am-row .am-edit{flex:none;align-self:auto;margin:0;padding:0!important;border:0!important;border-radius:0;background:none;font-size:13.5px;font-weight:500;color:var(--green-d)}
+html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mrow,.pcard,.sc-opt,.ls-main,.acc-row,.mb-col,.icon-btn,.ac-item,.add-opt,.rx-item,.pop-item,.rt-slot,.rt-ck,.fp-kind,.ptz,.sns-ic,.sc-d,[role="button"],[data-action]):active,html[data-nosink] #main .seg-opt:active span,html[data-nosink] #main .hap-keep:active > .btn,html[data-nosink] #main .hap-wrap:active > .btn{transform:none!important} /* アカウント・ホーム・記録一覧のボタンは押しても沈まない */
 </style>
 </head>
 <body>
@@ -10448,8 +10449,8 @@ function logDayFind(date) {
 }
 // 日付を変える（3Dの顔は作り直さず、色だけ塗り替える＝軽い）
 // 3D⇄写真とカレンダーのボタンを、肌の調子（「普通」など）と同じ高さにそろえる
-function ldAlignBtns() {
-  const cd = document.getElementById('log-day-card'), b = cd && cd.querySelector('.ld-info .t-cond'); if (!b) return;
+function ldAlignBtns(root) {
+  const cd = root ? root.querySelector('.ld-card') : document.getElementById('log-day-card'), b = cd && cd.querySelector('.ld-info .t-cond'); if (!b) return;
   const y = b.getBoundingClientRect().top + b.offsetHeight / 2 - cd.getBoundingClientRect().top;
   [cd.querySelector('.ld-vsw'), cd.querySelector('.ld-top')].forEach(el => { if (el) el.style.top = Math.round(y - el.offsetHeight / 2) + 'px'; });
 }
@@ -15800,11 +15801,15 @@ function placeHomeTabInd() {
     const tmp = document.createElement('div'); tmp.innerHTML = html; const src = tmp.querySelector('.home-pane'); if (!src) return null;
     src.querySelectorAll('canvas').forEach(c => { const sn = FACE3D.snap && FACE3D.snap[c.id]; if (sn) { const im = document.createElement('img'); im.src = sn; im.alt = ''; im.style.cssText = 'display:block;width:100%;height:100%;object-fit:fill'; c.replaceWith(im); } }); // 3Dの顔は、写しておいた絵で見せる
     src.querySelectorAll('.f3-load').forEach(x => x.remove());
+    src.querySelectorAll('.chart[id^="chart-"]').forEach(x => { x.dataset.cid = x.id.slice(6); }); // グラフは、のぞいている間も描いておく（あとから出てきて動いて見えないように）
     src.querySelectorAll('[id]').forEach(x => x.removeAttribute('id')); src.querySelectorAll('canvas,script,iframe,ins').forEach(x => x.remove());
     const g = document.createElement('div'); g.className = 'home-pane hp-ghost'; g.setAttribute('aria-hidden', 'true'); g.innerHTML = src.innerHTML;
     const par = pane.parentElement; if (getComputedStyle(par).position === 'static') par.style.position = 'relative';
     g.style.cssText = `position:absolute;top:${pane.offsetTop}px;left:${pane.offsetLeft}px;width:${pane.offsetWidth}px;pointer-events:none;transition:none;`;
-    g.dataset.side = side; par.appendChild(g); return g;
+    g.dataset.side = side; par.appendChild(g);
+    g.querySelectorAll('.chart[data-cid]').forEach(el => { const d = chartDefs.slice().reverse().find(c => c.id === el.dataset.cid); if (d) { try { el.innerHTML = d.fn(Math.max(260, Math.floor(el.clientWidth || 320))); } catch (e) { /* 何もしない */ } } });
+    ldAlignBtns(g); // 3D⇄写真・カレンダーのボタンも、本物と同じ高さに置く
+    return g;
   };
   const ghostMove = (v, anim) => { const W = pane ? pane.offsetWidth + 16 : window.innerWidth; Object.values(ghosts).forEach(g => { if (!g) return; g.style.transition = anim || 'none'; g.style.transform = `translateX(${(Number(g.dataset.side) * W + v).toFixed(1)}px)`; }); };
   const ghostClear = () => { Object.values(ghosts).forEach(g => g && g.remove()); ghosts = {}; };
@@ -15916,6 +15921,8 @@ function render() {
   try { gateSync(); } catch (e) { /* 何もしない */ }
   applyHelpPref();
   const r = parseRoute();
+  // アカウント（すべて）・ホーム・記録一覧のボタンは、押しても沈まない（2026-11-16）
+  try { document.documentElement.toggleAttribute('data-nosink', r.name === 'home' || r.name === 'account' || (r.name === 'log' && ui.logTab !== 'recent')); } catch (e) { /* 何もしない */ }
   if (r.name === 'new') { // ウィジェット・ショートカットから：記録の画面を直接開く
     const what = r.id; history.replaceState({d:NAV_D}, '', '#/home'); render();
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
