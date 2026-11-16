@@ -4131,7 +4131,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], .ct2-rec, .empty [data-action="new-log"], .empty [data-action="life-part"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 // ===== 切り替え（タブ・モード・期間など）に動きをつける =====
 // 選んでいる印（色の板）が、前に選んでいた場所から新しい場所へすべって動く。下の中身も、動いた向きからふわっと入れかわる
 // 動くしるしを付ける切り替えのまとまり（古いiPhone・ブラウザは :has() を使えずエラーになるので、.chips は自分で確かめる）
@@ -5993,21 +5993,23 @@ const ING_RANK_CACHE = {}; // 成分・洗顔料などの人気ランキング�
 async function openIngSheet(word) {
   const clQ = /^クレンジング｜/.test(word), washQ = /^洗顔｜/.test(word), wraw = String(word).replace(/^(洗顔|クレンジング)｜/, '');
   const w1 = wraw.replace(/（.*?）|\(.*?\)/g, '').trim();
-  const isCl = clQ || /^(クレンジング|メイク落とし)$/.test(w1);
-  const wk = isCl ? null : washQ || (/洗顔|洗浄成分/.test(w1) && !/後|運動|回数|しすぎ/.test(w1)) ? washKindOf(wraw) : null; // 洗顔料のおすすめは、洗顔料の中から探す
-  const w0 = isCl ? 'クレンジング' : wk ? (washQ || !/洗顔/.test(w1) ? wk[1] + '系の洗顔料' : w1).replace(/^アミノ酸系の洗顔料$/, 'アミノ酸系洗顔料').replace(/^(サリチル酸|酵素|クレイ)系の洗顔料$/, '$1洗顔') : w1, e = wk || isCl ? null : ingEntryOf(word);
-  const isSun = !wk && !isCl && (/日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen'));
+  const tm = TERM_RANK[wraw] ? wraw : ''; // 成分ではない言葉（ノンコメドジェニック・弱酸性など）：説明と、その表示がある商品の人気ランキング
+  const isCl = !tm && (clQ || /^(クレンジング|メイク落とし)$/.test(w1));
+  const wk = isCl || tm ? null : washQ || (/洗顔|洗浄成分/.test(w1) && !/後|運動|回数|しすぎ/.test(w1)) ? washKindOf(wraw) : null; // 洗顔料のおすすめは、洗顔料の中から探す
+  const w0 = isCl ? 'クレンジング' : wk ? (washQ || !/洗顔/.test(w1) ? wk[1] + '系の洗顔料' : w1).replace(/^アミノ酸系の洗顔料$/, 'アミノ酸系洗顔料').replace(/^(サリチル酸|酵素|クレイ)系の洗顔料$/, '$1洗顔') : w1, e = wk || isCl || tm ? null : ingEntryOf(word);
+  const isSun = !tm && !wk && !isCl && (/日焼け止め|サンスクリーン|UVカット|紫外線/i.test(w0) || !!(e && e.key === 'sunscreen'));
   const useNote = (String(wraw).match(/[（(](.*?)[）)]/) || [])[1] || '';
   setTimeout(() => { MODAL_REOPEN = () => openIngSheet(word); }, 0); // 商品を開いて戻ってきたら、このランキングを開き直す
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
     ${useNote && /回|朝|夜|だけ|毎/.test(useNote) ? `<p class="av-note">${esc(useNote)}</p>` : ''}
-    ${isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>説明</b><p>${esc(briefTxt(wk[4]))}</p></div><div class="ing-b"><b>ポイント</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl">${ingInfoHtml(e, w0)}${cautionOrPoint(briefTxt(e.caution))}</div>
+    ${tm ? `<div class="ing-dl"><div class="ing-b"><b>どういう意味？</b><p>${esc(TERM_INFO[tm][1])}</p></div>${TERM_INFO[tm][3] ? `<div class="ing-b warn"><b>ポイント</b><p>${esc(TERM_INFO[tm][3])}</p></div>` : ''}</div>` : isCl ? `<div class="ing-dl">${CL_INFO(clQ ? wraw : '').map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : wk ? `<div class="ing-dl"><div class="ing-b"><b>説明</b><p>${esc(briefTxt(wk[4]))}</p></div><div class="ing-b"><b>ポイント</b><p>よく泡立てて、こすらずに洗い、ぬるま湯でしっかりすすぎます。洗うのは朝晩1回ずつまでにします。</p></div></div>` : isSun ? `<div class="ing-dl">${SUN_INFO.map(([t, d, c]) => `<div class="ing-b ${c || ''}"><b>${t}</b><p>${d}</p></div>`).join('')}</div>` : e ? `<div class="ing-dl">${ingInfoHtml(e, w0)}${cautionOrPoint(briefTxt(e.caution))}</div>
       <a class="link small" href="#/ingredients/${e.key}">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
-    <h3 class="ing-h">${isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
+    <h3 class="ing-h">${tm ? TERM_RANK[tm].label + 'の人気ランキング' : isSun ? '日焼け止めの人気ランキング' : isCl ? 'クレンジングの人気ランキング' : wk ? '洗顔料の人気ランキング' : 'この成分の人気ランキング'}</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
     <p class="small muted" style="margin-top:8px">${ingAvoidKeys().length ? `${(() => { const L = ING_AVOID_CTX.filter(v => ingEntryOf(chipText(v)) || /香料|エタノール|アルコール|メントール|スクラブ|オイル/.test(v)).slice(0, 3).map(v => { const why = (String(v).match(/[（(](.*?)[）)]/) || [])[1]; return esc(chipText(v)) + (why ? `（${esc(why)}）` : ''); }); return L.length ? `今のあなたの肌・使っている物・薬から、${L.join('、')}が入った商品は省いています。` : '肌に合わなかった成分が入った商品は省いています。'; })()}` : ''}</p><div id="ing-partner"></div></div>`});
   const WASH_N = /洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|パウダー|wash/i, WASH_NG = /ボディ|シャンプー|ハンド|食器|洗濯|ヘア|メイク落とし|クレンジング(オイル|バーム|ジェル|ミルク|ウォーター)|拭き取り|詰め?替/i;
   const keys = wk ? [] : ingWords(word, e).concat(isSun ? ['日焼け止め', 'uv', 'spf', 'サンスクリーン'].map(fnorm) : []);
-  const hit = isCl ? x => { const n = cleanShopName(x.name) || x.name; return /クレンジング|メイク落とし|cleansing/i.test(n) && !/ボディ|シャンプー|頭皮|ヘア|スカルプ|洗顔フォーム|詰め?替/i.test(n) && shopSingle(x, w0); }
+  const hit = tm ? x => TERM_RANK[tm].re.test((cleanShopName(x.name) || x.name) + ' ' + (x.caption || '')) && (!TERM_RANK[tm].only || TERM_RANK[tm].only.test(cleanShopName(x.name) || x.name)) && shopSingle(x, w0)
+    : isCl ? x => { const n = cleanShopName(x.name) || x.name; return /クレンジング|メイク落とし|cleansing/i.test(n) && !/ボディ|シャンプー|頭皮|ヘア|スカルプ|洗顔フォーム|詰め?替/i.test(n) && shopSingle(x, w0); }
     : wk ? x => { const n = cleanShopName(x.name) || x.name; return WASH_N.test(n) && !WASH_NG.test(n) && wk[3].test(n + ' ' + (x.caption || '') + ' ' + (x.ingredients || '')) && shopSingle(x, w0); }
     : x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)) && shopSingle(x, w0); };
   // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
@@ -6028,7 +6030,7 @@ async function openIngSheet(word) {
   const rkKey = word + '|' + ingAvoidKeys().join(','), rkC = ING_RANK_CACHE[rkKey] && Date.now() - ING_RANK_CACHE[rkKey].t < 30 * 60000 ? ING_RANK_CACHE[rkKey] : null;
   const list = rkC ? rkC.list : [], alias = e && (e.aliases || [])[0] && (e.aliases || [])[0] !== w0 ? e.aliases[0] : '';
   if (!rkC) { // 一度調べたランキングは30分覚えておく（商品を開いて戻ったときに、もう一度探し直さない）
-  const qs = isCl ? ['クレンジング', 'クレンジングオイル', 'クレンジングバーム', 'クレンジングジェル', 'クレンジングクリーム', 'クレンジングミルク', 'クレンジングウォーター'] : wk ? wk[2] : isSun ? ['日焼け止め', '日焼け止め ジェル', '日焼け止め クリーム', '日焼け止め ミルク', '日焼け止め スプレー', '日焼け止め スティック', '日焼け止め パウダー'].concat(w0 !== '日焼け止め' ? [w0] : [])
+  const qs = tm ? TERM_RANK[tm].q : isCl ? ['クレンジング', 'クレンジングオイル', 'クレンジングバーム', 'クレンジングジェル', 'クレンジングクリーム', 'クレンジングミルク', 'クレンジングウォーター'] : wk ? wk[2] : isSun ? ['日焼け止め', '日焼け止め ジェル', '日焼け止め クリーム', '日焼け止め ミルク', '日焼け止め スプレー', '日焼け止め スティック', '日焼け止め パウダー'].concat(w0 !== '日焼け止め' ? [w0] : [])
     : [w0, w0 + ' 美容液', w0 + ' クリーム', w0 + ' 化粧水', alias].filter(Boolean);
   const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'popular'})));
   res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.filter(hit).forEach(x => { if (!list.some(y => sameProduct({name:y.name}, {name:x.name}))) list.push(Object.assign({}, x, {rank:0})); }); });
@@ -6053,7 +6055,7 @@ async function openIngSheet(word) {
   const kindOf = x => { const n = tidyName(x.name); if (isSun) return sunKind(n); if (isCl) return clKind(n); return /美容液|セラム|エッセンス|アンプル/i.test(n) ? 'serum' : /化粧水|ローション|トナー/i.test(n) && !/ボディ/.test(n) ? 'lotion' : /クリーム|バーム/.test(n) && !/ハンド|ボディ|日焼け|UV/i.test(n) ? 'cream' : 'other'; };
   list.forEach(x => { x.kind = kindOf(x); });
   // 日焼け止め・洗顔など、成分ではなく「商品の種類」そのもののときは、化粧水・美容液…に分けない
-  const isType = !!wk || isCl || /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
+  const isType = !!wk || isCl || !!(tm && TERM_RANK[tm].type) || /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
   const KINDS = isCl ? [['all', 'すべて'], ['oil', 'オイル'], ['balm', 'バーム'], ['gel', 'ジェル'], ['cream', 'クリーム'], ['milk', 'ミルク'], ['water', 'ウォーター'], ['other', 'その他']] : isSun ? [['all', 'すべて'], ['gel', 'ジェル'], ['cream', 'クリーム'], ['milk', 'ミルク'], ['spray', 'スプレー'], ['stick', 'スティック'], ['powder', 'パウダー'], ['other', 'その他']] : isType ? [['all', 'すべて']] : [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
   let cur = rkS.cur || 'all', shown = rkS.shown || 5;
   if (isCl && clQ && !rkS.cur) { const k0 = clKind(wraw.split(/[・（(]/)[0]); if (k0 !== 'other' && list.some(x => x.kind === k0)) cur = k0; } // ケア管理のおすすめの種類から開く
@@ -9259,14 +9261,22 @@ const TERM_INFO = {
   'ダブル洗顔': ['ダブル洗顔', 'クレンジングでメイクを落としたあとに、洗顔料でもう一度洗うことです。', [], '「W洗顔不要」と書いてあるクレンジングなら、洗顔料はいりません。'],
   '弱酸性': ['弱酸性', '健康な肌と同じくらいの、やや酸性の性質です。洗い上がりがやさしい洗顔料によく書かれています。', [], ''],
 };
+// 成分ではない言葉のうち、その表示がある商品を探せるもの（用語の説明に、人気ランキングも出す）
+const TERM_RANK = {
+  'ノンコメドジェニック': {label:'ノンコメドジェニックの商品', q:['ノンコメドジェニック', 'ノンコメドジェニック 化粧水', 'ノンコメドジェニック 日焼け止め', 'ノンコメドジェニック 乳液', 'ノンコメドジェニックテスト済み'], re:/ノンコメド|non\s*-?comedo/i},
+  '弱酸性': {label:'弱酸性の洗顔料', q:['弱酸性 洗顔', '弱酸性 洗顔フォーム', '弱酸性 洗顔料'], re:/弱酸性/, only:/洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん/, type:true},
+  'ダブル洗顔': {label:'W洗顔不要のクレンジング', q:['W洗顔不要 クレンジング', 'ダブル洗顔不要 クレンジング', 'w洗顔不要 クレンジングバーム'], re:/(W|ダブル|w)\s*洗顔\s*不要/, only:/クレンジング|メイク落とし/, type:true},
+};
 const TERM_KEYS = Object.keys(TERM_INFO);
 const ING_LINK_SKIP = /^(保湿|保湿成分|日焼け止め|水|オイル|洗顔|クリーム|乳液|化粧水|美容液|成分|エキス)$/;
+const TERM_NOLINK = ['皮脂']; // よく知られた言葉は、緑の下線（説明へのリンク）にしない
 let ING_LINK_RE = null;
 function ingLinkRe() {
   if (ING_LINK_RE) return ING_LINK_RE;
   const set = new Set(Object.keys(ING_LINK_EXTRA).concat(TERM_KEYS));
   ING_DB.forEach(e => [e.name.replace(/（.*?）|\(.*?\)/g, '').replace(/類$/, '')].concat(e.aliases || []).forEach(a => { a = String(a).trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,（(]/.test(a)) set.add(a); }));
   try { ING_MASTER.forEach(m => { const a = String(m.ja || '').replace(/（.*?）/g, '').trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,]/.test(a)) set.add(a); }); } catch (e) { /* 何もしない */ }
+  TERM_NOLINK.forEach(t => set.delete(t));
   const terms = [...set].sort((a, b) => b.length - a.length).map(t => esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   ING_LINK_RE = new RegExp('(' + terms.join('|') + ')', 'g');
   return ING_LINK_RE;
@@ -13184,6 +13194,7 @@ async function tipTowelRank() {
 // むずかしい言葉を押したとき：意味と、主にどんな成分か（成分を押すと成分の説明）
 function openTermSheet(k) {
   const t = TERM_INFO[k]; if (!t) return;
+  if (TERM_RANK[k]) { openIngSheet(k); return; } // 成分の説明と同じく、説明＋人気ランキングを出す
   setTimeout(() => { MODAL_REOPEN = () => openTermSheet(k); }, 0);
   const ings = t[2].filter(x => ingEntryOf(x) || ING_LINK_EXTRA[x]);
   openModal({title:esc(t[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>どういう意味？</b><p>${esc(t[1])}</p></div>
