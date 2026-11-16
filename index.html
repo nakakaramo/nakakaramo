@@ -7062,7 +7062,7 @@ function viewTrouble() {
   html += bad.length ? badS.filter(x => x.sus.length).map(({l, why, sus}) => {
       return `<div class="ng-day"><div class="ng-dh"><b>${fmtDate(l.date)}</b><span>${esc(why.join('・'))}</span></div>
         ${sus.map(x => `<div class="ng-sus"><span class="ng-sn"><b>${esc(truncate(x.p.name, 28))}</b><small>${[x.used ? 'この日に使った' : '', x.fresh ? `${diffDays(x.p.startDate, l.date) + 1}日目` : ''].filter(Boolean).join('・')}</small></span>${x.p.ng ? '<span class="chip warn">記録ずみ</span>' : `<button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(x.p.id)}" data-date="${l.date}">合わなかった</button>`}</div>`).join('')}</div>`; }).join('')
-      + (noUse.length ? `<div class="ng-day"><div class="ng-dh"><b>ほかに${noUse.length}日</b><span>${noUse.slice(0, 4).map(x => fmtShort(x.l.date)).join('・')}${noUse.length > 4 ? '…' : ''}</span></div><p class="small muted" style="margin:4px 0 0">使った化粧品が記録されていない日です。肌の記録で「使ったアイテム」を選ぶと、ここに出ます。</p></div>` : '')
+      + (noUse.length ? `<div class="ng-day"><div class="ng-dh"><b>ほかに${noUse.length}日</b><span>${noUse.slice(0, 4).map(x => fmtShort(x.l.date)).join('・')}${noUse.length > 4 ? '…' : ''}</span></div><p class="small muted" style="margin:4px 0 0">使った化粧品が記録されていない日です。ケア管理の「朝・夜のケア」で使ったものにチェックすると、ここに出ます。</p></div>` : '')
     : `<p class="small muted" style="margin:0">肌が荒れた日はまだありません。毎日の肌の記録から、自動で出します。</p>`;
   html += '</div><div class="notice cb-note">ここに出ている化粧品が原因とは限りません。かゆみや腫れが強いとき、続くときは、使うのをやめて皮膚科に相談してください。</div>';
   return html;
@@ -7324,7 +7324,7 @@ function viewMyDetail(id) {
     </div>
     ${fc ? `<div class="card mt"><div class="card-h"><h2>使用頻度の確認（直近4週間）</h2></div>
       <p style="font-size:14px">${esc(fc.text)}</p>
-      ${fc.status === 'none' ? '<p class="small muted" style="margin-top:6px">肌の記録で「使ったアイテム」にチェックすると、実際の使用回数と比べられます。</p>' : ''}
+      ${fc.status === 'none' ? '<p class="small muted" style="margin-top:6px">ケア管理の「朝・夜のケア」で使ったものにチェックすると、実際の使用回数と比べられます。</p>' : ''}
       ${fc.status === 'over' ? `<div class="alert-card" style="margin-top:10px"><b>使用回数を確認してください</b><span style="white-space:pre-line">${esc(overuseNote(p))}</span></div>` : ''}</div>` : ''}
     <div class="mt">
       <div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div>
@@ -7998,7 +7998,7 @@ function skinChangeHtml() {
   const idx = SC_RANGES.findIndex(x => x[0] === k), an = ui.scAnim; ui.scAnim = null; // 切り替えたときだけ動かす
   const tabs = `<div class="sc-tabs" role="tablist" aria-label="期間"><span class="sc-ind ${an ? 'go' : ''}" style="--to:${idx};--from:${an ? an.from : idx}" aria-hidden="true"></span>${SC_RANGES.map(([v, l]) => { const lk = v !== 'week' && locked();
     return `<div role="tab" tabindex="0" aria-selected="${k === v}" class="sc-tab ${k === v ? 'on' : ''}" ${lk ? `data-psheet="肌の変化（${l}）"` : `data-action="sc-range" data-id="${v}"`}>${l}${lk ? `<span class="sc-lock">${icon('lock')}</span>` : ''}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`; }).join('')}</div>`;
-  const head = `<div class="card sc-card"><div class="card-h"><h2>肌の変化</h2><a class="link" href="#/report">レポート →</a></div>${tabs}`;
+  const head = `<div class="card sc-card">${tabs}`; // 上のタブに「肌の変化」と出ているので、カードには同じ見出しを出さない
   if (!real.length) return head + `<p class="small muted" style="margin:6px 0 0">肌の記録をつけると、ここで変化を見られます。</p></div>`;
   // 期間：週間＝直近7日、月間＝直近30日、年間＝直近12か月（くらべるのは、その1つ前の同じ長さ）
   const days = k === 'week' ? 7 : k === 'month' ? 30 : 365, start = addDays(t, -(days - 1)), pStart = addDays(start, -days), pEnd = addDays(start, -1);
@@ -10733,11 +10733,7 @@ function openLogForm(id) {
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
       <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
-    <div class="field lf-sep"><div class="used-head"><span class="lbl">使ったアイテム<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="use-all-mini" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
-      ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${myThumb(p)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
-        <p class="hint">使ったものの写真を押してください。予定の使用頻度と実際の使用を比べられます。</p>`
-      : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
-    </div>
+    <div hidden aria-hidden="true">${d.usedProducts.map(id => `<input type="checkbox" name="usedProducts" value="${esc(id)}" checked tabindex="-1">`).join('')}</div><!-- 「使ったアイテム」の欄はなくした。ケア管理のチェックなどで記録した分は、そのまま残す -->
     <div class="lf-sep lf-sep-only"></div>
     ${field('自由メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="500" placeholder="例：新しい美容液を使い始めた、マスクで擦れた など">${esc(d.memo)}</textarea>`, {name:'memo', hint:'食事・睡眠は「食事・睡眠」から別に記録できます'})}
   </div></form>`,
@@ -11067,7 +11063,7 @@ function openLogForm(id) {
       redness:Number(fe.redness.value), dryness:Number(fe.dryness.value), oil:Number(fe.oil.value),
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
       factors:$$('input[name="factors"]:checked', form).map(i => i.value).concat(PERIOD_ON || !ex ? [] : (ex.factors || []).filter(f => /生理/.test(f))), // 画面に出していない生理の記録は、前のまま残す
-      areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed,
+      areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed || !!(ex && ex.usageRecorded),
       memo:fe.memo.value.trim(), photo:(pendingPhoto || photo) || null, aiPhoto:aiLast || (ex && ex.aiPhoto) || null};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); }
@@ -13405,7 +13401,7 @@ function reportBodyHtml() {
   if (started.length) pts.push(`「${started.map(x => x.name).join('」「')}」の使用を開始しました。新しい商品を同時にいくつも増やさず、1つずつ試すと記録を見比べやすくなります。`);
   if (started.length >= 2) pts.push('この週に2つ以上の商品を使い始めています。肌に変化があっても、どの商品によるものかを区別しにくくなります。');
   used.forEach(x => { if (freqCheck(x, ws, effEnd).status === 'over') pts.push(`「${x.name}」の使用回数が、登録した頻度より多くなっています。製品の使用方法を確認してください。`); });
-  if (used.length && !logs.some(l => l.usageRecorded)) pts.push('「使ったアイテム」を記録すると、予定と実際の使用頻度を比べられます。');
+  if (used.length && !logs.some(l => l.usageRecorded)) pts.push('ケア管理の「朝・夜のケア」で使ったものにチェックすると、予定と実際の使用頻度を比べられます。');
   if (s.acneAvg != null && p.acneAvg != null && s.acneAvg - p.acneAvg >= 0.5) pts.push('ニキビの記録数が前週より増えています。「ニキビの詳細」で部位・大きさ・経過を記録しておくと、振り返りやすくなります。');
   if (s.dry != null && s.dry >= 3) pts.push('乾燥の自己評価が高めでした。室内の湿度や洗顔の回数など、商品以外の状況もメモしておきましょう。');
   if (s.red != null && s.red >= 3) pts.push('赤みの自己評価が高めでした。赤みが続く・悪化する場合は、自己判断せず皮膚科医に相談してください。');
@@ -14800,7 +14796,7 @@ async function researchWithdraw() {
 }
 function researchPreviewHtml() {
   const sm = researchSummary(), arrow = (v, good) => v == null ? '—' : `<span style="color:${(good === 'up' ? v > 0 : v < 0) ? 'var(--green-d)' : v === 0 ? 'var(--muted)' : '#C0503C'}">${v > 0 ? '+' : ''}${v.toFixed(2)}</span>`;
-  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。Myアイテムに全成分を入れ、肌の記録で「使ったアイテム」を選ぶと、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
+  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。Myアイテムに全成分を入れ、ケア管理の「朝・夜のケア」で使ったものにチェックすると、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
   return `<p class="small muted" style="margin:0 0 6px">その成分を使った日と使わなかった日の差（あなたの記録）。肌の調子は＋が良い、ほかは−が良い変化です。</p>
     <div class="rs-list">${sm.ings.slice(0, 12).map(x => `<div class="rs-row"><b>${esc(truncate(x.name.replace(/（.*?）/g, ''), 16))}<small>使った日 ${x.du}日</small></b><span>調子 ${arrow(x.d.cond, 'up')}</span><span>ニキビ ${arrow(x.d.acne, 'down')}</span><span>赤み ${arrow(x.d.red, 'down')}</span><span>乾燥 ${arrow(x.d.dry, 'down')}</span></div>`).join('')}</div>`;
 }
