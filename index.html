@@ -2919,7 +2919,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119171311'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119172215'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -11827,7 +11827,7 @@ function openLifeForm(id, part, forDate) {
         box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b><span class="small muted">（${sec}秒）</span>
           ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">数字を出せませんでした。下のリストから選んでください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.needOfficial ? '<br><span class="small muted">メーカー公式の数字を確認中…</span>' : ''}${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
-          <p class="small muted" style="margin-top:6px">${aiRes[k].every(x => x.jan) ? 'バーコードから、パッケージの栄養成分表示を出しています。' : '「目安」は写真からの推定です。違うときは追加したあとで直せます。'}</p></div>`;
+          <p class="small muted" style="margin-top:6px">${aiRes[k].every(x => x.jan) ? 'バーコードから、パッケージの栄養成分表示を出しています。' : aiRes[k].some(x => x.basis === '推定') ? '「目安」は写真からの推定です。違うときは追加したあとで直せます。' : '違うときは、追加したあとで直せます。'}</p></div>`;
         };
         paintAi();
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
@@ -12858,7 +12858,7 @@ const AI_AUTO_GAP = 6 * 3600 * 1000, ADVICE_GAP = 3 * 60 * 1000;
 async function runMenu(force) {
   if (menuBusy || !isPremium()) return;
   const d = menuInput(), sig = adviceSig(d), c = menuCache();
-  if (c && c.res && (!(c.res.meals || []).every(m => Array.isArray(m.plans)) || !('storeNote' in c.res))) force = true; // 前の形（コンビニなし）の結果は作り直す
+  if (c && c.res && !(c.res.meals || []).every(m => Array.isArray(m.plans))) force = true; // 前の形（1パターン）の結果だけ作り直す（サーバーは storeNote を返さないので、それでは判断しない：毎回AIを使ってしまうため）
   if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return;
   if (!force && c && c.at && Date.now() - c.at < AI_AUTO_GAP) return; // 自動の作り直しは6時間に1回まで（AIの1日の回数を、写真の読み取りに残すため）
   menuBusy = true; menuErr = '';
