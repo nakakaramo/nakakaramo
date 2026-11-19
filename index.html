@@ -2649,10 +2649,10 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .ld-card .ld-head .ld-top{position:relative;top:auto!important;right:auto;left:auto;margin:0}
 .ld-card .ld-head .ld-date{flex:1;min-width:0}
 .ld-card .ld-stwrap{position:relative;width:100%;max-width:300px;margin:0 auto}
-.ld-card .ld-stwrap .ld-arrow{position:absolute;top:calc(50% - 17px);transform:none!important;z-index:4;width:34px;height:34px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.ld-card .ld-stwrap{--ld-ph-w:143px}.ld-card .ld-stwrap #ld-prev{left:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))}.ld-card .ld-stwrap #ld-next{right:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))} /* 写真の左右のはしのすぐ外 */
+.ld-card .ld-condrow{position:relative;width:100%;max-width:300px;margin:0 auto;--ld-ph-w:143px}.ld-card .ld-condrow .ld-arrow{position:absolute;top:calc(50% - 17px);transform:none!important;z-index:4;width:34px;height:34px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ld-card .ld-stwrap{--ld-ph-w:143px}.ld-card .ld-condrow #ld-prev{left:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))}.ld-card .ld-condrow #ld-next{right:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))} /* 写真の左右のはしのすぐ外 */
 .ld-card .ld-swipe{display:block;margin-top:8px}
-.ld-none .ld-stwrap .ld-arrow{visibility:hidden}
+.ld-none .ld-condrow .ld-arrow{visibility:hidden}
 .fb-wrap{z-index:4200}.sp-fb{margin-top:10px;background:var(--surface);color:var(--green-d)!important;border:1px solid var(--line)}
 .rt-today{padding:14px 16px}.rt-today-h{display:flex;align-items:center;gap:6px;color:var(--green-d)}.rt-today-h svg{width:18px;height:18px}.rt-today-c{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
 .rt-rest summary{cursor:pointer;font-size:13px;color:var(--green-d);padding:4px 0}.rt-rest ul{list-style:none;margin:6px 0 0;padding:0}.rt-rest li{display:flex;flex-direction:column;padding:6px 0;border-top:1px solid var(--line,#eee);font-size:13px}.rt-rest li span{color:var(--muted,#777);font-size:12px}
@@ -2888,7 +2888,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119100140'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119102022'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4913,6 +4913,13 @@ function openRxIngSheet(ing) {
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-rxing]'); if (!b) return; e.preventDefault(); hapticTick(); openRxIngSheet(b.dataset.rxing); });
+// ニキビの塗り薬の成分から、使われるニキビの種類（例：白ニキビ・黒ニキビ・赤ニキビ）
+function acneTypesOfIng(ing) {
+  const w = normIng(String(ing || '').replace(/[、,，]/g, '・')); if (!w) return '';
+  const k = Object.keys(ACNE_DRUG_ING).find(k => normIng(ACNE_DRUG_ING[k].name) === w) || (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(ing) && !/過酸化ベンゾイル/.test(ing) ? 'abx' : '');
+  if (!k) return '';
+  return [...new Set(ACNE_TYPE_DRUGS.filter(g => g.ks.includes(k)).flatMap(g => g.t.map(t => t.replace(/（.*?）/, ''))))].join('・');
+}
 const rxUseOf = name => { const d = RX_DRUGS.find(x => x[1] === name); return d ? (RX_USE[d[0]] || d[0]) : ''; };
 const rxInfoUrl = name => 'https://www.google.com/search?q=' + encodeURIComponent(name + ' 添付文書');
 // 薬の種類から、使用目的を自動で決める
@@ -7439,7 +7446,7 @@ function viewMyDetail(id) {
   const fc = p.status !== STOCK ? freqCheck(p, addDays(t, -27), t) : null;
   { // 化粧品も塗り薬も、同じ形の画面にする
     const isRx = p.category === '皮膚科の塗り薬';
-    const use = isRx ? rxUseOf(p.name) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
+    const use = isRx ? (u => { const at = /ニキビ/.test(u) ? acneTypesOfIng(ingsOfMy(p) || (RX_DRUGS.find(x => x[1] === p.name) || [])[2]) : ''; return at ? `ニキビ（${at}）` : u; })(rxUseOf(p.name) || p.purposes.join('・')) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
     const fEd = (k, l) => `<button type="button" class="kv-ed" data-action="my-field" data-id="${esc(p.id)}|${k}" aria-label="${l}を編集">${icon('edit')}</button>`;
     const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
     return `<div class="card detail-top my-dt"><a class="back in-card" href="#/my" data-incard-back="1">← Myアイテム</a>
@@ -10063,7 +10070,7 @@ const ACNE_DRUG_ING = {
 // ケア管理：ニキビの種類ごとに、使われる塗り薬の成分（日本皮膚科学会「尋常性痤瘡・酒皶治療ガイドライン2023」をもとにした一般的な情報）
 const ACNE_TYPE_DRUGS = [
   {t:['白ニキビ', '黒ニキビ'], l:'白ニキビ・黒ニキビ', d:'毛穴のつまり（炎症の前の段階）。つまりをできにくくする成分が中心です。', ks:['ada', 'bpo', 'adabpo', 'sulf']},
-  {t:['赤ニキビ'], l:'赤ニキビ', d:'炎症が起きている段階。菌を減らす成分と、つまりを防ぐ成分を組み合わせます。', ks:['adabpo', 'clbpo', 'bpo', 'abx', 'ibp']},
+  {t:['赤ニキビ'], l:'赤ニキビ', d:'炎症が起きている段階。菌を減らす成分と、つまりを防ぐ成分を組み合わせます。', ks:['adabpo', 'clbpo', 'bpo', 'ada', 'abx', 'ibp']},
   {t:['黄ニキビ（膿あり）'], l:'黄ニキビ（膿あり）', d:'炎症が強く、膿がたまった段階。跡が残りやすいので、早めに皮膚科へ。飲み薬が出ることもあります。', ks:['clbpo', 'adabpo', 'abx']},
   {t:['しこり・硬い'], l:'しこり・硬いニキビ', d:'皮膚の深いところまで炎症が広がっています。塗り薬だけでは治りにくいので、皮膚科に相談します。', ks:[]},
   {t:['ニキビ跡'], l:'ニキビ跡', d:'赤み・色の残った跡や凹みは、塗り薬で消すのは難しいとされています。新しいニキビを防ぐことが一番の対策で、気になるときは皮膚科に相談します。', ks:[]},
@@ -10071,10 +10078,12 @@ const ACNE_TYPE_DRUGS = [
 function acneTypeDrugsHtml() {
   const t = todayStr(), rec = new Set(); logsInRange(addDays(t, -13), t).forEach(l => (l.acneTypes || []).forEach(k => rec.add(k)));
   try { const K = faceFindings(14).acne.kinds; Object.keys(K).forEach(n => { const a = ACNE_TYPES.find(x => x.startsWith(n)); if (a) rec.add(a); }); } catch (e) { /* 何もしない */ }
-  const L = ACNE_TYPE_DRUGS.map((g, i) => ({g, i, on:g.t.some(x => rec.has(x))})).sort((a, b) => (b.on - a.on) || a.i - b.i);
+  const L = ACNE_TYPE_DRUGS.map((g, i) => ({g, i, on:g.t.some(x => rec.has(x))})).filter(o => o.on); // そのニキビがあるときだけ出す
+  if (!L.length) return '';
+  const seen = new Set(); L.forEach(o => { o.ks = o.g.ks.filter(k => !seen.has(k) && seen.add(k)); }); // 同じ成分は、最初の種類のところに1回だけ
   const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
-    ${L.map(({g, on}) => `<div class="at-row ${on ? 'on' : ''}"><div class="at-h"><b>${esc(g.l)}</b>${on ? '<span class="chip red">最近の記録にあり</span>' : ''}</div><p class="small no-ph">${esc(g.d)}</p>${g.ks.length ? `<div class="cm-ing at-ks"><div>${g.ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
+    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : g.ks.length ? '<p class="small muted no-ph" style="margin-top:6px">上と同じ成分の塗り薬が使われます。</p>' : ''}</div>`).join('')}
     <p class="small muted no-ph" style="margin-top:8px">成分を押すと説明が出ます。皮膚科で処方される成分は、診察を受けて医師が肌に合わせて選びます。日本皮膚科学会「尋常性痤瘡・酒皶治療ガイドライン2023」をもとにした一般的な情報です。</p></div>`;
 }
 const OTC_ING_CACHE = {};
@@ -10560,12 +10569,13 @@ function logDayCardHtml(logs) {
     <div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="肌の調子カレンダー">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div></div>
     <div class="ld-stwrap">
     <div class="f3-stage ld-stage ${ui.ldView === 'photo' ? 'ld-ph-on' : ''}" id="ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div><div class="ld-photo" id="ld-photo">${ldPhotoHtml(list[i])}</div></div>
+    </div>
+    <div class="ld-condrow">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
       <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5l7 7-7 7"/></svg></button>
-    </div>
     <div class="ld-swipe" id="ld-swipe">
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
-    </div>
+    </div></div>
     <p class="small muted ld-miss" id="ld-miss" hidden></p>
     <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
 }
@@ -11414,9 +11424,9 @@ function openLifeForm(id, part, forDate) {
     <div class="form-grid" data-part="sleep" ${show('sleep')}><div class="section-title">SLEEP 睡眠</div>
     <p class="hint" style="margin-top:-6px">今朝起きたときの睡眠を記録します。</p>
     ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="sleep">${icon('moon')}ヘルスケアから読み込む</button>` : ''}
-    <div class="form-grid two" style="gap:12px">
-      ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
+    <div class="form-grid" style="gap:12px">
       ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
+      ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
     </div>
     <p class="small" id="sleep-calc" style="margin-top:-6px"></p></div>
     <div class="form-grid" data-part="exercise" ${show('exercise')}><div class="section-title">EXERCISE 運動</div>
