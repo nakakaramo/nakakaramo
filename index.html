@@ -2901,7 +2901,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119111732'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119140555'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9096,6 +9096,8 @@ const STEP_MISTAKE = {
 function mkStep(kind, x, extra) { return Object.assign({id:kind + ':' + (x ? x.p.id : 'base'), kind, x, locked:!!(x && x.rx), label:STEP_LABEL[kind]}, extra || {}); }
 // 今ニキビがある・ニキビを悩みにしているか（肌質診断・悩み・最近14日の記録）。ないときは、ニキビの薬を「今のケア」に入れない
 const ACNE_RX_RE = /アダパレン|過酸化ベンゾイル|クリンダマイシン|ナジフロキサシン|オゼノキサシン|ディフェリン|ベピオ|エピデュオ|デュアック|ダラシン|アクアチム|ゼビアックス/;
+// ニキビを「悩み」にしているか：自分で選んだ悩みがあればそれだけで決める（なければ肌質診断の答えから）
+function acneConcernNow() { try { const st = state.settings; if (Array.isArray(st.concernKeys) && st.concernKeys.length) return st.concernKeys.includes('acne'); const d = diagNow(); return !!(d && (d.priority || []).includes('acne')) || concernKeysNow().includes('acne'); } catch (e) { return false; } }
 function acneActiveNow() {
   try { const d = diagNow(); if ((d && (d.priority || []).includes('acne')) || concernKeysNow().includes('acne')) return true;
     const t = todayStr(); if (logsInRange(addDays(t, -13), t).some(l => (Number(l.acneCount) || 0) > 0 || (l.acneTypes || []).some(k => k !== 'ニキビ跡'))) return true;
@@ -10147,7 +10149,7 @@ function acneTypeDrugsHtml() {
   const t = todayStr(), rec = new Set(); logsInRange(addDays(t, -13), t).forEach(l => (l.acneTypes || []).forEach(k => rec.add(k)));
   try { const K = faceFindings(14).acne.kinds; Object.keys(K).forEach(n => { const a = ACNE_TYPES.find(x => x.startsWith(n)); if (a) rec.add(a); }); } catch (e) { /* 何もしない */ }
   const L = ACNE_TYPE_DRUGS.map((g, i) => ({g, i, on:g.t.some(x => rec.has(x))})).filter(o => o.on); // そのニキビがあるときだけ出す
-  if (!L.length || !acneActiveNow()) return ''; // ニキビの悩み・記録がない人には出さない
+  if (!L.length || !acneConcernNow()) return ''; // ニキビを悩みにしていない人には出さない（記録にニキビがあっても）
   // 今使っている薬・化粧品に入っている成分は出さない（同じ物をくり返さない）。皮膚科のニキビの薬を使っている人には、市販薬は出さない（足す前に医師に相談するため）
   const CL = {ada:['adapalene'], bpo:['bpo'], adabpo:['adapalene', 'bpo'], clbpo:['abx', 'bpo'], abx:['abx'], ibp:['nsaid'], sulf:['sulfur']};
   const mineTxt = state.myProducts.filter(p => !p.demo && p.status !== '使用終了').map(p => `${p.name} ${ingsOfMy(p) || ''}`).join(' ');
