@@ -2917,7 +2917,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119153325'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119153955'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4713,8 +4713,8 @@ const exKcal = (l, w) => Math.round(l.exercise.reduce((a, e) => a + (EX_METS[e.t
 const fmtDur = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? `${h}時間${r === 30 ? '半' : r ? r + '分' : ''}` : `${r}分`; };
 // date を渡すと、その日の分（記録一覧の日付カードで使う）。渡さなければ今日
 // 睡眠・運動の「昨日と同じ」：前の日（なければ、いちばん近い前の記録）と同じ睡眠・運動をしたことにする
-function lifePrev(date, part) { const y = addDays(date, -1); return state.lifeLogs.find(l => l.date === y && (part === 'sleep' ? l.bed && l.wake : (l.exercise || []).length)) || null; } // 昨日の記録があるときだけ（はじめての日・前の日に記録がない日は出さない）
-const sameLabel = () => '昨日と同じ';
+function lifePrev(date, part) { return state.lifeLogs.filter(l => l.date < date && (part === 'sleep' ? l.bed && l.wake : (l.exercise || []).length)).sort((a, b) => b.date.localeCompare(a.date))[0] || null; } // その日より前の、いちばん新しい記録（はじめての日は出さない）
+const sameLabel = (date, p) => p && p.date === addDays(date, -1) ? '昨日と同じ' : p ? `前回（${+p.date.slice(5, 7)}/${+p.date.slice(8, 10)}）と同じ` : '昨日と同じ'; /* 昨日の記録がない日は、前回の記録を写す */
 function sameBtn(rowHtml, date, part, empty) { const p = empty ? lifePrev(date, part) : null; if (!p) return rowHtml;
   return rowHtml.replace(/<\/button><\/div>$/, `</button><button type="button" class="ls-same" data-lsame="${date}|${part}">${sameLabel(date, p)}</button></div>`); }
 function lifeCopyPrev(date, part) {
