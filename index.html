@@ -2919,7 +2919,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119155437'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119155957'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -12669,11 +12669,12 @@ function advChips(x) {
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
-// AIの分析は、記録・登録した物・肌の悩みが変わったときだけやり直す（日付・天気・ページの開き直しでは使わない）
+// AIの分析は、記録・登録した物・肌の悩み・日付・天気が変わったときだけやり直す（ページを開き直しただけでは使わない）
 function adviceRecSig() {
   const skin = state.skinLogs.map(l => Object.assign({}, l, {photo:l.photo ? 1 : 0, photos:undefined}));
   const prods = state.myProducts.filter(p => !p.demo).map(p => [p.id, p.name, p.ingredients, p.status, p.category, p.timing, p.frequency, p.ng ? 1 : 0]);
-  const st = state.settings || {}, str = JSON.stringify([skin, state.lifeLogs, prods, st.concernKeys, st.skinType, st.sensitive, st.sleepNeed]);
+  const t = todayStr(), w = state.weather[t], wx = w ? [Math.round((w.hum || 0) / 10), Math.round(w.uv || 0), Math.round((w.tmin || 0) / 3), Math.round((w.tmax || 0) / 3)] : null; /* 日付・天気が変わったら分析し直す（湿度10%・気温3℃ごと。少しの予報の変化では使わない） */
+  const st = state.settings || {}, str = JSON.stringify([t, wx, skin, state.lifeLogs, prods, st.concernKeys, st.skinType, st.sensitive, st.sleepNeed]);
   let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return 'r' + h;
 }
 function adviceSig(d) { const str = todayStr() + JSON.stringify(d); let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return String(h); }
