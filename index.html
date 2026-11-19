@@ -2900,7 +2900,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119110505'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119111035'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4156,7 +4156,10 @@ function toastFade(el, ms) {
 let MODAL_REOPEN = null, MODAL_FROM = '', SHEET_RET = null;
 // 窓の上に窓を開いたとき（保湿 → スクワラン など）、×で1つ前の窓に戻るための記録
 let MODAL_STACK = [], MODAL_BACKING = false;
+// 文章の中で、押せる名前（緑の下線）が2つ以上続くときは「・」で区切る（「レチノールアゼライン酸」のようにくっつかないように）。どの画面・どの窓でも
+const sepLinks = h => String(h).replace(/(class="care-link"[^>]*>[^<]*<\/(?:button|a)>)(\s*)(?=<(?:button|a)\b[^>]*class="care-link")/g, '$1・');
 function openModal({title, body, footer='', size='', dismissable=false}) {
+  body = sepLinks(body);
   const root = $('#modal-root');
   { const prevOpen = !!root.querySelector('.modal'); if (prevOpen && MODAL_REOPEN && !MODAL_BACKING) MODAL_STACK.push(MODAL_REOPEN); else if (!prevOpen && !MODAL_BACKING) MODAL_STACK = []; MODAL_BACKING = false; if (MODAL_STACK.length > 8) MODAL_STACK.shift(); }
   MODAL_REOPEN = null; MODAL_FROM = location.hash;
@@ -9922,7 +9925,7 @@ function rtPlan(slot, solo) {
     const spfX = x => Math.max(0, ...((String(x.p.name || '') + ' ' + String(x.p.memo || '')).match(/SPF\s*(\d+)/gi) || []).map(v => Number(v.replace(/\D/g, ''))));
     const kindX = x => x.step || '';
     const nm = x => '「' + prodIngLabel(x.p) + '」';
-    const restN = (st, L, why, src) => { if (L.length) { st.today.push(T(`今日は${L.map(nm).join('')}はお休みします（${why}）`, src || '肌')); L.forEach(x => RESTED.set(x.p.id, why)); } };
+    const restN = (st, L, why, src) => { if (L.length) { st.today.push(T(`今日は${L.map(nm).join('・')}はお休みします（${why}）`, src || '肌')); L.forEach(x => RESTED.set(x.p.id, why)); } };
     // 毎日は使わない物（週1回・週2〜3回）：前に使った日から日が浅ければ休む。不定期の物は、今日の肌の悩みに合うときだけ
     const FQ_GAP = {'週1回':6, '週2〜3回':2};
     const agoOf = id => { const t0 = todayStr(); let best = null; state.skinLogs.forEach(l => { if (!l.demo && (l.usedProducts || []).includes(id)) { const n = diffDays(l.date, t0); if (n >= 0 && (best == null || n < best)) best = n; } });
@@ -16238,7 +16241,7 @@ function render() {
   // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
   const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
   html = html.replace(/<a class="back( in-card)?" href="([^"]*)"(?: data-incard-back="1")?>([^<]*)<\/a>/g, (m, ic, href, label) => `<a class="back${ic || ''}" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
-  renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
+  html = sepLinks(html); renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
   setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'account' && /^(body|settings|privacy)\/\d+$/.test(r.id) ? ((accItems(r.id.split('/')[0])[Number(r.id.split('/')[1])] || {}).t || '') : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
