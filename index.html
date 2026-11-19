@@ -2928,7 +2928,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119231310'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119232203'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3778,7 +3778,7 @@ function normalize(d) {
       purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''), features:String(p.features||''), usage:String(p.usage||''), caution:String(p.caution||''),
       jan:/^(\d{8}|\d{13})$/.test(String(p.jan||'')) ? String(p.jan) : '',
       source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '',
-      offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 公式情報を調べた日・調べたページ
+      offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offTried:!!p.offTried, offErr:String(p.offErr || '').slice(0, 80), offErrAt:Number(p.offErrAt) || 0, /* 調べて失敗した時刻も残す（開き直すたびに調べ直さない。3時間たったら調べ直す） */ offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 公式情報を調べた日・調べたページ
       keyIngs:String(p.keyIngs || '').slice(0, 300), // 主な成分（商品名・成分から探したときの成分）
       offV:Number(p.offV) || 0, ingUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.ingUrl || '')) ? String(p.ingUrl) : '', ingSite:String(p.ingSite || '').slice(0, 40), // 全成分を調べた方法の版・全成分が載っていたページ
       offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
@@ -3792,7 +3792,7 @@ function normalize(d) {
     status:STATUSES.includes(p.status) ? p.status : '使用中', endDate:isValidYmd(p.endDate) ? p.endDate : '', memo:String(p.memo||''), demo:!!p.demo, pao:[0, 3, 6, 12, 24].includes(Number(p.pao)) ? Number(p.pao) : 0, // 開封後の使用期限の目安（か月。0＝カテゴリの目安）
     purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : [],
     order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null, // 長押しで並べ替えた順番
-    offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
+    offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offTried:!!p.offTried, offErr:String(p.offErr || '').slice(0, 80), offErrAt:Number(p.offErrAt) || 0, /* 調べて失敗した時刻も残す（開き直すたびに調べ直さない。3時間たったら調べ直す） */ offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
     offV:Number(p.offV) || 0, ingUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.ingUrl || '')) ? String(p.ingUrl) : '', ingSite:String(p.ingSite || '').slice(0, 40),
     ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300),
       when:NG_WHEN.includes(p.ng.when) ? p.ng.when : '', level:NG_LEVEL.includes(p.ng.level) ? p.ng.level : '', where:strArr(p.ng.where, NG_WHERE), newOther:!!p.ng.newOther, // 肌に合わなかったときのアンケート
@@ -6599,10 +6599,12 @@ function offInfoNote(p) {
   if (!acct.user) return '<p class="small muted" style="margin:12px 0 0">ログインすると、空の項目をメーカー公式サイトの情報で自動で埋めます。</p>';
   return '';
 }
+// 公式の情報を調べたことがあるか。失敗した（AIの上限・電波など）ときは、3時間たったらもう一度調べる（1回の失敗で、ずっと全成分が空のままにしない）
+function offTriedNow(p) { return !!p.offTried && Date.now() - (p.offErrAt || 0) < 3 * 3600 * 1000; } // offErrAt＝最後に調べはじめた時刻
 async function offFetch(p) {
-  if (!p || p.isSample || offDone(p) || offBusy[p.id] || p.offTried || !acct.user) return;
+  if (!p || p.isSample || offDone(p) || offBusy[p.id] || offTriedNow(p) || !acct.user) return;
   if (['features', 'usage', 'ingredients', 'caution'].every(k => String(p[k] || '').trim())) return;
-  offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id)) || location.hash.includes(p.id)) render();
+  offBusy[p.id] = true; p.offTried = true; p.offErrAt = Date.now(); if (location.hash.includes(encodeURIComponent(p.id)) || location.hash.includes(p.id)) render();
   try {
     const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:p.jan, volume:p.volume})).info || {};
     const c = getCat(p.id); if (!c) return;
@@ -6611,19 +6613,19 @@ async function offFetch(p) {
     if (!hadIng && r.ingredients && r.ing_url) { c.ingUrl = String(r.ing_url); c.ingSite = String(r.ing_site || '').slice(0, 40); }
     c.offChecked = todayStr(); c.offV = OFF_V; if (r.url) c.offUrl = r.url; delete c.offErr;
     save();
-  } catch (e) { const c = getCat(p.id); if (c) c.offErr = String(e.message || e).slice(0, 80); }
+  } catch (e) { const c = getCat(p.id); if (c) { c.offErr = String(e.message || e).slice(0, 80); c.offErrAt = Date.now(); save(); } }
   delete offBusy[p.id];
   if (parseRoute().name === 'product') render();
 }
 // Myアイテム：全成分が空なら、メーカー公式サイトの全成分を自動で調べて入れる（自分で入れた内容は上書きしない）
 async function myOffFetch(p) {
-  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(fullIngsOfMy(p)).trim() || offDone(p) || offBusy[p.id] || p.offTried || !acct.user) return;
+  if (!p || p.demo || p.category === '皮膚科の塗り薬' || String(fullIngsOfMy(p)).trim() || offDone(p) || offBusy[p.id] || offTriedNow(p) || !acct.user) return;
   const cat = getCat(p.catalogId); if (cat) { await offFetch(cat); if (String(fullIngsOfMy(p)).trim()) { comboRefreshAfterIngs(); return; } }
-  offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id))) render();
+  offBusy[p.id] = true; p.offTried = true; p.offErrAt = Date.now(); if (location.hash.includes(encodeURIComponent(p.id))) render();
   try {
     const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:(cat || {}).jan || '', volume:(cat || {}).volume || ''})).info || {};
     const m = getMy(p.id); if (m) { if (!String(m.ingredients || '').trim() && r.ingredients) { m.ingredients = String(r.ingredients).slice(0, 4000); if (r.ing_url) { m.ingUrl = String(r.ing_url); m.ingSite = String(r.ing_site || '').slice(0, 40); } } m.offChecked = todayStr(); m.offV = OFF_V; if (r.url) m.offUrl = r.url; save(); comboRefreshAfterIngs(); }
-  } catch (e) { const m = getMy(p.id); if (m) m.offErr = String(e.message || e).slice(0, 80); }
+  } catch (e) { const m = getMy(p.id); if (m) { m.offErr = String(e.message || e).slice(0, 80); m.offErrAt = Date.now(); save(); } }
   delete offBusy[p.id];
   if (parseRoute().name === 'my') render();
 }
