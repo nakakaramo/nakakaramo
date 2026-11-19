@@ -2691,6 +2691,7 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .ngf-q h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;font-weight:700}.ngf-q h3 i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green-d);color:#fff;font-style:normal;font-size:12px;flex:none}.ngf-q h3 small{font-size:12px;font-weight:500;color:var(--muted)}
 .ngf-chk{display:flex;flex-direction:column;gap:10px}.ngf-foot{margin:14px 0 0}
 .card>.rt-dl:first-child,.card>.rt-dl:first-of-type{border-top:0} /* カードのいちばん上の項目には、上の線を引かない */
+.at-mine{margin:6px 0 0}.at-mine b{display:inline-block;margin-right:8px;font-size:12px;color:var(--green-d)}
 </style>
 </head>
 <body>
@@ -2915,7 +2916,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119144818'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119150408'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4711,8 +4712,8 @@ const exKcal = (l, w) => Math.round(l.exercise.reduce((a, e) => a + (EX_METS[e.t
 const fmtDur = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? `${h}時間${r === 30 ? '半' : r ? r + '分' : ''}` : `${r}分`; };
 // date を渡すと、その日の分（記録一覧の日付カードで使う）。渡さなければ今日
 // 睡眠・運動の「昨日と同じ」：前の日（なければ、いちばん近い前の記録）と同じ睡眠・運動をしたことにする
-function lifePrev(date, part) { return state.lifeLogs.filter(l => l.date < date && (part === 'sleep' ? l.bed && l.wake : (l.exercise || []).length)).sort((a, b) => b.date.localeCompare(a.date))[0] || null; }
-const sameLabel = (date, p) => p.date === addDays(date, -1) ? '昨日と同じ' : `前回（${fmtShort(p.date)}）と同じ`;
+function lifePrev(date, part) { const y = addDays(date, -1); return state.lifeLogs.find(l => l.date === y && (part === 'sleep' ? l.bed && l.wake : (l.exercise || []).length)) || null; } // 昨日の記録があるときだけ（はじめての日・前の日に記録がない日は出さない）
+const sameLabel = () => '昨日と同じ';
 function sameBtn(rowHtml, date, part, empty) { const p = empty ? lifePrev(date, part) : null; if (!p) return rowHtml;
   return rowHtml.replace(/<\/button><\/div>$/, `</button><button type="button" class="ls-same" data-lsame="${date}|${part}">${sameLabel(date, p)}</button></div>`); }
 function lifeCopyPrev(date, part) {
@@ -9927,7 +9928,23 @@ function rtPlan(slot, solo) {
   const RXP_ALL = R ? R.A.infos.filter(x => x.rx && x.step !== 'oral').map(rxPlanOf) : [];
   // 登録してあるから出す、ではなく、今の肌に必要かで決める：ニキビの薬は、ニキビの悩み・最近の記録があるときだけ手順に入れる（ほかの薬は医師の指示どおり）
   const acneRxOff = RXP_ALL.filter(r => acneRxIdle(r.x.p));
-  const RXP = RXP_ALL.filter(r => !acneRxOff.includes(r));
+  const RXP1 = RXP_ALL.filter(r => !acneRxOff.includes(r));
+  const ACL = r => { const t = `${r.x.p.name} ${r.x.p.ingredients || ''}`; return [/アダパレン|ディフェリン|エピデュオ/.test(t) && 'ada', /過酸化ベンゾイル|ベピオ|エピデュオ|デュアック/.test(t) && 'bpo', /クリンダマイシン|ナジフロキサシン|オゼノキサシン|ダラシン|アクアチム|ゼビアックス|デュアック/.test(t) && 'abx'].filter(Boolean); };
+  const acneRx = RXP1.filter(r => r.role === 'drug' && ACL(r).length), acneSel = new Map(), acneRest = []; let acneTip = '';
+  if (acneRx.length >= 2) {
+    // 最近14日に記録したニキビの種類 → 使われる成分（白・黒：アダパレン・過酸化ベンゾイル／赤：過酸化ベンゾイル・アダパレン・抗菌薬／黄：抗菌薬・過酸化ベンゾイル）
+    const NEED = {'白ニキビ':['ada', 'bpo'], '黒ニキビ':['ada', 'bpo'], '赤ニキビ':['bpo', 'ada', 'abx'], '黄ニキビ（膿あり）':['abx', 'bpo']};
+    const t0 = todayStr(), types = []; logsInRange(addDays(t0, -13), t0).forEach(l => (l.acneTypes || []).forEach(k => { if (NEED[k] && !types.includes(k)) types.push(k); }));
+    const want = new Set(types.flatMap(k => NEED[k])); if (!want.size) ['ada', 'bpo'].forEach(c => want.add(c));
+    const left = new Set(want), chosen = [];
+    while (left.size) { const best = acneRx.filter(r => !chosen.includes(r)).map(r => [r, ACL(r).filter(c => left.has(c)).length]).sort((a, b) => b[1] - a[1] || ACL(b[0]).length - ACL(a[0]).length)[0]; if (!best || !best[1]) break; chosen.push(best[0]); ACL(best[0]).forEach(c => left.delete(c)); }
+    const have = new Set(chosen.flatMap(ACL)), CLN = {ada:'アダパレン', bpo:'過酸化ベンゾイル', abx:'抗菌薬'};
+    acneRx.forEach(r => { if (chosen.includes(r)) { acneSel.set(r, types.filter(k => NEED[k].some(c => ACL(r).includes(c))).map(k => k.replace(/（.*?）/, ''))); return; }
+      acneRest.push(r); const dup = ACL(r).every(c => have.has(c));
+      RESTED.set(r.x.p.id, dup ? `同じ成分（${ACL(r).map(c => CLN[c]).join('・')}）が、ほかの塗り薬に入っているため` : `今記録しているニキビ（${types.map(k => k.replace(/（.*?）/, '')).join('・') || 'ニキビ'}）には使わない薬のため`); });
+    if (acneRest.length) acneTip = (`ニキビの塗り薬は、記録したニキビの種類に合う物を選び、成分が重なる物はのぞきました（${[...new Set(acneRest.map(r => rxIngLabel(r.x.p)))].join('、')}）。医師に一緒に使うよう言われているときは、その指示に合わせましょう。`);
+  }
+  const RXP = RXP1.filter(r => !acneRest.includes(r));
   const rxOn = RXP.filter(r => r.slots.includes(slot));
   const rxHard = RXP.some(r => r.slots.includes(slot) && (r.avoid.includes('レチノール') || r.steroid)); // 同じ時間（朝・夜）に使う薬だけで判断する（朝と夜で分ければ使える） // レチノイド・過酸化ベンゾイル・ステロイドを使っている間は、刺激の強い化粧品を休む
   const rxAvoid = uniq(RXP.filter(r => r.slots.length).flatMap(r => r.avoid));
@@ -9941,8 +9958,8 @@ function rtPlan(slot, solo) {
     if (calm && /アダパレン|過酸化ベンゾイル|ディフェリン|ベピオ|エピデュオ|デュアック/.test(t)) return '赤み・ヒリヒリが強い日です。塗る範囲・量を守り、保湿をしっかりします。つらいときは自分でやめずに、塗る回数を減らしてよいか皮膚科に相談します';
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
-  const rxStep = r => { const cn = rxCalm(r); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
-    today:r.note.map(t => T(t, '薬')).concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
+  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || []; add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
+    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(r.note.map(t => T(t, '薬'))).concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const spotSteps = () => here.filter(s => s.kind === 'spot').forEach(s => add('spot:' + s.x.p.id, {name:STEP_LABEL.spot, prods:[s.x], how:'気になるところだけに、少量をのせます。'}));
   // 同じ成分の薬（例：クリームとローション）を2つ登録していても、手順は1つにまとめる（同じ物を2回出さない）
   const rxSteps = role => { const G = new Map(); rxOn.filter(r => r.role === role).forEach(r => { const k = normIng(rxIngLabel(r.x.p)); if (G.has(k)) G.get(k).more.push(r.x); else G.set(k, {r, more:[]}); });
@@ -10083,6 +10100,7 @@ function rtPlan(slot, solo) {
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
+  if (acneTip) tips.push(acneTip);
   if (acneRxOff.length) { tips.push(`ニキビの塗り薬（${[...new Set(acneRxOff.map(r => rxIngLabel(r.x.p)))].join('、')}）は、今はニキビの悩み・記録がないので、手順に入れていません。ニキビがおさまったあとも予防で続けるよう医師に言われているときは、夜の保湿のあとに続けます。`); acneRxOff.forEach(r => RESTED.set(r.x.p.id, '今はニキビの悩み・記録がないため（医師に続けるよう言われているときは続けます）')); }
   if (new Set(RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').map(r => normIng(rxIngLabel(r.x.p)))).size >= 2) tips.push('塗り薬が2つ以上あるときは、医師に言われた場所に塗ります。重ねるときは数分あけます。');
   if (slot === 'pm' && acneT) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替えます。');
@@ -10238,9 +10256,15 @@ function acneTypeDrugsHtml() {
   const rxAcne = state.myProducts.some(p => !p.demo && p.status !== '使用終了' && p.category === '皮膚科の塗り薬' && /アダパレン|過酸化ベンゾイル|クリンダマイシン|ナジフロキサシン|オゼノキサシン|ディフェリン|ベピオ|エピデュオ|デュアック|ダラシン|アクアチム|ゼビアックス/.test(`${p.name} ${ingsOfMy(p) || ''}`));
   const usable = k => !(CL[k] || []).every(c => own.has(c)) && !(rxAcne && ACNE_DRUG_ING[k].kind === 'otc');
   const seen = new Set(); L.forEach(o => { o.ks = o.g.ks.filter(k => usable(k) && !seen.has(k) && seen.add(k)); }); // 同じ成分は、最初の種類のところに1回だけ
+  // そのニキビに、今使っている薬のどれを塗るか（成分が重なる薬は、成分の多いほうだけ）
+  const clsP = p => { const t = `${p.name} ${ingsOfMy(p) || ''}`; return [/アダパレン|ディフェリン|エピデュオ/.test(t) && 'ada', /過酸化ベンゾイル|ベピオ|エピデュオ|デュアック/.test(t) && 'bpo', /クリンダマイシン|ナジフロキサシン|オゼノキサシン|ダラシン|アクアチム|ゼビアックス|デュアック/.test(t) && 'abx'].filter(Boolean); };
+  const TN = {'白ニキビ':['ada', 'bpo'], '黒ニキビ':['ada', 'bpo'], '赤ニキビ':['bpo', 'ada', 'abx'], '黄ニキビ（膿あり）':['abx', 'bpo']};
+  const myRx = state.myProducts.filter(p => !p.demo && p.status === '使用中' && p.category === '皮膚科の塗り薬' && clsP(p).length);
+  const mineFor = g => { const need = [...new Set(g.t.flatMap(t => TN[t] || []))]; let L2 = myRx.filter(p => clsP(p).some(c => need.includes(c)));
+    L2 = L2.filter(p => !L2.some(q => q !== p && clsP(q).length > clsP(p).length && clsP(p).every(c => clsP(q).includes(c)))); return [...new Set(L2.map(p => rxIngLabel(p)))]; };
   const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
-    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : g.ks.length ? `<p class="small muted no-ph" style="margin-top:6px">${g.ks.some(k => !usable(k)) && !g.ks.some(k => usable(k)) ? '今使っている塗り薬と同じ成分です。' : '上と同じ成分です。'}</p>` : ''}</div>`).join('')}
+    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${(m => m.length ? `<p class="small no-ph at-mine"><b>使っている薬</b>${m.map(esc).join('、')}</p>` : '')(mineFor(g))}${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
     <p class="small muted no-ph" style="margin-top:10px">${[own.size ? '今使っている成分は省いています。' : '', rxAcne ? '市販薬を足すときは医師に相談します。' : '', '押すと説明が出ます。処方の成分は医師が選びます（日本皮膚科学会ガイドライン2023より）。'].filter(Boolean).join('')}</p></div>`;
 }
 const OTC_ING_CACHE = {};
