@@ -959,6 +959,16 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .rt-qsw .sc-ind{width:calc((100% - 6px) / 2);border-radius:999px;background:var(--green-d);box-shadow:0 1px 4px rgba(46,90,64,.25)}
 .rt-qsw .sc-tab{padding:8px 0;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px}
 .rt-qsw .sc-tab.on{color:#fff}
+/* 時短は黄色。切り替えるときは、緑⇄黄色をグラデーションで動かす */
+.rt-qsw .sc-ind{background-image:linear-gradient(90deg,var(--green-d) 0%,var(--green-d) 30%,#E8B53A 70%,#E8B53A 100%);background-size:340% 100%;background-position:0 0}
+.rt-qsw .sc-ind.q{background-position:100% 0;box-shadow:0 1px 4px rgba(180,130,20,.3)}
+.rt-qsw .sc-ind.go{animation:scInd .35s cubic-bezier(.3,.7,.3,1),rtQn .35s ease}
+.rt-qsw .sc-ind.q.go{animation:scInd .35s cubic-bezier(.3,.7,.3,1),rtQy .35s ease}
+@keyframes rtQy{from{background-position:0 0}to{background-position:100% 0}}
+@keyframes rtQn{from{background-position:100% 0}to{background-position:0 0}}
+.rt-qsw .sc-tab{transition:color .35s ease}
+.rt-qsw .sc-tab.on[data-id="quick"]{color:#3B2A00}
+@media (prefers-reduced-motion:reduce){.rt-qsw .sc-ind.go,.rt-qsw .sc-ind.q.go{animation:none}}
 .rt-qsw .sc-tab svg{width:15px;height:15px;flex:none}
 .rt-qnote{margin:0 0 10px;text-align:center}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
@@ -2919,7 +2929,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119221546'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119222746'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -10347,7 +10357,7 @@ function viewRoutine() {
   const tabs = `<nav class="home-tabs rt-tabs" role="tablist" aria-label="朝と夜">${[['am', 'sun', '朝のケア'], ['pm', 'moon', '夜のケア']].map(([k, ic, l]) => `<button type="button" class="ht ${slot === k ? 'active' : ''}" role="tab" aria-selected="${slot === k}" data-action="rt-tab" data-id="${k}">${icon(ic)}<span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 通常⇄時短の切り替え（時短：落とす・皮膚科の薬・保湿・日焼け止めだけにする）
   const quick = rtSettings().mode === 'quick';
-  const sw = `<div class="sc-tabs rt-qsw" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常', 'menu'], ['quick', '時短', 'clock']].map(([k, l, ic]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${icon(ic)}${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
+  const sw = `<div class="sc-tabs rt-qsw" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${quick ? 'q' : ''} ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常', 'menu'], ['quick', '時短', 'clock']].map(([k, l, ic]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${icon(ic)}${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
   ui.rtQAnim = false;
   return tabs + sw + `<div class="home-pane">${rtPaneHtml(slot)}</div>`; // 通常⇄時短は朝・夜で共通なので、横にスワイプしても動かさない（中身の外に置く）
 }
