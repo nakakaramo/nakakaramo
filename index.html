@@ -1445,12 +1445,12 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ir-t em{font-style:normal;font-size:16px;font-weight:800;color:var(--ink)}.ir-t em.ir-np{font-size:12px;font-weight:600;color:var(--muted)}
 .ing-amz.main{background:#BF0000;border-color:#BF0000;color:#fff}.ing-amz.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}
 .ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz>span:not(.pr-tag){flex:1;min-width:0}.ing-amz .pr-tag{flex:none;margin:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
-.adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
+.adv-c{font-size:12.5px;font-weight:500;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
 .adv-c.bad{color:#B04A32;box-shadow:inset 0 0 0 1px #F2CFC4}
 .adv-gb{display:grid;gap:8px;margin:10px 0 2px}
 .adv-box{border-radius:14px;padding:10px 12px 11px}.adv-box.good{background:#EEF6F0}.adv-box.bad{background:#FDF1EC}
-.adv-box small{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;margin:0 0 7px}.adv-box.good small{color:var(--green-d)}.adv-box.bad small{color:#B04A32}
+.adv-box small{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin:0 0 7px}.adv-box.good small{color:var(--green-d)}.adv-box.bad small{color:#B04A32}
 .adv-ic{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}.adv-ic svg{width:14px;height:14px;display:block}
 .adv-box.good .adv-ic{background:var(--green)}.adv-box.bad .adv-ic{background:#D9694B}
 .adv-cl{display:flex;flex-wrap:wrap;gap:6px}
@@ -2203,7 +2203,7 @@ img{image-rendering:auto}
 
 
 /* ===== 今日のおすすめケア（肌・天気・睡眠・食事・運動をまとめて） ===== */
-.ct2-lead{margin:2px 0 10px;font-size:14px;line-height:1.7;font-weight:500;color:var(--ink)}
+.ct2-lead{margin:2px 0 10px;font-size:14px;line-height:1.7;font-weight:400;color:var(--ink)}
 .ct2-in{background:var(--surface2);border-radius:12px;padding:9px 12px;margin:0 0 4px}
 .ct2-in summary{font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer}
 .ct2-r{display:flex;gap:10px;padding:7px 0 0;font-size:13px;line-height:1.6}
@@ -2622,7 +2622,8 @@ html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-the
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cm-c.good{background:rgba(90,150,110,.16)}:root:not([data-theme="light"]) .cm-c.bad{background:rgba(217,105,75,.14)}}
 .cm-tips p{margin:0;font-size:13px;line-height:1.7}.cm-tips p+p{margin-top:6px}
 .cm-hint p{margin:0 0 6px}
-.ct2-adv .adv1-t{margin:4px 0 0;font-size:13.5px}
+.ct2-adv .adv1-t{margin:4px 0 0;font-size:12.5px;font-weight:400;color:var(--muted)} /* 小さな見出しは太字にしない（読みやすく） */
+.pc-ol li,.pc-ol .care-link{font-weight:400}
 .ct2 .adv-foot{padding-top:12px;border-top:1px solid var(--line);margin-top:14px}
 .ct2-c .ct2-sec{margin-top:0;padding-top:0;border-top:0}
 .ct2-c .ct2-sh{font-size:16px;margin-bottom:6px}
@@ -2684,7 +2685,8 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .lf-row>span:first-child{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;flex:none}.lf-row input[type=time]{width:132px}.lf-list:has(#ex-list:empty){display:none}.lf-row .input,.lf-row .select{width:auto;min-width:0;max-width:170px;min-height:40px;font-size:16px;text-align:right}
 .lf-row b#sleep-calc{font-size:17px;color:var(--green-d)}.lf-in{display:flex;align-items:center;gap:6px}.lf-in .input{width:96px}.lf-in em{font-style:normal;color:var(--muted);font-size:14px}
 .lf-list #ex-list{flex:1;min-width:0}.lf-in .lf-in-b{margin-left:4px}
-.lf-same{width:100%;justify-content:center;min-height:52px;font-size:15px;margin:2px 0 18px} /* 上の枠との間と、下の区切り線との間を同じにする */
+.lf-same{width:100%;justify-content:center;min-height:52px;font-size:15px;margin:2px 0 0}
+.modal-body > form + .modal-foot{margin-top:18px} /* 入力の枠と、下の区切り線をくっつけない（どの入力画面でも） */ /* 上の枠との間と、下の区切り線との間を同じにする */
 .im-irr{font-weight:700}.im-irr.red{color:#C0392B}.im-irr.warn{color:#B07A1A}.im-irr.green{color:var(--green-d)}
 .mf-l{margin:4px 0 8px;font-size:14px;font-weight:700;color:var(--ink)}.mf-l+.tm-pick{margin-bottom:14px}
 .ngf-p{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--surface2,#F6F3EE);margin-bottom:4px}.ngf-th{width:44px;height:44px;flex:none;border-radius:10px;overflow:hidden;position:relative;display:block}.ngf-th .thumb{width:100%;height:100%}.ngf-p b{font-size:15px;line-height:1.4}
@@ -2917,7 +2919,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119153955'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119155437'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9750,11 +9752,11 @@ function careHomeCard() {
 // role：wash＝洗顔のかわり／moist＝保湿のところ／drug＝保湿のあとに患部へ／cover＝いちばん最後にふたをする
 const RX_PLAN = [
   {re:/アダパレン.*過酸化ベンゾイル|エピデュオ/, slot:'pm', role:'drug', per:'1日1回・夜（洗顔のあと、寝る前）',
-    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします（量は医師に言われたとおり。人さし指の先から第一関節まで出した量で、手のひら2枚分の広さが目安）。目・口唇・小鼻のわきは避けます。',
+    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします（量は医師の指示どおり。目安は指先から第一関節までで手のひら2枚分）。目・口唇・小鼻のわきは避けます。',
     note:['使い始めの2〜4週間は、乾燥・赤み・ヒリヒリが出やすい時期です。保湿をしっかりすると軽くなります', '髪・枕カバー・タオル・衣類の色が抜けることがあります', '妊娠中・妊娠の可能性があるときは使えません', '赤く腫れる・強いかゆみが出たら、使うのをやめて皮膚科に相談します'],
     avoid:['レチノール', 'ピーリング（AHA・BHA）', 'スクラブ'], sun:true},
   {re:/アダパレン|ディフェリン/, slot:'pm', role:'drug', per:'1日1回・夜（洗顔のあと、寝る前）',
-    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします（量は医師に言われたとおり。人さし指の先から第一関節まで出した量で、手のひら2枚分の広さが目安）。目・口唇・小鼻のわきは避けます。',
+    how:'洗顔して保湿をしたあと、ニキビのできやすい範囲全体に薄くのばします（量は医師の指示どおり。目安は指先から第一関節までで手のひら2枚分）。目・口唇・小鼻のわきは避けます。',
     note:['使い始めの2〜4週間は、乾燥・赤み・ヒリヒリが出やすい時期です。保湿をしっかりすると軽くなります', '妊娠中・妊娠の可能性があるときは使えません'],
     avoid:['レチノール', 'ピーリング（AHA・BHA）', 'スクラブ'], sun:true},
   {re:/ウォッシュ/, slot:'pm', role:'wash', per:'1日1回（洗顔のあと）',
@@ -9784,7 +9786,7 @@ const RX_PLAN = [
   {re:/メトロニダゾール|ロゼックス/, slot:'both', role:'drug', per:'1日2回・朝と夜（洗顔のあと）',
     how:'洗顔して保湿をしたあと、赤みのある範囲全体に薄くのばします。目・口のまわりは避けます。', note:['日差し・熱いお湯・アルコール・辛い物は赤みを強めやすいので控えめに']},
   {re:/ヘパリン類似物質|ヒルドイド/, slot:'both', role:'moist', per:'1日1〜数回（朝と夜）',
-    how:'化粧水のあと、乾燥する所にやさしく広げます（量は医師に言われたとおり。人さし指の先から第一関節まで出した量で、手のひら2枚分の広さが目安）。これで保湿が足りれば、乳液は省いてもかまいません。', note:[]},
+    how:'化粧水のあと、乾燥する所にやさしく広げます（量は医師の指示どおり。目安は指先から第一関節までで手のひら2枚分）。足りれば乳液はなくてもかまいません。', note:[]},
   {re:/尿素|ケラチナミン|ウレパール|パスタロン/, slot:'both', role:'moist', per:'1日1〜数回（朝と夜）',
     how:'乾燥・ガサガサした部分に薄く塗ります。', note:['顔・赤みのある所・傷にはしみやすいので、しみるときは皮膚科に相談します']},
   {re:/ビタミンA油|ザーネ/, slot:'both', role:'moist', per:'1日2〜3回（朝と夜）', how:'乾燥した部分に薄く塗ります。', note:[]},
@@ -10272,7 +10274,7 @@ function acneTypeDrugsHtml() {
   const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
     ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${(m => m.length ? `<p class="small no-ph at-mine"><b>使っている薬</b>${m.map(x => String(x).split(RX_ING_SPLIT).map(y => y.trim()).filter(Boolean).map(y => rxIngNames().has(y) ? rxIngLink(y) : esc(y)).join('・')).join('、')}</p>` : '')(mineFor(g))}${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
-    <p class="small muted no-ph" style="margin-top:10px">${[own.size ? '今使っている成分は省いています。' : '', rxAcne ? '市販薬を足すときは医師に相談しましょう。' : '', '押すと説明が出ます。処方の成分は医師が選びます（日本皮膚科学会ガイドライン2023より）。'].filter(Boolean).join('')}</p></div>`;
+    <p class="small muted no-ph" style="margin-top:10px">${rxAcne ? '市販薬を足すときは医師に相談しましょう。' : '処方の成分は医師が選びます。'}（日本皮膚科学会ガイドライン2023より）</p></div>`;
 }
 const OTC_ING_CACHE = {};
 async function openAcneDrugSheet(k) {
@@ -12367,7 +12369,7 @@ function adviceInput() {
 }
 // 食事の見出しを短くする（食べ物の名前は下の「おすすめの食べ物」に出すので、見出しは栄養だけにする）
 const FOOD_SHORT = [[/^毎食、[^、]*?などを手のひら1枚分とる$/, '毎食、たんぱく質を手のひら1枚分とる'], [/^毎食、野菜とたんぱく質（[^）]*）を1品ずつ$/, '毎食、野菜とたんぱく質を1品ずつ'], [/^[^、]*?(?:など|で)(ビタミン[^、]*|良い脂[^、]*)$/, '$1'], [/^甘い間食を[^、]*?に替える$/, '甘い間食を控える']];
-function foodShortTitle(t) { for (const [re, to] of FOOD_SHORT) if (re.test(t)) return t.replace(re, to); return t; }
+function foodShortTitle(t) { if (!t) return t; for (const [re, to] of FOOD_SHORT) if (re.test(t)) return t.replace(re, to); return t; }
 // ===== 今日のおすすめケア：3Dの顔の記録・睡眠・運動・食事・今日の天気（湿度・気温・UV）を全部合わせて決める =====
 function careTodayData() {
   const t = todayStr(), d = adviceInput(), ff = faceFindings(7), sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal;
@@ -12459,7 +12461,7 @@ function careSkinChips() { const S = careSkinPick(); return S.good.length || S.a
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
-  const itemH = (x, short) => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(letsTone(short ? foodShortTitle(x.title) : x.title)), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(letsTone(x.why)), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
+  const itemH = (x, short) => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(letsTone(short ? foodShortTitle(x.title) : x.title)), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(letsTone(short ? ((L => (L.find(y => !/^(この1週間|今の食事|睡眠は平均)/.test(y)) || L[0] || ''))(String(x.why).split('。').filter(Boolean))) + '。' : x.why)), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
   const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'run', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'meal', '食事', '食事']];
   let AP = {ai:null, pts:[]}; try { AP = advicePts(); } catch (e) { /* 何もしない */ }
   const ptOf = a => AP.pts.find(x => x && x.area === a) || AP.pts[ADVICE_AREAS.indexOf(a)];
@@ -12472,13 +12474,15 @@ function careTodayHtml() {
     let chips = '';
     if (c === '肌') { const ch = careSkinChips(); if (ch) chips = `<div class="ct2-adv"><b class="adv1-t">今の肌に合う成分</b>${ch}</div>`; } /* ケア管理と同じ成分を出す（内容をそろえる） */
     else if (pt) { const tl = D.items.filter(x => x.cat === c && !/を記録する$/.test(x.title)).map(x => foodShortTitle(x.title)).join(' '); /* 見出しと同じことはチップに出さない */
-      const ch = advChips(Object.assign({}, pt, {area, good:(pt.good || []).filter(v => !tl.includes(chipText(v)))})); if (ch) chips = `<div class="ct2-adv">${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
+      const bg2 = t => { const x = String(t).replace(/[、。・\s「」（）()0-9.]/g, ''), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
+      const near = v => { const A = bg2(chipText(v)); return D.items.filter(x => x.cat === c && !/を記録する$/.test(x.title)).some(x => { const B = bg2(foodShortTitle(x.title)); let n = 0; A.forEach(y => { if (B.has(y)) n++; }); return n / Math.max(1, Math.min(A.size, B.size)) >= 0.5; }); };
+      const ch = advChips(Object.assign({}, pt, {area, good:(pt.good || []).filter(v => !tl.includes(chipText(v)) && !near(v))})); if (ch) chips = `<div class="ct2-adv">${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
     const L = D.items.filter(x => x.cat === c), real = L.filter(x => !/を記録する$/.test(x.title)), ask = L.filter(x => /を記録する$/.test(x.title));
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
     // 肌の朝・夜のケアの順番は「ケア管理」にまとめた（ここでは重ねて出さない）
     if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${recBtn(c)}</h3>${D.lead && !/^大きな問題は見つかりません|そろうと/.test(D.lead) ? `<p class="ct2-lead no-ph">${ingLinkHtml(esc(D.lead))}</p>` : ''}${chips}</section>`; // 伝えることがある日だけ、今日の肌のひとこと
-    const sh = c === '食事' && /adv-box good/.test(chips), ih = x => itemH(x, sh); /* 下の「おすすめの食べ物」と同じ物を見出しに書かない */
+    const sh = c !== '肌' && /adv-box/.test(chips), ih = x => itemH(x, sh); /* チップがあるときは、見出しを短く・説明を1文に */ /* 下の「おすすめの食べ物」と同じ物を見出しに書かない */
     const body = show.length ? show.map(ih).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(ih).join('')}</details>` : '')
       : chips || ask.length ? '' : '<p class="ct2-none">今日は特にありません。</p>';
     const askH = ask.length ? `<div class="ct2-ask"><p class="no-ph">${esc(ask[0].why)}</p></div>` : '';
@@ -12665,13 +12669,20 @@ function advChips(x) {
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
+// AIの分析は、記録・登録した物・肌の悩みが変わったときだけやり直す（日付・天気・ページの開き直しでは使わない）
+function adviceRecSig() {
+  const skin = state.skinLogs.map(l => Object.assign({}, l, {photo:l.photo ? 1 : 0, photos:undefined}));
+  const prods = state.myProducts.filter(p => !p.demo).map(p => [p.id, p.name, p.ingredients, p.status, p.category, p.timing, p.frequency, p.ng ? 1 : 0]);
+  const st = state.settings || {}, str = JSON.stringify([skin, state.lifeLogs, prods, st.concernKeys, st.skinType, st.sensitive, st.sleepNeed]);
+  let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return 'r' + h;
+}
 function adviceSig(d) { const str = todayStr() + JSON.stringify(d); let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return String(h); }
 let adviceBusy = false, adviceErr = '';
 // 使う人に見せるエラーの文：サーバーの設定の話などは出さず、どうすればいいかだけを書く
 function userErr(m, what) { m = String(m || ''); if (/ログイン/.test(m)) return 'ログインし直すと使えます（アカウント → プラン・アカウント）。'; if (/上限|回数|quota|429/i.test(m)) return `今日は${what}の回数の上限に達しました。明日また使えます。`; if (/network|fetch|Failed|通信|timeout|abort/i.test(m)) return `通信できませんでした。電波のよい場所で、もう一度お試しください。`; return `今は${what}ができませんでした。時間をおいて、もう一度お試しください。`; }
 function advicePts() {
-  const d = adviceInput(), c = adviceCache(), sig = adviceSig(d);
-  const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length && c.res.points.every(x => x.area) ? c.res : null; // 4つの角度で出した結果だけ使う
+  const d = adviceInput(), c = adviceCache(), rsig = adviceRecSig();
+  const ai = c && c.rsig === rsig && c.res && c.res.points && c.res.points.length && c.res.points.every(x => x.area) ? c.res : null; // 4つの角度で出した結果だけ使う
   const local = adviceLocal(d);
   // AIが控えたいもの・おすすめを出さなかった角度は、記録から出した内容でうめる（必ず両方出す）
   const pts = ai ? ADVICE_AREAS.map((a, i) => { const p = ai.points.find(x => x.area === a); if (!p) return local[i]; return Object.assign({}, p, {good:(p.good || []).length ? p.good : local[i].good, avoid:(p.avoid || []).length ? p.avoid : local[i].avoid}); }) : local; // AIが出さなかった角度は、ルールの結果でうめる
@@ -12800,7 +12811,7 @@ function menuHtml() {
   return head + body + cvNote + `<ul class="mn-foot">${res ? '<li>料理名を押すと、作り方が出ます。</li>' : ''}<li>${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}</li><li>カロリーなどの数字は出しません。</li></ul>`;
 }
 // 記録が変わったとき・食事の時間帯が変わったときだけ、自動で作り直す（同じなら前の献立を使う）
-const AI_AUTO_GAP = 6 * 3600 * 1000;
+const AI_AUTO_GAP = 6 * 3600 * 1000, ADVICE_GAP = 3 * 60 * 1000;
 async function runMenu(force) {
   if (menuBusy || !isPremium()) return;
   const d = menuInput(), sig = adviceSig(d), c = menuCache();
@@ -12870,16 +12881,16 @@ function refreshAdvice() { adviceRepaint(); if (isPremium()) runAdvice(false); }
 // プレミアムの人は、記録が変わったときだけ自動でAIに分析してもらう（同じ記録なら前の結果を使う）
 async function runAdvice(force) {
   if (adviceBusy || !isPremium()) return;
-  const d = adviceInput(), sig = adviceSig(d), c = adviceCache();
-  if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return; // 失敗したときは10分たったら自動でもう一度
-  if (!force && c && c.at && Date.now() - c.at < AI_AUTO_GAP) return; // 自動の分析は6時間に1回まで（記録を何度も直しても、AIの回数を使いすぎない）
+  const d = adviceInput(), sig = adviceRecSig(), c = adviceCache();
+  if (!force && c && (c.rsig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return; // 記録が変わっていなければAIは使わない（ページを開き直しても使わない）。失敗したときは10分たったら自動でもう一度
+  if (!force && c && c.at && Date.now() - c.at < ADVICE_GAP) { clearTimeout(runAdvice.t); runAdvice.t = setTimeout(() => runAdvice(false), ADVICE_GAP - (Date.now() - c.at) + 500); return; } // 続けて何度も直したときは、少し待ってから1回だけ分析する
   if (!d.skin.days && !d.sleep.days && !d.meal.days && !d.exercise.recordedDays) return;
   adviceBusy = true; adviceErr = '';
   const box = () => adviceRepaint();
   box();
   try {
     const r = await callVision('advice', null, d);
-    if (r && r.result && r.result.points && r.result.points.length) { try { localStorage.setItem(ADVICE_KEY, JSON.stringify({sig, at:Date.now(), res:r.result})); } catch (e) { /* 何もしない */ } }
+    if (r && r.result && r.result.points && r.result.points.length) { try { localStorage.setItem(ADVICE_KEY, JSON.stringify({rsig:sig, at:Date.now(), res:r.result})); } catch (e) { /* 何もしない */ } }
     else adviceErr = '分析結果が空でした。';
   } catch (e) {
     const m = String(e.message || e);
