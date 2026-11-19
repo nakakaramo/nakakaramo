@@ -2928,7 +2928,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119232203'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119234632'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3509,7 +3509,9 @@ const prodIngLabel = p => { if (!p) return ''; if (p.category === '皮膚科の�
   let ms = []; try { ms = masterIngsOf(ingsOfMy(p)).filter(e => !ING_BASE_RE.test(chipText(e.ja))); } catch (e) { ms = []; }
   ms.sort((a, b) => (b.act || 0) - (a.act || 0) || (b.cs || []).length - (a.cs || []).length);
   return ms.length ? chipText(ms[0].ja) : p.category && p.category !== 'その他' ? String(p.category).split('・')[0] : truncate(String(p.name || ''), 16); }; /* 「その他」では何の物かわからないので、商品名にする */
-const ingFromName = name => { const n = String(name || ''); let best = ''; try { ING_MASTER.forEach(e => [chipText(e.ja)].concat(e.inci || []).forEach(w => { w = String(w || ''); if (w.length >= 3 && w.length > best.length && n.includes(w)) best = chipText(e.ja); })); } catch (er) { /* 何もしない */ } return best; };
+const IFN_MEMO = new Map(); // 同じ名前は何度も調べない（成分の一覧は変わらないため）
+const ingFromName = name => { const n0 = String(name || ''); if (IFN_MEMO.has(n0)) return IFN_MEMO.get(n0); const v = ingFromName0(n0); if (IFN_MEMO.size > 2000) IFN_MEMO.clear(); IFN_MEMO.set(n0, v); return v; };
+const ingFromName0 = name => { const n = String(name || ''); let best = ''; try { ING_MASTER.forEach(e => [chipText(e.ja)].concat(e.inci || []).forEach(w => { w = String(w || ''); if (w.length >= 3 && w.length > best.length && n.includes(w)) best = chipText(e.ja); })); } catch (er) { /* 何もしない */ } return best; };
 const truncate = (s, n) => { s = String(s||''); return s.length > n ? s.slice(0, n-1) + '…' : s; };
 // 肌悩みのキー（CONCERN_MASTER と同じ。保存データの読み込みは起動の最初に行うので、ここに置く）
 const CONCERN_KEYS = ['acne', 'acnemark', 'redness', 'dry', 'pore', 'spot', 'aging', 'oily', 'sensitive', 'dull', 'rough', 'darkcircle', 'puffy', 'uv'];
@@ -3888,7 +3890,9 @@ function load() {
     return normalize(freshState());
   }
 }
+var SAVE_GEN = 0; // 保存するたびに増える（分析を作り直す合図。save より前に用意する）
 function save() {
+  SAVE_GEN++;
   if (!storageOK) return false;
   state.savedAt = Date.now(); try { recStamp(); } catch (e) { /* 何もしない */ }
   try { localStorage.setItem(STORE_KEY, stateJSON()); widgetSoon(); setTimeout(syncSoon, 0); setTimeout(() => { try { notifySoon(); } catch (e) { /* 何もしない */ } }, 0); return true; }
@@ -4970,7 +4974,7 @@ function openRxIngSheet(ing) {
   const w = normIng(ing); if (!w) return;
   const rows = RX_DRUGS.filter(d => String(d[2]).split(RX_ING_SPLIT).some(x => normIng(x) === w)), kinds = [...new Set(rows.map(d => d[0]))];
   const ms = masterOf(ing), ad = Object.values(ACNE_DRUG_ING).find(x => normIng(x.name) === w);
-  const first = t => (String(t || '').split(/(?<=。)/).filter(x => x.trim())[0] || '').trim();
+  const first = t => (String(t || '').replace(/。/g, '。\u0001').split('\u0001').filter(x => x.trim())[0] || '').trim();
   const use = [...new Set(kinds.map(k => RX_USE[k] || k))].join('・');
   const st = kinds.filter(k => /ステロイド/.test(k)).map(k => k.replace(/^ステロイド（|）$/g, ''));
   const desc = ad ? ad.d : (use ? `${use}の治療に使われる塗り薬の成分です。` : '皮膚科で処方される塗り薬の成分です。') + (st.length ? `ステロイドの塗り薬で、強さは「${st.join('・')}」の分類です。` : '');
@@ -6409,7 +6413,7 @@ function rxInfoHtml(p) {
   const d = RX_DRUGS.find(x => x[1] === p.name), kind = d ? d[0] : rxKindOf(p.name), act = d ? d[2] : String(p.ingredients || '').split(/[、,・]/)[0].trim();
   const use = kind ? (RX_USE[kind] || kind) : '';
   const ms = String(act || '').split(/・/).map(masterOf).filter(Boolean);
-  const first = t => (String(t || '').split(/(?<=。)/).filter(x => x.trim())[0] || '').trim();
+  const first = t => (String(t || '').replace(/。/g, '。\u0001').split('\u0001').filter(x => x.trim())[0] || '').trim();
   const r = RX_PLAN.find(o => o.re.test(`${p.name} ${p.ingredients || ''} ${kind}`));
   const desc = (use ? `${use}の治療に使う処方薬です。` : '皮膚科の処方薬です。') + (act ? `成分は${act}です。` : '') + (/ステロイド/.test(kind) ? `強さは「${kind.replace(/^ステロイド（|）$/g, '')}」です。` : '');
   const eff = ms.length && ms[0].eff ? ms[0].eff : use ? `${use}をおさえる` : '';
@@ -8905,7 +8909,18 @@ const CARE_POLICY = d => {
 };
 
 // ---------- 使っている商品の分析 ----------
-function prodAnalysis() {
+// 同じ内容なら、分析・スキンケア設計を何回も計算しない（記録が多い人でも、画面をすぐ出すため）。中身が少しでも変われば計算し直す
+let RD_KEY = '', RD_MEMO = new Map(), RD_SIG = null;
+function rdSig() {
+  const ref = [state, state.myProducts, state.skinLogs, state.routineLogs, state.settings, SAVE_GEN, todayStr(), state.myProducts.length, state.skinLogs.length];
+  if (RD_SIG && RD_SIG.ref.every((v, i) => v === ref[i]) && performance.now() - RD_SIG.at < 1500) return RD_SIG.k; /* 同じ描き直しの中では、作り直さない（保存・入れ替え・1.5秒で作り直す） */
+  const st = state.settings || {}, sub = {diag:st.diag, ck:st.concernKeys, g:st.gender, sk:st.skinType, se:st.sensitive, rt:st.routine, cat:state.catalog.length, cat2:state.catalog.reduce((a, c) => a + String(c.ingredients || '').length, 0)};
+  const str = JSON.stringify([state.myProducts, state.routineLogs, state.skinLogs, sub, todayStr(), state.ngLogs || null]);
+  let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; const k = h + ':' + str.length; RD_SIG = {ref, k, at:performance.now()}; return k;
+}
+function rdMemo(name, fn) { const k = rdSig(); if (k !== RD_KEY) { RD_KEY = k; RD_MEMO = new Map(); } if (!RD_MEMO.has(name)) RD_MEMO.set(name, fn()); return RD_MEMO.get(name); }
+function prodAnalysis() { return rdMemo('A', prodAnalysis0); }
+function prodAnalysis0() {
   const act = state.myProducts.filter(p => p.status === '使用中');
   const infos = act.map(prodInfo);
   const pri = (diagNow() || {}).priority || concernKeysNow();
@@ -8945,7 +8960,34 @@ Object.assign(CARE_REFS, {
 // ---- 成分マスターの追加（指定された成分。商品の成分表示と照らし合わせるための別名つき）----
 (function addMaster() {
   const r = ingM('retinol'); if (r) r.inci = ['レチノール', 'Retinol', '酢酸レチノール', 'Retinyl Acetate', 'ヒドロキシピナコロンレチノアート', 'レチノイン酸トコフェリル'];
-  const add = e => { if (!ingM(e.k)) ING_MASTER.push(Object.assign({cs:[], mech:'', eff:'', ev:'C', conc:'', irr:'低', side:'', combo:'', time:'朝・夜', timeT:'製品の説明どおりに使ってください。', reg:'化粧品', refs:['review'], act:0}, e)); };
+  const add = e => { IFN_MEMO.clear(); if (!ingM(e.k)) ING_MASTER.push(Object.assign({cs:[], mech:'', eff:'', ev:'C', conc:'', irr:'低', side:'', combo:'', time:'朝・夜', timeT:'製品の説明どおりに使ってください。', reg:'化粧品', refs:['review'], act:0}, e)); };
+  // よく入っている成分を追加（2026-11-19：成分がわかる商品を増やす）。すでにある成分は、別名だけ足す
+  const alias = (k, ...w) => { const e = ingM(k); if (e) { e.inci = (e.inci || []).concat(w.filter(x => !(e.inci || []).includes(x))); IFN_MEMO.clear(); } };
+  alias('bpo', 'ベンゾイルパーオキサイド'); alias('panthenol', 'パントテニルエチルエーテル', 'プロビタミンB5'); alias('chamomillaet', 'カミツレ花エキス', 'カモミール');
+  add({k:'jojoba', ja:'ホホバオイル', en:'Jojoba seed oil', inci:['ホホバ種子油', 'ホホバ油', 'Simmondsia Chinensis Seed Oil'], cs:['dry'], mech:'皮脂に近い成分（ワックスエステル）の植物油で、肌の水分が逃げるのを防ぎます。', eff:'乾燥・肌のごわつきの改善', ev:'C', irr:'低'});
+  add({k:'collagen', ja:'コラーゲン（保湿）', en:'Collagen', inci:['加水分解コラーゲン', '水溶性コラーゲン', 'サクシノイルアテロコラーゲン', 'Hydrolyzed Collagen', 'Soluble Collagen'], cs:['dry', 'aging'], mech:'肌の表面で水分を抱えて保湿します。塗ったコラーゲンが肌の中のコラーゲンになるわけではありません。', eff:'うるおい・ハリ感', ev:'C', irr:'低'});
+  add({k:'egf', ja:'EGF（ヒトオリゴペプチド-1）', en:'sh-Oligopeptide-1', inci:['ヒトオリゴペプチド-1', 'EGF', 'sh-Oligopeptide-1'], cs:['aging', 'dry'], mech:'肌の細胞の働きにかかわるたんぱく質のなかまです。化粧品での効果を示すデータは多くありません。', eff:'肌のキメ・ハリ（データは限られる）', ev:'D', irr:'低'});
+  add({k:'fullerene', ja:'フラーレン', en:'Fullerene', inci:['フラーレン', 'Fullerenes'], cs:['aging', 'dull'], mech:'抗酸化成分です。紫外線などでできる活性酸素から肌を守るとされます。', eff:'くすみ・ハリ不足のケア（データは限られる）', ev:'D', irr:'低'});
+  add({k:'placenta', ja:'プラセンタエキス', en:'Placental protein', inci:['プラセンタエキス', 'プラセンタエキス（1）', 'Placental Protein'], cs:['spot', 'dull', 'dry'], mech:'医薬部外品の美白有効成分として認められているものがあります（メラニンの生成をおさえる）。', eff:'シミ・そばかすを防ぐ（医薬部外品）、保湿', ev:'C', irr:'低', reg:'化粧品・医薬部外品'});
+  add({k:'dokudami', ja:'ドクダミエキス', en:'Houttuynia cordata extract', inci:['ドクダミエキス', 'ドクダミ葉エキス', 'Houttuynia Cordata Extract'], cs:['acne', 'sensitive'], mech:'肌をすこやかに保つとされる植物エキスです。', eff:'肌あれを防ぐ（データは限られる）', ev:'D', irr:'低'});
+  add({k:'uvabs', ja:'紫外線吸収剤', en:'UV filters (chemical)', inci:['メトキシケイヒ酸エチルヘキシル', 't-ブチルメトキシジベンゾイルメタン', 'ビスエチルヘキシルオキシフェノールメトキシフェニルトリアジン', 'エチルヘキシルトリアゾン', 'オクトクリレン', 'ジエチルアミノヒドロキシベンゾイル安息香酸ヘキシル', 'ポリシリコーン-15', 'オキシベンゾン-3', 'Ethylhexyl Methoxycinnamate', 'Octocrylene'], cs:['uv', 'spot', 'aging'], mech:'紫外線を吸収して、熱などに変えて肌に届きにくくする日焼け止めの成分です。', eff:'日焼け・シミ・光老化を防ぐ', ev:'A', irr:'中', side:'まれに刺激・かぶれが出ることがあります。敏感肌は「紫外線吸収剤不使用」も選べます。', time:'朝', timeT:'日中、2〜3時間ごとに塗り直します。'});
+  add({k:'tio2', ja:'酸化チタン（紫外線散乱剤）', en:'Titanium dioxide', inci:['酸化チタン', 'Titanium Dioxide'], cs:['uv', 'sensitive'], mech:'紫外線を跳ね返して防ぐ、日焼け止めの成分（紫外線散乱剤）です。刺激が少ないとされます。', eff:'日焼け・シミを防ぐ', ev:'A', irr:'低', time:'朝', timeT:'日中、2〜3時間ごとに塗り直します。'});
+  add({k:'mineraloil', ja:'ミネラルオイル', en:'Mineral oil', inci:['ミネラルオイル', '流動パラフィン', 'Mineral Oil', 'Paraffinum Liquidum'], cs:['dry'], mech:'肌の表面をおおって、水分が逃げるのを防ぐ油です。刺激が少ない成分です。', eff:'乾燥を防ぐ', ev:'B', irr:'低'});
+  add({k:'astaxanthin', ja:'アスタキサンチン', en:'Astaxanthin', inci:['アスタキサンチン', 'ヘマトコッカスプルビアリスエキス', 'Astaxanthin'], cs:['aging', 'dull'], mech:'赤い色の抗酸化成分です。', eff:'くすみ・ハリ不足のケア（データは限られる）', ev:'D', irr:'低'});
+  add({k:'resveratrol', ja:'レスベラトロール', en:'Resveratrol', inci:['レスベラトロール', 'Resveratrol'], cs:['aging', 'dull'], mech:'ブドウなどに含まれる抗酸化成分です。', eff:'くすみ・ハリ不足のケア（データは限られる）', ev:'D', irr:'低'});
+  add({k:'vitk', ja:'ビタミンK（フィトナジオン）', en:'Phytonadione', inci:['フィトナジオン', 'ビタミンK1', 'Phytonadione'], cs:['darkcircle', 'redness'], mech:'血のめぐりにかかわるビタミンで、目の下の青っぽいクマ向けの製品に使われます。', eff:'目の下のクマのケア（データは限られる）', ev:'D', irr:'低'});
+  add({k:'hatomugi', ja:'ハトムギエキス', en:'Coix seed extract', inci:['ハトムギ種子エキス', 'ヨクイニンエキス', 'Coix Lacryma-Jobi Ma-yuen Seed Extract'], cs:['rough', 'dry'], mech:'肌を整えるとされる植物エキスです。', eff:'肌あれ・キメの乱れを整える（データは限られる）', ev:'D', irr:'低'});
+  add({k:'licorice', ja:'カンゾウ根エキス', en:'Licorice root extract', inci:['カンゾウ根エキス', '甘草エキス', 'グリチルリチン酸', 'Glycyrrhiza Glabra Root Extract'], cs:['redness', 'sensitive', 'spot'], mech:'炎症をしずめる成分（グリチルリチン酸など）を含む植物エキスです。', eff:'赤み・肌あれを防ぐ', ev:'C', irr:'低'});
+  add({k:'ricepower', ja:'ライスパワーNo.11', en:'Rice extract No.11', inci:['ライスパワーNo.11', 'ライスパワーNo.11エキス'], cs:['dry', 'sensitive'], mech:'医薬部外品の有効成分で、肌の水分を保つ力を高めるとされます（皮膚水分保持能の改善）。', eff:'乾燥しやすい肌の改善（医薬部外品）', ev:'C', irr:'低', reg:'医薬部外品'});
+  add({k:'galactomyces', ja:'ガラクトミセス培養液', en:'Galactomyces ferment filtrate', inci:['ガラクトミセス培養液', 'Galactomyces Ferment Filtrate'], cs:['dull', 'dry', 'pore'], mech:'酵母を発酵させた液で、保湿・キメを整えるとされます。', eff:'うるおい・キメ（データは限られる）', ev:'D', irr:'低'});
+  add({k:'ergothioneine', ja:'エルゴチオネイン', en:'Ergothioneine', inci:['エルゴチオネイン', 'Ergothioneine'], cs:['aging', 'dull'], mech:'きのこなどに含まれる抗酸化成分です。', eff:'くすみ・ハリ不足のケア（データは限られる）', ev:'D', irr:'低'});
+  add({k:'heparinoid', ja:'ヘパリン類似物質', en:'Heparinoid', inci:['ヘパリン類似物質', 'Heparinoid'], cs:['dry', 'rough'], mech:'水分を抱えて保湿し、血のめぐりを良くする成分です。皮膚科の保湿剤（ヒルドイドなど）や市販薬に使われます。', eff:'乾燥・肌あれの改善', ev:'A', irr:'低', reg:'医薬品・医薬部外品', side:'出血しやすい病気のある人は、使う前に医師・薬剤師に相談します。'});
+  add({k:'honey', ja:'ハチミツ', en:'Honey', inci:['ハチミツ', 'Honey', 'Mel'], cs:['dry'], mech:'水分を抱える保湿成分です。', eff:'うるおい', ev:'D', irr:'低'});
+  add({k:'aloe', ja:'アロエエキス', en:'Aloe vera', inci:['アロエベラ葉エキス', 'アロエベラ液汁', 'アロエエキス', 'Aloe Barbadensis Leaf Extract'], cs:['dry', 'sensitive'], mech:'保湿・肌をしずめるとされる植物エキスです。', eff:'うるおい・肌あれを防ぐ（データは限られる）', ev:'D', irr:'低'});
+  add({k:'menthol', ja:'メントール', en:'Menthol', inci:['メントール', 'l-メントール', 'Menthol'], cs:[], mech:'スーッとする清涼感を出す成分です。', eff:'清涼感（肌への良い効果はほとんどない）', ev:'C', irr:'中', side:'敏感肌・赤みのある肌では、刺激になることがあります。'});
+  add({k:'camphor', ja:'カンフル', en:'Camphor', inci:['カンフル', 'dl-カンフル', 'Camphor'], cs:['acne'], mech:'清涼感があり、ニキビ用の薬にも使われる成分です。', eff:'清涼感・ニキビ用の薬の成分', ev:'C', irr:'中', side:'敏感肌では刺激になることがあります。'});
+  add({k:'polyq51', ja:'ポリクオタニウム-51（リピジュア）', en:'Polyquaternium-51', inci:['ポリクオタニウム-51', 'Polyquaternium-51'], cs:['dry', 'sensitive'], mech:'細胞膜に似た形の保湿成分で、水分を抱えて離しにくいとされます。', eff:'乾燥を防ぐ', ev:'C', irr:'低'});
+  add({k:'aminocleanser', ja:'アミノ酸系洗浄成分', en:'Amino acid surfactants', inci:['ココイルグルタミン酸Na', 'ココイルグルタミン酸TEA', 'ラウロイルグルタミン酸Na', 'ココイルグリシンK', 'ラウロイルメチルアラニンNa', 'Sodium Cocoyl Glutamate'], cs:['dry', 'sensitive'], mech:'洗浄力がおだやかで、肌のうるおいを取りすぎにくい洗浄成分です。', eff:'乾燥・敏感な肌でも洗いやすい', ev:'C', irr:'低'});
   const RET = {cs:['aging', 'acne', 'pore'], irr:'高', time:'夜', timeT:'光で分解されやすく、夜の使用が一般的です。使う期間は日中の紫外線対策を。', act:2};
   add(Object.assign({k:'retinal', ja:'レチナール', en:'Retinal (Retinaldehyde)', inci:['レチナール', 'Retinal', 'レチンアルデヒド'], grp:'retinoid', mech:'肌の中でレチノイン酸に変わる手前の形のビタミンAです。レチノールより変換の段階が少ないとされます。', eff:'小じわ・ハリ不足・ざらつきの改善', ev:'C', side:'乾燥・赤み・皮むけが出ることがあります。妊娠中・授乳中は使う前に医師に相談してください。', combo:'AHA・BHA・処方のレチノイドと重ねない。', reg:'化粧品'}, RET));
   add(Object.assign({k:'retinylpalm', ja:'レチニルパルミテート（パルミチン酸レチノール）', en:'Retinyl palmitate', inci:['パルミチン酸レチノール', 'Retinyl Palmitate', 'レチニルパルミテート'], grp:'retinoid', mech:'ビタミンAのエステル（誘導体）で、肌の中で少しずつレチノールに変わります。', eff:'肌のキメを整える', ev:'C', irr:'中', side:'レチノールより刺激は少ないとされますが、乾燥・赤みが出ることがあります。', combo:'AHA・BHA・処方のレチノイドと重ねない。', reg:'化粧品', act:1}, {cs:['aging', 'rough'], time:'夜', timeT:'夜の使用が一般的です。'}));
@@ -9211,7 +9253,8 @@ function acneActiveNow() {
     const ff = faceFindings(14); return !!(ff.inflamed || ff.comedo); } catch (e) { return true; }
 }
 const acneRxIdle = p => !!p && p.category === '皮膚科の塗り薬' && ACNE_RX_RE.test(`${p.name} ${p.ingredients || ''}`) && !acneActiveNow();
-function routineDesign(mode) {
+function routineDesign(mode) { mode = mode || 'normal'; return rdMemo('R:' + mode, () => routineDesign0(mode)); }
+function routineDesign0(mode) {
   mode = mode || 'normal';
   const d = diagNow(), A = prodAnalysis(), infos = A.infos, pri = (d && d.priority) || concernKeysNow();
   const main = d ? d.main : 'normal', sens = !!(d && d.sensitive);
@@ -10150,7 +10193,7 @@ function rtPlan(slot, solo) {
     steps.forEach(st => { const out = []; st.good = st.good.filter(g => { if (st.k === 'sunscreen' || st.k === 'cleanse') return true; const c = comboConflict(g, st.k === 'wash' ? dayPool() : dayPool().concat(gpool)); if (c) { out.push(comboAvoidWord(g, c)); return false; } if (st.k !== 'wash') { const o = toG(g); if (o) gpool.push(o); } /* 洗い流す洗顔料は、ほかのおすすめとの重なりは見ない */ const oc = comboConflict(g, otherRx); if (oc) st.today.push(T(`${chipText(g)}は${hereJa}だけにして、${otherJa}の${oc.who.name}とは時間を分けて使います`, '成分')); return true; }); st.avoid = st.avoid.filter(a => !out.some(o => chipText(o) === chipText(a))).concat(out); });
   }
   // 使う物に、その手順の「控えたい」ものが入っていたら、そう伝える（控えたいと言いながら黙って使わせない）
-  { const AV = [[/香料/, /(?<!無)香料(?!フリー|不使用)/], [/エタノール|アルコール/, /(?<!無水)エタノール(?!フリー|不使用)|変性アルコール/], [/スクラブ/, /スクラブ|ポリエチレン末?(?!グリコール)/], [/メントール|清涼/, /メントール/], [/洗浄力の強い/, /ラウリル硫酸|ラウレス硫酸/], [/重いクリーム|油分の多い/, /ミネラルオイル|ワセリン/]];
+  { const AV = [[/香料/, /(?:^|[^無])香料(?!フリー|不使用)/], [/エタノール|アルコール/, /(?:^|[^水])エタノール(?!フリー|不使用)|変性アルコール/] /* 古いiPhone（iOS 16.3以前）は「後ろ読み」の正規表現が使えず、アプリ全体が動かなくなるため使わない */, [/スクラブ/, /スクラブ|ポリエチレン末?(?!グリコール)/], [/メントール|清涼/, /メントール/], [/洗浄力の強い/, /ラウリル硫酸|ラウレス硫酸/], [/重いクリーム|油分の多い/, /ミネラルオイル|ワセリン/]];
     // 今の肌で控えたい物が入っている商品は使わない（お休みにして、おすすめの成分を出す）。日焼け止めは、塗らないよりよいので注意を出して使う
     steps.forEach(st => { if (st.fixed || !st.prods.length || !st.avoid.length) return; const off = [];
       st.prods.forEach(x => { const txt = `${x.p.name || ''} ${x.p.ingredients || ''}`, hit = st.avoid.map(chipText).filter(a => AV.some(([w, re]) => w.test(a) && re.test(txt))); if (!hit.length) return;
@@ -12653,14 +12696,14 @@ const ADV_LABELS = {スキンケア:['おすすめ', '控えたい'], 食事:['�
 function masterOf(name) { const w = normIng(chipText(name)); if (!w) return null; try { const nm = x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].map(normIng); return ING_MASTER.find(x => nm(x).includes(w)) || ING_MASTER.find(x => nm(x).some(n => n.length >= 2 && (w.includes(n) || n.includes(w)))) || null; } catch (e) { return null; } }
 function ingInfo(e, name) {
   let m = null; try { m = ING_MASTER.find(x => e && x.db === e.key) || (name ? masterOf(name) : null); } catch (er) { /* 何もしない */ }
-  const first = t => (String(t || '').split(/(?<=。)/).filter(x => x.trim())[0] || '').trim();
+  const first = t => (String(t || '').replace(/。/g, '。\u0001').split('\u0001').filter(x => x.trim())[0] || '').trim();
   let desc = m && m.mech ? first(m.mech) : '';
-  if (!desc && e) { const ss = String(e.feature || '').split(/(?<=。)/).map(x => x.trim()).filter(Boolean), keep = ss.filter(x => !/含まれる|由来|から作られ|から取れ|日本では|昔から|名前/.test(x)); desc = (keep[0] || ss[0] || ''); }
+  if (!desc && e) { const ss = String(e.feature || '').replace(/。/g, '。\u0001').split('\u0001').map(x => x.trim()).filter(Boolean), keep = ss.filter(x => !/含まれる|由来|から作られ|から取れ|日本では|昔から|名前/.test(x)); desc = (keep[0] || ss[0] || ''); }
   const eff = m && m.eff ? m.eff : e ? String(e.purpose || '').replace(/[。．]$/, '') : '';
   return {desc, eff};
 }
 const ingInfoHtml = (e, name) => { const I = ingInfo(e, name); return (I.desc ? `<div class="ing-b"><b>説明</b><p>${esc(I.desc)}</p></div>` : '') + (I.eff ? `<div class="ing-b"><b>効果</b><p>${esc(I.eff)}</p></div>` : ''); };
-function briefTxt(t) { const ss = String(t || '').split(/(?<=。)/).filter(x => x.trim()); let o = ss[0] || ''; if (o.length < 16 && ss[1]) o += ss[1]; return o.trim(); }
+function briefTxt(t) { const ss = String(t || '').replace(/。/g, '。\u0001').split('\u0001').filter(x => x.trim()); let o = ss[0] || ''; if (o.length < 16 && ss[1]) o += ss[1]; return o.trim(); }
 // 成分のボタンに出す言葉：（ ）の補足は外して1行に収める（補足は押したあとの画面に出す）
 function chipText(v) { const t = String(v || '').replace(/\s*[（(].*?[）)]\s*/g, '').trim(); return t || String(v || ''); }
 // AIの答えに混ざった説明文・重複を取り除いて、短い言葉だけにする
@@ -14011,6 +14054,8 @@ function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n ===
 // 記録・化粧品・設定をSupabaseに保存し、機種変更やブラウザのデータ削除のあとでも続きから使えるようにする
 // 写真（肌写真・化粧品の写真）はクラウドに送らない（この端末の中だけ）
 const SYNC = {busy:false, timer:null, at:'', err:'', pending:false, pulledFor:''};
+// アプリに戻ってきたとき（ほかの端末で記録したかもしれない）は、クラウドの記録を読んで合わせる（1分に1回まで）
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' || !acct || !acct.user || SYNC.busy) return; if (Date.now() - (SYNC.visAt || 0) < 60000) return; SYNC.visAt = Date.now(); try { if (syncOn()) syncPull(false); } catch (e) { /* 何もしない */ } });
 const SYNC_ARRAYS = ['catalog', 'myProducts', 'skinLogs', 'lifeLogs', 'customFoods'];
 // 記録の中身の目印（写真は中身ではなく有無だけ）：クラウドとこの端末で、記録が本当に違うかを比べる
 const SYNC_SIG_KEY = 'nk_sync_sig';
@@ -14077,6 +14122,14 @@ async function syncPush() {
   SYNC.busy = true; SYNC.err = '';
   try {
     const more = await photoUpload(); if (more) SYNC.pending = true; // 先に写真を送る（送れた写真だけ目印をつける）
+    // ほかの端末（iPhone・Macなど）があとで保存していたら、先にその記録と合わせてから送る（上書きして、ほかの端末の記録を消さないため）
+    const last = SYNC.at || (() => { try { return localStorage.getItem('nakakaramo_sync_at') || ''; } catch (e) { return ''; } })();
+    const head = await acct.client.from('user_data').select('updated_at').eq('user_id', acct.user.id).maybeSingle();
+    if (head && head.data && head.data.updated_at && (!last || head.data.updated_at > last)) {
+      const full = await acct.client.from('user_data').select('data, updated_at').eq('user_id', acct.user.id).maybeSingle();
+      if (full.error) throw full.error;
+      if (full.data && recSig(full.data.data || {}) !== recSig(syncPayload())) syncApply({data:syncMerge(state, full.data.data || {}), updated_at:full.data.updated_at}, true);
+    }
     const now = new Date().toISOString();
     const payload = syncPayload();
     const {error} = await acct.client.from('user_data').upsert({user_id:acct.user.id, data:payload, updated_at:now});
