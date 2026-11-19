@@ -2916,7 +2916,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119151527'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119152405'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9534,11 +9534,14 @@ const TERM_RECO_ONLY = new Set(['シミ', 'くすみ', 'しわ', 'たるみ', '�
 const ING_LINK_SKIP = /^(保湿|保湿成分|日焼け止め|水|オイル|洗顔|クリーム|乳液|化粧水|美容液|成分|エキス)$/;
 const TERM_NOLINK = ['皮脂']; // よく知られた言葉は、緑の下線（説明へのリンク）にしない
 let ING_LINK_RE = null;
+let RX_ING_NAMES = null; /* 塗り薬の成分の名前（すべて） */
+function rxIngNames() { if (!RX_ING_NAMES) { RX_ING_NAMES = new Set(); RX_DRUGS.forEach(r => String(r[2] || '').split(RX_ING_SPLIT).forEach(x => { x = x.trim(); if (x) RX_ING_NAMES.add(x); })); } return RX_ING_NAMES; }
 function ingLinkRe() {
   if (ING_LINK_RE) return ING_LINK_RE;
   const set = new Set(Object.keys(ING_LINK_EXTRA).concat(TERM_KEYS));
   ING_DB.forEach(e => [e.name.replace(/（.*?）|\(.*?\)/g, '').replace(/類$/, '')].concat(e.aliases || []).forEach(a => { a = String(a).trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,（(]/.test(a)) set.add(a); }));
   try { ING_MASTER.forEach(m => { const a = String(m.ja || '').replace(/（.*?）/g, '').trim(); if (a.length >= 3 && !ING_LINK_SKIP.test(a) && !/[、,]/.test(a)) set.add(a); }); } catch (e) { /* 何もしない */ }
+  rxIngNames().forEach(a => { if (a.length >= 2) set.add(a); }); /* 塗り薬の成分も、すべて緑の下線にする */
   TERM_NOLINK.forEach(t => set.delete(t));
   const terms = [...set].sort((a, b) => b.length - a.length).map(t => esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   ING_LINK_RE = new RegExp('(' + terms.join('|') + ')', 'g');
@@ -9552,7 +9555,8 @@ function ingLinkHtml(html, seen) {
   return String(html).split(/(<button[^>]*>[\s\S]*?<\/button>|<[^>]+>)/).map(part => part.startsWith('<') ? part : part.replace(ingLinkRe(), (w) => {
     const raw = w.replace(/&amp;/g, '&');
     if (TERM_INFO[raw]) { if (seen.has('t:' + raw)) return w; seen.add('t:' + raw); return `<button type="button" class="care-link" data-term="${esc(raw)}">${w}</button>`; }
-    const word = ING_LINK_EXTRA[raw] || raw, e = ingEntryOf(word); if (!e) return w;
+    const word = ING_LINK_EXTRA[raw] || raw, e = ingEntryOf(word);
+    if (!e) { if (!rxIngNames().has(raw) || seen.has('rx:' + raw)) return w; seen.add('rx:' + raw); return rxIngLink(raw); }
     const k = e.key || e.name; if (seen.has(k)) return w; seen.add(k);
     return `<button type="button" class="care-link" data-ingsheet="${esc(word)}">${w}</button>`;
   })).join('');
@@ -10264,7 +10268,7 @@ function acneTypeDrugsHtml() {
     L2 = L2.filter(p => !L2.some(q => q !== p && clsP(q).length > clsP(p).length && clsP(p).every(c => clsP(q).includes(c)))); return [...new Set(L2.map(p => rxIngLabel(p)))]; };
   const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
-    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${(m => m.length ? `<p class="small no-ph at-mine"><b>使っている薬</b>${m.map(esc).join('、')}</p>` : '')(mineFor(g))}${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
+    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${(m => m.length ? `<p class="small no-ph at-mine"><b>使っている薬</b>${m.map(x => String(x).split(RX_ING_SPLIT).map(y => y.trim()).filter(Boolean).map(y => rxIngNames().has(y) ? rxIngLink(y) : esc(y)).join('・')).join('、')}</p>` : '')(mineFor(g))}${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
     <p class="small muted no-ph" style="margin-top:10px">${[own.size ? '今使っている成分は省いています。' : '', rxAcne ? '市販薬を足すときは医師に相談しましょう。' : '', '押すと説明が出ます。処方の成分は医師が選びます（日本皮膚科学会ガイドライン2023より）。'].filter(Boolean).join('')}</p></div>`;
 }
 const OTC_ING_CACHE = {};
