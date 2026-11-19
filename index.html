@@ -1581,6 +1581,10 @@ details.fold[open] summary{margin-bottom:10px}
 /* キーボードが出ている間：見えている範囲（上の位置・高さはJSで指定）にぴったり合わせ、シートをキーボードのすぐ上に置く */
 .modal-backdrop.kb{bottom:auto!important;transition:none}
 .modal-backdrop.kb .modal{max-height:calc(var(--kb-h,100vh) - max(var(--sat),12px) - 8px)!important}
+.modal.tall{height:calc(100vh - max(var(--sat),12px) - 8px);height:calc(100dvh - max(var(--sat),12px) - 8px);max-height:none} /* 検索のシートは高さを決めておく：文字を入れても結果が出ても、シートの上の位置が動かない */
+.modal-backdrop.kb .modal.tall{height:calc(var(--kb-h,100vh) - max(var(--sat),12px) - 8px)!important}
+@media(min-width:640px){.modal.tall{height:min(760px,88vh)}}
+.find-sec{margin:10px 0 6px;font-size:12.5px;font-weight:700;color:var(--muted)}.find-sec:first-child{margin-top:0}
 body:has(#modal-root .modal-backdrop.kb)::before{transform:translate3d(0,var(--kb-top,0px),0)!important}
 @keyframes bgIn{from{background-color:transparent}}
 .sheet-grab{display:flex;justify-content:center;padding:8px 0 0;cursor:grab;touch-action:none}
@@ -2924,7 +2928,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119225546'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119231310'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4927,6 +4931,21 @@ const RX_DRUGS = [
   ['汗（多汗症）', 'エクロックゲル5%', 'ソフピロニウム臭化物'], ['汗（多汗症）', 'アポハイドローション20%', 'オキシブチニン塩酸塩'],
   ['ヘルペス', 'アラセナA軟膏3%', 'ビダラビン'], ['ヘルペス', 'ゾビラックス軟膏5%', 'アシクロビル'],
   ['傷・やけど', 'ゲーベンクリーム1%', 'スルファジアジン銀'],
+  // ジェネリック（後発品）・よく処方される薬を追加（2026-11-19：検索で全部出るように）
+  ['ニキビ', 'アダパレンゲル0.1%', 'アダパレン'], ['ニキビ', 'クリンダマイシンゲル1%', 'クリンダマイシン'], ['ニキビ', 'クリンダマイシンリン酸エステルゲル1%', 'クリンダマイシン'], ['ニキビ', 'ナジフロキサシンクリーム1%', 'ナジフロキサシン'], ['ニキビ', 'ナジフロキサシンローション1%', 'ナジフロキサシン'], ['ニキビ', 'ナジフロキサシン軟膏1%', 'ナジフロキサシン'],
+  ['ステロイド（最も強い）', 'クロベタゾールプロピオン酸エステル軟膏0.05%', 'クロベタゾールプロピオン酸エステル'], ['ステロイド（最も強い）', 'クロベタゾールプロピオン酸エステルクリーム0.05%', 'クロベタゾールプロピオン酸エステル'], ['ステロイド（最も強い）', 'マハディ軟膏0.05%', 'クロベタゾールプロピオン酸エステル'],
+  ['ステロイド（とても強い）', 'モメタゾンフランカルボン酸エステル軟膏0.1%', 'モメタゾンフランカルボン酸エステル'], ['ステロイド（とても強い）', 'ジフルプレドナート軟膏0.05%', 'ジフルプレドナート'], ['ステロイド（とても強い）', 'ベタメタゾン酪酸エステルプロピオン酸エステル軟膏0.05%', 'ベタメタゾン酪酸エステルプロピオン酸エステル'], ['ステロイド（とても強い）', 'ネリゾナ軟膏0.1%', 'ジフルコルトロン吉草酸エステル'], ['ステロイド（とても強い）', 'トプシムクリーム0.05%', 'フルオシノニド'], ['ステロイド（とても強い）', 'パンデルクリーム0.1%', '酪酸プロピオン酸ヒドロコルチゾン'],
+  ['ステロイド（強い）', 'ベタメタゾン吉草酸エステル軟膏0.12%', 'ベタメタゾン吉草酸エステル'], ['ステロイド（強い）', 'ベトネベート軟膏0.12%', 'ベタメタゾン吉草酸エステル'], ['ステロイド（強い）', 'ベトネベートN軟膏', 'ベタメタゾン吉草酸エステル・フラジオマイシン'], ['ステロイド（強い）', 'デキサメタゾンプロピオン酸エステル軟膏0.1%', 'デキサメタゾンプロピオン酸エステル'], ['ステロイド（強い）', 'リンデロンVGクリーム0.12%', 'ベタメタゾン吉草酸エステル・ゲンタマイシン'], ['ステロイド（強い）', 'リンデロンVGローション', 'ベタメタゾン吉草酸エステル・ゲンタマイシン'], ['ステロイド（強い）', 'デルモゾールG軟膏', 'ベタメタゾン吉草酸エステル・ゲンタマイシン'],
+  ['ステロイド（ふつう）', 'ヒドロコルチゾン酪酸エステル軟膏0.1%', 'ヒドロコルチゾン酪酸エステル'], ['ステロイド（ふつう）', 'キンダベートクリーム0.05%', 'クロベタゾン酪酸エステル'], ['ステロイド（ふつう）', 'リドメックスコーワクリーム0.3%', 'プレドニゾロン吉草酸エステル酢酸エステル'], ['ステロイド（ふつう）', 'リドメックスコーワローション0.3%', 'プレドニゾロン吉草酸エステル酢酸エステル'], ['ステロイド（ふつう）', 'ロコイドローション0.1%', 'ヒドロコルチゾン酪酸エステル'],
+  ['ステロイド（弱い）', 'テラ・コートリル軟膏', 'ヒドロコルチゾン・オキシテトラサイクリン'], ['ステロイド（弱い）', 'エキザルベ', 'ヒドロコルチゾン・混合死菌'],
+  ['アトピー・湿疹（ステロイド以外）', 'タクロリムス軟膏0.1%', 'タクロリムス'], ['アトピー・湿疹（ステロイド以外）', 'タクロリムス軟膏0.03%小児用', 'タクロリムス'],
+  ['保湿・乾燥', 'ヘパリン類似物質クリーム0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヘパリン類似物質ローション0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヘパリン類似物質ゲル0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヘパリン類似物質外用泡状スプレー0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ビーソフテンクリーム0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ビーソフテンローション0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ビーソフテン油性クリーム0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヘパリンZクリーム0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'パスタロンクリーム10%', '尿素'], ['保湿・乾燥', 'ウレパールローション10%', '尿素'], ['保湿・乾燥', '尿素クリーム10%', '尿素'], ['保湿・乾燥', '尿素クリーム20%', '尿素'], ['保湿・乾燥', 'サトウザルベ軟膏10%', '酸化亜鉛'],
+  ['化膿・とびひ（抗菌）', 'ゲンタマイシン硫酸塩軟膏0.1%', 'ゲンタマイシン'], ['化膿・とびひ（抗菌）', 'ゲンタシンクリーム0.1%', 'ゲンタマイシン'], ['化膿・とびひ（抗菌）', 'クロマイ-P軟膏', 'クロラムフェニコール・フラジオマイシン・プレドニゾロン'],
+  ['水虫・カビ（抗真菌）', 'ケトコナゾールクリーム2%', 'ケトコナゾール'], ['水虫・カビ（抗真菌）', 'ケトコナゾールローション2%', 'ケトコナゾール'], ['水虫・カビ（抗真菌）', 'テルビナフィン塩酸塩クリーム1%', 'テルビナフィン'], ['水虫・カビ（抗真菌）', 'ルリコナゾールクリーム1%', 'ルリコナゾール'], ['水虫・カビ（抗真菌）', 'エンペシドクリーム1%', 'クロトリマゾール'], ['水虫・カビ（抗真菌）', 'アデスタンクリーム1%', 'イソコナゾール'], ['水虫・カビ（抗真菌）', 'ゼフナートクリーム2%', 'リラナフタート'], ['水虫・カビ（抗真菌）', 'メンタックスクリーム1%', 'ブテナフィン'], ['水虫・カビ（抗真菌）', 'ペキロンクリーム0.5%', 'アモロルフィン'],
+  ['かゆみ', 'クロタミトンクリーム10%', 'クロタミトン'],
+  ['酒さ（赤ら顔）', 'メトロニダゾールゲル0.75%', 'メトロニダゾール'],
+  ['ヘルペス', 'アシクロビル軟膏5%', 'アシクロビル'], ['ヘルペス', 'ビダラビン軟膏3%', 'ビダラビン'],
+  ['傷・やけど', 'オルセノン軟膏0.25%', 'トレチノイントコフェリル'], ['傷・やけど', 'プロスタンディン軟膏0.003%', 'アルプロスタジルアルファデクス'], ['傷・やけど', 'アクトシン軟膏3%', 'ブクラデシンナトリウム'], ['傷・やけど', 'カデックス軟膏0.9%', 'ヨウ素'], ['傷・やけど', 'ユーパスタコーワ軟膏', '精製白糖・ポビドンヨード']
 ];
 // 塗り薬の絵（チューブ・ボトル・容器）。種類ごとに色を分けて、薬の名前を書く
 const RX_COL = {'ニキビ':'#3E8E7E','ステロイド（最も強い）':'#B23A48','ステロイド（とても強い）':'#D0613A','ステロイド（強い）':'#D99A2B','ステロイド（ふつう）':'#6A9A3A','ステロイド（弱い）':'#4F8FBF','アトピー・湿疹（ステロイド以外）':'#6B5BA8','保湿・乾燥':'#3F7FB5','化膿・とびひ（抗菌）':'#8A6D3B','水虫・カビ（抗真菌）':'#2F7F5F','乾癬':'#7B4F9E','かゆみ':'#C0587A','酒さ（赤ら顔）':'#C25B5B','汗（多汗症）':'#3D9BC2','ヘルペス':'#A0522D','傷・やけど':'#666'};
@@ -4995,13 +5014,17 @@ function openRxSheet() {
     if (!hit.length) return `<p class="small muted" style="margin:12px 0">見つかりませんでした。ジェネリック（後発品）などで一覧にないときは、下の「一覧にない薬を入力」から登録できます。</p>`;
     return groups.map(g => { const ds = hit.filter(d => d[0] === g); return ds.length ? `<h3 class="rx-g">${esc(g)}</h3>${ds.map(d => `<button type="button" class="rx-item" data-rx="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}` : ''; }).join('');
   };
-  openModal({title:'皮膚科の塗り薬を追加', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す" aria-label="薬の名前で探す" autocomplete="off">
+  openModal({title:'皮膚科の塗り薬を追加', size:'tall', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す" aria-label="薬の名前で探す" autocomplete="off">
     <p class="small muted" style="margin:8px 0 4px">皮膚科で処方される主な塗り薬が、最初から入っています（全${RX_DRUGS.length}種類）。</p>
-    <div id="rx-list">${list('')}</div>
+    <div id="rx-list">${list('')}</div><div id="find-list" class="net-list" hidden></div>
     <button type="button" class="btn btn-ghost btn-sm" data-action="rx-manual" style="margin-top:12px;width:100%;justify-content:center">一覧にない薬を入力</button>
     <p class="hint" style="margin-top:10px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。このアプリは、使った日や残りの記録のためのものです。</p>`});
   const q = document.getElementById('rx-q'), box = document.getElementById('rx-list');
-  q.addEventListener('input', () => { box.innerHTML = list(q.value); });
+  const shop = document.getElementById('find-list');
+  q.addEventListener('input', () => { box.innerHTML = list(q.value); const v = q.value.trim(); clearTimeout(openRxSheet.t);
+    if (v.length < 2) { shop.hidden = true; shop.innerHTML = ''; findState = null; return; }
+    findState = {kind:'my', q:'', items:null, loading:true, err:'', timer:null, noRx:true}; shop.hidden = false; shop.innerHTML = '<p class="find-sec">市販の薬・化粧品</p>';
+    openRxSheet.t = setTimeout(() => findRun(v), 500); }); /* 一覧の塗り薬の下に、通販で売っている市販薬・化粧品も出す */
   box.addEventListener('click', e => { const b = e.target.closest('[data-rx]'); if (b) rxPick(b.dataset.rx); });
 }
 function rxPick(name) {
@@ -5066,7 +5089,7 @@ async function popularMount() {
 }
 function openAddSheet(kind) {
   const my = kind === 'my';
-  openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
+  openModal({title:my ? '化粧品を追加' : '商品を追加', size:my ? 'small tall' : 'small', dismissable:true, body:`<div class="add-opts">
     <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
     <button class="add-opt main${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `${premLock()}`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="商品名で探す（例：アヌア レチノール）" aria-label="商品名で探す" autocomplete="off" enterkeyhint="search"></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">何も入れていないときは、人気ランキング（毎日自動で入れ替わります）を出します。Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>` : ''}`});
   if (my) popularMount();
@@ -5118,12 +5141,12 @@ async function findFetch(body) {
 }
 function openFindSheet(kind) {
   findState = {kind, q:'', items:null, loading:false, err:'', timer:null};
-  openModal({title:'自分で入力', dismissable:true, body:`<div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" id="find-q" class="input" placeholder="バーコードの数字 または 商品名" autocomplete="off" aria-label="バーコードの数字または商品名"></div>
+  openModal({title:'自分で入力', size:'tall', dismissable:true, body:`<div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" id="find-q" class="input" placeholder="バーコードの数字 または 商品名" autocomplete="off" aria-label="バーコードの数字または商品名"></div>
     <div id="find-list" class="net-list" style="margin-top:12px"><p class="small muted">バーコードの下の数字（13桁か8桁）か、「キュレル 化粧水」のような商品名を入れると、実際に売られている商品の候補が出ます。押すと選べます。</p></div>
     <p class="small" style="margin-top:12px"><button type="button" class="link" data-action="add-full" data-id="${kind}">見つからないときは、すべて自分で入力する</button></p>
     <p class="credit small muted" style="margin-top:10px">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`});
   const inp = document.getElementById('find-q');
-  if (inp) { setTimeout(() => inp.focus(), 280); inp.addEventListener('input', () => { clearTimeout(findState.timer); const q = inp.value.trim(); findState.timer = setTimeout(() => findRun(q), 600); });
+  if (inp) { setTimeout(() => { try { inp.focus({preventScroll:true}); } catch (e) { /* 何もしない */ } }, 280); inp.addEventListener('input', () => { clearTimeout(findState.timer); const q = inp.value.trim(); findState.timer = setTimeout(() => findRun(q), 600); });
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(findState.timer); findRun(inp.value.trim()); inp.blur(); } }); }
 }
 async function findRun(q) {
@@ -5168,13 +5191,17 @@ async function findRun(q) {
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
 }
+// 入れた言葉に合う皮膚科の塗り薬（アプリに入っている一覧から）。化粧品の検索でも出す（処方薬は通販では売っていないため）
+function rxHits(q, n = 6) { const k = fnorm(q || ''); if (k.length < 2) return []; return RX_DRUGS.filter(d => fnorm(d[1]).includes(k) || fnorm(d[2]).includes(k)).slice(0, n); }
+function rxHitsHtml(q) { const H = rxHits(q); return H.length ? `<p class="find-sec">皮膚科の塗り薬</p>${H.map(d => `<button type="button" class="rx-item" data-action="rx-pick" data-id="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}<p class="find-sec">市販の商品</p>` : ''; }
 function findPaint() {
   const box = document.getElementById('find-list') || (findState && findState.inPop ? document.getElementById('pop-list') : null), fs = findState; if (!box || !fs) return; // 化粧品を追加の画面の検索も、同じ表示
-  if (fs.loading) { box.innerHTML = skelHtml(4, {dots:true, label:fs.reading || '商品を検索中'}); return; }
-  if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
+  const rxH = fs.noRx ? '<p class="find-sec">市販の薬・化粧品</p>' : fs.cam ? '' : rxHitsHtml(((fs.inPop ? document.getElementById('pop-q') : document.getElementById('find-q')) || {}).value || fs.q || ''); /* いま入っている言葉で出す（前の言葉の結果を残さない） */
+  if (fs.loading) { box.innerHTML = rxH + skelHtml(4, {dots:true, label:fs.reading || '商品を検索中'}); return; }
+  if (fs.err) { box.innerHTML = rxH + `<p class="small muted">${esc(fs.err)}</p>`; return; }
   if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
-  if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
-  box.innerHTML = (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + fs.items.slice(0, fs.more ? 60 : 3).map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+  if (!fs.items.length) { box.innerHTML = rxH + `<p class="small muted">${rxH ? '市販の商品は' : ''}見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
+  box.innerHTML = rxH + (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + fs.items.slice(0, fs.more ? 60 : 3).map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 70))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
       <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('')
     + (!fs.more && fs.items.length > 3 ? `<p style="margin:10px 0 0;text-align:center"><button type="button" class="link small" data-action="find-more">ほかの候補も見る（${fs.items.length - 3}件）</button></p>` : '');
@@ -9915,7 +9942,7 @@ function rtPlan(slot, solo) {
   const acneT = acneActiveNow(); // ニキビの悩み（肌質診断・悩み）か、最近14日のニキビの記録があるとき
   const markT = has('acnemark') || has('spot') || has('dull') || (m.dull || 0) >= 3;
   const ageT = has('aging'), poreT = has('pore') || has('rough') || (m.rough || 0) >= 3;
-  const calm = !!(D && D.calm);
+  const calm = !!(D && D.calm), calmW = calm && (m.red || 0) >= 3 ? '赤み・肌あれ' : calm && (D.m.inflamed || 0) ? '赤いニキビ' : '肌の荒れ'; /* 守りのケアにする理由（記録にあることだけ言う） */
   const hum = w && w.hum != null ? Math.round(w.hum) : null, uv = w && w.uv != null ? Math.round(w.uv) : null;
   const lowHum = hum != null && hum < 50, hot = w && w.tmax >= 28, cold = w && w.tmax < 10;
   // 使っている化粧品（スキンケア設計の結果から、その工程に合う物を入れる）
@@ -9977,11 +10004,12 @@ function rtPlan(slot, solo) {
   const rxCat = p => { const d = RX_DRUGS.find(z => z[1] === p.name) || RX_DRUGS.find(z => normIng(z[2]) && normIng(z[2]) === normIng(p.ingredients || '')); return d ? d[0] : rxKindOf(p.name) || ''; };
   const rxCalm = r => { const c = rxCat(r.x.p), t = `${r.x.p.name} ${r.x.p.ingredients || ''}`;
     if (/ステロイド|かゆみ|アトピー/.test(c) && !sensT && !(m.red > 0)) return '最近の肌の記録では、赤み・かゆみは落ち着いています。医師に「よくなったら塗る回数を減らす・やめる」と言われているときは、その指示に合わせます';
-    if (calm && /アダパレン|過酸化ベンゾイル|ディフェリン|ベピオ|エピデュオ|デュアック/.test(t)) return '赤み・ヒリヒリが強い日です。塗る範囲・量を守り、保湿をしっかりします。つらいときは自分でやめずに、塗る回数を減らしてよいか皮膚科に相談します';
+    if (calm && /アダパレン|過酸化ベンゾイル|ディフェリン|ベピオ|エピデュオ|デュアック/.test(t)) return `${calmW === '赤み・肌あれ' ? '赤み・ヒリヒリが強い日です' : `${calmW}がある日です`}。塗る範囲・量を守り、保湿をしっかりします。ヒリヒリがつらいときは自分でやめずに、塗る回数を減らしてよいか皮膚科に相談します`;
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
+  const pregAsk = state.settings.gender !== '男性' && (((state.settings.diag || {}).a || {}).preg || '') !== 'no';
   const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || []; add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
-    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(r.note.map(t => T(t, '薬'))).concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
+    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const eyeT = has('darkcircle') || has('puffy');
   const eyeStep = () => { const L = R ? R.A.infos.filter(x => x.step === 'other' && /アイクリーム|アイセラム|アイジェル|アイケア|アイバーム|目元|目もと|eye/i.test(x.p.name) && !(R.paused || []).includes(x) && fitSlot(x)) : []; if (!L.length && !eyeT) return; /* 目元用の物は、黙って消さずに目元ケアの手順で使う */
     add('eye', {name:'目元ケア', prods:L, how:'薬指に米粒1つ分をとり、目のまわりの骨に沿って軽くたたくようにのせます。こすらないようにします。', good:uniq([has('puffy') ? 'カフェイン' : '', has('darkcircle') ? 'カフェイン' : '', has('darkcircle') && slot === 'pm' && !calm && !rxHard && !pregNow() ? 'レチノール（低い濃度）' : '', has('darkcircle') ? 'ビタミンC誘導体' : '', 'セラミド']).slice(0, 3), avoid:uniq([sensT ? '香料' : ''])}); };
@@ -9992,16 +10020,16 @@ function rtPlan(slot, solo) {
   const calmItem = D && D.items.find(x => /をお休み$/.test(x.title));
   if (slot === 'am') {
     const water = !hot && (m.oil || 0) < 3 && (dryT || sensT || lowHum || cold || (m.dry || 0) >= 3) && !(oilT && !dryT);
-    const why = uniq([lowHum ? T('空気が乾いているので、洗いすぎを防ぎます', '天気') : null, cold ? T('寒くて、肌のうるおいが逃げやすい日です', '天気') : null, (m.dry || 0) >= 3 ? T('最近の記録で乾燥が強めなので、洗いすぎないようにします', '肌') : null, (m.red || 0) >= 3 ? T('赤み・肌あれがあるので、こすらずに洗います', '肌') : null]);
+    const why = uniq([lowHum ? T('空気が乾いているので、洗いすぎを防ぎます', '天気') : null, cold ? T('寒くて、肌のうるおいが逃げやすい日です', '天気') : null, (m.dry || 0) >= 3 ? T(`${D && D.skinLabel || '記録'}で乾燥が強めなので、洗いすぎないようにします`, '肌') : null, (m.red || 0) >= 3 ? T('赤み・肌あれがあるので、こすらずに洗います', '肌') : null]);
     if (water) add('water', {name:'ぬるま湯で洗う', how:'32℃くらいのぬるま湯を手ですくって、顔にやさしくかけます。ペーパータオル（キッチンペーパーなど）を押し当てて水分をとります。', avoid:['熱いお湯', 'ゴシゴシこする'], today:why.slice(0, 2)});
-    else add('wash', Object.assign(washO(), {today:uniq([hot ? T('暑くて、汗と皮脂が出やすい日です', '天気') : null, (m.oil || 0) >= 3 ? T('最近の記録でテカリが強めです', '肌') : null])}));
+    else add('wash', Object.assign(washO(), {today:uniq([hot ? T('暑くて、汗と皮脂が出やすい日です', '天気') : null, (m.oil || 0) >= 3 ? T(`${D && D.skinLabel || '記録'}でテカリが強めです`, '肌') : null])}));
     add('toner', tonerO(lowHum ? [T('空気が乾いている日は、2回に分けて重ねづけすると、うるおいが続きます', '天気')] : []));
     // 赤み・肌あれが強い日や、皮膚科の薬を使っている間は、刺激の強い成分（act1以上）の美容液を休む
     const sp0 = prodOf(['serum']).concat(movedToAm()), rest = calm || rxHard ? sp0.filter(x => prodComboInfo(x).act >= 1) : [], sp = sp0.filter(x => !rest.includes(x));
     const restNote = rest.length ? T(`今日は「${rest.map(x => prodIngLabel(x.p)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     let sg = uniq([markT && !calm ? 'ビタミンC誘導体' : '', markT && !calm ? 'トラネキサム酸' : '', acneT || oilT || poreT || ageT ? 'ナイアシンアミド' : '', calm || sensT ? 'パンテノール' : '', calm ? 'ツボクサエキス（CICA）' : '']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。', good:sg, avoid:uniq([sensT ? '高濃度のビタミンC（純粋ビタミンC）' : '']),
-      today:restNote && !rxHard ? [restNote] : calm ? [T('赤み・肌あれがある日は、刺激の少ない美容液にして、しずめる成分を選びます', '肌')] : [], avoidOwn:rxHard ? restOwn(rest) : []});
+      today:restNote && !rxHard ? [restNote] : calm ? [T(`${calmW}がある日は、刺激の少ない美容液にして、しずめる成分を選びます`, '肌')] : [], avoidOwn:rxHard ? restOwn(rest) : []});
     spotSteps(); eyeStep(); rxSteps('moist');
     add('moist', moistO('am', uniq([lowHum || cold ? T(oilT && !dryT ? '乾燥する日は、乾きやすい所だけ乳液を少し重ねます' : '乾燥する日は、頬・口元にクリームを少し重ねます', '天気') : null, hot ? T('暑い日は少なめでOK（保湿をやめると、かえって皮脂が増えることがあります）', '天気') : null])));
     rxSteps('drug'); rxSteps('cover');
@@ -10037,7 +10065,7 @@ function rtPlan(slot, solo) {
     const sa = uniq([preg ? 'レチノール（妊娠中・授乳中）' : '', preg ? 'ハイドロキノン' : '', calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', calm || rxHard ? '' : 'レチノールとピーリングの併用']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
       avoidOwn:rxHard ? restOwn(rest, toAm) : [],
-      today:uniq([rxHard ? null : restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
+      today:uniq([rxHard ? null : restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T(calm ? `皮膚科の薬を使っている間と、${calmW}がある日は、レチノールやピーリングなど刺激の強い美容液は重ねません` : '皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote || (rxHard && calm) ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T(`${calmW}がある日は、刺激の強い成分はお休みします`, '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
     spotSteps(); eyeStep(); rxSteps('moist');
     add('moist', moistO('pm', uniq([lowHum ? T(oilT && !dryT ? '空気が乾いている日は、乾きやすい所だけ保湿を重ねます' : '空気が乾いている日は、最後にクリームでふたをして、寝ている間の乾燥を防ぎます', '天気') : null, calm ? T('肌を休ませる日は、うるおいを守るのが一番です', '肌') : null])));
     rxSteps('drug'); rxSteps('cover');
@@ -10072,7 +10100,7 @@ function rtPlan(slot, solo) {
       // 登録している物を全部使おうとしない：まず今日の肌に一番いい成分を決めて、それが入っている物だけ使う（美容液・部分用・化粧水）
       // 化粧水は、合う物がひとつもなければ、いちばん近い1つは残す（うるおす基本の手順なので）
       if (need.size && (st.k === 'serum' || st.k.startsWith('spot:') || st.k === 'toner')) {
-        const unk = L.filter(x => !ingsX(x).length); if (unk.length) st.today.push(T(`${unk.map(nm).join('・')}は成分が登録されていないので、合うかどうか判断できません。Myアイテムで成分を入れると、今日の肌に合わせて選べます`, '成分')); /* 成分がわからない物は「合わない」と決めつけない */
+        const unk = L.filter(x => !ingsX(x).length); if (unk.length) st.today.push(T(`${unk.map(x => '「' + truncate(String(x.p.name || ''), 24) + '」').join('・')}は成分が登録されていないので、合うかどうか判断できません。Myアイテムで成分を入れると、今日の肌に合わせて選べます`, '成分')); /* 成分がわからない物は「合わない」と決めつけない */
         const off = L.filter(x => fitX(x) <= 0 && ingsX(x).length);
         if (off.length && !(st.k === 'toner' && off.length === L.length)) { L = L.filter(x => !off.includes(x)); const hard = off.filter(x => (sensT || calm) && strongX(x)); restN(st, hard, calm ? '赤み・肌あれが落ち着くまで、刺激の強い成分は休むため' : '刺激を感じやすい肌なので、刺激の強い成分は休むため'); restN(st, off.filter(x => !hard.includes(x)), '今日の肌の悩みに合う成分が入っていないため'); }
       }
@@ -15702,6 +15730,7 @@ const actions = {
   'setup-finish': () => { if (swState && !swRead()) return; swSave(true); hapticSaved(); toast('肌質診断を保存しました'); },
   'add-full': kind => { findState = null; closeModal(); setTimeout(() => (actions[kind === 'my' ? 'new-my' : 'new-cat'])(), 200); },
   'find-pick': i => findPick(i),
+  'rx-pick': n => rxPick(n),
   'find-more': () => { if (findState) { findState.more = true; findPaint(); } },
   'add-camera': kind => {
     if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); return; }
