@@ -2888,7 +2888,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119102022'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119103246'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4968,7 +4968,11 @@ function rxPick(name) {
 // 「2本〜購入で特典」「おひとり様3点まで」「1ml×28包」「ギフト付き」は単品なので外さない
 const SET_RE = /セット|set\b|福袋|福箱|詰め?合わ?せ|キット|コフレ|ホリデーコレクション|ベスト\s*コレクション|トライアル|お試し|サンプル|ライン使い|本体\s*[+＋&＆]|[+＋]\s*(詰め?替|つめかえ|リフィル|レフィル)|([2-9]|[1-9]\d)\s*(個|本|点|箱|袋)(?![～〜~目分]|まで|以上|から|購入|ご購入|で)|[×xX✕]\s*[2-9](?![\d包枚回日]|\s*(ml|g)\b)/i;
 const OFFTOPIC_RE = /サプリ|ドリンク|飲む|タブレット|カプセル|シャンプー|コンディショナー|ヘアトリートメント|ヘアケア|ヘアオイル|ヘアミルク|頭皮|洗剤|柔軟剤|入浴剤|ペット|日傘|帽子|サングラス|手袋|アームカバー|パーカー|フィルム|カーテン|ネイル/;
-const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0 || '')); };
+// スキンケアの商品か：スキンケアの種類の言葉が入っていて、メイク・髪・体・食品・道具などではない物
+const SKIN_ITEM_RE = /化粧水|ローション|トナー|美容液|セラム|エッセンス|アンプル|乳液|ミルク|エマルジョン|クリーム|ジェル|ゲル|オールインワン|パック|フェイスマスク|シートマスク|マスク|洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|クレンジング|メイク落とし|日焼け止め|サンスクリーン|UV|SPF|バーム|オイル|ミスト|ピーリング|ゴマージュ|スクラブ|拭き取り|ふき取り|導入液|ブースター|スキンケア|保湿|医薬品|軟膏|ニキビ|スポッツ|美白|化粧品|toner|serum|essence|cream|lotion|gel|cleans|sunscreen|moistur/i;
+const NOT_SKIN_RE = /ファンデ|クッション(?!.*(クリーム|美容液))|口紅|ルージュ|リップ(スティック|ティント|グロス|ライナー|カラー)|ティント|グロス|アイシャドウ|アイライナー|マスカラ|アイブロウ|眉|チーク|ハイライター|シェーディング|コンシーラー|フェイスパウダー|おしろい|香水|フレグランス|オードトワレ|オードパルファム|デオドラント|制汗|ヘア|シャンプー|コンディショナー|頭皮|スカルプ|育毛|まつげ美容液|まつ毛美容液|ハンドクリーム|ハンドソープ|フット|かかと|ネイル|美顔器|ドライヤー|ブラシ|パフ|スポンジ|ケース|ポーチ|不織布|使い捨てマスク|サプリ|ドリンク|食品|お茶|プロテイン|ペット|洗剤|柔軟剤|入浴剤|日傘|帽子|サングラス|手袋|アームカバー|パーカー|カーテン|フィルム|書籍|雑誌/;
+const isSkinItem = x => { const n = String((x && x.name) || '').normalize('NFKC'); if (!SKIN_ITEM_RE.test(n)) return false; if (NOT_SKIN_RE.test(n)) return false; if (/ボディ|からだ|全身/.test(n) && !/顔|フェイス|face/i.test(n)) return false; return true; };
+const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0 || '')) && isSkinItem(x); };
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
 let POPULAR = null, popN = 20;
 async function popularLoad() {
@@ -9823,7 +9827,9 @@ function rtPlan(slot, solo) {
   const rxStep = r => { const cn = rxCalm(r); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗顔（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
     today:r.note.map(t => T(t, '薬')).concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const spotSteps = () => here.filter(s => s.kind === 'spot').forEach(s => add('spot:' + s.x.p.id, {name:STEP_LABEL.spot, prods:[s.x], how:'気になるところだけに、少量をのせます。'}));
-  const rxSteps = role => rxOn.filter(r => r.role === role).forEach(rxStep);
+  // 同じ成分の薬（例：クリームとローション）を2つ登録していても、手順は1つにまとめる（同じ物を2回出さない）
+  const rxSteps = role => { const G = new Map(); rxOn.filter(r => r.role === role).forEach(r => { const k = normIng(rxIngLabel(r.x.p)); if (G.has(k)) G.get(k).more.push(r.x); else G.set(k, {r, more:[]}); });
+    G.forEach(({r, more}) => { rxStep(r); if (more.length) steps[steps.length - 1].prods.push(...more); }); };
   const calmItem = D && D.items.find(x => /をお休み$/.test(x.title));
   if (slot === 'am') {
     const water = !hot && (m.oil || 0) < 3 && (dryT || sensT || lowHum || cold || (m.dry || 0) >= 3) && !(oilT && !dryT);
@@ -9945,7 +9951,7 @@ function rtPlan(slot, solo) {
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
-  if (RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').length >= 2) tips.push('塗り薬が2つ以上あるときは、それぞれ医師に言われた場所に塗ります。同じ場所に重ねるときは、前の薬がなじむまで数分あけてから次を塗ります。');
+  if (new Set(RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').map(r => normIng(rxIngLabel(r.x.p)))).size >= 2) tips.push('塗り薬が2つ以上あるときは、それぞれ医師に言われた場所に塗ります。同じ場所に重ねるときは、前の薬がなじむまで数分あけてから次を塗ります。');
   if (slot === 'pm' && (m.acne || 0) > 0) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替え、顔をふくのは使い捨てのペーパータオルにすると清潔です。');
   if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
   const lead = uniq([w ? `今日の天気　湿度${hum == null ? '－' : hum + '%'}・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${uv == null ? '－' : uv}` : '']);
