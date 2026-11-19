@@ -957,7 +957,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 /* 通常⇄時短：選んでいるほうを緑で塗って、ひと目でわかるように */
 .rt-qsw{grid-template-columns:repeat(2,1fr);max-width:240px;margin:2px auto 10px;background:var(--surface);border:1px solid var(--line2);border-radius:999px;padding:3px}
 .rt-qsw .sc-ind{width:calc((100% - 6px) / 2);border-radius:999px;background:var(--green-d);box-shadow:0 1px 4px rgba(46,90,64,.25)}
-.rt-qsw .sc-tab{padding:8px 0;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px}
+.rt-qsw .sc-tab{padding:5px 0;min-height:0;line-height:1.4;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px}
 .rt-qsw .sc-tab.on{color:#fff}
 /* 時短は黄色・文字は黒（グラデーションにはしない） */
 .rt-qsw .sc-ind.q{background:#E8B53A;box-shadow:0 1px 4px rgba(180,130,20,.3)}
@@ -2922,7 +2922,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119223348'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119224021'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
