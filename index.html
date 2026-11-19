@@ -2649,7 +2649,7 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .ld-card .ld-head .ld-top{position:relative;top:auto!important;right:auto;left:auto;margin:0}
 .ld-card .ld-head .ld-date{flex:1;min-width:0}
 .ld-card .ld-stwrap{position:relative;width:100%;max-width:300px;margin:0 auto}
-.ld-card .ld-stwrap .ld-arrow{position:absolute;top:50%;transform:translateY(-50%)!important;z-index:4;width:34px;height:34px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ld-card .ld-stwrap .ld-arrow{position:absolute;top:calc(50% - 17px);transform:none!important;z-index:4;width:34px;height:34px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .ld-card .ld-stwrap{--ld-ph-w:143px}.ld-card .ld-stwrap #ld-prev{left:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))}.ld-card .ld-stwrap #ld-next{right:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))} /* 写真の左右のはしのすぐ外 */
 .ld-card .ld-swipe{display:block;margin-top:8px}
 .ld-none .ld-stwrap .ld-arrow{visibility:hidden}
@@ -2657,6 +2657,13 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .rt-today{padding:14px 16px}.rt-today-h{display:flex;align-items:center;gap:6px;color:var(--green-d)}.rt-today-h svg{width:18px;height:18px}.rt-today-c{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
 .rt-rest summary{cursor:pointer;font-size:13px;color:var(--green-d);padding:4px 0}.rt-rest ul{list-style:none;margin:6px 0 0;padding:0}.rt-rest li{display:flex;flex-direction:column;padding:6px 0;border-top:1px solid var(--line,#eee);font-size:13px}.rt-rest li span{color:var(--muted,#777);font-size:12px}
 .at-row{padding:10px 0;border-top:1px solid var(--line,#eee)}.at-row:first-of-type{border-top:0}.at-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.at-row p{margin:4px 0 0}.at-ks{margin-top:8px}
+.thumb .xim,.pop-item .thumb .xim{position:absolute;inset:0;width:100%;height:100%;border-radius:0}
+/* 記録一覧の肌の調子：文字の上下左右の余白をそろえる */
+.ld-card .ld-info{margin:12px 0}.ld-card .ld-info .t-cond{display:inline-flex;align-items:center;justify-content:center;padding:4px 14px;line-height:1.2;letter-spacing:.06em;font-size:13px}
+/* 顔写真を大きく見る */
+.ph-view{position:fixed;inset:0;z-index:5000;background:rgba(15,18,16,.92);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);opacity:0;transition:opacity .18s ease}
+.ph-view.on{opacity:1}.ph-view img{max-width:100%;max-height:100%;object-fit:contain;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.ld-photo img{cursor:zoom-in}
 </style>
 </head>
 <body>
@@ -2881,7 +2888,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119093619'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119095345'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -2947,7 +2954,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
   ['自動バックアップ（ログインした場合）', '○', '○'],
   [`${PREMIUM_NAME}で増える`],
   ['今日のおすすめケア（記録・天気・あなたの肌の学習から）', '—', '○'],
-  ['ケア管理（朝・夜の順番、おすすめ成分・控えたいもの）', '—', '○'],
+  ['ケア管理（朝・夜の順番、おすすめ・控えたい）', '—', '○'],
   ['顔の写真を日付ごとに残して見比べる（ガイド付きの撮影）', '○', '○'],
   ['化粧品のパッケージ・成分表示を写真から読み取り', '—', '○'],
   ['食事の写真・栄養成分表示から読み取り', '—', '○'],
@@ -3457,6 +3464,11 @@ const datesRange = (s, e) => { const out=[]; let d=s, g=0; while (d <= e && g++ 
 // 商品名に入っている成分名を探す（いちばん長く一致したもの）。例：「アゼライン酸 美容液 皮脂…」→ アゼライン酸
 // 皮膚科の塗り薬を、商品名ではなく有効成分の名前で出す（例：アダパレン）
 const rxIngLabel = p => String((p && p.ingredients) || '').split(/[、,，・]/).map(t => t.trim()).filter(Boolean).slice(0, 2).join('・') || ingFromName(p && p.name) || truncate(String((p && p.name) || ''), 18);
+// 登録した商品を、商品名ではなく主な成分の名前で出す（ケア管理など）：商品名に成分名があればそれ、なければ入っている成分のうち働きのいちばん強い物
+const prodIngLabel = p => { if (!p) return ''; if (p.category === '皮膚科の塗り薬') return rxIngLabel(p); const n = ingFromName(p.name); if (n) return n;
+  let ms = []; try { ms = masterIngsOf(ingsOfMy(p)).filter(e => !ING_BASE_RE.test(chipText(e.ja))); } catch (e) { ms = []; }
+  ms.sort((a, b) => (b.act || 0) - (a.act || 0) || (b.cs || []).length - (a.cs || []).length);
+  return ms.length ? chipText(ms[0].ja) : String(p.category || '').split('・')[0] || truncate(String(p.name || ''), 16); };
 const ingFromName = name => { const n = String(name || ''); let best = ''; try { ING_MASTER.forEach(e => [chipText(e.ja)].concat(e.inci || []).forEach(w => { w = String(w || ''); if (w.length >= 3 && w.length > best.length && n.includes(w)) best = chipText(e.ja); })); } catch (er) { /* 何もしない */ } return best; };
 const truncate = (s, n) => { s = String(s||''); return s.length > n ? s.slice(0, n-1) + '…' : s; };
 // 肌悩みのキー（CONCERN_MASTER と同じ。保存データの読み込みは起動の最初に行うので、ここに置く）
@@ -6287,7 +6299,7 @@ const AVOID_OWN = new Map();
 function openAvoidOwnSheet(k) {
   setTimeout(() => { MODAL_REOPEN = () => openAvoidOwnSheet(k); }, 0);
   const a = AVOID_OWN.get(k); if (!a) return; const p = getMy(a.p.id) || a.p, row = (a.c && a.c.row) || {};
-  const pn = truncate(p.name, 24), who = a.c && a.c.who ? a.c.who.name : '';
+  const pn = prodIngLabel(p), who = a.c && a.c.who ? a.c.who.name : '';
   openModal({title:esc(a.nm), size:'small', dismissable:true, body:`<div class="ing-sheet av-sheet">
     <p class="small muted" style="margin:0 0 10px">Myアイテムに登録している商品です。</p>
     <div class="irk-list"><button type="button" class="pop-item ir ir-pr own-it" data-ownpick="${esc(p.id)}"><span class="pop-img ir-img own-th">${myThumb(p)}</span><span class="ir-t">${p.brand ? `<small class="ir-brand">${esc(p.brand)}</small>` : ''}<b>${esc(p.name)}</b></span><i class="ing-go">›</i></button></div>
@@ -9053,7 +9065,7 @@ function routineDesign(mode) {
   const rxs = infos.filter(x => x.rx && ['adapalene', 'bpo', 'steroid', 'rxretinoid', 'isotretinoin'].some(g => x.groups.has(g)));
   const iso = rxs.some(x => x.groups.has('isotretinoin'));
   const paused = rxs.length ? infos.filter(x => !x.rx && (iso || !['wash', 'cleanse', 'mask'].includes(x.step)) && ([...x.groups].some(g => ['retinoid', 'aha', 'bha', 'pha', 'hq', 'enzyme', 'sulfur'].includes(g)) || (iso && /スクラブ|scrub/i.test(x.name)))) : [];
-  if (paused.length) { paused.forEach(x => dropped.push({x, why:`処方薬（${truncate(rxs[0].p.name, 14)}）を使っている間は、刺激が重なりやすいため休みます。続けてよいかは医師・薬剤師に確認してください`})); notes.push({lv:'rx', t:'処方薬に合わせて、刺激の強い化粧品を休みました', d:`「${paused.map(x => truncate(x.p.name, 14)).join('」「')}」は、${rxs.map(x => truncate(x.p.name, 14)).join('・')}と重ねると刺激が強く出ることがあります。処方した医師・薬剤師に、一緒に使ってよいか確認するまでは休むのが安心です。`}); }
+  if (paused.length) { paused.forEach(x => dropped.push({x, why:`処方薬（${prodIngLabel(rxs[0].p)}）を使っている間は、刺激が重なりやすいため休みます。続けてよいかは医師・薬剤師に確認してください`})); notes.push({lv:'rx', t:'処方薬に合わせて、刺激の強い化粧品を休みました', d:`「${paused.map(x => prodIngLabel(x.p)).join('」「')}」は、${rxs.map(x => prodIngLabel(x.p)).join('・')}と重ねると刺激が強く出ることがあります。処方した医師・薬剤師に、一緒に使ってよいか確認するまでは休むのが安心です。`}); }
   const of = k => infos.filter(x => x.step === k && !paused.includes(x));
   const am = [], pm = [];
   // --- 朝 ---
@@ -9063,7 +9075,7 @@ function routineDesign(mode) {
   else am.push(mkStep('wash', pick(washers, 1, '洗顔料は1つあれば十分なため')[0]));
   // 夜だけに使うべき強い成分の商品は朝からはずす
   const amOk = x => timing(x, 'am') && !(x.nightOnly && !x.rx);
-  infos.filter(x => timing(x, 'am') && x.nightOnly && !x.rx && !paused.includes(x)).forEach(x => notes.push({lv:'move', pid:x.p.id, t:`「${truncate(x.p.name, 20)}」は夜だけにしました`, d:`${x.ings.filter(e => e.time === '夜').map(e => e.ja).join('・')}は、光で変化しやすい・紫外線の影響を受けやすいため、夜の使用が一般的です。製品の説明に朝の使用が書かれていれば、そちらを優先してください。`}));
+  infos.filter(x => timing(x, 'am') && x.nightOnly && !x.rx && !paused.includes(x)).forEach(x => notes.push({lv:'move', pid:x.p.id, t:`「${prodIngLabel(x.p)}」は夜だけにしました`, d:`${x.ings.filter(e => e.time === '夜').map(e => e.ja).join('・')}は、光で変化しやすい・紫外線の影響を受けやすいため、夜の使用が一般的です。製品の説明に朝の使用が書かれていれば、そちらを優先してください。`}));
   const toners = of('toner'), serums = of('serum'), emul = of('emulsion'), creams = of('cream'), aio = of('allinone'), suns = of('sunscreen'), spots = of('spot'), others = of('other');
   const quick = mode === 'quick';
   const moistPick = (slot) => {
@@ -9095,7 +9107,7 @@ function routineDesign(mode) {
   } else if (cleansers.length) cleansers.forEach(x => dropped.push({x, why:'メイクをしない・日焼け止めが洗顔料で落とせるため、毎日のクレンジングは不要です（メイクをした日だけ使います）', slot:'pm'}));
   if (washers.length && !(cl && cl.noDoubleWash)) pm.push(mkStep('wash', pick(washers, 1, '洗顔料は1つで十分なため')[0]));
   else if (!washers.length && !cl) pm.push(mkStep('water', null, {why2:'洗顔料が登録されていないため、ぬるま湯で洗います。皮脂・汗が気になる人は洗顔料があると安心です。'}));
-  if (cl && cl.noDoubleWash && washers.length) notes.push({lv:'skip', t:'夜の洗顔料は省きました', d:`「${truncate(cl.p.name, 20)}」はダブル洗顔不要と書かれているため、クレンジングのあとの洗顔料はいりません。`});
+  if (cl && cl.noDoubleWash && washers.length) notes.push({lv:'skip', t:'夜の洗顔料は省きました', d:`「${prodIngLabel(cl.p)}」はダブル洗顔不要と書かれているため、クレンジングのあとの洗顔料はいりません。`});
   if (!quick) { const t = toners.filter(x => timing(x, 'pm')); if (t.length) pm.push(mkStep('toner', pick(t, 1, '化粧水は1つで十分なため')[0])); else if (toners.length && !toners.some(x => timing(x, 'am'))) pm.push(mkStep('toner', toners[0])); }
   // 夜の美容液：強い成分は1晩に1つ。ぶつかる成分は日を分ける
   if (!quick) {
@@ -9104,7 +9116,7 @@ function routineDesign(mode) {
     const mild = s.filter(x => !strong.includes(x));
     const calm = sens || pri.slice(0, 2).includes('redness');
     let actives = pick(strong, calm ? 1 : 2, calm ? '赤み・刺激が落ち着くまでは、刺激の強い美容液は1つまでにするため' : '刺激の強い美容液は2つまでにするため');
-    if (actives.length === 2) { actives[0] = Object.assign({}, actives[0], {day:'A'}); actives[1] = Object.assign({}, actives[1], {day:'B'}); notes.push({lv:'alt', t:'刺激の強い美容液は、日を分けました', d:`「${truncate(actives[0].p.name, 16)}」（A日）と「${truncate(actives[1].p.name, 16)}」（B日）は、同じ夜に重ねると刺激が強くなりやすいので、交互に使います。製品の説明に使う回数（例：週2〜3回）があれば、そちらを優先してください。`}); }
+    if (actives.length === 2) { actives[0] = Object.assign({}, actives[0], {day:'A'}); actives[1] = Object.assign({}, actives[1], {day:'B'}); notes.push({lv:'alt', t:'刺激の強い美容液は、日を分けました', d:`「${prodIngLabel(actives[0].p)}」（A日）と「${prodIngLabel(actives[1].p)}」（B日）は、同じ夜に重ねると刺激が強くなりやすいので、交互に使います。製品の説明に使う回数（例：週2〜3回）があれば、そちらを優先してください。`}); }
     actives.forEach(x => pm.push(mkStep('serum', x, {day:x.day || ''})));
     const m = pick(mild, actives.length ? 1 : 2, '美容液は重ねすぎず、悩みに合うものにしぼるため'); m.forEach(x => pm.push(mkStep('serum', x)));
   }
@@ -9198,7 +9210,7 @@ function careTrends() {
 }
 
 // ===== スキンケア設計：画面 =====
-const CARE_TABS = [['routine', '朝・夜のケア'], ['ing', 'おすすめ成分'], ['diag', '肌質診断'], ['compare', '比較・分析'], ['guide', '洗い方ガイド']];
+const CARE_TABS = [['routine', '朝・夜のケア'], ['ing', 'おすすめ'], ['diag', '肌質診断'], ['compare', '比較・分析'], ['guide', '洗い方ガイド']];
 const evBadge = ev => `<span class="ev-b ev-${ev}" title="${esc(EVIDENCE[ev].d)}">根拠${ev}<small>${esc(EVIDENCE[ev].t)}</small></span>`;
 const csChips = cs => cs.map(k => { const c = concernOf(k); return c ? `<a class="chip" href="#/ingredients?c=${k}">${esc(c.s)}</a>` : ''; }).join('');
 function rtSettings() { const st = state.settings; st.routine = st.routine && typeof st.routine === 'object' ? st.routine : {}; st.routine.order = st.routine.order || {}; return st.routine; }
@@ -9796,6 +9808,7 @@ function rtPlan(slot, solo) {
   const rxCat = p => { const d = RX_DRUGS.find(z => z[1] === p.name) || RX_DRUGS.find(z => normIng(z[2]) && normIng(z[2]) === normIng(p.ingredients || '')); return d ? d[0] : rxKindOf(p.name) || ''; };
   const rxCalm = r => { const c = rxCat(r.x.p), t = `${r.x.p.name} ${r.x.p.ingredients || ''}`;
     if (/ステロイド|かゆみ|アトピー/.test(c) && !sensT && !(m.red > 0)) return '最近の肌の記録では、赤み・かゆみは落ち着いています。医師に「よくなったら塗る回数を減らす・やめる」と言われているときは、その指示に合わせます';
+    if (calm && /アダパレン|過酸化ベンゾイル|ディフェリン|ベピオ|エピデュオ|デュアック/.test(t)) return '赤み・ヒリヒリが強い日です。塗る範囲・量を守り、保湿をしっかりします。つらいときは自分でやめずに、塗る回数を減らしてよいか皮膚科に相談します';
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
   const rxStep = r => { const cn = rxCalm(r); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗顔（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
@@ -9811,7 +9824,7 @@ function rtPlan(slot, solo) {
     add('toner', tonerO(lowHum ? [T('空気が乾いている日は、2回に分けて重ねづけすると、うるおいが続きます', '天気')] : []));
     // 赤み・肌あれが強い日や、皮膚科の薬を使っている間は、刺激の強い成分（act1以上）の美容液を休む
     const sp0 = prodOf(['serum']).concat(movedToAm()), rest = calm || rxHard ? sp0.filter(x => prodComboInfo(x).act >= 1) : [], sp = sp0.filter(x => !rest.includes(x));
-    const restNote = rest.length ? T(`今日は「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
+    const restNote = rest.length ? T(`今日は「${rest.map(x => prodIngLabel(x.p)).join('」「')}」はお休みします（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     let sg = uniq([markT && !calm ? 'ビタミンC誘導体' : '', acneT || oilT || poreT ? 'ナイアシンアミド' : '', calm || sensT ? 'パンテノール' : '', calm ? 'ツボクサエキス（CICA）' : '']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。', good:sg, avoid:uniq([sensT ? '高濃度のビタミンC（純粋ビタミンC）' : '']),
       today:restNote && !rxHard ? [restNote] : calm ? [T('赤み・肌あれがある日は、刺激の少ない美容液にして、しずめる成分を選びます', '肌')] : [], avoidOwn:rxHard ? restOwn(rest) : []});
@@ -9840,7 +9853,7 @@ function rtPlan(slot, solo) {
     // 赤み・肌あれが強い日や、皮膚科の薬を使っている間は、刺激の強い成分（act1以上）の美容液を休む
     const sp0 = prodOf(['serum']), rest = calm || rxHard ? sp0.filter(x => prodComboInfo(x).act >= 1) : [], sp = sp0.filter(x => !rest.includes(x));
     const amIds = (() => { if (solo || !rest.length) return new Set(); try { return new Set(rtPlan('am', true).steps.flatMap(z => z.prods.map(y => y.p.id))); } catch (e) { return new Set(); } })(), toAm = rest.filter(x => amIds.has(x.p.id));
-    const restNote = rest.length ? T(`${toAm.length === rest.length ? '' : '今日は'}「${rest.map(x => truncate(x.p.name, 16)).join('」「')}」は${toAm.length === rest.length ? '夜はお休みして、朝に使います' : 'お休みします'}（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
+    const restNote = rest.length ? T(`${toAm.length === rest.length ? '' : '今日は'}「${rest.map(x => prodIngLabel(x.p)).join('」「')}」は${toAm.length === rest.length ? '夜はお休みして、朝に使います' : 'お休みします'}（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     // レチノールを使ったことがなく、記録もまだ少ない人には、いきなりすすめない（まずはおだやかな成分から）
     const retNew = state.skinLogs.filter(l => !l.demo).length < 14 && !state.myProducts.some(p => !p.demo && knownIngs(ingsOfMy(p)).some(k => /レチノ|retin/i.test(String(k.entry.name) + (k.entry.key || ''))));
     const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4) && !(retNew && sensT);
@@ -9862,7 +9875,7 @@ function rtPlan(slot, solo) {
     const photoX = x => !!x.nightOnly || (x.ings || []).some(e => e.time === '夜');
     const spfX = x => Math.max(0, ...((String(x.p.name || '') + ' ' + String(x.p.memo || '')).match(/SPF\s*(\d+)/gi) || []).map(v => Number(v.replace(/\D/g, ''))));
     const kindX = x => x.step || '';
-    const nm = x => '「' + truncate(x.p.name, 16) + '」';
+    const nm = x => '「' + prodIngLabel(x.p) + '」';
     const restN = (st, L, why, src) => { if (L.length) { st.today.push(T(`今日は${L.map(nm).join('')}はお休みします（${why}）`, src || '肌')); L.forEach(x => RESTED.set(x.p.id, why)); } };
     // 毎日は使わない物（週1回・週2〜3回）：前に使った日から日が浅ければ休む。不定期の物は、今日の肌の悩みに合うときだけ
     const FQ_GAP = {'週1回':6, '週2〜3回':2};
@@ -9906,9 +9919,9 @@ function rtPlan(slot, solo) {
     // 使う化粧品どうし：薬と重なる物、刺激の強い物どうしは、片方をお休み
     steps.forEach(st => { if (st.fixed) return; st.prods = st.prods.filter(x => { const info = prodComboInfo(x);
       const c = comboConflict(info, pool.filter(p => p.rx || keep.includes(p.id)), x.p.id);
-      if (c && !(info.act >= 1)) { st.today.push(T(`「${truncate(x.p.name, 16)}」は${c.who.name}と併用注意の成分が入っています。しみる・赤くなるときは、別の物に替えます`, c.who.rx ? '薬' : '成分')); keep.push(x.p.id); return true; } // 日焼け止め・保湿など欠かせない物は休まず、注意を出す
+      if (c && !(info.act >= 1)) { st.today.push(T(`「${prodIngLabel(x.p)}」は${c.who.name}と併用注意の成分が入っています。しみる・赤くなるときは、別の物に替えます`, c.who.rx ? '薬' : '成分')); keep.push(x.p.id); return true; } // 日焼け止め・保湿など欠かせない物は休まず、注意を出す
       if (c) { let canOther = false; if (slot === 'pm' && !solo) { try { canOther = rtPlan('am', true).steps.some(z => z.prods.some(y => y.p.id === x.p.id)); } catch (e) { canOther = false; } } (st.avoidOwn = st.avoidOwn || []).push({p:x.p, c, when:canOther ? otherJa : '', here:hereJa}); { const i = pool.findIndex(p => p.id === x.p.id); if (i >= 0) pool.splice(i, 1); } return false; }
-      { const oc = comboConflict(info, otherRx); if (oc && info.act >= 1) st.today.push(T(`「${truncate(x.p.name, 16)}」は${hereJa}だけにして、${otherJa}の${oc.who.name}とは時間を分けて使います`, '成分')); }
+      { const oc = comboConflict(info, otherRx); if (oc && info.act >= 1) st.today.push(T(`「${prodIngLabel(x.p)}」は${hereJa}だけにして、${otherJa}の${oc.who.name}とは時間を分けて使います`, '成分')); }
       keep.push(x.p.id); return true; }); });
     // おすすめ成分：使っている物と併用注意になる成分は、おすすめにせず「控えたい」へ
     // おすすめどうし：朝と夜のおすすめを全部使っても、併用注意にならないようにする（夜は、朝のおすすめを先に入れて考える）
@@ -9919,7 +9932,7 @@ function rtPlan(slot, solo) {
   // 使う物に、その手順の「控えたい」ものが入っていたら、そう伝える（控えたいと言いながら黙って使わせない）
   { const AV = [[/香料/, /(?<!無)香料(?!フリー|不使用)/], [/エタノール|アルコール/, /(?<!無水)エタノール(?!フリー|不使用)|変性アルコール/], [/スクラブ/, /スクラブ|ポリエチレン末?(?!グリコール)/], [/メントール|清涼/, /メントール/], [/洗浄力の強い/, /ラウリル硫酸|ラウレス硫酸/], [/重いクリーム|油分の多い/, /ミネラルオイル|ワセリン/]];
     steps.forEach(st => { if (st.fixed || !st.prods.length || !st.avoid.length) return; st.prods.forEach(x => { const txt = `${x.p.name || ''} ${x.p.ingredients || ''}`, hit = st.avoid.map(chipText).filter(a => AV.some(([w, re]) => w.test(a) && re.test(txt)));
-      if (hit.length && !st.today.some(z => z && String(z.t || '').includes(truncate(x.p.name, 16)))) st.today.push(T(`「${truncate(x.p.name, 16)}」には、控えたい「${hit.slice(0, 2).join('・')}」が入っています。${/重い|油分/.test(hit.join()) ? '軽い物に替えるのがおすすめです' : 'しみる・赤くなるときは、別の物に替えます'}`, '成分')); }); }); }
+      if (hit.length && !st.today.some(z => z && String(z.t || '').includes(prodIngLabel(x.p)))) st.today.push(T(`「${prodIngLabel(x.p)}」には、控えたい「${hit.slice(0, 2).join('・')}」が入っています。${/重い|油分/.test(hit.join()) ? '軽い物に替えるのがおすすめです' : 'しみる・赤くなるときは、別の物に替えます'}`, '成分')); }); }); }
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
@@ -9940,12 +9953,12 @@ function rtPlan(slot, solo) {
     let otherUsed = new Set(); if (!solo) { try { otherUsed = new Set(rtPlan(slot === 'am' ? 'pm' : 'am', true).steps.flatMap(z => z.prods.map(y => y.p.id))); } catch (e) { otherUsed = new Set(); } }
     const kindOf = k => ({emulsion:'moist', cream:'moist', allinone:'moist', mask:'serum', other:'serum', spot:'serum'})[k] || k;
     R.dropped.filter(o => o.x && !o.x.rx && (!o.slot || o.slot === slot) && !usedIds.has(o.x.p.id)).forEach(o => {
-      const nm = truncate(o.x.p.name, 16);
+      const nm = prodIngLabel(o.x.p);
       if (steps.some(st => (st.avoidOwn || []).some(a => a.p.id === o.x.p.id) || st.today.some(t => String((t && t.t) || '').includes(nm)))) return; // もう説明している
       const st = steps.find(z => !z.fixed && z.k === kindOf(o.x.step)) || steps.find(z => z.k === 'serum') || steps.filter(z => !z.fixed).pop(); if (!st) return;
       const why = String(o.why || '').replace(/。$/, '');
       // 同じ時間に使う物と併用注意なら、その組み合わせを理由にする（どれと重なるのかがわかるように）
-      const pool = steps.flatMap(z => z.prods).map(x => { const i = prodComboInfo(x); return {id:x.p.id, name:x.rx ? rxIngLabel(x.p) + 'の塗り薬' : truncate(x.p.name, 18), tags:i.tags, rx:!!x.rx, act:i.act}; });
+      const pool = steps.flatMap(z => z.prods).map(x => { const i = prodComboInfo(x); return {id:x.p.id, name:x.rx ? rxIngLabel(x.p) + 'の塗り薬' : prodIngLabel(x.p), tags:i.tags, rx:!!x.rx, act:i.act}; });
       const cc = comboConflict(prodComboInfo(o.x), pool, o.x.p.id);
       if (cc) (st.avoidOwn = st.avoidOwn || []).push({p:o.x.p, c:cc, here, when:otherUsed.has(o.x.p.id) ? (slot === 'am' ? '夜' : '朝') : ''});
       else if (/処方薬|併用|刺激/.test(why)) (st.avoidOwn = st.avoidOwn || []).push({p:o.x.p, why:why + '。', here, when:otherUsed.has(o.x.p.id) ? (slot === 'am' ? '夜' : '朝') : ''});
@@ -9974,15 +9987,11 @@ function rtPaneHtml(slot) {
   const gChips = s => s.good.map(x => { const sun = s.k === 'sunscreen', wash = s.k === 'wash', cl = s.k === 'cleanse', e = !sun && !wash && !cl && ingEntryOf(x), ok = sun || wash || cl || e;
     return ok ? `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(sun ? '日焼け止め' : wash ? '洗顔｜' + x : cl ? 'クレンジング｜' + x : x)}" data-avoid="${esc(JSON.stringify(s.avoid))}">${esc(chipText(x))}<i>›</i></button>` : `<button type="button" class="cm-c good cm-ing-b" data-tip="${esc(x)}" data-tipstep="${esc(s.k)}">${esc(chipText(x))}<i>›</i></button>`; }).join('');
   // 文章の中の「商品名」は、その商品の成分名にして、押すと持っている商品が出るリンクにする（成分のチップと同じ）
-  const ownLinkText = (t, s) => esc(t).replace(/「([^」]{1,40})」/g, (all, q) => { const pre = q.replace(/(…|\.\.\.)$/, '');
-    const pr = state.myProducts.find(p => !p.demo && (esc(p.name) === pre || (pre.length >= 4 && esc(p.name).startsWith(pre)))); if (!pr) return all;
-    const own = P.steps.flatMap(z => z.own || []).find(o => !o.drug && o.pids.includes(pr.id)); if (!own) return all;
-    return `<button type="button" class="care-link" data-owned="${esc(own.name)}" data-pids="${esc(own.pids.join(','))}">${esc(own.name)}</button>`; })
-    // 文章の中の皮膚科の薬の名前（「 」なし）も、押すと薬の説明が出るリンクにする
-    .split(/(<[^>]+>[^<]*<\/button>)/).map(part => part.startsWith('<') ? part : state.myProducts.filter(q => !q.demo && isRxP(q) && q.status === '使用中').map(q => ({name:truncate(q.name, 18), lab:rxIngLabel(q), pids:[q.id]})).filter((o, i, a) => o.name && a.findIndex(y => y.name === o.name) === i).sort((a, b) => b.name.length - a.name.length)
-      .reduce((t, o) => { const en = esc(o.name), q = `「${en}」`; const b = `<button type="button" class="care-link" data-owned="${esc(o.lab)}" data-pids="${esc(o.pids.join(','))}">${esc(o.lab)}</button>`; return t.includes(en) ? t.split(q).join(b).split(en).join(b) : t; }, part)).join('');
+  const ownLinkText = (t, s) => { void s; return esc(t).replace(/「([^」]{1,40})」/g, (all, q) => { // 文章の中の「成分名」（＝持っている商品）は、押すとその商品が出るリンクにする
+    const L = state.myProducts.filter(p => !p.demo && p.status !== '使用終了' && esc(prodIngLabel(p)) === q); if (!L.length) return all;
+    return `<button type="button" class="care-link" data-owned="${q}" data-pids="${esc(L.map(p => p.id).join(','))}">${q}</button>`; }); };
   // 持っている商品で、今は控えるもの（併用注意の薬などと同じ時間に使わない）：青い枠で出し、押すと理由が出る
-  const aoChips = s => (s.avoidOwn || []).map(a => { const k = `${slot}|${s.k}|${a.p.id}`, nm = ingFromName(a.p.name) || truncate(a.p.name, 16); AVOID_OWN.set(k, Object.assign({nm}, a)); return `<button type="button" class="cm-c own cm-ing-b" data-avoidown="${esc(k)}">${icon('bottle')}${esc(nm)}<i>›</i></button>`; }).join('');
+  const aoChips = s => (s.avoidOwn || []).map(a => { const k = `${slot}|${s.k}|${a.p.id}`, nm = prodIngLabel(a.p); AVOID_OWN.set(k, Object.assign({nm}, a)); return `<button type="button" class="cm-c own cm-ing-b" data-avoidown="${esc(k)}">${icon('bottle')}${esc(nm)}<i>›</i></button>`; }).join('');
   const oChips = s => s.own.map(o => `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(o.name)}" data-pids="${esc(o.pids.join(','))}">${icon('bottle')}${esc(o.name)}<i>›</i></button>`).join('');
   // 手順の役わり（落とす→整える→美容成分→うるおす→守る）。順番の意味がひと目でわかるように
   const phase = s => /クレンジング|洗顔|洗う/.test(s.name) ? ['落とす', 'p1'] : /化粧水/.test(s.name) ? ['整える', 'p2'] : /美容液|スポット|部分/.test(s.name) || s.k.startsWith('spot:') ? ['美容成分', 'p3'] : /保湿/.test(s.name) ? ['うるおす', 'p4'] : /日焼け止め|保護/.test(s.name) ? ['守る', 'p5'] : /薬/.test(s.name) ? ['薬', 'p6'] : ['ケア', 'p2'];
@@ -10002,21 +10011,21 @@ function rtPaneHtml(slot) {
   // ニキビが続いていて、ニキビの薬を登録していない人：夜の美容成分の手順の「おすすめ成分」に、塗り薬の成分も出す（市販薬はランキング、処方薬は説明だけ）
   const drugStep = slot === 'pm' && P.acne && !P.hasAcneRx ? (P.steps.find(st => st.k === 'serum') || P.steps.find(st => st.k.startsWith('spot:')) || P.steps.find(st => !st.fixed && /保湿/.test(st.name)) || null) : null;
   const retPause = P.steps.some(st => (st.avoid || []).some(v => /^レチノ/.test(chipText(v)) && !/併用|と/.test(chipText(v))) || (st.avoidOwn || []).some(a => /レチノ|レチナ/.test(ingsOfMy(a.p) + a.p.name))); // 赤みなどでレチノールを控える日は、レチノールの仲間（アダパレン）も出さない
-  const dChips = s => s === drugStep ? Object.entries(ACNE_DRUG_ING).filter(([k, x]) => ['ibp', 'ada', 'bpo'].includes(k) && !(k === 'ada' && retPause) && !ownsIng(x.name)).map(([k, x]) => `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name)}<small class="cm-dtag ${x.kind}">${x.kind === 'otc' ? '市販薬' : '皮膚科で処方'}</small><i>›</i></button>`).join('') : '';
+  const dChips = () => ''; void drugStep; void retPause; void ownsIng; // ニキビの塗り薬は、下の「ニキビの種類ごとの塗り薬」にまとめて出す
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${ingLinkHtml(esc(s.how), s._lk = new Set())}</p>
       ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(x.t, s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
-      ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${s.k === 'serum' || s.k === 'toner' || s.k.startsWith('spot:') || s === drugStep ? 'おすすめ成分' : 'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
-      ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${aoChips(s)}${chips(s.avoid)}</div></div>` : ''}
+      ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
+      ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${aoChips(s)}${chips(s.avoid.filter(v => !(s.avoidOwn || []).some(o => prodIngLabel(o.p) === chipText(v))))}</div></div>` : ''}
     </div></li>`;
   // 登録済みの商品に入っている成分（色を変えて出す。押すとその商品が出る）。皮膚科の薬は薬の名前を出す
   const nk = v => normIng(chipText(v));
   P.steps.forEach(st => { const m = new Map();
     st.prods.forEach(x => { if (st.fixed) { const n = rxIngLabel(x.p); m.set(n, (m.get(n) || []).concat(x.p.id)); return; }
       (x.ings || []).filter(e => (e.cs || []).length && !/^(グリセリン|濃グリセリン|BG|水|エタノール|香料)$/.test(chipText(e.ja))).slice(0, 4).forEach(e => { const n = chipText(e.ja); m.set(n, (m.get(n) || []).concat(x.p.id)); });
-      if (![...m.values()].some(L => L.includes(x.p.id))) { const n = ingFromName(x.p.name) || truncate(x.p.name, 16); m.set(n, (m.get(n) || []).concat(x.p.id)); } }); // 目立つ成分がない商品は、商品名に入っている成分名（なければ商品名）で出す
+      if (![...m.values()].some(L => L.includes(x.p.id))) { const n = ingFromName(x.p.name) || prodIngLabel(x.p); m.set(n, (m.get(n) || []).concat(x.p.id)); } }); // 目立つ成分がない商品は、商品名に入っている成分名（なければ商品名）で出す
     st.own = [...m].map(([name, pids]) => ({name, pids:[...new Set(pids)], drug:!!st.fixed}));
     const ok = st.own.map(o => nk(o.name)); st.good = st.good.filter(v => { const k = nk(v); return !ok.some(o => o && k && (o === k || o.includes(k) || k.includes(o))); }); }); // 持っている成分と同じおすすめは出さない
   // 前の手順で出した成分・控えたいものは、あとの手順ではくり返さない
@@ -10034,7 +10043,7 @@ function rtPaneHtml(slot) {
     if (mine.length) {
       const ao = new Map(); P.steps.forEach(z => (z.avoidOwn || []).forEach(a => ao.set(a.p.id, a.c ? `${a.c.who.name}と併用注意` : String(a.why || '').replace(/。$/, ''))));
       const rest = mine.filter(p => !used.has(p.id)).map(p => ({p, why:P.rested.get(p.id) || ao.get(p.id) || ((P.R && P.R.dropped || []).find(o => o.x && o.x.p.id === p.id) || {}).why || (quick && cut.some(z => z.prods.some(x => x.p.id === p.id)) ? '時短の日なので' : '今日の手順には入れていません')}));
-      const lab = p => isRxP(p) ? rxIngLabel(p) : truncate(p.name, 20);
+      const lab = p => prodIngLabel(p);
       h += `<div class="card rt-today"><div class="rt-today-h">${icon('spark')}<b>今日の肌に合わせて選びました</b></div>
         <div class="rt-today-c">${(P.skinL.length ? P.skinL : ['大きな悩みは出ていません']).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
         <p class="small no-ph">登録している${mine.length}個のうち、今日の${sj}は<b>${mine.length - rest.length}個</b>を使います。</p>
@@ -10072,7 +10081,7 @@ function acneTypeDrugsHtml() {
   const t = todayStr(), rec = new Set(); logsInRange(addDays(t, -13), t).forEach(l => (l.acneTypes || []).forEach(k => rec.add(k)));
   try { const K = faceFindings(14).acne.kinds; Object.keys(K).forEach(n => { const a = ACNE_TYPES.find(x => x.startsWith(n)); if (a) rec.add(a); }); } catch (e) { /* 何もしない */ }
   const L = ACNE_TYPE_DRUGS.map((g, i) => ({g, i, on:g.t.some(x => rec.has(x))})).sort((a, b) => (b.on - a.on) || a.i - b.i);
-  const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<small class="cm-dtag ${x.kind}">${x.kind === 'otc' ? '市販薬' : '皮膚科で処方'}</small><i>›</i></button>`; };
+  const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
     ${L.map(({g, on}) => `<div class="at-row ${on ? 'on' : ''}"><div class="at-h"><b>${esc(g.l)}</b>${on ? '<span class="chip red">最近の記録にあり</span>' : ''}</div><p class="small no-ph">${esc(g.d)}</p>${g.ks.length ? `<div class="cm-ing at-ks"><div>${g.ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
     <p class="small muted no-ph" style="margin-top:8px">成分を押すと説明が出ます。皮膚科で処方される成分は、診察を受けて医師が肌に合わせて選びます。日本皮膚科学会「尋常性痤瘡・酒皶治療ガイドライン2023」をもとにした一般的な情報です。</p></div>`;
@@ -10089,7 +10098,7 @@ async function openAcneDrugSheet(k) {
   }
   setTimeout(() => { MODAL_REOPEN = () => openAcneDrugSheet(k); }, 0);
   openModal({title:x.name, size:'small', dismissable:true, body:`<div class="ing-sheet">
-    <div class="ing-dl"><div class="ing-b"><b>説明</b><p>${esc(x.d)}</p></div></div>
+    <div class="ing-dl"><div class="ing-b"><b>説明</b><p>${esc(x.d)}</p></div><div class="ing-b"><b>市販薬の成分です</b><p>この成分の塗り薬は、ドラッグストアや通販で買えます（医薬品）。</p></div></div>
     <h3 class="ing-h">この成分の市販薬の人気ランキング</h3>
     <p class="small muted" style="margin:0 0 8px">楽天市場でレビューの多い順です<span class="pr-tag" style="margin-left:6px">PR</span></p>
     <div id="otc-pop">${skelHtml(3, {label:'商品を探しています'})}</div>
@@ -10648,6 +10657,14 @@ function ldPhotoHtml(l) {
   setTimeout(ldFitAll, 0);
   return src ? `<img src="${src}" alt="${esc(fmtMD(l.date))}の顔写真" data-fb='${l.faceBox ? esc(JSON.stringify(l.faceBox)) : ''}'>` : `<p class="small muted">この日の顔写真はありません<br><span style="font-size:11px">肌の記録で写真を撮ると、ここで見られます</span></p>`;
 }
+function openPhotoView(src, alt) {
+  if (!src) return; document.querySelector('.ph-view')?.remove();
+  const v = document.createElement('div'); v.className = 'ph-view'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', '写真を大きく表示（写真の外を押すと戻る）');
+  v.innerHTML = `<img src="${esc(src)}" alt="${esc(alt || '')}">`; document.body.appendChild(v); requestAnimationFrame(() => v.classList.add('on'));
+  const close = () => { v.classList.remove('on'); setTimeout(() => v.remove(), 180); };
+  v.addEventListener('click', e => { if (e.target === v) { hapticTick(); close(); } }); // 写真の外（余白）を押したら戻る
+}
+document.addEventListener('click', e => { const im = e.target.closest && e.target.closest('#ld-photo img'); if (!im || window.__hSwipe) return; hapticTick(); openPhotoView(im.getAttribute('src'), im.getAttribute('alt')); });
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
 function bindLogDaySwipe() {
@@ -12170,7 +12187,7 @@ function careTodayData() {
   const lowHum = w && w.hum < 50, uvHi = w && w.uv >= 6, uvMid = w && w.uv >= 3, cold = w && w.tmax < 10, hot = w && w.tmax >= 28;
   const snack = hasMeal && ml.snackDays >= 3, protLow = ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8, vitCLow = ml.foodDays >= 3 && ml.vitCDays < 3, vegLow = ml.avgVeg != null && ml.avgVeg < 250;
   // 使っている商品の中の、刺激が出やすい成分（今夜休むか決めるため）
-  const strong = []; state.myProducts.filter(p => p.status === '使用中').forEach(p => { const ks = knownIngs(ingsOfMy(p)).map(x => x.entry.key); if (ks.some(k => ['retinoid', 'aha', 'bha'].includes(k)) || /アダパレン|ディフェリン|ベピオ|過酸化ベンゾイル/.test(p.name + (p.ingredients || ''))) strong.push(shortName(p.name).slice(0, 16)); });
+  const strong = []; state.myProducts.filter(p => p.status === '使用中' && p.category !== '皮膚科の塗り薬').forEach(p => { const ks = knownIngs(ingsOfMy(p)).map(x => x.entry.key); if (ks.some(k => ['retinoid', 'aha', 'bha'].includes(k)) || /アダパレン|ディフェリン|ベピオ|過酸化ベンゾイル/.test(p.name + (p.ingredients || ''))) strong.push(prodIngLabel(p)); });
   const calm = red >= 3 || inflamed >= 3 || (short && (dry >= 3 || red >= 2)) || (lowHum && dry >= 4);
   const wxs = w ? `湿度${Math.round(w.hum)}%` : '', sleepS = hasSleep ? `睡眠${sl.avgHours}時間` : '';
   const items = [];
@@ -12281,8 +12298,8 @@ function adviceLocal(d) {
   const sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal, need = d.profile.sleepNeedHours;
   // 使っている化粧品に入っている成分（成分辞典で見つかったもの）
   const use = {}; state.myProducts.filter(p => p.status === '使用中').forEach(p => knownIngs(ingsOfMy(p)).forEach(x => { (use[x.entry.key] = use[x.entry.key] || []).push(p); }));
-  const inUse = k => (use[k] || []).map(p => shortName(p.name).slice(0, 14));
-  const warn = (k, label) => inUse(k).length ? `使用中の「${inUse(k)[0]}」には${label}が入っています。` : '';
+  const inUse = k => (use[k] || []).map(p => String(p.category || '化粧品').split('・')[0]); // 商品名は出さない（種類で言う）
+  const warn = (k, label) => inUse(k).length ? `使用中の${inUse(k)[0]}には${label}が入っています。` : '';
   // ① スキンケア（成分のおすすめ・控えたい成分つき）
   let skin;
   const topArea = Object.entries(sk.acneByArea).sort((a, b) => b[1] - a[1])[0];
@@ -12339,7 +12356,7 @@ function adviceLocal(d) {
   return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
 }
 // おすすめ・控えたいもののラベル（角度ごと）
-const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
+const ADV_LABELS = {スキンケア:['おすすめ', '控えたい'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
 // 説明を短く：最初の1文（短すぎるときは2文）だけにする
 // 成分の説明と効果（簡潔に）：成分マスター（作用・効果）を優先し、なければ辞典の説明から、産地などのどうでもいい文は外す
 // 成分マスターの元のデータ（作用・効果・副作用）を名前で探す
@@ -13295,7 +13312,7 @@ function viewMycare() {
   const G = careGoods();
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${careLinkHtml(x, G)}</li>`).join('')}</ul></div>
-      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ成分</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}<i>›</i></button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
+      ${c.ings.length ? `<div class="pc-blk"><small>おすすめ</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}<i>›</i></button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
       ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
   if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
   if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みはありません。記録を続けてください。</p></div>`;
@@ -13345,7 +13362,7 @@ function careLinkHtml(text, G) {
   return ingLinkHtml(esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join(''));
 }
 // 「保湿」「化粧水」「美容液」を押したとき：その人に合う、その工程の成分を並べる（押すと成分の説明とおすすめ商品）
-const STEP_T = {moist:['保湿（乳液・クリーム）', 'おすすめ成分'], toner:['化粧水', 'おすすめ成分'], serum:['美容液', 'おすすめ成分']};
+const STEP_T = {moist:['保湿（乳液・クリーム）', 'おすすめ'], toner:['化粧水', 'おすすめ'], serum:['美容液', 'おすすめ']};
 // 成分ではない「おすすめ」（ぬるま湯・ペーパータオルなど）を押したとき：理由とやり方
 const TIP_INFO = [
   [/ぬるま湯/, '32〜34℃くらいのぬるま湯で洗う', '体温より少し低い温度です。手首の内側でさわって「少しぬるい」と感じるくらいが目安です。', '熱いお湯は、汚れと一緒に肌のうるおい（皮脂やセラミド）まで流してしまい、乾燥・赤み・かゆみの原因になります。冷たすぎる水は、皮脂や汚れが落ちにくくなります。', 'シャワーを顔に直接当てないでください（温度と水圧が強すぎるため）。手ですくって、やさしくかけます。'],
@@ -13386,7 +13403,7 @@ function openTermSheet(k) {
   setTimeout(() => { MODAL_REOPEN = () => openTermSheet(k); }, 0);
   const ings = t[2].filter(x => ingEntryOf(x) || ING_LINK_EXTRA[x]);
   openModal({title:esc(t[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>どういう意味？</b><p>${esc(t[1])}</p></div>
-    ${t[2].length ? `<div class="ing-b"><b>主な成分</b><div class="term-ings">${t[2].map(x => ings.includes(x) ? `<button type="button" class="cm-c good" data-ingsheet="${esc(ING_LINK_EXTRA[x] || x)}">${esc(x)}<i>›</i></button>` : `<span class="cm-c term-plain">${esc(x)}</span>`).join('')}</div>${ings.length ? '<p class="small muted" style="margin:6px 0 0">成分を押すと、説明が見られます</p>' : ''}</div>` : ''}
+    ${t[2].length ? `<div class="ing-b"><b>おすすめ</b><div class="term-ings">${t[2].map(x => ings.includes(x) ? `<button type="button" class="cm-c good" data-ingsheet="${esc(ING_LINK_EXTRA[x] || x)}">${esc(x)}<i>›</i></button>` : `<span class="cm-c term-plain">${esc(x)}</span>`).join('')}</div>${ings.length ? '<p class="small muted" style="margin:6px 0 0">成分を押すと、説明が見られます</p>' : ''}</div>` : ''}
     ${t[3] ? `<div class="ing-b warn"><b>ポイント</b><p>${esc(t[3])}</p></div>` : ''}</div></div>`});
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-term]'); if (!b) return; hapticTick(); openTermSheet(b.dataset.term); });
@@ -16172,11 +16189,12 @@ const navKey = () => { const h = location.hash || '#/home'; return h === '#' || 
 const navStack = [navKey()];
 // 画面ごとのスクロール位置（戻ったときに、元の位置に戻す）
 const navScroll = {};
+try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* 何もしない */ } // 履歴を巻き戻すときに、ブラウザが前の位置へ勝手に飛ばさない（画面がガタつかないように）
 let navRestoreY = null;
 window.addEventListener('scroll', () => { if (lockedY != null) return; navScroll[navStack[navStack.length - 1]] = window.scrollY; }, {passive:true}); // メニューなどを開いて画面を固定している間は記録しない
 window.addEventListener('hashchange', () => {
   const k = navKey(), i = navStack.lastIndexOf(k);
-  navRestoreY = i >= 0 && navScroll[k] != null ? navScroll[k] : null; // 来たことのある画面へ戻るときだけ、位置を戻す
+  navRestoreY = i >= 0 && navScroll[k] != null && !(Date.now() - NAV_SRC.bar < 1500) ? navScroll[k] : null; // 来たことのある画面へ「戻る」ときだけ、位置を戻す（下のバーで移ったときは、いちばん上から）
   if (i >= 0) navStack.length = i + 1; else { navStack.push(k); navScroll[k] = 0; }
   if (navStack.length > 50) navStack.splice(0, navStack.length - 50);
 });
