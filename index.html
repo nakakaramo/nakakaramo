@@ -1080,7 +1080,7 @@ body:has(.ps-wrap.on)::before{background:color-mix(in srgb,rgb(20,20,20) 45%,var
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body:has(#modal-root .modal-backdrop:not(.closing))::before{background:color-mix(in srgb,#000 55%,var(--bg))}}
 .rx-svg{width:100%;height:100%;display:block}.rx-item .rx-svg{width:46px;height:46px;flex:none;border-radius:10px}
 .pop-sec{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}.pop-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 8px}.pop-h b{font-size:15px}.pop-h small{font-size:11.5px;color:var(--muted)}
-#pop-list{margin-top:8px}
+#pop-list,.pop-list{margin-top:8px}
 .pop-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
 .pop-r{flex:none;width:26px;text-align:center;font-weight:800;font-size:13px;color:var(--green-d)}
 .pop-item .pop-img,.pop-item .xim{flex:none;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#F2F1EE;display:block}.pop-item .xim img{width:100%;height:100%;object-fit:contain;background:#fff}
@@ -2336,7 +2336,7 @@ img{image-rendering:auto}
 .nt-line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
 .nt-line .select{width:auto;min-width:110px}
 .nt-line>span{white-space:nowrap}
-#notify-card .nt-time{flex:0 0 auto;width:132px!important;max-width:132px;min-width:0;padding-left:10px;padding-right:10px;font-variant-numeric:tabular-nums;text-align:center}
+.notify-card .nt-time{flex:0 0 auto;width:132px!important;max-width:132px;min-width:0;padding-left:10px;padding-right:10px;font-variant-numeric:tabular-nums;text-align:center}
 
 /* はじめの設定 */
 .pm-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -2650,7 +2650,7 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .ld-card .ld-head .ld-date{flex:1;min-width:0}
 .ld-card .ld-stwrap{position:relative;width:100%;max-width:300px;margin:0 auto}
 .ld-card .ld-condrow{position:relative;width:100%;max-width:300px;margin:0 auto;--ld-ph-w:143px}.ld-card .ld-condrow .ld-arrow{position:absolute;top:calc(50% - 17px);transform:none!important;z-index:4;width:34px;height:34px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.ld-card .ld-stwrap{--ld-ph-w:143px}.ld-card .ld-condrow #ld-prev{left:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))}.ld-card .ld-condrow #ld-next{right:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))} /* 写真の左右のはしのすぐ外 */
+.ld-card .ld-stwrap{--ld-ph-w:143px}.ld-card .ld-condrow .ld-prev{left:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))}.ld-card .ld-condrow .ld-next{right:max(0px,calc(50% - var(--ld-ph-w) / 2 - 42px))} /* 写真の左右のはしのすぐ外 */
 .ld-card .ld-swipe{display:block;margin-top:8px}
 .ld-none .ld-condrow .ld-arrow{visibility:hidden}
 .fb-wrap{z-index:4200}.sp-fb{margin-top:10px;background:var(--surface);color:var(--green-d)!important;border:1px solid var(--line)}
@@ -2664,6 +2664,18 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .ph-view{position:fixed;inset:0;z-index:5000;background:rgba(15,18,16,.92);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 24px);opacity:0;transition:opacity .18s ease}
 .ph-view.on{opacity:1}.ph-view img{max-width:100%;max-height:100%;object-fit:contain;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
 .ld-photo img{cursor:zoom-in}
+.av-menu{position:fixed;inset:0;z-index:4300;display:flex;align-items:flex-end;justify-content:center;padding:0 10px calc(10px + env(safe-area-inset-bottom))}
+.avm-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);opacity:0;transition:opacity .2s}.av-menu.on .avm-bg{opacity:1}
+.avm-box{position:relative;width:100%;max-width:420px;display:flex;flex-direction:column;gap:8px;transform:translateY(110%);transition:transform .25s cubic-bezier(.2,.9,.3,1)}.av-menu.on .avm-box{transform:none}
+.avm-grp{background:var(--surface);border-radius:14px;overflow:hidden}.avm-t{margin:0;padding:12px;text-align:center;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
+.avm-b{display:block;width:100%;padding:16px;border:0;border-bottom:1px solid var(--line);background:var(--surface);color:var(--green-d);font:inherit;font-size:17px;text-align:center;cursor:pointer}.avm-grp .avm-b:last-child{border-bottom:0}
+.avm-b.red{color:#C0392B}.avm-cancel{border-radius:14px;border:0;font-weight:700}
+.av-crop{position:fixed;inset:0;z-index:4400;background:#000;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.avc-stage{position:relative;flex:1;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.avc-stage img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none}
+.avc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.85);pointer-events:none}
+.avc-hint{color:#ddd;font-size:13px;text-align:center;margin:8px 0 0}
+.avc-bar{display:flex;justify-content:space-between;padding:14px 20px 18px}.avc-bar button{background:none;border:0;color:#fff;font:inherit;font-size:17px;padding:8px 6px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -2888,7 +2900,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119103904'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119105137'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9717,14 +9729,19 @@ function prodComboInfo(x) {
 function comboPool(onlyIds, slot) {
   let R = null; try { R = routineDesign('normal'); } catch (e) { return []; }
   if (!R) return [];
-  return R.A.infos.filter(x => !(R.paused || []).includes(x) && (x.rx ? (!slot || x.step === 'oral' || rxPlanOf(x).slots.includes(slot)) : (onlyIds ? onlyIds.has(x.p.id) : prodComboInfo(x).act >= 1))).map(x => { const inf = prodComboInfo(x), tags = inf.tags; if (x.rx && x.step !== 'oral') tags.add('rxTopical'); return {id:x.p.id, name:x.rx ? rxIngLabel(x.p) + (x.step === 'oral' ? 'の飲み薬' : 'の塗り薬') : truncate(x.p.name, 14), tags, rx:!!x.rx, oral:x.step === 'oral', act:inf.act}; });
+  return R.A.infos.filter(x => !(R.paused || []).includes(x) && (x.rx ? (!slot || x.step === 'oral' || rxPlanOf(x).slots.includes(slot)) : (onlyIds ? onlyIds.has(x.p.id) : prodComboInfo(x).act >= 1))).map(x => { const inf = prodComboInfo(x), tags = inf.tags;
+    // 刺激が重なりやすい処方の塗り薬（レチノイド・過酸化ベンゾイル・ステロイド・免疫を調整する薬など）だけを「処方の塗り薬」として注意の対象にする。保湿剤（ヘパリン類似物質など）・ワセリン・抗菌薬・抗真菌薬などは、化粧品の成分と併用注意にしない
+    const irr = rxIrritant(x); if (irr) tags.add('rxTopical');
+    return {id:x.p.id, name:x.rx ? rxIngLabel(x.p) + (x.step === 'oral' ? 'の飲み薬' : 'の塗り薬') : truncate(x.p.name, 14), tags, rx:!!x.rx, oral:x.step === 'oral', act:inf.act, irr}; });
 }
+function rxIrritant(x) { if (!x || !x.rx || x.step === 'oral') return false; const r = rxPlanOf(x);
+  return (r.role === 'drug' || r.role === 'wash') && (!!r.steroid || (r.avoid || []).length > 0 || /タクロリムス|デルゴシチニブ|ジファミラスト|タピナロフ|メトロニダゾール|カルシポトリオール|タカルシトール|マキサカルシトール|ボンアルファ|ドボベット/.test(`${x.p.name} ${x.p.ingredients || ''}`)); }
 function comboConflict(w, pool, selfId) {
   const {tags:tg, act} = w && w.tags ? w : tagsOfWord(w);
   for (const p of pool) { if (p.id === selfId) continue;
     const row = COMBO_DB.filter(r => r.lv >= 2 && ((r.a.some(g => tg.has(g)) && r.b.some(g => p.tags.has(g))) || (r.b.some(g => tg.has(g)) && r.a.some(g => p.tags.has(g))))).sort((x, y) => y.lv - x.lv)[0];
     if (row) return {row, who:p};
-    if (p.rx && !p.oral && act >= 1) return {row:{lv:2, t:'処方の塗り薬 × 刺激が出やすい成分', why:'皮膚科の塗り薬を使っている肌に、刺激の出やすい成分を重ねると、赤み・乾燥・ヒリヒリが強く出やすくなります。', how:'薬に慣れるまでは使わず、使いたいときは皮膚科で相談します。'}, who:p};
+    if (p.rx && !p.oral && p.irr !== false && act >= 1) return {row:{lv:2, t:'処方の塗り薬 × 刺激が出やすい成分', why:'皮膚科の塗り薬を使っている肌に、刺激の出やすい成分を重ねると、赤み・乾燥・ヒリヒリが強く出やすくなります。', how:'薬に慣れるまでは使わず、使いたいときは皮膚科で相談します。'}, who:p};
   }
   return null;
 }
@@ -9875,7 +9892,7 @@ function rtPlan(slot, solo) {
     const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4) && !(retNew && sensT);
     const retW = retNew ? 'ナイアシンアミド' : 'レチノール';
     const sg = uniq([acneT ? 'アゼライン酸' : '', acneT || poreT ? 'ナイアシンアミド' : '', (markT || ageT) && retOk ? retW : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
-    const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', 'レチノールとピーリングの併用']).slice(0, 3);
+    const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', calm || rxHard ? '' : 'レチノールとピーリングの併用']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
       avoidOwn:rxHard ? restOwn(rest, toAm) : [],
       today:uniq([rxHard ? null : restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
@@ -9952,8 +9969,8 @@ function rtPlan(slot, solo) {
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
-  if (new Set(RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').map(r => normIng(rxIngLabel(r.x.p)))).size >= 2) tips.push('塗り薬が2つ以上あるときは、それぞれ医師に言われた場所に塗ります。同じ場所に重ねるときは、前の薬がなじむまで数分あけてから次を塗ります。');
-  if (slot === 'pm' && (m.acne || 0) > 0) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替え、顔をふくのは使い捨てのペーパータオルにすると清潔です。');
+  if (new Set(RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').map(r => normIng(rxIngLabel(r.x.p)))).size >= 2) tips.push('塗り薬が2つ以上あるときは、医師に言われた場所に塗ります。重ねるときは数分あけます。');
+  if (slot === 'pm' && (m.acne || 0) > 0) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替えます。');
   if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
   const lead = uniq([w ? `今日の天気　湿度${hum == null ? '－' : hum + '%'}・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${uv == null ? '－' : uv}` : '']);
   // あなたの記録で合っていた成分を先に、合わなかった成分は「控えたい」へ（記録から学んだ結果を毎日の提案に反映する）
@@ -9970,11 +9987,11 @@ function rtPlan(slot, solo) {
     const kindOf = k => ({emulsion:'moist', cream:'moist', allinone:'moist', mask:'serum', other:'serum', spot:'serum'})[k] || k;
     R.dropped.filter(o => o.x && !o.x.rx && (!o.slot || o.slot === slot) && !usedIds.has(o.x.p.id)).forEach(o => {
       const nm = prodIngLabel(o.x.p);
-      if (steps.some(st => (st.avoidOwn || []).some(a => a.p.id === o.x.p.id) || st.today.some(t => String((t && t.t) || '').includes(nm)))) return; // もう説明している
+      if (steps.some(st => (st.avoidOwn || []).some(a => a.p.id === o.x.p.id) || st.today.some(t => String((t && t.t) || '').includes('「' + nm + '」')))) return; // もう説明している（商品は「成分名」のかぎかっこで書いている）
       const st = steps.find(z => !z.fixed && z.k === kindOf(o.x.step)) || steps.find(z => z.k === 'serum') || steps.filter(z => !z.fixed).pop(); if (!st) return;
       const why = String(o.why || '').replace(/。$/, '');
       // 同じ時間に使う物と併用注意なら、その組み合わせを理由にする（どれと重なるのかがわかるように）
-      const pool = steps.flatMap(z => z.prods).map(x => { const i = prodComboInfo(x); return {id:x.p.id, name:x.rx ? rxIngLabel(x.p) + 'の塗り薬' : prodIngLabel(x.p), tags:i.tags, rx:!!x.rx, act:i.act}; });
+      const pool = steps.flatMap(z => z.prods).map(x => { const i = prodComboInfo(x); return {id:x.p.id, name:x.rx ? rxIngLabel(x.p) + 'の塗り薬' : prodIngLabel(x.p), tags:i.tags, rx:!!x.rx, irr:rxIrritant(x), act:i.act}; });
       const cc = comboConflict(prodComboInfo(o.x), pool, o.x.p.id);
       if (cc) (st.avoidOwn = st.avoidOwn || []).push({p:o.x.p, c:cc, here, when:otherUsed.has(o.x.p.id) ? (slot === 'am' ? '夜' : '朝') : ''});
       else if (/処方薬|併用|刺激/.test(why)) (st.avoidOwn = st.avoidOwn || []).push({p:o.x.p, why:why + '。', here, when:otherUsed.has(o.x.p.id) ? (slot === 'am' ? '夜' : '朝') : ''});
@@ -10076,22 +10093,28 @@ const ACNE_DRUG_ING = {
 };
 // ケア管理：ニキビの種類ごとに、使われる塗り薬の成分（日本皮膚科学会「尋常性痤瘡・酒皶治療ガイドライン2023」をもとにした一般的な情報）
 const ACNE_TYPE_DRUGS = [
-  {t:['白ニキビ', '黒ニキビ'], l:'白ニキビ・黒ニキビ', d:'毛穴のつまり（炎症の前の段階）。つまりをできにくくする成分が中心です。', ks:['ada', 'bpo', 'adabpo', 'sulf']},
-  {t:['赤ニキビ'], l:'赤ニキビ', d:'炎症が起きている段階。菌を減らす成分と、つまりを防ぐ成分を組み合わせます。', ks:['adabpo', 'clbpo', 'bpo', 'ada', 'abx', 'ibp']},
-  {t:['黄ニキビ（膿あり）'], l:'黄ニキビ（膿あり）', d:'炎症が強く、膿がたまった段階。跡が残りやすいので、早めに皮膚科へ。飲み薬が出ることもあります。', ks:['clbpo', 'adabpo', 'abx']},
-  {t:['しこり・硬い'], l:'しこり・硬いニキビ', d:'皮膚の深いところまで炎症が広がっています。塗り薬だけでは治りにくいので、皮膚科に相談します。', ks:[]},
-  {t:['ニキビ跡'], l:'ニキビ跡', d:'赤み・色の残った跡や凹みは、塗り薬で消すのは難しいとされています。新しいニキビを防ぐことが一番の対策で、気になるときは皮膚科に相談します。', ks:[]},
+  {t:['白ニキビ', '黒ニキビ'], l:'白ニキビ・黒ニキビ', d:'毛穴のつまり。つまりを防ぐ成分を使います。', ks:['ada', 'bpo', 'adabpo', 'sulf']},
+  {t:['赤ニキビ'], l:'赤ニキビ', d:'炎症している段階。菌を減らす成分と、つまりを防ぐ成分を使います。', ks:['adabpo', 'clbpo', 'bpo', 'ada', 'abx', 'ibp']},
+  {t:['黄ニキビ（膿あり）'], l:'黄ニキビ（膿あり）', d:'膿がある段階。跡になりやすいので、早めに皮膚科へ。', ks:['clbpo', 'adabpo', 'abx']},
+  {t:['しこり・硬い'], l:'しこり・硬いニキビ', d:'深い炎症。塗り薬だけでは治りにくいので、皮膚科へ。', ks:[]},
+  {t:['ニキビ跡'], l:'ニキビ跡', d:'跡や凹みは、塗り薬では消えにくいです。新しいニキビを防ぎ、気になるときは皮膚科へ。', ks:[]},
 ];
 function acneTypeDrugsHtml() {
   const t = todayStr(), rec = new Set(); logsInRange(addDays(t, -13), t).forEach(l => (l.acneTypes || []).forEach(k => rec.add(k)));
   try { const K = faceFindings(14).acne.kinds; Object.keys(K).forEach(n => { const a = ACNE_TYPES.find(x => x.startsWith(n)); if (a) rec.add(a); }); } catch (e) { /* 何もしない */ }
   const L = ACNE_TYPE_DRUGS.map((g, i) => ({g, i, on:g.t.some(x => rec.has(x))})).filter(o => o.on); // そのニキビがあるときだけ出す
   if (!L.length) return '';
-  const seen = new Set(); L.forEach(o => { o.ks = o.g.ks.filter(k => !seen.has(k) && seen.add(k)); }); // 同じ成分は、最初の種類のところに1回だけ
+  // 今使っている薬・化粧品に入っている成分は出さない（同じ物をくり返さない）。皮膚科のニキビの薬を使っている人には、市販薬は出さない（足す前に医師に相談するため）
+  const CL = {ada:['adapalene'], bpo:['bpo'], adabpo:['adapalene', 'bpo'], clbpo:['abx', 'bpo'], abx:['abx'], ibp:['nsaid'], sulf:['sulfur']};
+  const mineTxt = state.myProducts.filter(p => !p.demo && p.status !== '使用終了').map(p => `${p.name} ${ingsOfMy(p) || ''}`).join(' ');
+  const own = new Set([/アダパレン|ディフェリン|エピデュオ/.test(mineTxt) && 'adapalene', /過酸化ベンゾイル|ベピオ|エピデュオ|デュアック/.test(mineTxt) && 'bpo', /クリンダマイシン|ナジフロキサシン|オゼノキサシン|ダラシン|アクアチム|ゼビアックス|デュアック/.test(mineTxt) && 'abx', /イブプロフェンピコノール/.test(mineTxt) && 'nsaid', /イオウ|硫黄/.test(mineTxt) && 'sulfur'].filter(Boolean));
+  const rxAcne = state.myProducts.some(p => !p.demo && p.status !== '使用終了' && p.category === '皮膚科の塗り薬' && /アダパレン|過酸化ベンゾイル|クリンダマイシン|ナジフロキサシン|オゼノキサシン|ディフェリン|ベピオ|エピデュオ|デュアック|ダラシン|アクアチム|ゼビアックス/.test(`${p.name} ${ingsOfMy(p) || ''}`));
+  const usable = k => !(CL[k] || []).every(c => own.has(c)) && !(rxAcne && ACNE_DRUG_ING[k].kind === 'otc');
+  const seen = new Set(); L.forEach(o => { o.ks = o.g.ks.filter(k => usable(k) && !seen.has(k) && seen.add(k)); }); // 同じ成分は、最初の種類のところに1回だけ
   const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
-    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : g.ks.length ? '<p class="small muted no-ph" style="margin-top:6px">上と同じ成分の塗り薬が使われます。</p>' : ''}</div>`).join('')}
-    <p class="small muted no-ph" style="margin-top:8px">成分を押すと説明が出ます。皮膚科で処方される成分は、診察を受けて医師が肌に合わせて選びます。日本皮膚科学会「尋常性痤瘡・酒皶治療ガイドライン2023」をもとにした一般的な情報です。</p></div>`;
+    ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : g.ks.length ? `<p class="small muted no-ph" style="margin-top:6px">${g.ks.some(k => !usable(k)) && !g.ks.some(k => usable(k)) ? '今使っている塗り薬と同じ成分です。' : '上と同じ成分です。'}</p>` : ''}</div>`).join('')}
+    <p class="small muted no-ph" style="margin-top:10px">${[own.size ? '今使っている成分は省いています。' : '', rxAcne ? '市販薬を足すときは医師に相談します。' : '', '押すと説明が出ます。処方の成分は医師が選びます（日本皮膚科学会ガイドライン2023より）。'].filter(Boolean).join('')}</p></div>`;
 }
 const OTC_ING_CACHE = {};
 async function openAcneDrugSheet(k) {
@@ -10578,8 +10601,8 @@ function logDayCardHtml(logs) {
     <div class="f3-stage ld-stage ${ui.ldView === 'photo' ? 'ld-ph-on' : ''}" id="ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div><div class="ld-photo" id="ld-photo">${ldPhotoHtml(list[i])}</div></div>
     </div>
     <div class="ld-condrow">
-      <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
-      <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5l7 7-7 7"/></svg></button>
+      <button class="ld-arrow ld-prev" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button>
+      <button class="ld-arrow ld-next" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5l7 7-7 7"/></svg></button>
     <div class="ld-swipe" id="ld-swipe">
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
     </div></div>
@@ -14013,7 +14036,7 @@ function notifyCardHtml() {
       <p class="small muted" style="margin:4px 0 10px">その日まだ肌を記録していないときだけ届きます（記録した日は届きません）。</p>
       <label class="check"><input type="checkbox" id="f_notify_exp" ${c.expiry ? 'checked' : ''}>使用期限が近い化粧品をお知らせ（7日前）</label>
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="notify-test">テストのお知らせを送る</button></div>`;
-  return `<div class="card" id="notify-card"><div class="card-h"><h2>お知らせ</h2></div>${body}</div>`;
+  return `<div class="card notify-card" id="notify-card"><div class="card-h"><h2>お知らせ</h2></div>${body}</div>`;
 }
 // ===== はじめの設定：最初に開いたときに1回だけ、位置情報とお知らせの許可をまとめて聞く =====
 // iPhoneは、ボタンを押したときにしか通知の許可を聞けないので、ボタンを並べた画面を出す
@@ -14864,6 +14887,61 @@ function viewAccountMe() {
     ${embedView(() => viewPlan({}))}`;
 }
 let avDraft = null;
+// ===== アイコンの変更：押すと「ライブラリから選択・写真を撮る・現在の写真を削除・キャンセル」→ 写真は丸い枠の中で動かす・拡大して「選択」 =====
+function openAvatarMenu() {
+  document.getElementById('av-menu')?.remove();
+  const has = !!state.settings.avatar;
+  const el = document.createElement('div'); el.id = 'av-menu'; el.className = 'av-menu';
+  el.innerHTML = `<div class="avm-bg" data-avm="close"></div><div class="avm-box" role="dialog" aria-label="プロフィール画像の変更">
+    <div class="avm-grp"><p class="avm-t">プロフィール画像の変更</p>
+      <label class="avm-b">ライブラリから選択<input type="file" accept="image/*" class="vh" data-avfile></label>
+      <label class="avm-b">写真を撮る<input type="file" accept="image/*" capture="user" class="vh" data-avfile></label>
+      <button type="button" class="avm-b" data-avm="emoji">絵文字で作る</button>
+      ${has ? '<button type="button" class="avm-b red" data-avm="del">現在の写真を削除</button>' : ''}</div>
+    <button type="button" class="avm-b avm-cancel" data-avm="close">キャンセル</button></div>`;
+  document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
+  const close = () => { el.classList.remove('on'); setTimeout(() => el.remove(), 200); };
+  el.addEventListener('click', e => { const b = e.target.closest('[data-avm]'); if (!b) return; hapticTick();
+    if (b.dataset.avm === 'close') close();
+    else if (b.dataset.avm === 'emoji') { close(); setTimeout(openProfile, 200); }
+    else if (b.dataset.avm === 'del') { close(); state.settings.avatar = null; if (save()) { toast('写真を削除しました'); render(); } } });
+  el.querySelectorAll('[data-avfile]').forEach(inp => inp.addEventListener('change', async () => { const f = inp.files && inp.files[0]; if (!f) return; close();
+    try { const src = await readImage(f, 1400, 0.9); openAvatarCrop(src); } catch (er) { toast(er.message || '画像を読み込めませんでした', 'error'); } }));
+}
+// 写真を丸い枠に合わせる：指で動かす・2本の指で拡大縮小（パソコンはホイール）。枠の中がいつも写真で埋まるようにする
+function openAvatarCrop(src) {
+  const img = new Image(); img.src = src;
+  img.decode().then(() => {
+    const el = document.createElement('div'); el.className = 'av-crop';
+    el.innerHTML = `<div class="avc-stage"><img alt="" draggable="false"><div class="avc-ring" aria-hidden="true"></div></div>
+      <p class="avc-hint">動かして・拡大して、丸の中に合わせてください</p>
+      <div class="avc-bar"><button type="button" data-avc="cancel">キャンセル</button><button type="button" data-avc="ok"><b>選択</b></button></div>`;
+    document.body.appendChild(el);
+    const st = el.querySelector('.avc-stage'), im = el.querySelector('img'), ring = el.querySelector('.avc-ring'); im.src = src;
+    const W = img.naturalWidth, H = img.naturalHeight;
+    let D = 0, k0 = 1, k = 1, x = 0, y = 0; // D：丸の直径、k：倍率、x,y：写真の左上（丸の左上から）
+    const fit = () => { const r = st.getBoundingClientRect(); D = Math.min(r.width, r.height) - 40; ring.style.width = ring.style.height = D + 'px'; k0 = Math.max(D / W, D / H); if (k < k0) k = k0; clamp(); draw(); };
+    const clamp = () => { k = Math.min(Math.max(k, k0), k0 * 6); x = Math.min(0, Math.max(D - W * k, x)); y = Math.min(0, Math.max(D - H * k, y)); };
+    const draw = () => { const r = st.getBoundingClientRect(), ox = (r.width - D) / 2, oy = (r.height - D) / 2; im.style.width = W * k + 'px'; im.style.height = H * k + 'px'; im.style.transform = `translate(${ox + x}px,${oy + y}px)`; };
+    k = 0; requestAnimationFrame(() => { fit(); x = (D - W * k) / 2; y = (D - H * k) / 2; clamp(); draw(); });
+    const P = new Map(); let last = null;
+    const zoomAt = (nk, cx, cy) => { const r = st.getBoundingClientRect(), ox = (r.width - D) / 2, oy = (r.height - D) / 2, px = cx - r.left - ox, py = cy - r.top - oy; const old = k; k = Math.min(Math.max(nk, k0), k0 * 6); x = px - (px - x) * k / old; y = py - (py - y) * k / old; clamp(); draw(); };
+    st.addEventListener('pointerdown', e => { st.setPointerCapture(e.pointerId); P.set(e.pointerId, {x:e.clientX, y:e.clientY}); last = null; });
+    st.addEventListener('pointermove', e => { if (!P.has(e.pointerId)) return; const pr = P.get(e.pointerId); P.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if (P.size === 1) { x += e.clientX - pr.x; y += e.clientY - pr.y; clamp(); draw(); }
+      else if (P.size === 2) { const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (last) zoomAt(k * d / last, (a.x + b.x) / 2, (a.y + b.y) / 2); last = d; } });
+    const up = e => { P.delete(e.pointerId); last = null; }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+    st.addEventListener('wheel', e => { e.preventDefault(); zoomAt(k * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX, e.clientY); }, {passive:false});
+    window.addEventListener('resize', fit);
+    const done = () => { window.removeEventListener('resize', fit); el.remove(); };
+    el.addEventListener('click', e => { const b = e.target.closest('[data-avc]'); if (!b) return; hapticTick();
+      if (b.dataset.avc === 'cancel') return done();
+      const c = document.createElement('canvas'), S = 320; c.width = c.height = S; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+      g.drawImage(img, -x / k, -y / k, D / k, D / k, 0, 0, S, S);
+      state.settings.avatar = {t:'img', v:c.toDataURL('image/jpeg', 0.85)}; done();
+      if (save()) { hapticSaved(); toast('アイコンを変更しました'); render(); } });
+  }).catch(() => toast('画像を読み込めませんでした', 'error'));
+}
 function openProfile() {
   avDraft = state.settings.avatar ? Object.assign({}, state.settings.avatar) : null;
   const cur = () => avDraft || {};
@@ -15442,7 +15520,7 @@ const actions = {
   'support-open': () => openSupport(),
   'acc-login': () => { acct.msg = ''; openAuth('login').then(ok => { if (ok) render(); }); },
   'auth-open': v => { acct.msg = ''; openAuth(v === 'signup' ? 'signup' : 'login').then(ok => { if (!ok) return; if (parseRoute().name !== 'home') location.hash = '#/home'; else render(); }); }, // ログインしたらホームへ
-  'acc-profile': () => openProfile(),
+  'acc-profile': () => openAvatarMenu(),
   'perm-geo': () => {
     ui.permGeoBusy = true; permRefresh(); actions['wx-geo']();
     let n = 0; const t = setInterval(() => { n++; if (state.settings.wxLoc || n > 30 || !document.getElementById('perm-body')) { clearInterval(t); ui.permGeoBusy = false; permRefresh(); } }, 700);
