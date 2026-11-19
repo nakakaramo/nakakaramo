@@ -2676,6 +2676,7 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .avc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.85);pointer-events:none}
 .avc-hint{color:#ddd;font-size:13px;text-align:center;margin:8px 0 0}
 .avc-bar{display:flex;justify-content:space-between;padding:14px 20px 18px}.avc-bar button{background:none;border:0;color:#fff;font:inherit;font-size:17px;padding:8px 6px;cursor:pointer}
+.ls-row{position:relative}.ls-same{display:block;margin:-4px 12px 10px 38px;padding:6px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--green-d);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
@@ -2900,7 +2901,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119111035'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119111732'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3795,7 +3796,7 @@ function normalize(d) {
     foods:Array.isArray(l.foods) ? l.foods.filter(x => x && x.name && FOOD_MEAL_KEYS.includes(x.meal)).map(normFood) : [],
     mealPhotos:Object.fromEntries(FOOD_MEALS.map(m => [m.k, safeImg(l.mealPhotos && l.mealPhotos[m.k])]).filter(x => x[1])),
     exercise:Array.isArray(l.exercise) ? l.exercise.filter(x => x && EX_TYPES.includes(x.type)).map(x => ({type:x.type, minutes:clamp(Math.round(num(x.minutes, 1)), 1, 600)})) : [],
-    exRecorded:!!l.exRecorded || (Array.isArray(l.exercise) && l.exercise.length > 0),
+    exRecorded:true, // 運動の記録がない日は「していない」
     steps:(l.steps === null || l.steps === undefined || l.steps === '') ? null : clamp(Math.round(num(l.steps)), 0, 200000),
     weight:(() => { const w = Number(l.weight); return Number.isFinite(w) && w >= 20 && w <= 250 ? Math.round(w * 10) / 10 : null; })(), // その日の体重（kg・任意）
     memo:String(l.memo||''), demo:!!l.demo
@@ -4695,6 +4696,19 @@ const lifeGoals = () => { const st = state.settings, w = st.weight || 55; return
 const exKcal = (l, w) => Math.round(l.exercise.reduce((a, e) => a + (EX_METS[e.type] || 4) * w * e.minutes / 60 * 1.05, 0));
 const fmtDur = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? `${h}時間${r === 30 ? '半' : r ? r + '分' : ''}` : `${r}分`; };
 // date を渡すと、その日の分（記録一覧の日付カードで使う）。渡さなければ今日
+// 睡眠・運動の「昨日と同じ」：前の日（なければ、いちばん近い前の記録）と同じ睡眠・運動をしたことにする
+function lifePrev(date, part) { return state.lifeLogs.filter(l => l.date < date && (part === 'sleep' ? l.bed && l.wake : (l.exercise || []).length)).sort((a, b) => b.date.localeCompare(a.date))[0] || null; }
+const sameLabel = (date, p) => p.date === addDays(date, -1) ? '昨日と同じ' : `前回（${fmtShort(p.date)}）と同じ`;
+function sameBtn(rowHtml, date, part, empty) { const p = empty ? lifePrev(date, part) : null; if (!p) return rowHtml;
+  return rowHtml.replace(/<\/button><\/div>$/, `</button><button type="button" class="ls-same" data-lsame="${date}|${part}">${sameLabel(date, p)}</button></div>`); }
+function lifeCopyPrev(date, part) {
+  const p = lifePrev(date, part); if (!p) return false;
+  let l = getLife(date); if (!l) { l = blankLife(date); state.lifeLogs.push(l); }
+  if (part === 'sleep') { l.bed = p.bed; l.wake = p.wake; } else { l.exercise = p.exercise.map(e => Object.assign({}, e)); l.exRecorded = true; }
+  if (save()) { hapticSaved(); toast(`${p.date === addDays(date, -1) ? '昨日' : fmtShort(p.date) + 'の記録'}と同じ${part === 'sleep' ? '睡眠' : '運動'}を記録しました`); }
+  return true;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-lsame]'); if (!b) return; e.preventDefault(); const [d, part] = b.dataset.lsame.split('|'); if (lifeCopyPrev(d, part)) { if (document.getElementById('life-form')) closeModal(); render(); } });
 function lifeSumHtml(lf, date) {
   const g = lifeGoals();
   const row = (id, ic, label, main, sub, cls) => `<div class="ls-row"><button class="ls-main" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|' + id : id}" aria-label="${label}を編集">${icon(ic)}<span class="ls-l">${label}</span><b class="${main === '未記録' ? 'none' : ''}">${esc(main)}</b><em class="${cls || ''}">${sub}</em><span class="ls-go">›</span></button></div>`;
@@ -4703,8 +4717,8 @@ function lifeSumHtml(lf, date) {
   let sMain = '未記録', sSub = `必要 ${esc(fmtDur(g.sleep))}`, sCls = '';
   if (sm != null) { sMain = fmtDur(sm); const d = sm - g.sleep; if (d < -10) { sSub = `−${esc(fmtDur(-d))}<small>（必要 ${esc(fmtDur(g.sleep))}）</small>`; sCls = 'bad'; } else { sSub = `十分<small>（必要 ${esc(fmtDur(g.sleep))}）</small>`; sCls = 'good'; } }
   // 運動
-  let eMain = '未記録', eSub = '', eCls = '';
-  if (lf && lf.exRecorded) { const k = exKcal(lf, g.weight), m = exTotal(lf); eMain = m ? `${k.toLocaleString()}kcal` : '0kcal'; eSub = m ? `${esc(fmtMin(m))}<small>（体重${g.weight}kg${g.weightSet ? '' : '・仮'}で計算）</small>` : '運動なし'; eCls = m ? 'good' : ''; }
+  let eMain = 'なし', eSub = '', eCls = ''; // 記録がない日は「運動しなかった」
+  if (lf && lf.exRecorded) { const k = exKcal(lf, g.weight), m = exTotal(lf); eMain = m ? `${k.toLocaleString()}kcal` : 'なし'; eSub = m ? `${esc(fmtMin(m))}<small>（体重${g.weight}kg${g.weightSet ? '' : '・仮'}で計算）</small>` : ''; eCls = m ? 'good' : ''; }
   // 食事（カロリーと、肌に必要なたんぱく質）
   let fMain = '未記録', fSub = `たんぱく質の目標 ${g.protein}g`, fCls = '';
   if (lf && lf.foods && lf.foods.length) {
@@ -4717,7 +4731,7 @@ function lifeSumHtml(lf, date) {
   const mealRadar = `<button type="button" class="ls-radar" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|meal' : 'meal'}" aria-label="栄養のバランスを見る">${nutRadarSvg(ft, 210, true)}<span class="ls-rnote"><i class="ls-rkey"></i>緑の点線が1日の目安（100%）</span></button>`;
   // 記録一覧（date あり）では見出しを出さない
   return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
-    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'run', '運動', eMain, eSub, eCls)}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
+    ${sameBtn(row('sleep', 'moon', '睡眠', sMain, sSub, sCls), date || todayStr(), 'sleep', sm == null)}${sameBtn(row('exercise', 'run', '運動', eMain, eSub, eCls), date || todayStr(), 'exercise', !(lf && exTotal(lf) > 0))}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
 }
 function openLifeGoal() {
   const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
@@ -9806,7 +9820,7 @@ function rtPlan(slot, solo) {
   const dryT = ['dry', 'innerdry'].includes(main) || has('dry') || (m.dry || 0) >= 3;
   const oilT = ['oily', 'combo'].includes(main) || has('oily') || (m.oil || 0) >= 3;
   const sensT = sens || has('sensitive') || has('redness') || (m.red || 0) >= 3;
-  const acneT = has('acne') || (m.acne || 0) > 0;
+  const acneT = acneActiveNow(); // ニキビの悩み（肌質診断・悩み）か、最近14日のニキビの記録があるとき
   const markT = has('acnemark') || has('spot') || has('dull') || (m.dull || 0) >= 3;
   const ageT = has('aging'), poreT = has('pore') || has('rough') || (m.rough || 0) >= 3;
   const calm = !!(D && D.calm);
@@ -10000,7 +10014,7 @@ function rtPlan(slot, solo) {
   const tips = [];
   if (acneRxOff.length) { tips.push(`ニキビの塗り薬（${[...new Set(acneRxOff.map(r => rxIngLabel(r.x.p)))].join('、')}）は、今はニキビの悩み・記録がないので、手順に入れていません。ニキビがおさまったあとも予防で続けるよう医師に言われているときは、夜の保湿のあとに続けます。`); acneRxOff.forEach(r => RESTED.set(r.x.p.id, '今はニキビの悩み・記録がないため（医師に続けるよう言われているときは続けます）')); }
   if (new Set(RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').map(r => normIng(rxIngLabel(r.x.p)))).size >= 2) tips.push('塗り薬が2つ以上あるときは、医師に言われた場所に塗ります。重ねるときは数分あけます。');
-  if (slot === 'pm' && (m.acne || 0) > 0) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替えます。');
+  if (slot === 'pm' && acneT) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替えます。');
   if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
   const lead = uniq([w ? `今日の天気　湿度${hum == null ? '－' : hum + '%'}・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${uv == null ? '－' : uv}` : '']);
   // あなたの記録で合っていた成分を先に、合わなかった成分は「控えたい」へ（記録から学んだ結果を毎日の提案に反映する）
@@ -10133,7 +10147,7 @@ function acneTypeDrugsHtml() {
   const t = todayStr(), rec = new Set(); logsInRange(addDays(t, -13), t).forEach(l => (l.acneTypes || []).forEach(k => rec.add(k)));
   try { const K = faceFindings(14).acne.kinds; Object.keys(K).forEach(n => { const a = ACNE_TYPES.find(x => x.startsWith(n)); if (a) rec.add(a); }); } catch (e) { /* 何もしない */ }
   const L = ACNE_TYPE_DRUGS.map((g, i) => ({g, i, on:g.t.some(x => rec.has(x))})).filter(o => o.on); // そのニキビがあるときだけ出す
-  if (!L.length) return '';
+  if (!L.length || !acneActiveNow()) return ''; // ニキビの悩み・記録がない人には出さない
   // 今使っている薬・化粧品に入っている成分は出さない（同じ物をくり返さない）。皮膚科のニキビの薬を使っている人には、市販薬は出さない（足す前に医師に相談するため）
   const CL = {ada:['adapalene'], bpo:['bpo'], adabpo:['adapalene', 'bpo'], clbpo:['abx', 'bpo'], abx:['abx'], ibp:['nsaid'], sulf:['sulfur']};
   const mineTxt = state.myProducts.filter(p => !p.demo && p.status !== '使用終了').map(p => `${p.name} ${ingsOfMy(p) || ''}`).join(' ');
@@ -11488,13 +11502,13 @@ function openLifeForm(id, part, forDate) {
       ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
       ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
     </div>
-    <p class="small" id="sleep-calc" style="margin-top:-6px"></p></div>
+    <p class="small" id="sleep-calc" style="margin-top:-6px"></p>${(p => p && part ? `<button type="button" class="btn btn-soft btn-sm" data-lsame="${esc(d.date || t)}|sleep">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'sleep'))}</div>
     <div class="form-grid" data-part="exercise" ${show('exercise')}><div class="section-title">EXERCISE 運動</div>
     ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="exercise">${icon('chart')}ヘルスケアから読み込む</button>` : ''}
+    ${(p => p && part ? `<button type="button" class="btn btn-soft btn-sm" data-lsame="${esc(d.date || t)}|exercise">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'exercise'))}
     <div class="field" data-field="exercise"><span class="lbl">運動の種類と時間<span class="opt">任意</span></span>
       <div id="ex-list"></div>
       <div class="food-pick" style="margin-top:6px"><select class="select" id="ex-type" aria-label="運動の種類">${EX_TYPES.map(x => `<option>${esc(x)}</option>`).join('')}</select><input class="input" id="ex-min" inputmode="numeric" placeholder="分" aria-label="運動の時間（分）"><button type="button" class="btn btn-soft btn-sm" id="ex-add">追加</button></div>
-      <label class="check" style="margin-top:10px"><input type="checkbox" name="noEx" ${d.exRecorded && !d.exercise.length ? 'checked' : ''}> この日は運動しなかった</label>
       <div class="field-error" data-err="exercise"></div></div>
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
@@ -11539,7 +11553,6 @@ function openLifeForm(id, part, forDate) {
   };
   const renderExercise = () => {
     $('#ex-list', form).innerHTML = exercise.length ? `<div class="chips">${exercise.map((e, i) => `<span class="chip green">${esc(e.type)} ${e.minutes}分<button type="button" class="chip-x" data-exdel="${i}" aria-label="削除">×</button></span>`).join('')}</div><p class="small muted" style="margin-top:6px">合計 ${esc(fmtMin(exercise.reduce((a, e) => a + e.minutes, 0)))}</p>` : '';
-    if (exercise.length) form.elements.noEx.checked = false;
   };
   const renderPhoto = k => {
     const box = $(`[data-mprev="${k}"]`, form);
@@ -11695,7 +11708,6 @@ function openLifeForm(id, part, forDate) {
       } catch (err) { toast(err.message, 'error'); }
       el.value = ''; return;
     }
-    if (el.name === 'noEx' && el.checked && exercise.length) { exercise = []; renderExercise(); el.checked = true; }
   });
   const calc = () => { const m = sleepMin({bed:form.elements.bed.value, wake:form.elements.wake.value}); $('#sleep-calc').textContent = m == null ? '' : `睡眠時間：${fmtHM(m)}`; };
   // ヘルスケア（アプリ版）から睡眠・運動・歩数を入れる。空いている欄だけ（ボタンを押したときは上書き）
@@ -11733,7 +11745,7 @@ function openLifeForm(id, part, forDate) {
       ...(() => { if (!foods.length) return {veg:d.veg || '', protein:d.protein || ''}; const tt = nutTotals(foods), g = nutNeeds();
         const lvl = (v, need) => v >= need * 0.7 ? 'しっかり' : v >= need * 0.3 ? '少し' : 'ほぼなし'; return {veg:lvl(tt.veg, g.veg), protein:lvl(tt.p, g.p)}; })(),
       sweets:d.sweets || '', water:d.water || '', tags:d.tags || [], // 「食事の内容」の入力欄はなし（前の値は残す）
-      foods:foods.map(normFood), mealPhotos, exercise:exercise.slice(), exRecorded:exercise.length > 0 || fe.noEx.checked, steps, weight:d.weight == null ? null : d.weight, memo:fe.memo.value.trim()};
+      foods:foods.map(normFood), mealPhotos, exercise:exercise.slice(), exRecorded:true /* 運動を入れていない日は「運動しなかった」として扱う */, steps, weight:d.weight == null ? null : d.weight, memo:fe.memo.value.trim()};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); } else state.lifeLogs.push(Object.assign({id:uid(), demo:false}, data));
     if (save()) { closeModal(); toast(part ? `${LIFE_PARTS[part].t}を記録しました` : '食事・運動・睡眠を記録しました'); render(); }
