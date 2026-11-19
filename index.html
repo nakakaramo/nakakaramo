@@ -2919,7 +2919,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119161410'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119162727'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5300,7 +5300,7 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_ALL = ['hello', 'gender', 'age', 'skin', 'concerns', 'account', 'done']; // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
+const SW_ALL = ['hello', 'gender', 'age', 'skin', 'concerns', 'preg', 'account', 'done']; // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
 // はじめの質問の「アカウントを作成／ログイン」：成功したら次の質問へ進む
 async function swAuth() {
   if (!swState || swState.busy) return;
@@ -5700,6 +5700,7 @@ function swStepHtml(step) {
   const dq = (k, first) => { const q = DIAG_Q.find(x => x.k === k); return `<p class="sw-sec${first ? ' sw-sec1' : ''}">${esc(q.q)}${q.multi ? '<small>（いくつでも）</small>' : ''}</p>` + swOpts(k, q.o, q.multi ? (Array.isArray(v[k]) ? v[k] : []) : (v[k] || ''), q.multi); };
   if (step === 'skin') h = `<p class="sw-q">肌について</p>` + dq('tight', 1) + dq('oilDay') + dq('acne') + dq('red') + dq('sens');
   if (step === 'trouble') h = `<p class="sw-q">過去に肌トラブルが起きた成分は？</p><p class="sw-sub">いくつでも選べます。選んだ成分は、提案から外します</p>` + swOpts('trouble', DIAG_Q.find(x => x.k === 'trouble').o, Array.isArray(v.trouble) ? v.trouble : [], true);
+  if (step === 'preg') h = `<p class="sw-q">今、妊娠中・授乳中ですか？</p><p class="sw-sub">妊娠中・授乳中に控えたい成分（レチノールなど）を、提案から外します</p>` + swOpts('preg', DIAG_Q.find(x => x.k === 'preg').o, v.preg || ''); /* 男性と答えた人には出さない */
   if (step === 'concerns') h = `<p class="sw-q">気になる肌悩み<small>（いくつでも）</small></p>` + swOpts('concerns', CONCERN_MASTER.map(c => [c.k, c.l]), v.concerns, true);
   if (step === 'routine') h = `<p class="sw-q">ふだんのケア</p>` + dq('makeup', 1) + dq('timeAm') + dq('timePm') + `<p class="sw-sub" style="margin-top:12px">使っている化粧品は、診断のあとに「Myアイテム」で登録すると、ケアの順番に反映されます</p>`;
   if (step === 'life') h = `<p class="sw-q">生活と予算</p><p class="sw-sub">睡眠の記録と、化粧品の支出の管理に使います</p>
@@ -5723,7 +5724,7 @@ function swPaint() {
   if (b.firstChild) swGrab();
   const list = swSteps().filter(x => x !== 'hello' && x !== 'done');
   b.innerHTML = `<p class="sw-intro">あてはまるものを選んでください（1分ほど）。肌質を診断して、朝・夜のケアを組み立てます。</p>`
-    + list.map(step => `<section class="sw-card" id="sw-s-${step}">${swStepHtml(step)}</section>`).join('')
+    + list.map(step => `<section class="sw-card" id="sw-s-${step}"${step === 'preg' && s.v.gender === '男性' ? ' hidden' : ''}>${swStepHtml(step)}</section>`).join('') /* 妊娠の質問は、男性と答えた人には出さない */
     + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-action="setup-finish">診断する</button>`;
   if (mb) mb.scrollTop = top;
@@ -5763,7 +5764,7 @@ function swClick(e) {
     const k = o.dataset.sw, val = o.dataset.v, v = swState.v;
     if (o.closest('.sw-opts.multi')) { const cur = Array.isArray(v[k]) ? v[k] : []; v[k] = val === 'none' ? (cur.includes('none') ? [] : ['none']) : (cur.includes(val) ? cur.filter(x => x !== val) : cur.filter(x => x !== 'none').concat(val)); }
     else { v[k] = v[k] === val && val !== '' ? '' : val; swState.none = swState.none || {}; swState.none[k] = val === '' ? !swState.none[k] : false; }
-    swSyncOpts(o.closest('.sw-opts'), k); return; // 押したボタンのまわりだけ変える（全体を描き直すと画面ごとチカッと光るため）
+    swSyncOpts(o.closest('.sw-opts'), k); if (k === 'gender') { const pc = $('#sw-s-preg'); if (pc) pc.hidden = v.gender === '男性'; } return; // 押したボタンのまわりだけ変える（全体を描き直すと画面ごとチカッと光るため）
   }
   const g = e.target.closest('[data-swgo]');
   if (g) { const n = Number(g.dataset.swgo); if (n > 0 && !swRead()) return; if (n < 0) swRead(); swState.i = clamp(swState.i + n, 0, swSteps().length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
@@ -8705,10 +8706,15 @@ const DIAG_Q = [
   {k:'pore', q:'毛穴は気になりますか？', o:[['yes','気になる'],['some','少し'],['no','気にならない']]},
   {k:'sens', q:'化粧品でしみたり、かゆくなったりしやすいですか？', o:[['yes','しやすい'],['some','たまに'],['no','ほとんどない']]},
   {k:'trouble', q:'過去に肌トラブルが起きた成分は？', multi:true, o:[['ethanol','アルコール（エタノール）'],['fragrance','香料'],['essentialoil','精油'],['retinoid','レチノール'],['acid','角質ケア（ピーリング）'],['vitc','ビタミンC'],['other','ほかにある'],['none','特にない・わからない']]},
+  {k:'preg', q:'今、妊娠中・授乳中ですか？', o:[['preg','妊娠中・その可能性がある'],['nursing','授乳中'],['no','どちらでもない']]},
   {k:'makeup', q:'ふだんのメイクは？', o:[['full','しっかりメイク'],['light','うすいメイク'],['sunonly','日焼け止めだけ'],['none','何もつけない']]},
   {k:'timeAm', q:'朝のスキンケアに使える時間は？', o:[['1','1分くらい'],['3','3分くらい'],['5','5分くらい'],['10','10分以上']]},
   {k:'timePm', q:'夜のスキンケアに使える時間は？', o:[['1','1分くらい'],['3','3分くらい'],['5','5分くらい'],['10','10分以上']]}
 ];
+// 妊娠中・授乳中（肌質診断で答えた人だけ）。男性と答えた人は対象外
+function pregNow() { const a = (state.settings.diag && state.settings.diag.a) || {}; return state.settings.gender !== '男性' && (a.preg === 'preg' || a.preg === 'nursing') ? a.preg : ''; }
+const PREG_ING_RE = /レチノ|レチナ|ハイドロキノン|トレチノイン|タザロテン|バクチオール(?!フリー)/;
+const PREG_RX_RE = /アダパレン|ディフェリン|エピデュオ|トレチノイン|タザロテン/;
 function diagAnswers() { return (state.settings.diag && state.settings.diag.a) || {}; }
 // 答えから肌質を判断する（1つに決めつけず、いくつかの特徴の組み合わせとして出す）
 function diagCompute(a, concernKeys) {
@@ -9928,7 +9934,7 @@ function rtPlan(slot, solo) {
     good:uniq(['アミノ酸系洗浄成分（ココイルグルタミン酸Naなど）', oilT && acneT && !sensT ? 'サリチル酸（BHA）配合' : '']), avoid:uniq(['スクラブ', sensT ? 'メントール' : '', '熱いお湯'])});
   const tonerO = extra => ({name:'化粧水', type:dryT ? 'しっとりタイプ' : oilT ? 'さっぱりタイプ' : '', prods:prodOf(['toner'], true), how:'手のひらに500円玉くらい出し、顔全体を包むように押さえてなじませます。',
     good:uniq([dryT || lowHum ? 'セラミド' : '', 'ヒアルロン酸', sensT ? 'パンテノール' : '', sensT || acneT ? 'グリチルリチン酸2K' : '', acneT || oilT ? 'ナイアシンアミド' : '', 'グリセリン']).slice(0, 4),
-    avoid:uniq([dryT || sensT ? 'エタノール（多く入った物）' : '', sensT ? '香料' : '']), today:extra || []});
+    avoid:uniq([dryT || sensT ? 'エタノール（多く入った物）' : '', sensT ? '香料' : '', sensT ? 'メントール' : '']), today:extra || []});
   const moistO = (s, ex) => { const heavy = !(oilT && !dryT) && (s === 'pm' && (dryT || lowHum || cold || calm) || s === 'am' && dryT && (lowHum || cold)); /* テカりやすい肌には、乾燥する日でも重いクリームはすすめない */
     return {name:heavy ? '保湿（乳液＋クリーム）' : oilT && !dryT ? '保湿（乳液・ジェル）' : '保湿（乳液）', prods:prodOf(['emulsion', 'cream', 'allinone'], true), how:heavy ? '乳液を顔全体にのばしたあと、乾きやすい頬・口元にクリームを薄く重ねて、手のひらで包みます。' : '薄くのばし、手のひらで包んでなじませます。',
       good:uniq([dryT || lowHum ? 'セラミド' : '', dryT ? 'スクワラン' : '', oilT ? 'ナイアシンアミド' : '', sensT ? 'パンテノール' : '', !dryT && !oilT ? 'ヒアルロン酸' : '']).slice(0, 3),
@@ -9953,7 +9959,9 @@ function rtPlan(slot, solo) {
       RESTED.set(r.x.p.id, dup ? `同じ成分（${ACL(r).map(c => CLN[c]).join('・')}）が、ほかの塗り薬に入っているため` : `今記録しているニキビ（${types.map(k => k.replace(/（.*?）/, '')).join('・') || 'ニキビ'}）には使わない薬のため`); });
     if (acneRest.length) acneTip = (`ニキビの塗り薬は、記録したニキビの種類に合う物を選び、成分が重なる物はのぞきました（${[...new Set(acneRest.map(r => rxIngLabel(r.x.p)))].join('、')}）。医師に一緒に使うよう言われているときは、その指示に合わせましょう。`);
   }
-  const RXP = RXP1.filter(r => !acneRest.includes(r));
+  const preg = pregNow(), pregRx = preg === 'preg' ? RXP1.filter(r => PREG_RX_RE.test(`${r.x.p.name} ${r.x.p.ingredients || ''}`)) : [];
+  pregRx.forEach(r => RESTED.set(r.x.p.id, '妊娠中は使えない薬のため（添付文書で禁忌）。使う前に医師に相談しましょう')); /* 妊娠中：アダパレンなどは手順に入れない */
+  const RXP = RXP1.filter(r => !acneRest.includes(r) && !pregRx.includes(r));
   const rxOn = RXP.filter(r => r.slots.includes(slot));
   const rxHard = RXP.some(r => r.slots.includes(slot) && (r.avoid.includes('レチノール') || r.steroid)); // 同じ時間（朝・夜）に使う薬だけで判断する（朝と夜で分ければ使える） // レチノイド・過酸化ベンゾイル・ステロイドを使っている間は、刺激の強い化粧品を休む
   const rxAvoid = uniq(RXP.filter(r => r.slots.length).flatMap(r => r.avoid));
@@ -9971,7 +9979,7 @@ function rtPlan(slot, solo) {
     today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(r.note.map(t => T(t, '薬'))).concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const eyeT = has('darkcircle') || has('puffy');
   const eyeStep = () => { const L = R ? R.A.infos.filter(x => x.step === 'other' && /アイクリーム|アイセラム|アイジェル|アイケア|アイバーム|目元|目もと|eye/i.test(x.p.name) && !(R.paused || []).includes(x) && fitSlot(x)) : []; if (!L.length && !eyeT) return; /* 目元用の物は、黙って消さずに目元ケアの手順で使う */
-    add('eye', {name:'目元ケア', prods:L, how:'薬指に米粒1つ分をとり、目のまわりの骨に沿って軽くたたくようにのせます。こすらないようにします。', good:uniq([has('puffy') ? 'カフェイン' : '', has('darkcircle') ? 'カフェイン' : '', has('darkcircle') && slot === 'pm' && !calm && !rxHard ? 'レチノール（低い濃度）' : '', has('darkcircle') ? 'ビタミンC誘導体' : '', 'セラミド']).slice(0, 3), avoid:uniq([sensT ? '香料' : ''])}); };
+    add('eye', {name:'目元ケア', prods:L, how:'薬指に米粒1つ分をとり、目のまわりの骨に沿って軽くたたくようにのせます。こすらないようにします。', good:uniq([has('puffy') ? 'カフェイン' : '', has('darkcircle') ? 'カフェイン' : '', has('darkcircle') && slot === 'pm' && !calm && !rxHard && !pregNow() ? 'レチノール（低い濃度）' : '', has('darkcircle') ? 'ビタミンC誘導体' : '', 'セラミド']).slice(0, 3), avoid:uniq([sensT ? '香料' : ''])}); };
   const spotSteps = () => here.filter(s => s.kind === 'spot').forEach(s => add('spot:' + s.x.p.id, {name:STEP_LABEL.spot, prods:[s.x], how:'気になるところだけに、少量をのせます。'}));
   // 同じ成分の薬（例：クリームとローション）を2つ登録していても、手順は1つにまとめる（同じ物を2回出さない）
   const rxSteps = role => { const G = new Map(); rxOn.filter(r => r.role === role).forEach(r => { const k = normIng(rxIngLabel(r.x.p)); if (G.has(k)) G.get(k).more.push(r.x); else G.set(k, {r, more:[]}); });
@@ -10018,10 +10026,10 @@ function rtPlan(slot, solo) {
     const restNote = rest.length ? T(`${toAm.length === rest.length ? '' : '今日は'}「${rest.map(x => prodIngLabel(x.p)).join('」「')}」は${toAm.length === rest.length ? '夜はお休みして、朝に使います' : 'お休みします'}（${rxHard ? '皮膚科の薬と刺激が重なるため' : '赤み・肌あれが落ち着くまで'}）`, rxHard ? '薬' : '肌') : null;
     // レチノールを使ったことがなく、記録もまだ少ない人には、いきなりすすめない（まずはおだやかな成分から）
     const retNew = state.skinLogs.filter(l => !l.demo).length < 14 && !state.myProducts.some(p => !p.demo && knownIngs(ingsOfMy(p)).some(k => /レチノ|retin/i.test(String(k.entry.name) + (k.entry.key || ''))));
-    const retOk = !calm && !rxHard && !(dryT && lowHum && (m.dry || 0) >= 4) && !(retNew && sensT);
+    const retOk = !calm && !rxHard && !preg && !(dryT && lowHum && (m.dry || 0) >= 4) && !(retNew && sensT);
     const retW = retNew ? 'レチノール（低い濃度から・週2〜3回）' : 'レチノール';
     const sg = uniq([acneT ? 'アゼライン酸' : '', (markT || ageT) && retOk ? retW : '', acneT || poreT || ageT ? 'ナイアシンアミド' : '', markT && !retOk ? 'トラネキサム酸' : '', poreT && retOk && !sensT ? 'AHA・BHA（週1〜2回）' : '', dryT ? 'セラミド' : '', calm || sensT ? 'パンテノール' : '']).slice(0, 4);
-    const sa = uniq([calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', calm || rxHard ? '' : 'レチノールとピーリングの併用']).slice(0, 3);
+    const sa = uniq([preg ? 'レチノール（妊娠中・授乳中）' : '', preg ? 'ハイドロキノン' : '', calm || rxHard ? 'レチノール' : '', calm || rxHard ? 'AHA・BHA（ピーリング）' : '', sensT ? '香料' : '', calm || rxHard ? '' : 'レチノールとピーリングの併用']).slice(0, 3);
     if (sp.length || sg.length) add('serum', {name:'美容液', prods:sp, how:'化粧水のあと、1〜2プッシュを顔の内側から外側へなじませます。刺激の強い物は1晩に1つまで。', good:sg, avoid:sa,
       avoidOwn:rxHard ? restOwn(rest, toAm) : [],
       today:uniq([rxHard ? null : restNote, rxHard && RXP.some(r => r.slots.includes('pm')) && !restNote ? T('皮膚科の薬を使っている間は、レチノールやピーリングなど刺激の強い美容液は重ねません', '薬') : null, restNote ? null : calmItem ? T(calmItem.title.replace(/^今夜は/, '今夜は') + 'します（赤み・肌あれが落ち着くまで）', '肌') : calm ? T('赤み・肌あれがある日は、刺激の強い成分はお休みします', '肌') : null, R && R.pm.some(s => s.day && s.day !== today && s.x) ? T(`今日は${today}日：交互に使う美容液は、今日の分だけにしています`, '肌') : null])});
@@ -10086,7 +10094,7 @@ function rtPlan(slot, solo) {
     // 「あなたの肌の分析」で優先した悩みの成分を、美容液のおすすめの先頭に置く（分析とケア管理の言うことをそろえる）
     { const sv = steps.find(z => z.k === 'serum'); if (sv && !solo) { let pref = []; try { pref = personalAnalysis().top.flatMap(c => c.ings.map(x => x.ja)); } catch (e) { pref = []; }
       const fitT = w => { const e = ING_MASTER.find(x => chipText(x.ja) === w); const tm = e && e.time; return !tm || tm === '朝・夜' || (slot === 'am' ? /朝/ : /夜/).test(tm); };
-      pref = pref.filter(w => fitT(w) && !((calm || rxHard) && tagsOfWord(w).act >= 1));
+      pref = pref.filter(w => fitT(w) && !((calm || rxHard) && tagsOfWord(w).act >= 1) && !(preg && PREG_ING_RE.test(w)));
       if (pref.length) { const k = v => normIng(chipText(v)); sv.good = uniq(pref.concat(sv.good).filter((v, i, a) => a.findIndex(y => k(y) === k(v)) === i)).slice(0, 4); } } }
     // 一緒に使う（同じ朝・同じ夜）物どうしだけを見る。朝ビタミンC・夜レチノールのように、時間を分ければ使える
     const pool = comboPool(used, slot), keep = [], other = slot === 'am' ? 'pm' : 'am', otherJa = other === 'am' ? '朝' : '夜', hereJa = slot === 'am' ? '朝' : '夜';
@@ -10114,6 +10122,8 @@ function rtPlan(slot, solo) {
         if (st.k === 'sunscreen') { if (!st.today.some(z => z && String(z.t || '').includes(prodIngLabel(x.p)))) st.today.push(T(`「${prodIngLabel(x.p)}」には、控えたい「${w}」が入っています。しみる・赤くなるときは、別の物に替えます`, '成分')); return; }
         off.push(x); st.today.push(T(`今日は「${prodIngLabel(x.p)}」はお休みします（今の肌で控えたい「${w}」が入っているため）`, '成分')); RESTED.set(x.p.id, `今の肌で控えたい「${w}」が入っているため`); });
       if (off.length) st.prods = st.prods.filter(x => !off.includes(x)); }); }
+  if (preg) steps.forEach(st => { if (st.fixed || !st.prods.length) return; const off = st.prods.filter(x => !x.rx && PREG_ING_RE.test(`${ingsOfMy(x.p) || ''} ${x.p.name}`)); if (!off.length) return;
+    st.prods = st.prods.filter(x => !off.includes(x)); off.forEach(x => { const w = (`${ingsOfMy(x.p) || ''} ${x.p.name}`.match(/レチノール|レチナール|レチノイン酸|ハイドロキノン|トレチノイン|バクチオール/) || ['レチノール'])[0], why = `${preg === 'preg' ? '妊娠中' : '授乳中'}は控えるのが一般的な成分（${w}）が入っているため`; st.today.push(T(`今日は「${prodIngLabel(x.p)}」はお休みします（${why}）`, '肌')); RESTED.set(x.p.id, why); }); });
   // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
   steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
@@ -10164,6 +10174,7 @@ function rtPlan(slot, solo) {
   { const EX = /サリチル酸|BHA|AHA|グリコール酸|乳酸|ピーリング/, owns = steps.some(st => st.prods.some(x => !x.rx && EX.test(`${ingsOfMy(x.p) || ''} ${x.p.name}`)));
     let done = owns; const ord = ['serum', 'toner', 'wash'], rank = st => { const i = ord.indexOf(st.k); return i < 0 ? 9 : i; };
     steps.slice().sort((a, b) => rank(a) - rank(b)).forEach(st => { if (st.fixed || !st.good) return; st.good = st.good.filter(g => { if (!EX.test(chipText(g))) return true; if (done) return false; done = true; return true; }); }); }
+  if (pregRx.length && slot === 'pm') tips.unshift(`「${[...new Set(pregRx.map(r => rxIngLabel(r.x.p)))].join('、')}」の塗り薬は、妊娠中は使えない薬なので手順に入れていません。使う前に、妊娠中であることを医師に伝えて相談しましょう。`);
   // 最後の確認：この時間に使う設定の物が、どこにも出ていなければ理由を書く（登録した物を黙って消さない）
   if (R) { const here = slot === 'am' ? '朝' : '夜', usedIds = new Set(steps.flatMap(st => st.prods.map(x => x.p.id))), txt = () => steps.map(z => z.today.map(t => (t && t.t) || '').join(' ')).join(' ');
     const kindOf = k => ({emulsion:'moist', cream:'moist', allinone:'moist', mask:'serum', other:'serum', spot:'serum'})[k] || k;
@@ -10295,7 +10306,7 @@ function acneTypeDrugsHtml() {
   const chip = k => { const x = ACNE_DRUG_ING[k]; return `<button type="button" class="cm-c good cm-ing-b" data-acnedrug="${k}">${esc(x.name.replace(/（.*?）/, ''))}<i>›</i></button>`; }; // 市販薬か処方薬かは、押して開いた中に出す
   return `<div class="card at-drugs"><div class="card-h"><h2>ニキビの種類ごとの塗り薬</h2></div>
     ${L.map(({g, ks}) => `<div class="at-row on"><div class="at-h"><b>${esc(g.l)}</b></div><p class="small no-ph">${esc(g.d)}</p>${(m => m.length ? `<p class="small no-ph at-mine"><b>使っている薬</b>${m.map(x => String(x).split(RX_ING_SPLIT).map(y => y.trim()).filter(Boolean).map(y => rxIngNames().has(y) ? rxIngLink(y) : esc(y)).join('・')).join('、')}</p>` : '')(mineFor(g))}${ks.length ? `<div class="cm-ing at-ks"><div>${ks.map(chip).join('')}</div></div>` : ''}</div>`).join('')}
-    <p class="small muted no-ph" style="margin-top:10px">${rxAcne ? '市販薬を足すときは医師に相談しましょう。' : '処方の成分は医師が選びます。'}（日本皮膚科学会ガイドライン2023より）</p></div>`;
+    <p class="small muted no-ph" style="margin-top:10px">${pregNow() === 'preg' ? 'アダパレンは妊娠中は使えません。' : ''}${rxAcne ? '市販薬を足すときは医師に相談しましょう。' : '処方の成分は医師が選びます。'}（日本皮膚科学会ガイドライン2023より）</p></div>`;
 }
 const OTC_ING_CACHE = {};
 async function openAcneDrugSheet(k) {
@@ -12365,7 +12376,7 @@ function adviceInput() {
   const L = logMap()[t];
   const sleepNeedH = r1((state.settings.sleepNeed || 420) / 60);
   return {
-    profile:{skinType:state.settings.skinType || null, sensitive:!!state.settings.sensitive, concerns:state.settings.concerns, sleepNeedHours:sleepNeedH},
+    profile:{skinType:state.settings.skinType || null, sensitive:!!state.settings.sensitive, concerns:state.settings.concerns, sleepNeedHours:sleepNeedH, pregnancy:pregNow() || null}, /* 妊娠中・授乳中は、AIにもレチノールなどをすすめないよう伝える */
     analysis:(() => { try { const A = personalAnalysis(); return {priorityConcerns:A.top.map(c => ({name:c.name, reasons:c.why, trend:c.trend})), weekFocus:A.week, itemsToReview:A.items.filter(i => i.v !== 'keep').map(i => ({name:i.x.p.name, why:i.note})), lifeLinks:A.links.filter(x => x.enough && x.strong).map(x => ({label:x.label, better:x.diff > 0 ? x.aL : x.bL})), longTerm:A.long ? (A.long.better ? '良くなっている' : A.long.worse ? '悪くなっている' : '変わらず') : null}; } catch (e) { return null; } })(), // 「あなたの肌の分析」の結果も渡して、提案をそろえる
     weatherToday:(() => { const w = state.weather[t]; return w ? {humidity:w.hum, tempMin:w.tmin, tempMax:w.tmax, uvMax:w.uv} : null; })(), // 今日の天気（湿度・気温・UV）もケアの判断に使う
     skin:{days:logs.length, cond:r1(S.cond), condPrevWeek:r1(P.cond), acneTotal:S.acneTotal, acnePrevWeek:prev.length ? P.acneTotal : null, redness:r1(S.red), dryness:r1(S.dry), oil:r1(S.oil),
