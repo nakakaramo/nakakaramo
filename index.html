@@ -2900,7 +2900,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119105137'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119105742'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9903,8 +9903,10 @@ function rtPlan(slot, solo) {
   // 登録しているから全部使う、ではなく、今日の肌の状態・天気（紫外線・暑さ）から、今日使う物をしぼる
   {
     const need = new Set([(dryT || lowHum || cold) && 'dry', (oilT || hot) && 'oily', (oilT || poreT) && 'pore', sensT && 'sensitive', sensT && 'redness', acneT && 'acne', markT && 'acnemark', markT && 'spot', markT && 'dull', ageT && 'aging', poreT && 'rough'].filter(Boolean));
-    const strongX = x => (x.ings || []).some(e => e.act >= 1);
-    const fitX = x => (x.ings || []).reduce((a, e) => a + (e.cs || []).filter(k => need.has(k)).length, 0) - ((sensT || calm) && strongX(x) ? 3 : 0);
+    // 全成分を入れていない商品も、商品名に書かれた成分（例：「アゼライン酸 美容液」）で判断する
+    const ingsX = x => { if ((x.ings || []).length) return x.ings; try { const n = ingFromName(x.p.name); return n ? masterIngsOf(n) : []; } catch (e) { return []; } };
+    const strongX = x => ingsX(x).some(e => e.act >= 1);
+    const fitX = x => ingsX(x).reduce((a, e) => a + (e.cs || []).filter(k => need.has(k)).length, 0) - ((sensT || calm) && strongX(x) ? 3 : 0);
     const photoX = x => !!x.nightOnly || (x.ings || []).some(e => e.time === '夜');
     const spfX = x => Math.max(0, ...((String(x.p.name || '') + ' ' + String(x.p.memo || '')).match(/SPF\s*(\d+)/gi) || []).map(v => Number(v.replace(/\D/g, ''))));
     const kindX = x => x.step || '';
@@ -9922,6 +9924,12 @@ function rtPlan(slot, solo) {
       restN(st, odd, '今日の肌の悩みに合う成分が入っていないため'); });
     const best = (L, sc) => L.slice().sort((a, b) => sc(b) - sc(a));
     steps.forEach(st => { if (st.fixed || !st.prods.length) return; let L = st.prods.slice();
+      // 登録している物を全部使おうとしない：まず今日の肌に一番いい成分を決めて、それが入っている物だけ使う（美容液・部分用・化粧水）
+      // 化粧水は、合う物がひとつもなければ、いちばん近い1つは残す（うるおす基本の手順なので）
+      if (need.size && (st.k === 'serum' || st.k.startsWith('spot:') || st.k === 'toner')) {
+        const off = L.filter(x => fitX(x) <= 0);
+        if (off.length && !(st.k === 'toner' && off.length === L.length)) { L = L.filter(x => !off.includes(x)); restN(st, off, '今日の肌の悩みに合う成分が入っていないため'); }
+      }
       if (st.k === 'serum') {
         if (slot === 'am' && uv != null && uv >= 3) { const ph = L.filter(photoX); L = L.filter(x => !ph.includes(x)); restN(st, ph, '紫外線が強めの日なので、夜に回します', '天気'); }
         const sg = best(L.filter(strongX), fitX); if (sg.length > 1) { const off = sg.slice(1); L = L.filter(x => !off.includes(x)); restN(st, off, '刺激の強い美容液は1回に1つまで'); }
@@ -9936,6 +9944,8 @@ function rtPlan(slot, solo) {
         restN(st, off, st.k === 'sunscreen' ? (uv != null && uv >= 6 ? '紫外線が強い日なので、SPFの高い物にします' : '今日の紫外線ならこれで十分です') : '今日の肌に合う1つにしぼります', st.k === 'sunscreen' ? '天気' : '肌');
       }
       st.prods = L; });
+    // 部分用の手順で、今日は使わない物しかなくなったら、手順ごと出さない（理由は美容液の手順に書く）
+    for (let i = steps.length - 1; i >= 0; i--) { const st = steps[i]; if (!st.k.startsWith('spot:') || st.prods.length) continue; const sv = steps.find(z => z.k === 'serum'); if (sv) sv.today.push(...st.today); steps.splice(i, 1); }
   }
   // 併用注意：薬・化粧品どうし、おすすめ成分と使っている物が「一緒に使うと注意」にならないようにする
   {
