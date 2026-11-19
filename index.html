@@ -635,6 +635,7 @@ details.acc-cmp{margin-top:14px}
 .xim{display:block;overflow:hidden;background:#fff;position:relative}
 .xim img{width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.24)}
 .thumb .xim{position:absolute;inset:0}
+.thumb .xim,.pop-item .pop-img .xim{width:100%!important;height:100%!important;border-radius:0!important;margin:0!important} /* 商品の写真は、どの枠の中でも枠いっぱいに出す */
 .xim.clean img{transform:scale(.92)}
 .net-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .net-noimg svg{width:22px;height:22px}
@@ -2916,7 +2917,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119152405'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119153325'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9549,7 +9550,8 @@ function ingLinkRe() {
 }
 // html：エスケープ済みの文。ボタンなどのタグの中は変えない。seen：同じ手順の中で、もう下線にした成分
 const LETS_RE = /(塗り直し|塗り|避け|替え|続け|使い分け|使い|選び|休ませ|休み|控え|落とし|洗い|流し|すすぎ|重ね|なじませ|広げ|のばし|押さえ|包み|守り|合わせ|あけ|分け|足し|減らし|やめ|ふき|拭き|保ち|補い|とり|取り|飲み|置き|抑え|始め|試し|見直し|付け|つけ|整え|落ち着かせ|入れ|寝|確かめ|止め|冷やし|泡立て|あて|食べ|待ち|戻し|残し|し)ます(?=[。！）」（]|$)/g;
-const letsTone = t => String(t || '').replace(LETS_RE, '$1ましょう');
+const LETS_NOUN = /(回復|悪化|改善|変化|増加|減少|乾燥|発生|関係|影響|安定|低下|上昇|吸収|反応|蒸発|酸化|分解|作用|進行|再発|炎症|充血|緊張|活発に|活性化|心配|退色|沈着)$/; /* 肌や体が「〜します」は、すすめる文ではないので変えない */
+const letsTone = t => String(t || '').replace(LETS_RE, (all, v, off, str) => v === 'し' && LETS_NOUN.test(str.slice(0, off)) ? all : v + 'ましょう');
 function ingLinkHtml(html, seen) {
   seen = seen || new Set();
   return String(html).split(/(<button[^>]*>[\s\S]*?<\/button>|<[^>]+>)/).map(part => part.startsWith('<') ? part : part.replace(ingLinkRe(), (w) => {
@@ -9987,7 +9989,8 @@ function rtPlan(slot, solo) {
     const spf = uv == null ? 'SPF30・PA+++くらい' : uv >= 6 ? 'SPF50・PA++++' : uv >= 3 ? 'SPF30以上・PA+++' : 'SPF15〜30・PA++';
     add('sunscreen', {name:'日焼け止め', type:spf, prods:prodOf(['sunscreen'], true), how:'顔全体にパール2粒分くらいを、2回に分けてムラなく塗ります。',
       gl:'選び方', good:uniq([spf, sensT ? '紫外線吸収剤不使用（ノンケミカル）' : '', acneT ? 'ノンコメドジェニックテスト済み' : '']), avoid:uniq([sensT ? '香料' : '']),
-      today:uniq([RXP.some(r => r.sun && r.slots.length) ? T('塗り薬を使っている間は肌が紫外線に弱くなりやすいので、毎朝欠かさず塗ります', '薬') : null, uv != null ? T(uv >= 6 ? '紫外線が強い日です。外にいるときは2〜3時間ごとに塗り直します' : uv >= 3 ? '紫外線がやや強い日です。くもりでも塗ります' : '紫外線は弱めですが、短い外出でも塗っておくと安心です', '天気') : null, markT || (m.dull || 0) >= 3 || ff.inflamed ? T(has('spot') ? 'シミ・くすみは紫外線で濃くなりやすいので、毎日続けます' : 'ニキビ跡・くすみは紫外線で濃くなりやすいので、毎日続けます', '肌') : null, ageT ? T('しわ・たるみの大きな原因は紫外線なので、毎日塗ります', '肌') : null])});
+      today:uniq([RXP.some(r => r.sun && r.slots.length) ? T('塗り薬を使っている間は肌が紫外線に弱くなりやすいので、毎朝欠かさず塗ります', '薬') : null, uv != null ? T(uv >= 6 ? '紫外線が強い日です。外にいるときは2〜3時間ごとに塗り直します' : uv >= 3 ? '紫外線がやや強い日です。くもりでも塗ります' : '紫外線は弱めですが、短い外出でも塗っておくと安心です', '天気') : null, (() => { const pig = markT || (m.dull || 0) >= 3 || ff.inflamed, w1 = pig ? (has('spot') ? 'シミ・くすみ' : 'ニキビ跡・くすみ') : ''; /* 同じ「紫外線」の話は1つにまとめる */
+        return pig && ageT ? T(`${w1}・しわ・たるみは紫外線で悪くなりやすいので、毎日塗ります`, '肌') : pig ? T(`${w1}は紫外線で濃くなりやすいので、毎日塗ります`, '肌') : ageT ? T('しわ・たるみの大きな原因は紫外線なので、毎日塗ります', '肌') : null; })()])});
   } else {
     const mk = ans.makeup || '', sun = prodOf(['sunscreen'], true)[0];
     const sunOff = mk === 'sunonly' && sun && R && R.A.infos.some(x => x.p.id === sun.p.id && x.soapOff);
@@ -12362,6 +12365,9 @@ function adviceInput() {
     products:state.myProducts.filter(p => p.status === '使用中').slice(0, 12).map(p => ({category:p.category, ings:knownIngs(ingsOfMy(p)).map(x => x.entry.name.replace(/（.*?）/g, ''))}))
   };
 }
+// 食事の見出しを短くする（食べ物の名前は下の「おすすめの食べ物」に出すので、見出しは栄養だけにする）
+const FOOD_SHORT = [[/^毎食、[^、]*?などを手のひら1枚分とる$/, '毎食、たんぱく質を手のひら1枚分とる'], [/^毎食、野菜とたんぱく質（[^）]*）を1品ずつ$/, '毎食、野菜とたんぱく質を1品ずつ'], [/^[^、]*?(?:など|で)(ビタミン[^、]*|良い脂[^、]*)$/, '$1'], [/^甘い間食を[^、]*?に替える$/, '甘い間食を控える']];
+function foodShortTitle(t) { for (const [re, to] of FOOD_SHORT) if (re.test(t)) return t.replace(re, to); return t; }
 // ===== 今日のおすすめケア：3Dの顔の記録・睡眠・運動・食事・今日の天気（湿度・気温・UV）を全部合わせて決める =====
 function careTodayData() {
   const t = todayStr(), d = adviceInput(), ff = faceFindings(7), sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal;
@@ -12405,7 +12411,7 @@ function careTodayData() {
   else if ((dull || uvHi || inflamed) && (vitCLow || vegLow)) add('生活', 'キウイ・ブロッコリーなどビタミンCを1品', [vitCLow ? `ビタミンCの多い物を食べた日は${ml.vitCDays}日` : `野菜が1日${ml.avgVeg}g`, dull ? 'くすみ・ニキビ跡のケアにも役立ちます' : uvHi ? '紫外線が強い日は特に大切です' : ''], ['食事', dull || inflamed ? '肌' : '', uvHi ? '天気' : '']);
   else if (dry >= 3 && hasMeal) add('生活', '鮭・さば・くるみなど良い脂をとる', ['肌の乾燥が強めです', '肌のうるおいを保つ脂質の材料になります'], ['食事', '肌']);
   else if (!hasMeal) { const LN = skinLean(d);
-    if (LN.acne) add('生活', '納豆・卵・まぐろでビタミンB群をとる', ['皮脂のバランスに関わるビタミンB2・B6が多い食べ物です', '甘い物・揚げ物が続くと、ニキビが悪化しやすいと言われています'], ['食事']);
+    if (LN.acne) add('生活', '納豆・卵・まぐろでビタミンB群をとる', ['ビタミンB2・B6は、皮脂のバランスに関わります', '甘い物・揚げ物が続くと、ニキビが悪化しやすいと言われています'], ['食事']);
     else if (LN.dull) add('生活', 'キウイ・ブロッコリーなどビタミンCを1品', ['ニキビ跡・くすみのケアには、コラーゲンづくりを助けるビタミンCが役立ちます'], ['食事']);
     else if (LN.dry) add('生活', '鮭・さば・くるみなど良い脂をとる', ['乾燥しやすい肌は、うるおいを保つ脂質の材料が大切です'], ['食事']);
     else add('生活', '毎食、野菜とたんぱく質（卵・魚・大豆）を1品ずつ', ['肌の材料になるたんぱく質と、ビタミンがそろいます'], ['食事']);
@@ -12437,10 +12443,23 @@ function careTodayData() {
   ];
   return {lead, inputs, items, calm, w, m:{dry, red, oil, dull, rough, acne, inflamed}};
 }
+// ホームの「肌のケア」のおすすめ・控えたい成分：ケア管理の朝・夜の手順と同じもの（美容液・部分ケア → 化粧水 → 保湿の順に大事）
+function careSkinPick() {
+  const good = [], avoid = [], seenG = new Set(), seenA = new Set(), rank = s => s.k === 'serum' || s.k.startsWith('spot:') ? 0 : /化粧水/.test(s.name) ? 1 : /保湿/.test(s.name) ? 2 : 3;
+  let sun = false;
+  ['am', 'pm'].forEach(sl => { let P; try { P = rtPlan(sl); } catch (e) { return; }
+    P.steps.forEach(s => { if (s.k === 'sunscreen') sun = true; });
+    P.steps.filter(s => !/^(water|wash|cleanse|sunscreen)$/.test(s.k) && !s.k.startsWith('rx:')).sort((x, y) => rank(x) - rank(y)).forEach(s => {
+      (s.good || []).forEach(v => { const t = chipText(v), k = normIng(t); if (seenG.has(k) || !ingEntryOf(t)) return; seenG.add(k); good.push({v, r:rank(s)}); });
+      (s.avoid || []).forEach(v => { const t = chipText(v), k = normIng(t); if (seenA.has(k) || /こする|お湯|コットン/.test(t)) return; seenA.add(k); avoid.push(v); }); }); });
+  const g = good.sort((x, y) => x.r - y.r).map(x => x.v).slice(0, 5); if (sun) g.push('日焼け止め');
+  return {good:g, avoid:avoid.filter(v => !g.some(x => normIng(chipText(x)) === normIng(chipText(v)))).slice(0, 5)};
+}
+function careSkinChips() { const S = careSkinPick(); return S.good.length || S.avoid.length ? advChips({area:'スキンケア', good:S.good, avoid:S.avoid}) : ''; }
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
-  const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(letsTone(x.title)), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(letsTone(x.why)), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
+  const itemH = (x, short) => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(letsTone(short ? foodShortTitle(x.title) : x.title)), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(letsTone(x.why)), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
   const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'run', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'meal', '食事', '食事']];
   let AP = {ai:null, pts:[]}; try { AP = advicePts(); } catch (e) { /* 何もしない */ }
   const ptOf = a => AP.pts.find(x => x && x.area === a) || AP.pts[ADVICE_AREAS.indexOf(a)];
@@ -12451,14 +12470,16 @@ function careTodayHtml() {
   const sec = ([c, ic, label, area]) => {
     const pt = ptOf(area);
     let chips = '';
-    if (c === '肌' && adviceBusy) chips = `<div class="ct2-adv">${skelHtml(3, {dots:true, label:'分析中'})}</div>`;
-    else if (pt) { const ch = advChips(Object.assign({}, pt, {area})); if (ch) chips = `<div class="ct2-adv">${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
+    if (c === '肌') { const ch = careSkinChips(); if (ch) chips = `<div class="ct2-adv"><b class="adv1-t">今の肌に合う成分</b>${ch}</div>`; } /* ケア管理と同じ成分を出す（内容をそろえる） */
+    else if (pt) { const tl = D.items.filter(x => x.cat === c && !/を記録する$/.test(x.title)).map(x => foodShortTitle(x.title)).join(' '); /* 見出しと同じことはチップに出さない */
+      const ch = advChips(Object.assign({}, pt, {area, good:(pt.good || []).filter(v => !tl.includes(chipText(v)))})); if (ch) chips = `<div class="ct2-adv">${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
     const L = D.items.filter(x => x.cat === c), real = L.filter(x => !/を記録する$/.test(x.title)), ask = L.filter(x => /を記録する$/.test(x.title));
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
     // 肌の朝・夜のケアの順番は「ケア管理」にまとめた（ここでは重ねて出さない）
     if (c === '肌') return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${recBtn(c)}</h3>${D.lead && !/^大きな問題は見つかりません|そろうと/.test(D.lead) ? `<p class="ct2-lead no-ph">${ingLinkHtml(esc(D.lead))}</p>` : ''}${chips}</section>`; // 伝えることがある日だけ、今日の肌のひとこと
-    const body = show.length ? show.map(itemH).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(itemH).join('')}</details>` : '')
+    const sh = c === '食事' && /adv-box good/.test(chips), ih = x => itemH(x, sh); /* 下の「おすすめの食べ物」と同じ物を見出しに書かない */
+    const body = show.length ? show.map(ih).join('') + (more.length ? `<details class="ct2-more"><summary>ほかに${more.length}つ</summary>${more.map(ih).join('')}</details>` : '')
       : chips || ask.length ? '' : '<p class="ct2-none">今日は特にありません。</p>';
     const askH = ask.length ? `<div class="ct2-ask"><p class="no-ph">${esc(ask[0].why)}</p></div>` : '';
     return `<section class="ct2-sec"><h3 class="ct2-sh">${icon(ic)}<span>${label}</span>${recBtn(c)}${c === '肌' && wxLine ? `<small>今日の天気　${esc(wxLine)}</small>` : ''}</h3>${body}${chips}${askH}</section>`;
