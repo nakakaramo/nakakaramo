@@ -1523,7 +1523,7 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-sleep{text-align:center;margin-top:2px}
 .ld-used{margin-top:12px}
 .ld-used .used-sub{display:none}
-.ld-date b{font-size:17px;white-space:nowrap}
+.ld-date b{font-size:17px;white-space:nowrap;font-variant-numeric:tabular-nums} /* 数字の幅をそろえて、日付が変わっても文字が左右に動かない */
 .ld-nums{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12.5px;color:var(--muted)}
 .ld-nums b{color:var(--ink);font-size:14px}
 .ld-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:4px}
@@ -2318,7 +2318,7 @@ img{image-rendering:auto}
 .ai-link{text-decoration:none!important;flex:none;font-weight:600;color:var(--green-d);background:none;border:0;cursor:pointer;font-size:14px}
 
 /* アカウント情報：アイコンを少し小さく、全体を上に */
-.ai-hero{margin:-50px 0 0!important;pointer-events:none}.ai-hero .ai-av{pointer-events:auto}
+.ai-hero{margin:0 0 4px!important;pointer-events:none}.ai-hero .ai-av{pointer-events:auto}
 .ai-av>i{width:26px!important;height:26px!important;right:-2px!important;bottom:0!important}
 .ai-av>i svg{width:13px!important;height:13px!important}
 .ai-sec{margin:12px 4px 8px!important}
@@ -2888,7 +2888,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119095345'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119100140'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3292,7 +3292,7 @@ const ING_DB = [
    caution:'赤み・かぶれが出ることがあります。使う間は日焼け止めをしっかり使い、異常があれば使うのをやめてください。',
    combo:'レチノールやピーリング成分と同時に使うと、刺激が強くなることがあります。'},
   {key:'bpo', name:'過酸化ベンゾイル', aliases:['過酸化ベンゾイル','BPO'], groups:['bpo'],
-   feature:'ニキビの治療に使われる医薬品の成分です（ベピオ、デュアックなど）。',
+   feature:'ニキビの治療に使われる医薬品の成分です。',
    purpose:'ニキビの治療（医薬品）',
    caution:'乾燥・赤み・ヒリヒリ感が出やすい成分です。髪や服・タオルが脱色することがあります。医師の指示に従って使ってください。',
    combo:'ピーリング成分やレチノールと重ねると、刺激が強くなることがあります。'},
@@ -6560,7 +6560,7 @@ function viewProduct(id) {
       <div class="card"><div class="card-h"><h2>使用方法</h2></div><p class="prose">${offVal(p, p.usage)}</p></div>
     </div>
     <div class="card mt"><div class="card-h"><h2>全成分</h2><span class="small muted">${ings.length ? ings.length + '成分（緑色は解説あり）' : ''}</span></div>
-      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `${(() => { const ks = splitIngs(keyIngsOf({name:p.name, category:p.category, catalogId:p.id})); return ks.length ? `<p class="small muted" style="margin:0 0 8px">主な成分（商品名・探した成分から）</p><div class="ing-list" style="margin-bottom:10px">${ks.map(s => { const e = ingEntryOf(s); return e && e.key && ING_DB.includes(e) ? `<a href="#/ingredients/${e.key}">${esc(s)}</a>` : `<span>${esc(s)}</span>`; }).join('')}</div><p class="small muted" style="margin:0">全成分：</p>` : ''; })()}<p class="na">${p.offChecked && Number(p.offV) >= OFF_V && !offBusy[p.id] ? '<span class="muted">非公開（公式サイト・通販サイトなどにも記載が見つかりませんでした）</span>' : offVal(p, '')}</p>`}</div>
+      ${ings.length ? `<p class="ing-text" style="margin:0;line-height:2">${ings.map(s => knownMap[s] ? `<a class="care-link" href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<button type="button" class="care-link" data-ingsheet="${esc(s)}">${esc(s)}</button>`).join('、')}</p>` : `${(() => { const ks = splitIngs(keyIngsOf({name:p.name, category:p.category, catalogId:p.id})); return ks.length ? `<p class="small muted" style="margin:0 0 8px">主な成分（商品名・探した成分から）</p><div class="ing-list" style="margin-bottom:10px">${ks.map(s => { const e = ingEntryOf(s); return e && e.key && ING_DB.includes(e) ? `<a href="#/ingredients/${e.key}">${esc(s)}</a>` : `<span>${esc(s)}</span>`; }).join('')}</div><p class="small muted" style="margin:0">全成分：</p>` : ''; })()}<p class="na">${p.offChecked && Number(p.offV) >= OFF_V && !offBusy[p.id] ? '<span class="muted">非公開（公式サイト・通販サイトなどにも記載が見つかりませんでした）</span>' : offVal(p, '')}</p>`}</div>
     ${known.length ? `<div class="card"><div class="card-h"><h2>成分の解説</h2><span class="chip">一般的な情報</span></div>
       ${known.map(k => ingCard(k.entry, k.items)).join('')}
       <p class="small muted pg-foot" style="margin-top:12px">成分が含まれていることは、効果を保証するものではありません。濃度・処方・使用頻度・個人差によって、感じ方は異なります。</p></div>` : ''}
@@ -7456,8 +7456,10 @@ function viewMyDetail(id) {
             const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || e.includes(w)); }) : null; };
             const lk = (k, t) => `<a class="care-link" href="#/ingredients/${k.entry.key}">${esc(t)}</a>`;
             if (!ing) return '<span class="muted">未登録</span>';
-            if (isRx || ing.length <= 60) return ing.split(/[、,，・]/).map(t => t.trim()).filter(Boolean).map(t => { const k = kOf(t); return k ? lk(k, t) : isRx ? rxIngLink(t) : esc(t); }).join('、');
-            return (known.length ? `<p style="margin:0">${known.map(k => lk(k, k.entry.name)).join('、')}</p>` : '') + ingHtml;
+            const tok = t => { const k = kOf(t); return k ? lk(k, t) : isRx ? rxIngLink(t) : `<button type="button" class="care-link" data-ingsheet="${esc(t)}">${esc(t)}</button>`; }; // 解説のない成分も押せる（説明・その成分の商品が出る）
+            const all = ing.split(/[、,，・]/).map(t => t.trim()).filter(Boolean).map(tok).join('、');
+            if (isRx || ing.length <= 60) return all;
+            return (known.length ? `<p style="margin:0">${known.map(k => lk(k, k.entry.name)).join('、')}</p>` : '') + `<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${all}</p></details>`;
           })()}</dd>
         </dl>
         ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : (() => { const sp = p.ingredients ? p : getCat(p.catalogId); const h = sp && fullIngsOfMy(p) ? ingSrcHtml(sp, true) : ''; return h ? `<p class="small muted" style="margin-top:10px">${h}</p>` : !fullIngsOfMy(p) && offBusy[p.id] ? '<p class="small muted" style="margin-top:10px">全成分を調べています（10〜30秒）…</p>' : ''; })()}
@@ -8251,7 +8253,7 @@ const CARE_REFS = {
   jda_acne:{t:'日本皮膚科学会「尋常性痤瘡・酒皶治療ガイドライン2023」', u:'https://www.dermatol.or.jp/modules/guideline/index.php?content_id=2'},
   jda_ad:{t:'日本皮膚科学会・日本アレルギー学会「アトピー性皮膚炎診療ガイドライン2024」', u:'https://www.dermatol.or.jp/modules/guideline/index.php?content_id=2'},
   jda_melasma:{t:'日本皮膚科学会 一般向けQ&A（シミ・肝斑）', u:'https://qa.dermatol.or.jp/'},
-  pmda:{t:'PMDA 医療用医薬品の添付文書（ディフェリンゲル・ベピオゲル など）', u:'https://www.pmda.go.jp/PmdaSearch/iyakuSearch/'},
+  pmda:{t:'PMDA 医療用医薬品の添付文書', u:'https://www.pmda.go.jp/PmdaSearch/iyakuSearch/'},
   mhlw_cos:{t:'厚生労働省「化粧品基準」（配合してよい成分・量の決まり）', u:'https://www.mhlw.go.jp/'},
   mhlw_qd:{t:'厚生労働省 医薬部外品（薬用化粧品）の有効成分の考え方', u:'https://www.mhlw.go.jp/'},
   cosing:{t:'欧州委員会 CosIng（化粧品成分のデータベース）', u:'https://ec.europa.eu/growth/tools-databases/cosing/'},
@@ -10038,17 +10040,6 @@ function rtPaneHtml(slot) {
   P.steps.forEach(st => { st.good = st.good.filter(v => { let ks = []; try { ks = masterIngsOf(chipText(v)).map(e => e.k); } catch (e) { ks = []; } return !ks.some(k => PAUSED.has(k)); }); });
   let h = '';
   void cut; // 時短：説明の文は出さない（切り替えのボタンだけで伝える）
-  { const sj = slot === 'am' ? '朝' : '夜', fit = p => p.timing === '朝・夜' || p.timing === sj;
-    const mine = state.myProducts.filter(p => !p.demo && p.status === '使用中' && fit(p) && !/飲み薬|内服/.test(p.category || '') && !(slot === 'pm' && /日焼け止め/.test(p.category || ''))), used = new Set(P.steps.flatMap(z => z.prods.map(x => x.p.id)));
-    if (mine.length) {
-      const ao = new Map(); P.steps.forEach(z => (z.avoidOwn || []).forEach(a => ao.set(a.p.id, a.c ? `${a.c.who.name}と併用注意` : String(a.why || '').replace(/。$/, ''))));
-      const rest = mine.filter(p => !used.has(p.id)).map(p => ({p, why:P.rested.get(p.id) || ao.get(p.id) || ((P.R && P.R.dropped || []).find(o => o.x && o.x.p.id === p.id) || {}).why || (quick && cut.some(z => z.prods.some(x => x.p.id === p.id)) ? '時短の日なので' : '今日の手順には入れていません')}));
-      const lab = p => prodIngLabel(p);
-      h += `<div class="card rt-today"><div class="rt-today-h">${icon('spark')}<b>今日の肌に合わせて選びました</b></div>
-        <div class="rt-today-c">${(P.skinL.length ? P.skinL : ['大きな悩みは出ていません']).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
-        <p class="small no-ph">登録している${mine.length}個のうち、今日の${sj}は<b>${mine.length - rest.length}個</b>を使います。</p>
-        ${rest.length ? `<details class="rt-rest"><summary>今日はお休みする物（${rest.length}個）</summary><ul>${rest.map(r => `<li><b>${esc(lab(r.p))}</b><span>${esc(String(r.why).replace(/。$/, ''))}</span></li>`).join('')}</ul></details>` : ''}</div>`;
-    } }
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${ingLinkHtml(esc(t))}</p>`).join('')}</div>`;
@@ -10136,12 +10127,11 @@ function ingMasterDetail(e) {
   return `<a class="back" href="#/ingredients">← 成分辞典</a>` + pageHead(e.ja, e.en) + `<div class="card">
     <div class="im-top">${evBadge(e.ev)}<span class="chip">${esc(e.reg)}</span><span class="chip ${e.irr === '高' ? 'red' : e.irr === '中' ? 'warn' : 'green'}">刺激：${esc(e.irr)}</span></div>
     ${row('対応する肌悩み', `<div class="chips">${csChips(e.cs)}</div>`)}
-    ${row('主な作用', esc(e.mech))}${row('期待できる効果', esc(e.eff))}
-    ${row('科学的根拠', `${esc(EVIDENCE[e.ev].t)}：${esc(EVIDENCE[e.ev].d)}`)}
-    ${row('濃度', e.conc ? esc(e.conc) : '<span class="muted">はっきりした根拠のある推奨濃度は示していません（製品ごとに異なります）</span>')}
-    ${row('副作用・注意事項', esc(e.side))}${row('併用時の注意', esc(e.combo))}
-    ${row('朝・夜', `${esc(e.time)}：${esc(e.timeT)}`)}${row('区分', esc(e.reg))}
-    ${row('INCI名・別名', esc(e.inci.join('、')))}
+    ${row('はたらき', esc(e.mech) + (e.eff && e.eff.length > 14 && !normIng(e.mech).includes(normIng(e.eff)) ? '<br>' + esc(e.eff) : ''))}
+    ${e.conc ? row('濃度', esc(/処方/.test(e.reg) ? e.conc.replace(/（[^）]*）/g, '') : e.conc)) : ''}
+    ${row('注意', esc(e.side) + (e.combo && !/一緒に使えます/.test(e.combo) ? '<br>' + esc(e.combo) : ''))}
+    ${row('朝・夜', `${esc(e.time)}：${esc(e.timeT)}`)}
+    ${(() => { const al = e.inci.filter(a => fnorm(a) !== fnorm(chipText(e.ja)) && fnorm(a) !== fnorm(e.en || '') && !RX_DRUGS.some(d => fnorm(d[1]).includes(fnorm(a)))); return al.length ? row('別名', esc(al.join('、'))) : ''; })()}
     ${row('参考文献・情報源', e.refs.map(r => CARE_REFS[r] ? `<a href="${CARE_REFS[r].u}" target="_blank" rel="noopener">${esc(CARE_REFS[r].t)}</a>` : '').join('<br>'))}
     <p class="small muted pg-foot">メーカーの宣伝表現ではなく、公的な基準・ガイドライン・研究にもとづく一般的な情報です。効果を保証するものではありません。${fmtDate(CARE_DB_UPDATED)}更新</p></div>
     ${comboSplitHtml(pairs)}
@@ -10621,8 +10611,8 @@ function logDaySet(date) {
   const list = logDayList(); if (!list.length) return;
   ui.logDay = date; const i = logDayIdx(list), l = list[i]; ui.logDay = l.date;
   const info = document.getElementById('ld-info'), det = document.getElementById('ld-detail');
-  if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
-  const dt = document.getElementById('ld-date'); if (dt) { dt.innerHTML = `<b>${fmtMD(l.date)}</b>`; dt.classList.remove('ld-flash'); void dt.offsetWidth; dt.classList.add('ld-flash'); }
+  if (info) info.innerHTML = logDayInfoHtml(list, i); // 文字は動かさない（その場で入れかえる）
+  const dt = document.getElementById('ld-date'); if (dt) dt.innerHTML = `<b>${fmtMD(l.date)}</b>`;
   if (det) det.innerHTML = logDayDetailHtml(list, i);
   const ms = document.getElementById('ld-miss'); if (ms) ms.hidden = true;
   const cd = document.getElementById('log-day-card'); if (cd) cd.classList.remove('ld-none');
