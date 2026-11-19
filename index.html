@@ -2919,7 +2919,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119164748'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119165639'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -10067,7 +10067,8 @@ function rtPlan(slot, solo) {
       // 登録している物を全部使おうとしない：まず今日の肌に一番いい成分を決めて、それが入っている物だけ使う（美容液・部分用・化粧水）
       // 化粧水は、合う物がひとつもなければ、いちばん近い1つは残す（うるおす基本の手順なので）
       if (need.size && (st.k === 'serum' || st.k.startsWith('spot:') || st.k === 'toner')) {
-        const off = L.filter(x => fitX(x) <= 0);
+        const unk = L.filter(x => !ingsX(x).length); if (unk.length) st.today.push(T(`${unk.map(nm).join('・')}は成分が登録されていないので、合うかどうか判断できません。Myアイテムで成分を入れると、今日の肌に合わせて選べます`, '成分')); /* 成分がわからない物は「合わない」と決めつけない */
+        const off = L.filter(x => fitX(x) <= 0 && ingsX(x).length);
         if (off.length && !(st.k === 'toner' && off.length === L.length)) { L = L.filter(x => !off.includes(x)); const hard = off.filter(x => (sensT || calm) && strongX(x)); restN(st, hard, calm ? '赤み・肌あれが落ち着くまで、刺激の強い成分は休むため' : '刺激を感じやすい肌なので、刺激の強い成分は休むため'); restN(st, off.filter(x => !hard.includes(x)), '今日の肌の悩みに合う成分が入っていないため'); }
       }
       if (st.k === 'serum') {
@@ -12687,8 +12688,16 @@ function openFoodSheet(name) {
   openModal({title:esc(name), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>栄養</b><p>${esc(f[0])}</p></div><div class="ing-b"><b>効果</b><p>${esc(f[1])}</p></div></div></div>`});
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-food]'); if (!b) return; hapticTick(); openFoodSheet(b.dataset.food); });
+// AIが出した「おすすめ」を、ルールで確かめる：控えたい物（甘い物・揚げ物・お酒・寝る前のスマホなど）をおすすめにしない。妊娠中・授乳中に控えたい食べ物も出さない
+const PREG_FOOD_RE = /レバー|まぐろ|マグロ|めかじき|キンメ|金目|刺身|生魚|寿司|生ハム|ナチュラルチーズ|うなぎ|ひじき/;
+function advSane(area, good, avoid) {
+  const bad = v => LIFE_AVOID.some(([re]) => re.test(v)) && !/控え|減らす|やめる|ノンカフェイン|カフェインレス|無糖|麦茶|ハーブティー|塗って|塗り直|ふく|拭く|洗顔|シャワー/.test(v);
+  const g = good.filter(v => !bad(v) && !(area === '食事' && pregNow() && PREG_FOOD_RE.test(v)) && !avoid.some(a => chipText(a) === chipText(v)));
+  return [g, avoid];
+}
 function advChips(x) {
-  const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
+  const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの']; let g = advClean(x.good), a = advClean(x.avoid, 24);
+  if (x.area !== 'スキンケア') [g, a] = advSane(x.area, g, a);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
   if (skin) { const pool = comboPool(), careK = new Set(); try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => st.good.forEach(v => careK.add(normIng(chipText(v)))))); } catch (e) { /* 何もしない */ } const out = []; for (let i = 0; i < g.length; i++) { const c = careK.has(normIng(chipText(g[i]))) ? null : comboConflict(g[i], pool); if (c) { out.push(comboAvoidWord(g[i], c)); g.splice(i, 1); i--; continue; } const tw = tagsOfWord(g[i]); if (tw.tags.size) pool.push({id:'g:' + g[i], name:chipText(g[i]), tags:tw.tags, rx:false, act:tw.act}); } out.forEach(o => { if (!a.some(v => chipText(v) === chipText(o))) a.push(o); }); }
@@ -13568,7 +13577,7 @@ function viewMycare() {
   if (A.top.length) h += `<h2 class="pc-sec">あなたの悩み（優先順）</h2>` + A.top.map((c, i) => `<div class="card pc-c"><div class="pc-ch"><b class="pc-n">${i + 1}</b><div><b class="pc-cn">${esc(c.name)}</b>${c.trend ? TR[c.trend] : ''}<small>${esc(c.why.join('・'))}</small></div></div>
       <div class="pc-blk"><small>スキンケア</small><ul class="pc-ul">${c.care.map(x => `<li>${careLinkHtml(x, G)}</li>`).join('')}</ul></div>
       ${c.ings.length ? `<div class="pc-blk"><small>おすすめ</small><div class="pc-ings">${c.ings.map(x => x.own ? `<button type="button" class="cm-c own cm-ing-b" data-owned="${esc(x.ja)}" data-pids="${esc(x.own.p.id)}">${icon('bottle')}${esc(x.ja)}<i>›</i></button>` : `<button type="button" class="cm-c good cm-ing-b" data-ingsheet="${esc(x.ja)}">${esc(x.ja)}<i>›</i></button>`).join('')}</div>${c.ings.some(x => x.own) ? '<p class="small muted pc-own">青い成分は持っている物に入っています。</p>' : ''}</div>` : ''}
-      ${c.nut ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join('');
+      ${c.nut && A.life && A.life.foodN >= 3 ? `<div class="pc-blk"><small>食事</small><p>${esc(c.nut)}</p></div>` : ''}</div>`).join(''); /* 食事の記録がないのに、食事のことを決めつけない */
   if (A.others && A.others.length) h += `<div class="card"><h3 class="pc-h3">ほかの悩み</h3><ul class="pc-ul small">${A.others.map(o => `<li><b>${esc(o.name)}</b>：${esc(o.care)}</li>`).join('')}</ul></div>`;
   if (!A.top.length && A.stage !== 'none') h += `<div class="card"><p class="small muted">今は目立つ悩みはありません。記録を続けてください。</p></div>`;
   if (A.starter && A.starter.length) h += `<h2 class="pc-sec">まずはこれだけ（はじめの基本セット）</h2><div class="card pc-items">${A.starter.map(x => `<button type="button" class="pc-it pc-st" data-ingsheet="${esc(x.q)}"><span class="pc-v keep">${esc(x.n)}</span><span><b>${esc(x.d)}</b><small>押すと人気の商品</small></span><i>›</i></button>`).join('')}<p class="small muted" style="margin:6px 16px 10px">合う物はMyアイテムに登録を。</p></div>`;
