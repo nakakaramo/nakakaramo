@@ -1582,7 +1582,7 @@ body:has(#modal-root .modal-backdrop.kb)::before{transform:translate3d(0,var(--k
 .modal-head{touch-action:none}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
 .modal-head h2{font-size:17px}
-.modal{position:relative}.msb{position:absolute;top:0;right:3px;width:4px;border-radius:4px;background:var(--ink);opacity:0;pointer-events:none;transition:opacity .25s;z-index:5}.msb.on{opacity:0}.msb.on.act{opacity:.42} /* さわっていない時は消す。さわる・スクロールすると出る */
+.modal{position:relative}.msb{position:absolute;top:0;right:2px;width:2.5px;border-radius:3px;background:var(--ink);opacity:0;pointer-events:none;transition:opacity .25s;z-index:5}.msb.on{opacity:0}.msb.on.act{opacity:.42} /* さわっていない時は消す。さわる・スクロールすると出る */
 .modal-body::-webkit-scrollbar{display:none}.modal-body{padding:20px;overflow-y:auto;scrollbar-width:none;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .modal-body .field,.modal-body .form-grid>*{min-width:0}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
@@ -2677,6 +2677,19 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .avc-hint{color:#ddd;font-size:13px;text-align:center;margin:8px 0 0}
 .avc-bar{display:flex;justify-content:space-between;padding:14px 20px 18px}.avc-bar button{background:none;border:0;color:#fff;font:inherit;font-size:17px;padding:8px 6px;cursor:pointer}
 .ls-row{position:relative}.ls-same{display:block;margin:-4px 12px 10px 38px;padding:6px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--green-d);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+@media (hover:hover) and (pointer:fine){*{scrollbar-width:thin}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:6px}::-webkit-scrollbar-track{background:transparent}}
+.lf-rows{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.lf-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;min-height:54px;margin:0}.lf-row+.lf-row{border-top:1px solid var(--line)}
+.lf-row>span:first-child{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;flex:none}.lf-row input[type=time]{width:132px}.lf-list:has(#ex-list:empty){display:none}.lf-row .input,.lf-row .select{width:auto;min-width:0;max-width:170px;min-height:40px;font-size:16px;text-align:right}
+.lf-row b#sleep-calc{font-size:17px;color:var(--green-d)}.lf-in{display:flex;align-items:center;gap:6px}.lf-in .input{width:96px}.lf-in em{font-style:normal;color:var(--muted);font-size:14px}
+.lf-list #ex-list{flex:1;min-width:0}.lf-in .lf-in-b{margin-left:4px}
+.lf-same{width:100%;justify-content:center;min-height:48px;font-size:15px;margin-top:4px}
+.im-irr{font-weight:700}.im-irr.red{color:#C0392B}.im-irr.warn{color:#B07A1A}.im-irr.green{color:var(--green-d)}
+.mf-l{margin:4px 0 8px;font-size:14px;font-weight:700;color:var(--ink)}.mf-l+.tm-pick{margin-bottom:14px}
+.ngf-p{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--surface2,#F6F3EE);margin-bottom:4px}.ngf-th{width:44px;height:44px;flex:none;border-radius:10px;overflow:hidden;position:relative;display:block}.ngf-th .thumb{width:100%;height:100%}.ngf-p b{font-size:15px;line-height:1.4}
+.ngf-q{padding:16px 0 4px;border-top:1px solid var(--line);margin-top:12px}.ngf-q:first-of-type{border-top:0}
+.ngf-q h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;font-weight:700}.ngf-q h3 i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green-d);color:#fff;font-style:normal;font-size:12px;flex:none}.ngf-q h3 small{font-size:12px;font-weight:500;color:var(--muted)}
+.ngf-chk{display:flex;flex-direction:column;gap:10px}.ngf-foot{margin:14px 0 0}
 </style>
 </head>
 <body>
@@ -2901,7 +2914,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119141050'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119142449'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -2985,7 +2998,7 @@ function lockCard(title, desc) {
     <p class="small muted" style="margin-top:6px">肌の記録や成分の注意点など、基本の機能と安全に関わる情報は、無料プランでも使えます。</p>
     <a class="btn btn-primary btn-sm" style="margin-top:12px" href="#/plan" data-psheet="${esc(title)}">${PREMIUM_NAME}にする</a></div>`;
 }
-/* 肌悩みと、それに関係する「使用目的」（商品の登録時に選ぶ目的） */
+/* 肌悩みと、それに関係する「効果」（商品の登録時に選ぶ目的） */
 const CONCERNS = ['ニキビ','乾燥','赤み','皮脂・テカリ','毛穴','くすみ','肌あれ','ハリ・エイジング'];
 const CONCERN_PURPOSES = {'ニキビ':['ニキビ対策','皮脂・毛穴ケア'], '乾燥':['保湿'], '赤み':['鎮静・肌あれ対策'], '皮脂・テカリ':['皮脂・毛穴ケア'], '毛穴':['皮脂・毛穴ケア','角質ケア'], 'くすみ':['くすみ対策'], '肌あれ':['鎮静・肌あれ対策'], 'ハリ・エイジング':['ハリ・エイジングケア']};
 const BASIC_PURPOSES = ['洗浄','保湿','紫外線対策'];
@@ -4731,7 +4744,7 @@ function lifeSumHtml(lf, date) {
   const mealRadar = `<button type="button" class="ls-radar" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|meal' : 'meal'}" aria-label="栄養のバランスを見る">${nutRadarSvg(ft, 210, true)}<span class="ls-rnote"><i class="ls-rkey"></i>緑の点線が1日の目安（100%）</span></button>`;
   // 記録一覧（date あり）では見出しを出さない
   return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
-    ${sameBtn(row('sleep', 'moon', '睡眠', sMain, sSub, sCls), date || todayStr(), 'sleep', sm == null)}${sameBtn(row('exercise', 'run', '運動', eMain, eSub, eCls), date || todayStr(), 'exercise', !(lf && exTotal(lf) > 0))}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
+    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'run', '運動', eMain, eSub, eCls)}${row('meal', 'meal', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${date ? mealRadar : `<details class="ls-fold"><summary>栄養のバランスを見る</summary>${mealRadar}</details>`}</div>`)}</div>`;
 }
 function openLifeGoal() {
   const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
@@ -4919,7 +4932,7 @@ function rxSvg(name) {
   const ty = form === 'tube' ? 43 : form === 'jar' ? 63 : form === 'can' ? 54 : 56;
   return `<svg class="rx-svg" viewBox="0 0 100 100" role="img" aria-label="${esc(n)}"><rect width="100" height="100" fill="${c}" opacity=".08"/>${body}<text x="50" y="${ty}" text-anchor="middle" font-size="${short.length > 5 ? 7.2 : short.length > 4 ? 8.5 : 10}" font-weight="700" fill="#fff" font-family="sans-serif"${short.length > 5 ? ' textLength="40" lengthAdjust="spacingAndGlyphs"' : ''}>${short}</text>${kind ? `<text x="50" y="${ty + 8}" text-anchor="middle" font-size="6" fill="#fff" opacity=".9" font-family="sans-serif">${kind}</text>` : ''}</svg>`;
 }
-// 薬の使用目的（添付文書の「効能・効果」をもとに、種類ごとにわかりやすく書いたもの）
+// 薬の効果（添付文書の「効能・効果」をもとに、種類ごとにわかりやすく書いたもの）
 const RX_USE = {'ニキビ':'ニキビ','ステロイド（最も強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（とても強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（ふつう）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（弱い）':'湿疹・皮膚炎などの炎症やかゆみ','アトピー・湿疹（ステロイド以外）':'アトピー性皮膚炎','保湿・乾燥':'皮膚の乾燥（乾皮症など）','化膿・とびひ（抗菌）':'細菌による皮膚の感染（とびひ・化膿など）','水虫・カビ（抗真菌）':'水虫・カンジダなど、カビによる皮膚の感染','乾癬':'乾癬','かゆみ':'皮膚のかゆみ','酒さ（赤ら顔）':'酒さ（赤ら顔）','汗（多汗症）':'多汗症（汗が多い）','ヘルペス':'ヘルペス（疱疹）','傷・やけど':'やけど・傷の感染を防ぐ'};
 // ===== 塗り薬の成分（押すと説明が出る）：どの塗り薬の成分も、緑の下線のリンクにする =====
 const RX_ING_SPLIT = /[、,，・]/;
@@ -4951,7 +4964,7 @@ function acneTypesOfIng(ing) {
 }
 const rxUseOf = name => { const d = RX_DRUGS.find(x => x[1] === name); return d ? (RX_USE[d[0]] || d[0]) : ''; };
 const rxInfoUrl = name => 'https://www.google.com/search?q=' + encodeURIComponent(name + ' 添付文書');
-// 薬の種類から、使用目的を自動で決める
+// 薬の種類から、効果を自動で決める
 function rxPurposes(name, ing) {
   const d = RX_DRUGS.find(x => x[1] === name), g = d ? d[0] : '', i = String(ing || (d && d[2]) || '');
   const out = new Set();
@@ -4987,7 +5000,7 @@ function rxPick(name) {
   if (!getCat(id)) state.catalog.push({id, isSample:false, verify:'verified', name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', origin:'その他', price:0, volume:'', image:'', imageUrl:'', shopUrl:'', imgClean:false,
     purposes:rxPurposes(d[1], d[2]), ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
   ui.myKind = 'rx';
-  // 登録画面は出さずに、そのまま登録する（使用開始日＝今日、朝・夜／毎日、使用目的は薬の効能どおり）
+  // 登録画面は出さずに、そのまま登録する（使用開始日＝今日、朝・夜／毎日、効果は薬の効能どおり）
   if (state.myProducts.some(x => x.catalogId === id && x.status === '使用中')) { closeModal(); toast('この薬はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:id, name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', purposes:rxPurposes(d[1], d[2]), ingredients:d[2],
     timing:rxDefaultTiming(d[1], d[2]), frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
@@ -5324,7 +5337,48 @@ async function swAuth() {
   swPaint();
 }
 // ===== お問い合わせ：プレミアムの人はAIサポートに質問できる。答えられない内容はメールへ案内する =====
-const SUPPORT_Q = ['解約したい', 'ログインできない', '確認メールが届かない', '機種変更したい', '写真の読み取り回数'];
+const SUPPORT_Q = ['解約したい', '解約できたか確かめたい', 'ログインできない', '確認メールが届かない', 'パスワードを忘れた', '機種変更したい', '料金・支払い方法', 'アプリとして使いたい'];
+// よくある質問：アプリの中で、すぐに答える（通信しない・プレミアムでなくても）。上から順に調べて、最初に当てはまったものを答える。当てはまらない質問は、AIが答える
+const MAIL_GO = '下のボタンから、メールでお問い合わせください。';
+const SUPPORT_FAQ = [
+  [/返金|お金.*(戻|返)|日割/, '月の途中で解約しても、日割りの返金はありません。法令で必要な場合や、こちらの不具合で使えなかった場合は、個別に対応します。' + MAIL_GO, true],
+  [/二重|請求.*(おかし|違|多|間違)|引き落とし.*(おかし|違|2回)|身に覚え/, 'ご迷惑をおかけしています。お支払いの記録を確認しますので、' + MAIL_GO, true],
+  [/(アカウント|データ|記録).*(削除|消し|消す|消去)|退会/, 'アカウントの削除は、1. 下の「アカウント」 2.「プラン・アカウント」 3. いちばん下の「アカウントを削除」です。削除すると、クラウドに保存した記録も消えます。プレミアムプランの人は、先に解約をしてください。'],
+  [/解約.*(でき(た|て)|出来(た|て)|され|済|確認|確か|なって|反映)|解約した(?!い)/, '解約できたかは、1. 下の「アカウント」 2.「プラン・アカウント」 3.「状態」を見てください。「解約手続き済み：（日付）で終了します」と出ていれば解約できています。その日までは使えて、そのあとは請求されません。出ていないときは、解約の手順をもう一度行ってください。'],
+  [/解約|やめたい|止めたい|キャンセル|サブスク|自動更新.*(止|やめ)/, '解約は、1. 下の「アカウント」 2.「プラン・アカウント」 3.「契約内容の確認・解約・カード変更」 4. 開いた画面（Stripe）で解約、の順です。解約しても、支払った期間の終わりまで使えます。次からは請求されません。'],
+  [/カード.*(変更|変え|替え|更新)|支払い方法.*(変更|変え)/, 'カードの変更は、1. 下の「アカウント」 2.「プラン・アカウント」 3.「契約内容の確認・解約・カード変更」から行えます。'],
+  [/領収|レシート|請求書|明細/, '請求の履歴は、「アカウント」→「プラン・アカウント」→「契約内容の確認・解約・カード変更」で開く画面（Stripe）で見られます。見つからないときは、' + MAIL_GO],
+  [/料金|値段|いくら|月額|年額|価格|支払|払い方|PayPay|ペイペイ|コンビニ|デビット|Apple ?Pay|Google ?Pay/i, 'プレミアムプランは月額600円（税込）か、年額6,000円（税込）です。支払いは、クレジットカード・デビットカード・Apple Pay・Google Payが使えます（PayPay・コンビニ払いは今は使えません）。カード番号はナカカラモには保存されません。'],
+  [/お試し|無料期間|トライアル|無料で(試|使)/, '新しく登録すると、3日間プレミアムプランを無料で試せます（カードの登録はいりません）。3日たつと、自動で無料のプランに戻ります。'],
+  [/(確認|認証|登録).*(メール|コード)|(メール|コード).*(届|来|こない|来ない)/, '1. 迷惑メールのフォルダを見てください。 2. ログイン画面の「コードをもう一度送る」で送り直せます。 3. 届いたら「迷惑メールではない」にすると、次から届きやすくなります。それでも届かないときは、' + MAIL_GO],
+  [/パスワード/, 'パスワードを忘れたときは、1. ログイン画面でメールアドレスを入れて「続行」 2.「パスワードを忘れた場合」 3. 届いたメールのボタンから、新しいパスワードを決めてください。'],
+  [/ログイン.*(でき|出来|無理|入れ|エラー)|入れない|サインインでき/, '1. 下の「アカウント」 2.「プラン・アカウント」 3.「ログイン」から、メールアドレスとパスワード、または「Googleで続行」でログインできます。パスワードを忘れたときは「パスワードを忘れた場合」から決め直せます。それでもできないときは、' + MAIL_GO],
+  [/新規登録|会員登録|アカウント.*(作|登録)|ログイン(方法|の仕方|したい|って)/, '1. 下の「アカウント」 2.「プラン・アカウント」 3.「新規登録」 4. メールに届く6桁のコードを入力、で登録できます。登録は無料です。'],
+  [/ログアウト/, 'ログアウトは、「アカウント」→「プラン・アカウント」のいちばん下のボタンです。記録はこのスマホに残ります。'],
+  [/機種変更|引き継|新しい(スマホ|iPhone|端末)|別の(端末|スマホ|iPhone)|移行/, '1. 古いスマホでログインして「クラウドに保存する」をオン 2. 新しいスマホで同じアカウントにログイン、で続きから使えます（写真はクラウドに送らないので、移りません）。'],
+  [/バックアップ|保存.*(場所|どこ|され)|クラウド|データ.*(消え|なくな)/, '記録はこのスマホ（ブラウザ）の中に保存されています。ログインして「クラウドに保存する」をオンにすると、スマホを変えても続きから使えます。'],
+  [/回数|上限|何回/, 'AIの回数は1日あたり、顔・食事の写真の読み取り15回・AI相談20回・おすすめケアと肌の分析5回・献立とレシピ10回、全部で30回までです。化粧品の登録は別に1日30回までです。日本時間の0時にもとに戻ります（うまくいかなかったときは数えません）。'],
+  [/プレミアム.*(何|でき|違)|無料.*(何|でき|違|範囲)|有料/, 'プレミアムプランでは、カメラで化粧品を登録・食事の写真から栄養を計算・肌ケアと献立の提案（ケア管理）・詳しい分析・成分相性マップ・AI相談が使えて、広告が出ません。肌の記録・Myアイテム・成分辞典・食事・運動・睡眠の記録・このサポートは無料で使えます。'],
+  [/ホーム画面|アプリ(化|として|版|に|の(ダウンロード|インストール))|インストール|App ?Store|ダウンロード/i, 'iPhoneは、1. Safariでナカカラモを開く 2. 下の「共有」ボタン 3.「ホーム画面に追加」で、アプリのように使えます。App Storeのアプリは、今はありません。'],
+  [/表示.*(おかし|変|崩)|古い|更新され|反映され|バグ|動かな|固ま|真っ白|開かな|エラー/, '1. 画面のいちばん上で、下に引っぱって更新してください（新しい版があれば読み込み直します）。 2. 直らないときは、アプリを完全に閉じて開き直してください。それでも直らないときは、どの画面で何をしたかを書いて、' + MAIL_GO],
+  [/ダーク|暗い表示|黒い画面|夜モード/, 'ダークモードは、「アカウント」→「設定・プライバシー」の表示の設定で切り替えられます。'],
+  [/通知|お知らせ|リマインド/, '「アカウント」→「設定・プライバシー」の「お知らせ」で、記録のお知らせと、使用期限が近い化粧品のお知らせを受け取れます（ログインが必要です。iPhoneはホーム画面に追加したアプリで使えます）。'],
+  [/アイコン|プロフィール画像|プロフィール写真/, 'アカウントのアイコンを押すと、「ライブラリから選択」「写真を撮る」「絵文字で作る」「現在の写真を削除」が出ます。写真は、丸の中に合わせて「選択」を押すと変わります。'],
+  [/(塗り)?薬.*(登録|追加|入れ)/, '塗り薬は、「Myアイテム」→「塗り薬」のタブ →「塗り薬を追加」から登録できます。'],
+  [/(化粧品|商品|コスメ).*(登録|追加|入れ)|バーコード/, '化粧品は、「Myアイテム」→「化粧品を追加」から登録できます。商品名で探すか、プレミアムプランならカメラでパッケージ・バーコードから登録できます。'],
+  [/合わなかった|肌荒れ|かぶれ|かゆ|赤く/, '合わなかった化粧品は、Myアイテムの商品の画面の「肌に合わなかった」から記録できます。記録した商品と、入っていた成分は、ケア管理の提案で使わないようにします。かゆみや腫れが強いとき・続くときは、使うのをやめて皮膚科に相談してください。'],
+  [/(顔)?写真.*(撮|選|変)|顔写真/, '顔写真は、肌の記録の画面の「選ぶ」「撮る」「ガイド付きで撮る」から無料で入れられます。記録一覧で写真を押すと大きく見られます。'],
+  [/記録一覧|過去の記録|前の日|カレンダー/, '下の「記録」→「記録一覧」で、日ごとの3Dの顔・顔写真・使った物・睡眠・運動・食事・メモを見られます。左右の矢印かカレンダーで日を変えられます。'],
+  [/肌.*記録|記録(の仕方|の方法|する)|3D/, 'ホームの「今日の肌を記録」から記録できます。3Dの顔を押すと、ニキビの種類（白・黒・赤・黄ニキビなど）や乾燥・テカリを場所ごとに記録できます。'],
+  [/睡眠|運動|歩数|食事|カロリー|栄養/, '睡眠・運動・食事は、記録一覧の日付の画面か、ホームの「記録する」から記録できます。睡眠・運動は「昨日と同じ」を押すと、昨日と同じ内容がすぐ入ります。運動の記録がない日は、運動しなかったことになります。'],
+  [/ケア管理|朝のケア|夜のケア|手順|おすすめケア|提案/, 'ケア管理（プレミアムプラン）では、肌の記録・肌の悩み・天気・登録した化粧品と塗り薬から、朝と夜のスキンケアの順番を毎日組み立てます。今日の肌に合わない物は、理由と一緒にお休みにします。'],
+  [/成分|併用|組み合わせ/, '成分の名前（緑の下線）を押すと、説明が出ます。「成分辞典」で成分を調べられ、「成分の組み合わせ」で2つの成分を一緒に使ってよいかを確かめられます。'],
+  [/意見|要望|感想|改善/, 'ありがとうございます。お問い合わせのいちばん下の「ご意見・ご感想を送る」から送れます（返信はしていません）。'],
+  [/個人情報|プライバシー|安全|データ.*(送|共有|使)/, '記録はこのスマホの中に保存されます。クラウドに保存するのは、ログインして「クラウドに保存する」をオンにしたときだけで、写真は送りません。くわしくは「アカウント」→「設定・プライバシー」のプライバシーポリシーをご覧ください。'],
+  [/広告/, '広告は、プレミアムプランでは出ません。'],
+  [/運営|会社|連絡先|問い合わせ先|メールアドレス/, '運営はナカカラモ（個人で運営）です。お問い合わせ先は ' + 'nakakaramo@gmail.com' + ' です。'],
+];
+function supportFaq(text) { const t = String(text || '').normalize('NFKC'); if (t.length > 80) return null; const hit = SUPPORT_FAQ.find(([re]) => re.test(t)); return hit ? {answer:hit[1], handoff:!!hit[2]} : null; }
 let supportLog = []; // 会話はこの画面を開いている間だけ（どこにも保存しない）
 function supportMail(withLog) {
   const line = '――――――――――';
@@ -5370,7 +5424,7 @@ function openFeedback() {
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-fb-open]')) { e.preventDefault(); openFeedback(); } });
 function openSupport() {
   const ov = document.createElement('div'); ov.className = 'au-ov sp-ov';
-  const premium = isPremium();
+  void isPremium; // AIサポートは、プレミアムでなくても使える
   // 横から出るページ：うしろの画面はそのまま（固定しない）ので、戻ったときに画面がずれない
   // 開いたときに履歴を1つ足す：iPhoneの「左の端から右へなぞって戻る」は、この1つだけを戻す（お問い合わせを閉じるだけで、その前の画面までは戻らない）
   let histOn = false;
@@ -5381,15 +5435,7 @@ function openSupport() {
   const close = () => { if (ov._closing) return; ov._closing = true; ov.remove(); dropHist();
     const m = document.getElementById('main'); if (m) { m.classList.remove('pg-push', 'pg-pop', 'pg-in'); void m.offsetWidth; m.classList.add('pg-pop'); setTimeout(() => m.classList.remove('pg-pop'), 600); } };
   const head = `<div class="au-head"><button type="button" class="au-back sp-backbtn" data-sp="close" aria-label="戻る"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>お問い合わせ</h2><span></span></div>`;
-  if (!premium) {
-    ov.innerHTML = `<div class="au-page">${head}<div class="au-body">
-      <p class="sp-lead">ご質問・ご要望は、メールで受け付けています。</p>
-      <a class="au-go sp-mail" href="${esc(supportMail(false))}">${icon('chat')}メールで問い合わせる</a>
-      <button type="button" class="au-go sp-fb" data-fb-open>${icon('heart')}ご意見・ご感想を送る</button>
-      <p class="au-fine" style="text-align:left">送り先：${esc(LEGAL.email)}<br>返信まで数日かかることがあります。解約の方法・ログインの方法など、よくある内容はアプリ内の案内もご覧ください。</p>
-      <div class="sp-prem"><b>${PREMIUM_NAME}プランなら、サポートにすぐ質問できます</b><p class="small muted">使い方・解約・ログインなどの質問に、その場で答えます。</p><button type="button" class="btn btn-ghost btn-sm" data-sp="prem">${PREMIUM_NAME}プランを見る</button></div>
-    </div></div>`;
-  } else {
+  {
     ov.innerHTML = `<div class="au-page sp-page">${head}
       <div class="sp-log" id="sp-log" aria-live="polite"></div>
       <div class="sp-bar"><textarea class="au-in sp-in" id="sp-in" rows="1" maxlength="500" placeholder="質問を入力"></textarea><button type="button" class="sp-send" data-sp="send" aria-label="送る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button></div>
@@ -5440,6 +5486,8 @@ function openSupport() {
   const send = async (text) => {
     text = String(text || '').trim(); if (!text || busy) return;
     supportLog.push({role:'me', text:text.slice(0, 500)}); if (inp) { inp.value = ''; inp.style.height = ''; }
+    const faq = supportFaq(text); // よくある質問は、通信せずにすぐ答える
+    if (faq) { supportLog.push({role:'ai', text:faq.answer, handoff:faq.handoff}); paint(); return; }
     busy = true; paint();
     try {
       if (!acct.client) await initCloud();
@@ -5449,7 +5497,7 @@ function openSupport() {
       if (!data || data.error || !data.result) throw new Error((data && data.error) || '答えを受け取れませんでした');
       supportLog.push({role:'ai', text:data.result.answer, handoff:!!data.result.handoff});
     } catch (e) {
-      supportLog.push({role:'ai', text:(e && e.message === 'timeout' ? '時間がかかりすぎました。' : (e && e.message ? e.message + '。' : '')) + '少し時間をおいて、もう一度お試しください。急ぎの場合はメールでお問い合わせください。', handoff:true});
+      supportLog.push({role:'ai', text:'今はその質問にお答えできませんでした。' + (e && e.message === 'timeout' ? '通信に時間がかかっています。' : '') + '下のボタンから、メールでお問い合わせください。', handoff:true});
     }
     busy = false; paint();
   };
@@ -5975,7 +6023,7 @@ function openFilterSheet() {
       ${field('カテゴリ', filterSelect('flt-cat', CATEGORIES, ui.cat, 'すべてのカテゴリ'), {name:'c'})}
       ${field('成分', `<input id="flt-ingq" class="input" placeholder="例：ナイアシンアミド、セラミド" value="${esc(ui.ingQ || '')}" autocomplete="off">`, {name:'i', hint:'入れた成分が配合されている商品だけを表示します'})}
       ${field('ブランド', filterSelect('flt-brand', brands, ui.brand, 'すべてのブランド'), {name:'b'})}
-      ${field('使用目的', filterSelect('flt-purpose', PURPOSES, ui.purpose, 'すべての使用目的'), {name:'u'})}
+      ${field('効果', filterSelect('flt-purpose', PURPOSES, ui.purpose, 'すべての効果'), {name:'u'})}
       ${field('予算上限（円）', `<input id="flt-max" class="input" inputmode="numeric" placeholder="例：3000" value="${esc(ui.maxPrice)}">`, {name:'m'})}
     </div>`, footer:`<button type="button" class="btn btn-ghost" data-action="clear-filter">条件をクリア</button><button type="button" class="btn btn-primary" data-action="flt-done" id="flt-done">${searchCount()}件を見る</button>`});
 }
@@ -6648,7 +6696,7 @@ function openCatForm(id, prefill) {
     ${field('価格（円）', `<input class="input" id="f_price" name="price" inputmode="numeric" value="${esc(p.price || '')}" placeholder="例：2200">`, {name:'price', hint:'定価・参考価格など'})}
     ${field('内容量', `<input class="input" id="f_volume" name="volume" maxlength="20" value="${esc(p.volume)}" placeholder="例：150ml、50g、30枚">`, {name:'volume', hint:'「ml」「g」「枚」を付けると、1mlあたりの価格を計算します'})}
     ${field('JANコード（バーコードの数字）', `<input class="input" id="f_jan" name="jan" inputmode="numeric" maxlength="16" value="${esc(p.jan || '')}" placeholder="13桁または8桁">`, {name:'jan', cls:'span2', hint:'登録すると、次からバーコードの数字で呼び出せます'})}
-    ${field('使用目的', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
+    ${field('効果', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
     ${field('商品画像', `<input type="file" accept="image/*" id="f_image" name="image" class="input" style="padding:9px"><div id="img-prev">${image ? `<img class="img-prev" src="${image}" alt=""><button type="button" class="btn btn-ghost btn-sm" id="img-clear" style="margin-top:6px">画像を外す</button>` : ''}</div>`, {name:'image', hint:'画像はこのブラウザ内にのみ保存されます', cls:'span2'})}
     ${field('全成分', `<textarea class="textarea" id="f_ingredients" name="ingredients" maxlength="4000" placeholder="読点（、）で区切って入力">${esc(p.ingredients)}</textarea><button type="button" class="btn btn-ghost btn-sm" id="ing-clean" style="margin-top:8px">貼り付けた文字を整える</button>`, {name:'ingredients', cls:'span2', hint:'iPhone・Macの「テキスト認識表示」を使うと、パッケージの写真から成分表示をコピーして貼り付けられます。改行やカンマは「整える」で読点に変わります。読み取りミスがないか、必ず目で確認してください。'})}
     ${field('商品の特徴', `<textarea class="textarea" id="f_features" name="features" maxlength="1000">${esc(p.features)}</textarea>`, {name:'features', cls:'span2'})}
@@ -7301,15 +7349,17 @@ function openNgForm(id, date) {
   const cur = Object.assign({date:date || todayStr(), sym:[], note:'', when:'', level:'', where:[], newOther:false}, p.ng || {});
   const chips = (name, arr, sel, multi) => `<div class="ng-syms">${arr.map(x => `<label class="ng-sym"><input type="${multi ? 'checkbox' : 'radio'}" name="${name}" value="${x}" ${(multi ? sel.includes(x) : sel === x) ? 'checked' : ''}><span>${x}</span></label>`).join('')}</div>`;
   const isRx = p.category === '皮膚科の塗り薬';
-  openModal({title:'肌に合わなかった', body:`<p class="small" style="margin:0 0 12px"><b>${esc(p.name)}</b></p>
-    <div class="field"><label class="lbl" for="ng-date">気づいた日</label><input type="date" class="input" id="ng-date" value="${esc(cur.date)}" max="${todayStr()}"></div>
-    <div class="field"><span class="lbl">出た症状<span class="opt">いくつでも</span></span>${chips('ng-sym', NG_SYMS, cur.sym, true)}</div>
-    <div class="field"><span class="lbl">使い始めてから、出るまで</span>${chips('ng-when', NG_WHEN, cur.when)}</div>
-    <div class="field"><span class="lbl">出た場所<span class="opt">いくつでも</span></span>${chips('ng-where', NG_WHERE, cur.where, true)}</div>
-    <div class="field"><span class="lbl">強さ</span>${chips('ng-level', NG_LEVEL, cur.level)}</div>
-    <label class="check" style="margin-bottom:12px"><input type="checkbox" id="ng-other" ${cur.newOther ? 'checked' : ''}>同じころに、ほかの新しい物も使い始めた</label>
-    <div class="field"><label class="lbl" for="ng-note">メモ<span class="opt">任意</span></label><textarea class="input" id="ng-note" rows="3" maxlength="300" placeholder="例：つけた次の日、あごに赤いブツブツ">${esc(cur.note)}</textarea></div>
-    ${p.status === '使用中' ? `<label class="check"><input type="checkbox" id="ng-stop" ${isRx ? '' : 'checked'}>使うのをやめる（停止中にする）</label>` : ''}
+  const q = (n, t, sub, inner) => `<section class="ngf-q"><h3><i>${n}</i>${t}${sub ? `<small>${sub}</small>` : ''}</h3>${inner}</section>`;
+  openModal({title:'肌に合わなかった', body:`<div class="ngf"><div class="ngf-p"><span class="ngf-th">${myThumb(p)}</span><b>${esc(p.name)}</b></div>
+    ${q(1, '気づいた日', '', `<input type="date" class="input" id="ng-date" value="${esc(cur.date)}" max="${todayStr()}">`)}
+    ${q(2, '出た症状', 'いくつでも', chips('ng-sym', NG_SYMS, cur.sym, true))}
+    ${q(3, '使い始めてから、出るまで', '', chips('ng-when', NG_WHEN, cur.when))}
+    ${q(4, '出た場所', 'いくつでも', chips('ng-where', NG_WHERE, cur.where, true))}
+    ${q(5, '強さ', '', chips('ng-level', NG_LEVEL, cur.level))}
+    ${q(6, 'メモ', '任意', `<textarea class="input" id="ng-note" rows="3" maxlength="300" placeholder="例：つけた次の日、あごに赤いブツブツ">${esc(cur.note)}</textarea>`)}
+    <section class="ngf-q ngf-chk"><label class="check"><input type="checkbox" id="ng-other" ${cur.newOther ? 'checked' : ''}>同じころに、ほかの新しい物も使い始めた</label>
+    ${p.status === '使用中' ? `<label class="check"><input type="checkbox" id="ng-stop" ${isRx ? '' : 'checked'}>使うのをやめる（停止中にする）</label>` : ''}</section>
+    <p class="small muted ngf-foot">記録した商品と、それに入っていた成分は、ケア管理の提案で使わないようにします。</p></div>
     ${isRx ? '<p class="hint" style="margin-top:10px">処方された薬は、自分の判断でやめずに、まず処方した医師か薬剤師に相談してください。</p>' : ''}`,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="ng-save" data-id="${esc(p.id)}">保存する</button>`});
 }
@@ -7488,9 +7538,8 @@ function viewMyDetail(id) {
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
         <dl class="kv" style="margin-top:12px">
           ${!isRx && p.brand ? `<dt>ブランド</dt><dd>${esc(p.brand)}</dd>` : ''}
-          ${use ? `<dt>使用目的</dt><dd>${esc(use)}</dd>` : ''}
-          <dt>使用タイミング</dt><dd class="kv-e"><span>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}</span>${fEd('timing', '使用タイミング')}</dd>
-          <dt>使用頻度</dt><dd class="kv-e"><span>${esc(p.frequency)}</span>${fEd('frequency', '使用頻度')}</dd>
+          ${use ? `<dt>効果</dt><dd>${esc(use)}</dd>` : ''}
+          <dt>使用頻度</dt><dd class="kv-e"><span>${esc(useFreqText(p))}</span>${fEd('use', '使用頻度')}</dd>
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd class="kv-e"><span>${fmtDate(p.startDate)}</span>${fEd('startDate', '使用開始日')}</dd>
           <dt>${!isRx && ing && !fullIngsOfMy(p) ? '主な成分' : '成分'}</dt><dd>${(() => { // 成分は1回だけ。解説のある成分は緑の下線（押すと成分の説明へ）
             const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || e.includes(w)); }) : null; };
@@ -7522,7 +7571,7 @@ function viewMyDetail(id) {
         <div class="small muted" style="margin-top:10px">${esc(p.brand)}</div>
         <h1 class="detail-title">${esc(p.name)}</h1>
         <dl class="kv">
-          ${p.status !== STOCK ? `<dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}</dd><dt>使用頻度（予定）</dt><dd>${esc(p.frequency)}</dd>` : ''}
+          ${p.status !== STOCK ? `<dt>使用頻度</dt><dd>${esc(useFreqText(p))}</dd>` : ''}
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd>${fmtDate(p.startDate)}</dd>
           ${p.status === '使用終了' ? `<dt>使用終了日</dt><dd>${fmtDate(p.endDate)}</dd>` : ''}
           ${p.status !== STOCK ? `<dt>使用日数</dt><dd>${days}日${p.status === '使用終了' ? '' : '（今日まで）'}</dd>` : ''}
@@ -7550,26 +7599,36 @@ function viewMyDetail(id) {
 }
 
 /* Myアイテムの詳細：使用タイミング・頻度・使用開始日・メモを、それぞれ横の鉛筆から直す */
-const MY_FIELD_T = {timing:'使用タイミング', frequency:'使用頻度', startDate:'使用開始日', memo:'使用感・肌状態のメモ'};
+const MY_FIELD_T = {use:'使用頻度', timing:'使用タイミング', frequency:'使用頻度', startDate:'使用開始日', memo:'使用感・肌状態のメモ'};
+const useFreqText = p => p.timing === '必要なときだけ' ? '必要な時だけ' : `${p.timing}（${p.frequency}）`; // 例：朝・夜（毎日）
+const myTmPick = p => `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="mf-tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`;
 function openMyField(id, k) {
   const p = getMy(id); if (!p || !MY_FIELD_T[k]) return;
   const t = todayStr(), ky = `${esc(p.id)}|${k}`;
   let body = '';
-  if (k === 'timing') body = `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="mf-tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div><p class="hint" style="margin-top:8px">朝と夜の両方に使うときは、2つとも選んでください</p>`;
+  if (k === 'use') body = `<p class="mf-l">使う時間</p>${myTmPick(p)}<p class="mf-l">回数</p><div class="tm-pick mf-pick">${FREQS.map(v => `<label class="tm-opt"><input type="radio" name="mf-fq" value="${esc(v)}" ${p.frequency === v ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div>`;
+  else if (k === 'timing') body = `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="mf-tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div><p class="hint" style="margin-top:8px">朝と夜の両方に使うときは、2つとも選んでください</p>`;
   else if (k === 'frequency') body = `<div class="tm-pick mf-pick">${FREQS.map(v => `<label class="tm-opt"><input type="radio" name="mf-fq" value="${esc(v)}" ${p.frequency === v ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div>`;
   else if (k === 'startDate') body = `<input type="date" class="input" id="mf-date" value="${esc(p.startDate)}" max="${t}" aria-label="使用開始日"><p class="hint" style="margin-top:8px">ストックの場合は購入日</p>`;
   else body = `<textarea class="textarea" id="mf-memo" maxlength="500" rows="5" placeholder="例：少しピリピリした、香りが好き など" aria-label="使用感・肌状態のメモ">${esc(p.memo || '')}</textarea>`;
   body += '<p class="small" id="mf-err" role="alert" style="display:none;color:var(--danger);margin-top:8px"></p>';
   openModal({title:MY_FIELD_T[k], body, dismissable:true,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="my-field-save" data-id="${ky}">保存する</button>`});
-  if (k === 'timing') $$('#modal-root input[name="mf-tm"]').forEach(ip => ip.addEventListener('change', () => { // 「必要な時だけ」と朝・夜は一緒に選べない（フォームと同じ）
+  if (k === 'timing' || k === 'use') $$('#modal-root input[name="mf-tm"]').forEach(ip => ip.addEventListener('change', () => { // 「必要な時だけ」と朝・夜は一緒に選べない（フォームと同じ）
     if (!ip.checked) return; $$('#modal-root input[name="mf-tm"]').forEach(o => { if (o !== ip && ((ip.value === '必要なときだけ') !== (o.value === '必要なときだけ'))) o.checked = false; });
   }));
 }
 function saveMyField(id, k) {
   const p = getMy(id); if (!p || !MY_FIELD_T[k]) return closeModal();
   const err = m => { const e = document.getElementById('mf-err'); if (e) { e.textContent = m; e.style.display = ''; } };
-  if (k === 'timing') {
+  if (k === 'use') {
+    const tms = $$('#modal-root input[name="mf-tm"]:checked').map(x => x.value);
+    const v = tms.includes('必要なときだけ') ? '必要なときだけ' : tms.length === 2 ? '朝・夜' : tms[0] || '';
+    if (!v) return err('使う時間を選んでください。');
+    const f = ($('#modal-root input[name="mf-fq"]:checked') || {}).value;
+    if (!FREQS.includes(f)) return err('回数を選んでください。');
+    p.timing = v; p.frequency = f;
+  } else if (k === 'timing') {
     const tms = $$('#modal-root input[name="mf-tm"]:checked').map(x => x.value);
     const v = tms.includes('必要なときだけ') ? '必要なときだけ' : tms.length === 2 ? '朝・夜' : tms[0] || '';
     if (!v) return err('使用タイミングを選んでください。');
@@ -7589,7 +7648,7 @@ function saveMyField(id, k) {
 }
 
 /* Myアイテム 登録・編集フォーム */
-// 商品名から、ブランド名・使用目的・カテゴリを推測する（商品データベースにあればその情報を使う）
+// 商品名から、ブランド名・効果・カテゴリを推測する（商品データベースにあればその情報を使う）
 const PURPOSE_WORDS = [
   ['洗浄', /洗顔|クレンジング|フォーム|ソープ|メイク落とし|ウォッシュ|cleans/i],
   ['保湿', /保湿|ヒアルロン|セラミド|モイスト|うるおい|潤い|化粧水|乳液|クリーム|ローション|トナー|hydra|moist/i],
@@ -7615,7 +7674,7 @@ function guessFromName(name) {
   const g = guessCat(n);
   return {brand:brand || brandFromName(n, true), purposes, category:g === 'その他' ? '' : g};
 }
-// 商品を選んだら、登録画面は出さずにそのままMyアイテムに入れる（使用開始日＝今日、朝・夜／毎日、使用目的・ブランドは自動）
+// 商品を選んだら、登録画面は出さずにそのままMyアイテムに入れる（使用開始日＝今日、朝・夜／毎日、効果・ブランドは自動）
 function quickAddMy(catId) {
   const c = getCat(catId); if (!c) return;
   if (c.category === '皮膚科の塗り薬' && RX_DRUGS.some(d => d[1] === c.name)) return rxPick(c.name);
@@ -7642,7 +7701,7 @@ function openMyForm(id, fromCatId) {
     ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}" autocomplete="off"><div class="hint name-auto" id="name-auto"></div>`, {name:'name', required:true, cls:'span2'})}
     ${field('ブランド名', `<input class="input" id="f_brand" name="brand" maxlength="40" list="brand-list2" value="${esc(p.brand)}"><datalist id="brand-list2">${BRAND_SUGGEST.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`, {name:'brand', required:true})}
     ${field('カテゴリ', selectHtml('category', CATEGORIES, p.category), {name:'category', required:true})}
-    ${field('使用目的', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
+    ${field('効果', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
     <div class="span2 form-grid two" id="use-wrap" style="gap:16px">
       ${field('使用タイミング', `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`, {name:'timing', required:true, cls:'span2', hint:'朝と夜の両方に使うときは、2つとも選んでください'})}
       ${field('使用頻度（予定）', selectHtml('frequency', FREQS, p.frequency), {name:'frequency', required:true})}
@@ -7668,7 +7727,7 @@ function openMyForm(id, fromCatId) {
     $$('input[name="purposes"]', form).forEach(i => i.checked = c.purposes.includes(i.value));
     if (form.elements.price && c.price && !form.elements.price.value) form.elements.price.value = c.price;
   };
-  // 商品名を入れると、ブランド名と使用目的に自動で印をつける（自分で直した項目は変えない）
+  // 商品名を入れると、ブランド名と効果に自動で印をつける（自分で直した項目は変えない）
   let brandTouched = !!p.brand, purTouched = !!(ex && p.purposes.length), catTouched = !!ex || !!src; const autoPur = new Set();
   form.elements.brand.addEventListener('input', () => { brandTouched = !!form.elements.brand.value.trim(); });
   $$('input[name="purposes"]', form).forEach(i => i.addEventListener('change', () => { purTouched = true; }));
@@ -7687,7 +7746,7 @@ function openMyForm(id, fromCatId) {
         else if (!want && i.checked && autoPur.has(i.value)) { i.checked = false; autoPur.delete(i.value); }
       });
     }
-    const h = $('#name-auto', form); if (h) h.textContent = did || autoPur.size || (g.brand && !brandTouched) ? '商品名から、ブランド名・カテゴリ・使用目的を自動で入れました。違うところは直してください。' : '';
+    const h = $('#name-auto', form); if (h) h.textContent = did || autoPur.size || (g.brand && !brandTouched) ? '商品名から、ブランド名・カテゴリ・効果を自動で入れました。違うところは直してください。' : '';
   };
   form.elements.name.addEventListener('input', () => { clearTimeout(gTimer); gTimer = setTimeout(applyGuess, 350); });
   form.elements.name.addEventListener('change', applyGuess);
@@ -9449,6 +9508,10 @@ const TERM_INFO = {
   '炎症': ['炎症', '肌が刺激やニキビ菌などに反応して、赤み・はれ・熱・痛みが出ている状態です。', ['グリチルリチン酸2K', 'アラントイン', 'CICA'], '炎症があるときは、角質ケアやレチノールなど刺激の強いケアを休みます。'],
   '鎮静': ['鎮静', 'ほてりや赤みなど、高ぶった肌を落ち着かせることです。', ['CICA', 'グリチルリチン酸2K', 'アラントイン'], ''],
   'くすみ': ['くすみ', '肌が暗く、つやがなく見える状態です。古い角質・乾燥・血行不良・日焼けなどが原因です。', ['ビタミンC誘導体', 'ナイアシンアミド', 'AHA'], ''],
+  'シミ': ['シミ', '紫外線などでメラニンがたまってできる、茶色い色むらです。', ['トラネキサム酸', 'ビタミンC誘導体', 'ナイアシンアミド', 'アルブチン'], ''],
+  'しわ': ['しわ', '乾燥や紫外線・年齢で、肌に線ができることです。', ['レチノール', 'ナイアシンアミド', 'ビタミンC誘導体'], ''],
+  'たるみ': ['たるみ', '肌のハリが弱くなって、下がって見えることです。', ['レチノール', 'ビタミンC誘導体', 'ナイアシンアミド'], ''],
+  '毛穴': ['毛穴', '毛穴の開き・黒ずみ・つまりのことです。', ['ナイアシンアミド', 'サリチル酸', 'ビタミンC誘導体'], ''],
   '敏感肌': ['敏感肌', 'ふつうの人は平気な化粧品や環境の変化で、ヒリヒリ・赤み・かゆみが出やすい肌です。', ['セラミド', 'アラントイン'], '新しい化粧品は、腕の内側などで試してから顔に使うと安心です（パッチテスト）。'],
   'パッチテスト': ['パッチテスト', '新しい化粧品を、腕の内側など目立たないところに少し塗って、1〜2日ようすを見ることです。赤み・かゆみが出たら顔には使いません。', [], ''],
   'ノンコメドジェニック': ['ノンコメドジェニック', '「ニキビのもと（コメド）ができにくいか」をテストした化粧品という意味です。', [], '「ニキビができない」という意味ではありません。'],
@@ -9465,6 +9528,7 @@ const TERM_RANK = {
   'ダブル洗顔': {label:'W洗顔不要のクレンジング', q:['W洗顔不要 クレンジング', 'ダブル洗顔不要 クレンジング', 'w洗顔不要 クレンジングバーム'], re:/(W|ダブル|w)\s*洗顔\s*不要/, only:/クレンジング|メイク落とし/, type:true},
 };
 const TERM_KEYS = Object.keys(TERM_INFO);
+const TERM_RECO_ONLY = new Set(['シミ', 'くすみ', 'しわ', 'たるみ', '毛穴']); // 肌の悩みの言葉：押すと「おすすめ」の成分だけを出す
 const ING_LINK_SKIP = /^(保湿|保湿成分|日焼け止め|水|オイル|洗顔|クリーム|乳液|化粧水|美容液|成分|エキス)$/;
 const TERM_NOLINK = ['皮脂']; // よく知られた言葉は、緑の下線（説明へのリンク）にしない
 let ING_LINK_RE = null;
@@ -9479,6 +9543,8 @@ function ingLinkRe() {
   return ING_LINK_RE;
 }
 // html：エスケープ済みの文。ボタンなどのタグの中は変えない。seen：同じ手順の中で、もう下線にした成分
+const LETS_RE = /(塗り直し|塗り|避け|替え|続け|使い分け|使い|選び|休ませ|休み|控え|落とし|洗い|流し|すすぎ|重ね|なじませ|広げ|のばし|押さえ|包み|守り|合わせ|あけ|分け|足し|減らし|やめ|ふき|拭き|保ち|補い|とり|取り|飲み|置き|抑え|始め|試し|見直し|付け|つけ|整え|落ち着かせ|入れ|寝|確かめ|止め|冷やし|泡立て|あて|食べ|待ち|戻し|残し|し)ます(?=[。！）」（]|$)/g;
+const letsTone = t => String(t || '').replace(LETS_RE, '$1ましょう');
 function ingLinkHtml(html, seen) {
   seen = seen || new Set();
   return String(html).split(/(<button[^>]*>[\s\S]*?<\/button>|<[^>]+>)/).map(part => part.startsWith('<') ? part : part.replace(ingLinkRe(), (w) => {
@@ -10022,6 +10088,18 @@ function rtPlan(slot, solo) {
   if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
   const lead = uniq([w ? `今日の天気　湿度${hum == null ? '－' : hum + '%'}・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${uv == null ? '－' : uv}` : '']);
   // あなたの記録で合っていた成分を先に、合わなかった成分は「控えたい」へ（記録から学んだ結果を毎日の提案に反映する）
+  { // 「肌に合わなかった」と記録した商品と、同じ有効成分が入った商品は使わない（理由を出す）
+    const ngP = state.myProducts.filter(p => !p.demo && p.ng && p.category !== '皮膚科の塗り薬');
+    const ngIngs = new Map(); ngP.forEach(p => { try { masterIngsOf(ingsOfMy(p) || ingFromName(p.name) || '').filter(e => !ING_BASE_RE.test(chipText(e.ja))).forEach(e => { if (!ngIngs.has(e.k)) ngIngs.set(e.k, {e, n:0}); ngIngs.get(e.k).n++; }); } catch (e) { /* 何もしない */ } });
+    // 合わなかった商品が1つだけのときは、強い成分（刺激の出やすい成分）だけを「あやしい成分」にする。2つ以上に共通して入っている成分は、すべて
+    const sus = [...ngIngs.values()].filter(o => o.n >= 2 || (o.e.act || 0) >= 1 || o.e.irr === '高' || o.e.irr === '中').map(o => o.e);
+    steps.forEach(st => { if (st.fixed || !st.prods.length) return; const off = [];
+      st.prods.forEach(x => { if (x.p.ng) { off.push(x); st.today.push(T(`今日は「${prodIngLabel(x.p)}」はお休みします（肌に合わなかったと記録しているため）`, '肌')); RESTED.set(x.p.id, '肌に合わなかったと記録しているため'); return; }
+        let ms = []; try { ms = masterIngsOf(ingsOfMy(x.p) || ingFromName(x.p.name) || ''); } catch (e) { ms = []; } const hit = ms.find(e => sus.some(z => z.k === e.k));
+        if (hit) { off.push(x); st.today.push(T(`今日は「${prodIngLabel(x.p)}」はお休みします（肌に合わなかった物と同じ「${chipText(hit.ja)}」が入っているため）`, '肌')); RESTED.set(x.p.id, `肌に合わなかった物と同じ「${chipText(hit.ja)}」が入っているため`); } });
+      if (off.length) st.prods = st.prods.filter(x => !off.includes(x));
+      // おすすめの成分からも外して、控えたいに入れる
+      if (st.good) { const bad = st.good.filter(g => sus.some(z => normIng(chipText(z.ja)) === normIng(chipText(g)))); if (bad.length) { st.good = st.good.filter(g => !bad.includes(g)); bad.forEach(g => { if (!st.avoid.some(a => chipText(a) === chipText(g))) st.avoid.push(`${chipText(g)}（肌に合わなかった物に入っていた）`); }); } } }); }
   { const PL = personalLearn(); if (PL.good.size || PL.bad.size) steps.forEach(st => { if (st.fixed || !st.good) return;
     const keep = [], drop = []; st.good.forEach(g => (plOf(g, PL.bad) ? drop : keep).push(g));
     PL.good.forEach(row => { if ((row.steps || []).includes(st.k) && !keep.some(g => plOf(g, new Map([[normIng(row.name), row]])))) keep.unshift(row.name); });
@@ -10096,8 +10174,8 @@ function rtPaneHtml(slot) {
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
-      <p class="cm-how no-ph">${ingLinkHtml(esc(s.how), s._lk = new Set())}</p>
-      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(x.t, s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
+      <p class="cm-how no-ph">${ingLinkHtml(esc(letsTone(s.how)), s._lk = new Set())}</p>
+      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(letsTone(x.t), s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
       ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${aoChips(s)}${chips(s.avoid.filter(v => !(s.avoidOwn || []).some(o => prodIngLabel(o.p) === chipText(v))))}</div></div>` : ''}
     </div></li>`;
@@ -10121,7 +10199,7 @@ function rtPaneHtml(slot) {
   void cut; // 時短：説明の文は出さない（切り替えのボタンだけで伝える）
   h += `<ol class="cm-list">${P.steps.map(stepH).join('')}</ol>`;
   if (P.steps.length && nDone === P.steps.length) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
-  if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${ingLinkHtml(esc(t))}</p>`).join('')}</div>`;
+  if (P.tips.length) h += `<div class="card cm-tips">${P.tips.map(t => `<p class="no-ph">${ingLinkHtml(esc(letsTone(t)))}</p>`).join('')}</div>`;
   if (!P.hasProd) h += `<div class="card cm-hint"><p class="small no-ph">使っている化粧品を「Myアイテム」に登録すると、それぞれの順番に商品名が入ります。</p><a class="link small" href="#/my">Myアイテムを開く →</a></div>`;
   h += acneTypeDrugsHtml();
   h += `<p class="small muted rt-foot no-ph">肌質・最近の肌の記録・今日の天気・使っている化粧品から組み立てた目安です。皮膚科の塗り薬は、医師の指示を優先してください。</p>`;
@@ -10207,20 +10285,23 @@ function viewRoutine() {
   return tabs + sw + `<div class="home-pane">${rtPaneHtml(slot)}</div>`; // 通常⇄時短は朝・夜で共通なので、横にスワイプしても動かさない（中身の外に置く）
 }
 // 成分辞典：肌悩みで絞り込み・成分マスターの詳細
+// 成分の使用頻度の目安（強い成分は少ない回数から）
+function ingFreqText(e) {
+  const g = e.grp || '', tm = e.time === '朝' ? '朝' : e.time === '夜' ? '夜' : '朝・夜';
+  if (/処方/.test(e.reg)) return '医師に言われた回数で使います';
+  if (/aha|bha|pha|enzyme|scrub|peel/.test(g)) return `週1〜2回（${tm}）から。肌が慣れたら、製品の表示の回数まで`;
+  if (/retino/.test(g) || (e.act || 0) >= 2) return `週2〜3回（${tm}）から。慣れたら毎日`;
+  return `毎日（${tm}）`;
+}
 function ingMasterDetail(e) {
   const inMy = state.myProducts.filter(p => p.status !== '使用終了' && masterIngsOf(ingsOfMy(p)).some(x => x.k === e.k));
   const pairs = COMBO_DB.filter(r => r.a.some(g => e.tags.includes(g)) || r.b.some(g => e.tags.includes(g))).sort((x, y) => y.lv - x.lv);
   const row = (t, v) => `<div class="rt-dl"><b>${t}</b><div>${v}</div></div>`;
   return `<a class="back" href="#/ingredients">← 成分辞典</a>` + pageHead(e.ja, e.en) + `<div class="card">
-    <div class="im-top">${evBadge(e.ev)}<span class="chip">${esc(e.reg)}</span><span class="chip ${e.irr === '高' ? 'red' : e.irr === '中' ? 'warn' : 'green'}">刺激：${esc(e.irr)}</span></div>
-    ${row('対応する肌悩み', `<div class="chips">${csChips(e.cs)}</div>`)}
-    ${row('はたらき', esc(e.mech) + (e.eff && e.eff.length > 14 && !normIng(e.mech).includes(normIng(e.eff)) ? '<br>' + esc(e.eff) : ''))}
-    ${e.conc ? row('濃度', esc(/処方/.test(e.reg) ? e.conc.replace(/（[^）]*）/g, '') : e.conc)) : ''}
-    ${row('注意', esc(e.side) + (e.combo && !/一緒に使えます/.test(e.combo) ? '<br>' + esc(e.combo) : ''))}
-    ${row('朝・夜', `${esc(e.time)}：${esc(e.timeT)}`)}
-    ${(() => { const al = e.inci.filter(a => fnorm(a) !== fnorm(chipText(e.ja)) && fnorm(a) !== fnorm(e.en || '') && !RX_DRUGS.some(d => fnorm(d[1]).includes(fnorm(a)))); return al.length ? row('別名', esc(al.join('、'))) : ''; })()}
-    ${row('参考文献・情報源', e.refs.map(r => CARE_REFS[r] ? `<a href="${CARE_REFS[r].u}" target="_blank" rel="noopener">${esc(CARE_REFS[r].t)}</a>` : '').join('<br>'))}
-    <p class="small muted pg-foot">メーカーの宣伝表現ではなく、公的な基準・ガイドライン・研究にもとづく一般的な情報です。効果を保証するものではありません。${fmtDate(CARE_DB_UPDATED)}更新</p></div>
+    ${row('効果', esc(e.eff || '－'))}
+    ${row('はたらき', esc(e.mech))}
+    ${row('注意と刺激', `<b class="im-irr ${e.irr === '高' ? 'red' : e.irr === '中' ? 'warn' : 'green'}">刺激：${esc(e.irr)}</b><br>${esc(e.side)}${e.combo && !/一緒に使えます/.test(e.combo) ? '<br>' + esc(e.combo) : ''}${/処方/.test(e.reg) ? '<br>皮膚科で処方される成分です。' : ''}`)}
+    ${row('使用頻度', esc(ingFreqText(e)))}</div>
     ${comboSplitHtml(pairs)}
     <div class="card"><div class="card-h"><h2>この成分を含むMyアイテム</h2></div>${inMy.length ? inMy.map(p => `<p><a href="#/my/${encodeURIComponent(p.id)}">${esc(p.name)}</a></p>`).join('') : '<p class="small muted">ありません（全成分を登録した商品だけを調べています）</p>'}</div>`;
 }
@@ -11497,24 +11578,27 @@ function openLifeForm(id, part, forDate) {
     </div>
     <div class="field-error" data-err="food_${m.k}"></div></details>`;
   openModal({title: part ? `${LIFE_PARTS[part].t}の記録` : (ex ? '食事・運動・睡眠を編集' : '食事・運動・睡眠の記録'), body:`<form id="life-form" novalidate><div class="form-grid">
-    <p class="small muted">分かる項目だけで大丈夫です。未入力の項目は「記録なし」として扱います。</p>
+    ${part === 'sleep' || part === 'exercise' ? '' : '<p class="small muted">分かる項目だけで大丈夫です。未入力の項目は「記録なし」として扱います。</p>'}
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint:'睡眠は「この日の朝に起きた睡眠」を記録します'})}
-    <div class="form-grid" data-part="sleep" ${show('sleep')}><div class="section-title">SLEEP 睡眠</div>
-    <p class="hint" style="margin-top:-6px">今朝起きたときの睡眠を記録します。</p>
+    <div class="form-grid" data-part="sleep" ${show('sleep')}>${part ? '' : '<div class="section-title">SLEEP 睡眠</div>'}
     ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="sleep">${icon('moon')}ヘルスケアから読み込む</button>` : ''}
-    <div class="form-grid" style="gap:12px">
-      ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
-      ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
+    <div class="lf-rows">
+      <label class="lf-row"><span>就寝時間</span><input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}"></label>
+      <label class="lf-row"><span>起床時間</span><input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}"></label>
+      <div class="lf-row"><span>睡眠時間</span><b id="sleep-calc">－</b></div>
     </div>
-    <p class="small" id="sleep-calc" style="margin-top:-6px"></p>${(p => p && part ? `<button type="button" class="btn btn-soft btn-sm" data-lsame="${esc(d.date || t)}|sleep">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'sleep'))}</div>
-    <div class="form-grid" data-part="exercise" ${show('exercise')}><div class="section-title">EXERCISE 運動</div>
+    <div class="field-error" data-err="bed"></div><div class="field-error" data-err="wake"></div>
+    ${(p => p && part ? `<button type="button" class="btn btn-soft lf-same" data-lsame="${esc(d.date || t)}|sleep">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'sleep'))}</div>
+    <div class="form-grid" data-part="exercise" ${show('exercise')}>${part ? '' : '<div class="section-title">EXERCISE 運動</div>'}
     ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="exercise">${icon('chart')}ヘルスケアから読み込む</button>` : ''}
-    ${(p => p && part ? `<button type="button" class="btn btn-soft btn-sm" data-lsame="${esc(d.date || t)}|exercise">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'exercise'))}
-    <div class="field" data-field="exercise"><span class="lbl">運動の種類と時間<span class="opt">任意</span></span>
-      <div id="ex-list"></div>
-      <div class="food-pick" style="margin-top:6px"><select class="select" id="ex-type" aria-label="運動の種類">${EX_TYPES.map(x => `<option>${esc(x)}</option>`).join('')}</select><input class="input" id="ex-min" inputmode="numeric" placeholder="分" aria-label="運動の時間（分）"><button type="button" class="btn btn-soft btn-sm" id="ex-add">追加</button></div>
-      <div class="field-error" data-err="exercise"></div></div>
-    ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
+    <div class="lf-rows" data-field="exercise">
+      <label class="lf-row"><span>運動種目</span><select class="select" id="ex-type" aria-label="運動種目">${EX_TYPES.map(x => `<option>${esc(x)}</option>`).join('')}</select></label>
+      <div class="lf-row"><span>時間</span><span class="lf-in"><input class="input" id="ex-min" inputmode="numeric" placeholder="30" aria-label="運動の時間（分）"><em>分</em><button type="button" class="btn btn-soft btn-sm" id="ex-add">追加</button></span></div>
+      <div class="lf-row lf-list"><div id="ex-list"></div></div>
+      <label class="lf-row"><span>歩数</span><span class="lf-in"><input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="6500" aria-label="歩数"><em>歩</em></span></label>
+    </div>
+    <div class="field-error" data-err="exercise"></div><div class="field-error" data-err="steps"></div>
+    ${(p => p && part ? `<button type="button" class="btn btn-soft lf-same" data-lsame="${esc(d.date || t)}|exercise">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'exercise'))}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
@@ -11713,7 +11797,7 @@ function openLifeForm(id, part, forDate) {
       el.value = ''; return;
     }
   });
-  const calc = () => { const m = sleepMin({bed:form.elements.bed.value, wake:form.elements.wake.value}); $('#sleep-calc').textContent = m == null ? '' : `睡眠時間：${fmtHM(m)}`; };
+  const calc = () => { const m = sleepMin({bed:form.elements.bed.value, wake:form.elements.wake.value}); $('#sleep-calc').textContent = m == null ? '－' : fmtDur(m); };
   // ヘルスケア（アプリ版）から睡眠・運動・歩数を入れる。空いている欄だけ（ボタンを押したときは上書き）
   const applyHealth = async (what, force) => {
     const h = await healthDay(form.elements.date.value || t); if (!h) return;
@@ -12327,7 +12411,7 @@ function careTodayData() {
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
-  const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(x.title), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(x.why), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
+  const itemH = x => `<div class="ct2-i">${x.cat === '肌' ? `<span class="ct2-w">${x.when === '朝' ? icon('sun') : icon('moon')}${x.when}</span>` : ''}<b>${ingLinkHtml(esc(letsTone(x.title)), x._lk = new Set())}</b><p class="no-ph">${ingLinkHtml(esc(letsTone(x.why)), x._lk)}</p>${x.src.includes('天気') ? '<div class="ct2-src"><span>天気から</span></div>' : ''}</div>`;
   const CATS = [['肌', 'drop', '肌のケア', 'スキンケア'], ['運動', 'run', '運動', '運動'], ['睡眠', 'moon', '睡眠', '睡眠'], ['食事', 'meal', '食事', '食事']];
   let AP = {ai:null, pts:[]}; try { AP = advicePts(); } catch (e) { /* 何もしない */ }
   const ptOf = a => AP.pts.find(x => x && x.area === a) || AP.pts[ADVICE_AREAS.indexOf(a)];
@@ -13478,6 +13562,7 @@ function openTermSheet(k) {
   if (TERM_RANK[k]) { openIngSheet(k); return; } // 成分の説明と同じく、説明＋人気ランキングを出す
   setTimeout(() => { MODAL_REOPEN = () => openTermSheet(k); }, 0);
   const ings = t[2].filter(x => ingEntryOf(x) || ING_LINK_EXTRA[x]);
+  if (TERM_RECO_ONLY.has(k)) { openModal({title:esc(t[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>おすすめ</b><div class="term-ings">${t[2].map(x => ings.includes(x) ? `<button type="button" class="cm-c good" data-ingsheet="${esc(ING_LINK_EXTRA[x] || x)}">${esc(x)}<i>›</i></button>` : `<span class="cm-c term-plain">${esc(x)}</span>`).join('')}</div>${ings.length ? '<p class="small muted" style="margin:6px 0 0">成分を押すと、説明が見られます</p>' : ''}</div></div></div>`}); return; }
   openModal({title:esc(t[0]), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl"><div class="ing-b"><b>どういう意味？</b><p>${esc(t[1])}</p></div>
     ${t[2].length ? `<div class="ing-b"><b>おすすめ</b><div class="term-ings">${t[2].map(x => ings.includes(x) ? `<button type="button" class="cm-c good" data-ingsheet="${esc(ING_LINK_EXTRA[x] || x)}">${esc(x)}<i>›</i></button>` : `<span class="cm-c term-plain">${esc(x)}</span>`).join('')}</div>${ings.length ? '<p class="small muted" style="margin:6px 0 0">成分を押すと、説明が見られます</p>' : ''}</div>` : ''}
     ${t[3] ? `<div class="ing-b warn"><b>ポイント</b><p>${esc(t[3])}</p></div>` : ''}</div></div>`});
