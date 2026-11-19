@@ -1584,6 +1584,8 @@ details.fold[open] summary{margin-bottom:10px}
 .modal.tall{height:calc(100vh - max(var(--sat),12px) - 8px);height:calc(100dvh - max(var(--sat),12px) - 8px);max-height:none} /* 検索のシートは高さを決めておく：文字を入れても結果が出ても、シートの上の位置が動かない */
 .modal-backdrop.kb .modal.tall{height:calc(var(--kb-h,100vh) - max(var(--sat),12px) - 8px)!important}
 @media(min-width:640px){.modal.tall{height:min(760px,88vh)}}
+.mpt-hint{margin:0 0 8px;min-height:40px;font-size:14px}
+.ai-alts{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px}.ai-alt{border:1px solid var(--line2);background:var(--surface);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;color:var(--green-d);cursor:pointer}
 .find-sec{margin:10px 0 6px;font-size:12.5px;font-weight:700;color:var(--muted)}.find-sec:first-child{margin-top:0}
 body:has(#modal-root .modal-backdrop.kb)::before{transform:translate3d(0,var(--kb-top,0px),0)!important}
 @keyframes bgIn{from{background-color:transparent}}
@@ -2928,7 +2930,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119234632'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120001110'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3757,6 +3759,10 @@ async function officialFill(items) {
   try { got = ((await callVision('official', null, {items:need.map(x => ({name:x.name, maker:x.maker, series:x.series, size:x.size, amount:x.amount}))})).result || {}).items || []; } catch (e) { /* 見つからなければ目安のまま */ }
   return need.map((x, i) => got[i] && (got[i].basis === '公式' || got[i].basis === '販売') ? Object.assign({}, got[i], {veg:x.veg || 0}) : Object.assign({}, x, {needOfficial:false}));
 }
+// 料理の写真：直した料理名を覚える（読み取った名前 → 直した名前）。次の読み取りで、AIへの手がかりにし、同じ名前ならそのまま直す
+function foodFixes() { return Array.isArray(state.settings.foodFixes) ? state.settings.foodFixes : []; }
+function foodFixAdd(from, to) { from = String(from || '').slice(0, 30); to = String(to || '').slice(0, 30); if (!from || !to || from === to) return; const L = foodFixes().filter(f => f.from !== from && f.from !== to); L.push({from, to}); state.settings.foodFixes = L.slice(-30); save(); }
+function foodFixApply(items) { const F = foodFixes(); return items.map(x => { const f = F.find(y => y.from === x.name); if (!f || x.kind === 'product') return x; const a = (x.alts || []).find(y => y.name === f.to); if (!a) return x; const old = {name:x.name, kcal:x.kcal, p:x.p, f:x.f, c:x.c, salt:x.salt, veg:x.veg}; return Object.assign({}, x, {name:a.name, kcal:a.kcal, p:a.p, f:a.f, c:a.c, salt:a.salt, veg:a.veg, fixedFrom:x.name, alts:[old].concat((x.alts || []).filter(y => y !== a))}); }); }
 function aiFoodToRec(x, meal) {
   // 数字を使えるのは、パッケージの表示を読めたもの・メーカー公式で確認できたものだけ
   if (!['表示', '公式', '販売', '推定'].includes(x.basis) || x.kcal == null) return null;
@@ -3860,6 +3866,7 @@ function normalize(d) {
   out.settings.surveyDone = !!ds.surveyDone;
   out.settings.concernKeys = strArr(ds.concernKeys).filter(k => CONCERN_KEYS.includes(k)); /* CONCERN_MASTER はあとで作られるので、起動時に読めるキーの一覧を使う */ // 肌悩み（14の中から）
   out.settings.diag = ds.diag && typeof ds.diag === 'object' && ds.diag.a ? {a:ds.diag.a, r:ds.diag.r || null} : null; // 肌質診断の答えと結果
+  out.settings.foodFixes = (Array.isArray(ds.foodFixes) ? ds.foodFixes : []).filter(f => f && f.from && f.to).map(f => ({from:String(f.from).slice(0, 30), to:String(f.to).slice(0, 30)})).slice(-30); // 写真の読み取りで直した料理名（次から優先する）
   { const r0 = ds.routine && typeof ds.routine === 'object' ? ds.routine : {}; out.settings.routine = {mode:['normal', 'quick', 'beginner'].includes(r0.mode) ? r0.mode : 'normal', order:{am:strArr(r0.order && r0.order.am), pm:strArr(r0.order && r0.order.pm)}}; } // 朝・夜のケアの設定
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
   out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
@@ -9419,7 +9426,7 @@ function rtSettings() { const st = state.settings; st.routine = st.routine && ty
 function rtLog(date) { state.routineLogs = state.routineLogs || {}; return state.routineLogs[date || todayStr()] = state.routineLogs[date || todayStr()] || {am:{}, pm:{}}; }
 const careNeedsDiag = () => !diagNow();
 // 今日がA日かB日か（交互に使う美容液）：日付で決める（毎日同じ順番でくり返す）
-const altDay = () => (Math.floor(Date.parse(todayStr() + 'T00:00:00Z') / 864e5) % 2 === 0 ? 'A' : 'B');
+function altDay() { return Math.floor(Date.parse(todayStr() + 'T00:00:00Z') / 864e5) % 2 === 0 ? 'A' : 'B'; } // 交互に使う日（A日・B日）。確認のときに入れかえられるように function にする
 
 function viewCare(tab) {
   // スキンケア設計の画面はなくした：肌質診断の結果・洗い方ガイドだけを1枚で出し、ほかはケア管理へ
@@ -10203,8 +10210,6 @@ function rtPlan(slot, solo) {
       if (off.length) st.prods = st.prods.filter(x => !off.includes(x)); }); }
   if (preg) steps.forEach(st => { if (st.fixed || !st.prods.length) return; const off = st.prods.filter(x => !x.rx && PREG_ING_RE.test(`${ingsOfMy(x.p) || ''} ${x.p.name}`)); if (!off.length) return;
     st.prods = st.prods.filter(x => !off.includes(x)); off.forEach(x => { const w = (`${ingsOfMy(x.p) || ''} ${x.p.name}`.match(/レチノール|レチナール|レチノイン酸|ハイドロキノン|トレチノイン|バクチオール/) || ['レチノール'])[0], why = `${preg === 'preg' ? '妊娠中' : '授乳中'}は控えるのが一般的な成分（${w}）が入っているため`; st.today.push(T(`今日は「${prodIngLabel(x.p)}」はお休みします（${why}）`, '肌')); RESTED.set(x.p.id, why); }); });
-  // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える
-  steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   const tips = [];
   if (acneTip) tips.push(acneTip);
   if (acneRxOff.length) { tips.push(`ニキビの塗り薬（${[...new Set(acneRxOff.map(r => rxIngLabel(r.x.p)))].join('、')}）は、今はニキビの悩み・記録がないので、手順に入れていません。ニキビがおさまったあとも予防で続けるよう医師に言われているときは、夜の保湿のあとに続けます。`); acneRxOff.forEach(r => RESTED.set(r.x.p.id, '今はニキビの悩み・記録がないため（医師に続けるよう言われているときは続けます）')); }
@@ -10254,6 +10259,11 @@ function rtPlan(slot, solo) {
     let done = owns; const ord = ['serum', 'toner', 'wash'], rank = st => { const i = ord.indexOf(st.k); return i < 0 ? 9 : i; };
     steps.slice().sort((a, b) => rank(a) - rank(b)).forEach(st => { if (st.fixed || !st.good) return; st.good = st.good.filter(g => { if (!EX.test(chipText(g))) return true; if (done) return false; done = true; return true; }); }); }
   if (pregRx.length && slot === 'pm') tips.unshift(`「${[...new Set(pregRx.map(r => rxIngLabel(r.x.p)))].join('、')}」の塗り薬は、妊娠中は使えない薬なので手順に入れていません。使う前に、妊娠中であることを医師に伝えて相談しましょう。`);
+  // 手順に入っていない物（交互に使う日でお休みの物など）でも、肌に合わなかった物・同じ成分が入った物は、その理由を残す
+  { const ngP = state.myProducts.filter(p => !p.demo && p.ng && p.category !== '皮膚科の塗り薬'); if (ngP.length && R) { const ngK = new Set(); ngP.forEach(p => { try { masterIngsOf(ingsOfMy(p) || ingFromName(p.name) || '').filter(e => !ING_BASE_RE.test(chipText(e.ja)) && ((e.act || 0) >= 1 || e.irr === '高' || e.irr === '中' || ngP.length >= 2)).forEach(e => ngK.add(e.k)); } catch (e) { /* 何もしない */ } });
+    R.A.infos.filter(x => !x.rx && !RESTED.has(x.p.id) && !steps.some(z => z.prods.includes(x))).forEach(x => { if (x.p.ng) { RESTED.set(x.p.id, '肌に合わなかったと記録しているため'); return; } let ms = []; try { ms = masterIngsOf(ingsOfMy(x.p) || ingFromName(x.p.name) || ''); } catch (e) { ms = []; } const hit = ms.find(e => ngK.has(e.k)); if (hit) RESTED.set(x.p.id, `肌に合わなかった物と同じ「${chipText(hit.ja)}」が入っているため`); }); } }
+  // 使っている化粧品に、朝・夜の決まりがある成分が入っていれば、その使い方を添える（お休みにした物は除いて、最後に使う物だけ）
+  steps.forEach(st => { if (st.fixed) return; const seen = new Set(); st.prods.forEach(x => (x.ings || []).forEach(e => { if (!e.timeT || e.time === '朝・夜' || seen.has(e.k)) return; seen.add(e.k); st.today.push(T(`${e.ja.replace(/（.*?）/g, '')}：${e.timeT}`, '成分')); })); });
   // 最後の確認：この時間に使う設定の物が、どこにも出ていなければ理由を書く（登録した物を黙って消さない）
   if (R) { const here = slot === 'am' ? '朝' : '夜', usedIds = new Set(steps.flatMap(st => st.prods.map(x => x.p.id))), txt = () => steps.map(z => z.today.map(t => (t && t.t) || '').join(' ')).join(' ');
     const kindOf = k => ({emulsion:'moist', cream:'moist', allinone:'moist', mask:'serum', other:'serum', spot:'serum'})[k] || k;
@@ -10261,6 +10271,8 @@ function rtPlan(slot, solo) {
       const lb = prodIngLabel(x.p); if (txt().includes('「' + lb + '」')) return;
       const st = steps.find(z => !z.fixed && z.k === kindOf(x.step)) || steps.find(z => z.k === 'serum') || steps.filter(z => !z.fixed).pop(); if (!st) return;
       const n = (R.notes || []).find(o => o.pid === x.p.id);
+      const offDay = (slot === 'am' ? R.am : R.pm).some(z => z.x === x && z.day && z.day !== altDay());
+      if (offDay) { st.today.push(T(`今日は「${lb}」はお休みします（交互に使う物で、今日は${altDay()}日のため。次の日に使います）`, '成分')); RESTED.set(x.p.id, '交互に使う物で、今日は使わない日のため'); return; }
       st.today.push(T(slot === 'am' && x.nightOnly ? `「${lb}」は夜に使います（${(x.ings || []).filter(e => e.time === '夜').map(e => chipText(e.ja)).join('・') || '刺激の出やすい成分'}は、紫外線の影響を受けやすいため）` : `今日は「${lb}」は${here}は使いません${n && n.d ? `（${String(n.d).replace(/。$/, '')}）` : ''}`, '成分'));
       RESTED.set(x.p.id, slot === 'am' && x.nightOnly ? '夜に使うため' : '今日は使わないため'); }); }
   // どの手順にも「おすすめ」を出す（併用注意などで消えて空になったときは、だれにでも合いやすい物を入れる）
@@ -11693,7 +11705,7 @@ function openLifeForm(id, part, forDate) {
   let foods = d.foods.map(x => Object.assign({}, x));
   let exercise = d.exercise.map(x => Object.assign({}, x));
   const saved = Object.assign({}, d.mealPhotos);
-  const pending = {}, aiRes = {}, pendingFile = {};
+  const pending = {}, aiRes = {}, pendingFile = {}, aiPaint = {};
   // 食事だけを開いたときは、今の時刻で朝食・昼食・夕食・間食を自動で選び、その食事の入力欄だけを出す
   const nowHM = () => { const n = new Date(); return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`; };
   const slot0 = mealByTime(nowHM());
@@ -11745,6 +11757,7 @@ function openLifeForm(id, part, forDate) {
     <div class="field-error" data-err="exercise"></div><div class="field-error" data-err="steps"></div>
     ${(p => p && part ? `<button type="button" class="btn btn-soft lf-same" data-lsame="${esc(d.date || t)}|exercise">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'exercise'))}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}>${part ? '' : '<div class="section-title">MEAL 食事</div>'}
+    ${isPremium() ? `<input type="text" class="input mpt-hint" id="meal-hint" maxlength="40" placeholder="料理名のヒント（任意）例：とんかつ定食" aria-label="料理名のヒント" autocomplete="off" enterkeyhint="done">` : ''}
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
       : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>
@@ -11896,21 +11909,28 @@ function openLifeForm(id, part, forDate) {
         // ① バーコードが写っていれば、AIを使わずに一瞬で出す（② なければAIで読む。③ 表示が写っていない商品は、公式情報を裏で調べて入れる）
         const file = pendingFile[k], t0 = Date.now(); let r = null;
         if (file) { const jan = await janFromFile(file), off = jan ? await offNutrition(jan) : null; if (off) r = {items:[off]}; }
-        if (!r) { box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'商品名と栄養成分表示を読み取っています'}); r = (await callVision('meal', file ? await readImage(file, 800, 0.8) : img)).result || {items:[]}; }
+        if (!r) { box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'商品名と栄養成分表示を読み取っています'}); r = (await callVision('meal', file ? await readImage(file, 800, 0.8) : img, {hint:(($('#meal-hint', form) || {}).value || '').trim().slice(0, 40), fixes:foodFixes().slice(-10)})).result || {items:[]}; r.items = foodFixApply(r.items || []); }
         aiRes[k] = r.items || []; const sec = ((Date.now() - t0) / 1000).toFixed(1);
         if (aiRes[k].some(x => x.needOfficial)) officialFill(aiRes[k]).then(got => { let gi = 0; const chk = $$(`[data-aipick="${k}"]`, form).map(c => c.checked); aiRes[k] = aiRes[k].map(x => x.needOfficial ? (got[gi++] || Object.assign({}, x, {needOfficial:false})) : x); paintAi(); $$(`[data-aipick="${k}"]`, form).forEach((c, i) => { if (chk[i] === false) c.checked = false; }); });
         const paintAi = () => {
         if (!document.body.contains(box)) return;
+        const altH = (x, i) => (x.alts || []).length ? `<br><span class="ai-alts small">ちがうときは：${x.alts.map((a, j) => `<button type="button" class="ai-alt" data-aialt="${k}|${i}|${j}">${esc(a.name)}</button>`).join('')}</span>` : ''; /* 取り違えやすい料理は、ほかの候補を押して直せる */
         if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">食べ物を読み取れませんでした。${esc(r.note || '全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; return; }
         box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b><span class="small muted">（${sec}秒）</span>
-          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">数字を出せませんでした。下のリストから選んでください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.needOfficial ? '<br><span class="small muted">メーカー公式の数字を確認中…</span>' : ''}${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
+          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">数字を出せませんでした。下のリストから選んでください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.fixedFrom ? `<br><span class="small muted">前に直した名前にしました（読み取り：${esc(x.fixedFrom)}）</span>` : ''}${altH(x, i)}${x.needOfficial ? '<br><span class="small muted">メーカー公式の数字を確認中…</span>' : ''}${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
           <p class="small muted" style="margin-top:6px">${aiRes[k].every(x => x.jan) ? 'バーコードから、パッケージの栄養成分表示を出しています。' : aiRes[k].some(x => x.basis === '推定') ? '「目安」は写真からの推定です。違うときは追加したあとで直せます。' : '違うときは、追加したあとで直せます。'}</p></div>`;
         };
-        paintAi();
+        aiPaint[k] = paintAi; paintAi();
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
       b.disabled = false;
       return;
+    }
+    if (b.dataset.aialt) { // ほかの候補を選んだ：名前と栄養を入れかえて、次からその名前を優先する（直した名前を覚える）
+      e.preventDefault(); const [k, i, j] = b.dataset.aialt.split('|'), x = aiRes[k] && aiRes[k][Number(i)], a = x && (x.alts || [])[Number(j)]; if (!a) return;
+      const old = {name:x.name, kcal:x.kcal, p:x.p, f:x.f, c:x.c, salt:x.salt, veg:x.veg}; foodFixAdd(x.fixedFrom || x.name, a.name);
+      Object.assign(x, {name:a.name, kcal:a.kcal, p:a.p, f:a.f, c:a.c, salt:a.salt, veg:a.veg, basis:'推定'}); x.alts = x.alts.map((y, n) => n === Number(j) ? old : y); delete x.fixedFrom;
+      if (aiPaint[k]) aiPaint[k](); return;
     }
     if (b.dataset.aiadd) {
       const k = b.dataset.aiadd, picks = $$(`[data-aipick="${k}"]:checked`, form).map(x => aiRes[k][Number(x.value)]).filter(Boolean);
@@ -12496,6 +12516,10 @@ function careTodayData() {
   const LF = lifeMap()[t] || null, slMin = LF ? sleepMin(LF) : null, slH = slMin == null ? null : Math.round(slMin / 6) / 10, bedT = LF && LF.bed || '';
   const hasSleep = slH != null, short = hasSleep && slH < need - 0.5, late = hasSleep && /^0[1-4]:/.test(bedT);
   const foodsT = (LF && LF.foods) || [], mealsDone = MEALS.filter(m => foodsT.some(f => f.meal === m.k)).length, hasMeal = foodsT.length > 0, totT = nutTotals(foodsT), goalP = lifeGoals().protein;
+  // 食事の習慣：今日より前の2週間で、食べた物を記録した日（3日以上あるときだけ使う）
+  const HB = (() => { if (hasMeal) return null; const L = state.lifeLogs.filter(l => !l.demo && l.date < t && l.date >= addDays(t, -14) && (l.foods || []).length); if (L.length < 3) return null;
+    const known = L.filter(l => l.foods.every(f => Number(f.kcal) > 0)), tot = known.map(l => nutTotals(l.foods)), avg = k => known.length >= 3 ? Math.round(tot.reduce((a, x) => a + x[k], 0) / known.length) : null;
+    return {days:L.length, sweet:L.filter(l => l.foods.some(f => f.meal === 'snack' && /菓子|チョコ|ケーキ|アイス|クッキー|ドーナツ|パン|ジュース|スイーツ|プリン|甘|饅頭|まんじゅう|団子|だんご|ポテト|スナック/.test(f.name))).length, vitC:L.filter(l => l.foods.some(f => VITC_RE.test(f.name))).length, p:avg('p'), veg:avg('veg')}; })();
   const exMinT = LF ? exTotal(LF) : 0, exToday = exMinT > 0, hasEx = exToday || ex.activeDays > 0;
   const sl = {avgHours:slH, avgBedtime:bedT}, ml = {snackDays:0, avgProtein:hasMeal ? Math.round(totT.p) : null, proteinGoal:goalP, avgVeg:hasMeal ? Math.round(totT.veg) : null, days:hasMeal ? 1 : 0};
   const lowHum = w && w.hum < 50, uvHi = w && w.uv >= 6, uvMid = w && w.uv >= 3, cold = w && w.tmax < 10, hot = w && w.tmax >= 28;
@@ -12533,6 +12557,13 @@ function careTodayData() {
     else if ((dull || uvHi || inflamed) && vitCLow) add('生活', 'ビタミンCの多い物を1品足す', ['今日の食事に、ビタミンCの多い野菜・果物がまだありません', dull ? 'くすみ・ニキビ跡のケアに役立ちます' : uvHi ? '紫外線が強い日は特に大切です' : '赤いニキビのあとを残しにくくします'], ['食事', dull || inflamed ? '肌' : '', uvHi ? '天気' : '']);
     else if (vegLow) add('生活', '次の食事で、野菜を1品足す', [`今日の野菜は${Math.round(totT.veg)}g（1日の目安350g）です`, '肌の調子を整えるビタミン・食物繊維がとれます'], ['食事']);
     if (!items.some(x => x.src.includes('食事'))) { if (mealsDone >= 2) add('生活', '今の食事を続ける', [`今日の食事（${mealsDone}回分）に、大きなかたよりはありません`], ['食事']); else add('生活', '次の食事も記録する', ['1日の食事がそろうと、足りない栄養がわかります'], ['食事']); } /* 1回分だけでは決めつけない */
+  } else if (HB) { // 今日の記録がないときは、この2週間の食事の記録（習慣）から出す（記録がない日は決めつけない）
+    const lab = `この2週間の記録（${HB.days}日分）`;
+    if ((acne || oil >= 3) && HB.sweet >= 3) add('生活', '甘い間食をナッツ・ヨーグルトに替える', [`${lab}で、甘い間食が${HB.sweet}日ありました`, '甘い物が多いと、皮脂やニキビが増えることがあります'], ['食事', '肌']);
+    if (HB.p != null && HB.p < goalP * 0.8) add('生活', '毎食、卵・魚・大豆を1品入れる', [`${lab}の平均は、たんぱく質が1日${HB.p}g（目安${goalP}g）です`, '肌をつくる材料になります'], ['食事']);
+    else if ((dull || uvHi || inflamed) && HB.vitC < HB.days / 2) add('生活', 'ビタミンCの多い野菜・果物を1日1品', [`${lab}で、ビタミンCの多い食べ物があった日は${HB.vitC}日です`, dull ? 'くすみ・ニキビ跡のケアに役立ちます' : '赤いニキビのあとを残しにくくします'], ['食事', '肌']);
+    else if (HB.veg != null && HB.veg < 250) add('生活', '野菜を1日350gに近づける', [`${lab}の平均は、野菜が1日${HB.veg}gです（目安350g）`, '肌の調子を整えるビタミン・食物繊維がとれます'], ['食事']);
+    if (!items.some(x => x.src.includes('食事'))) add('生活', 'いつもの食事を続ける', [`${lab}では、大きなかたよりはありません`], ['食事']);
   } else add('生活', '食事を記録する', ['食べた物を入れると、今日の食事に合わせた内容に変わります'], ['食事']);
   if (exToday) {
     if (acne || oil >= 3) add('生活', '運動で汗をかいたら、すぐ洗顔と保湿', [`今日は${exMinT}分運動しています`, '汗や皮脂をそのままにすると、ニキビができやすくなります'], ['運動', '肌']);
@@ -12551,10 +12582,10 @@ function careTodayData() {
     ['肌', fz || '記録なし', !fz],
     ['天気', w ? `湿度${Math.round(w.hum)}%・${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃・UV${w.uv == null ? '－' : Math.round(w.uv)}` : '地域が未設定', !w],
     ['睡眠', hasSleep ? `昨夜${fmtH(slH)}${bedT ? `・${bedT}就寝` : ''}` : '記録なし', !hasSleep],
-    ['食事', hasMeal ? `今日${foodsT.length}品・たんぱく質${Math.round(totT.p)}g` : '記録なし', !hasMeal],
+    ['食事', hasMeal ? `今日${foodsT.length}品・たんぱく質${Math.round(totT.p)}g` : HB ? `この2週間${HB.days}日分` : '記録なし', !hasMeal && !HB],
     ['運動', exToday ? `今日${exMinT}分` : ex.activeDays ? `この1週間${ex.activeDays}日` : '記録なし', !hasEx]
   ];
-  return {lead, inputs, items, calm, w, has:{睡眠:hasSleep, 食事:hasMeal, 運動:hasEx}, skinLabel:SW.label, m:{dry, red, oil, dull, rough, acne, inflamed}};
+  return {lead, inputs, items, calm, w, has:{睡眠:hasSleep, 食事:hasMeal || !!HB, 運動:hasEx}, skinLabel:SW.label, m:{dry, red, oil, dull, rough, acne, inflamed}};
 }
 // ホームの「肌のケア」のおすすめ・控えたい成分：ケア管理の朝・夜の手順と同じもの（美容液・部分ケア → 化粧水 → 保湿の順に大事）
 function careSkinPick() {
@@ -14563,7 +14594,7 @@ async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
   // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
-  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' || mode === 'official' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : mode === 'meal' ? {mode, image, fast:true} : mode === 'skin' && payload && payload.images ? {mode, image, images:payload.images} : {mode, image}});
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' || mode === 'official' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : mode === 'meal' ? Object.assign({mode, image, fast:true}, payload || {}) : mode === 'skin' && payload && payload.images ? {mode, image, images:payload.images} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。', lim = false;
