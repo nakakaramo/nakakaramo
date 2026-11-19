@@ -1583,7 +1583,10 @@ body:has(#modal-root .modal-backdrop.kb)::before{transform:translate3d(0,var(--k
 .modal-head{touch-action:none}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
 .modal-head h2{font-size:17px}
-.modal{position:relative}.msb{position:absolute;top:0;right:2px;width:2.5px;border-radius:3px;background:var(--ink);opacity:0;pointer-events:none;transition:opacity .25s;z-index:5}.msb.on{opacity:0}.msb.on.act{opacity:.42} /* さわっていない時は消す。さわる・スクロールすると出る */
+.psb{position:fixed;right:2px;width:3px;border-radius:3px;background:var(--ink);opacity:0;z-index:28;transition:opacity .25s,width .15s;touch-action:none;will-change:transform;pointer-events:none}.psb.on.act{opacity:.42;pointer-events:auto} /* さわっていない時は見えない。さわる・スクロールすると出て、つかめる */.psb.drag{opacity:.55!important;width:6px}
+body.no-scroll .psb{opacity:0!important;pointer-events:none!important} /* 窓を開いている間は、ページのバーを出さない */
+.psb::before,.msb::before{content:"";position:absolute;top:-10px;bottom:-10px;left:-18px;right:-4px} /* 指でつかみやすいように、さわれる範囲を広げる（見た目は細いまま） */
+.modal{position:relative}.msb{position:absolute;top:0;right:2px;width:2.5px;border-radius:3px;background:var(--ink);opacity:0;pointer-events:none;transition:opacity .25s;z-index:5}.msb.on{opacity:0}.msb.on.act{opacity:.42;pointer-events:auto;touch-action:none}.msb.drag{opacity:.55!important;width:6px} /* さわっていない時は消す。さわる・スクロールすると出る */
 .modal-body::-webkit-scrollbar{display:none}.modal-body{padding:20px;overflow-y:auto;scrollbar-width:none;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .modal-body .field,.modal-body .form-grid>*{min-width:0}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
@@ -2919,7 +2922,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119165639'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119170741'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4194,6 +4197,36 @@ function openModal({title, body, footer='', size='', dismissable=false}) {
   attachSbar(root.querySelector('.modal-body'), root.querySelector('.modal'));
   return root.querySelector('.modal');
 }
+// スクロールバーをつかんで動かすと、その位置まで一気に移動する（ページと窓の両方）
+function sbarDrag(bar, getM, setTop) {
+  bar.addEventListener('pointerdown', e => { const m0 = getM(); if (m0.S <= m0.H + 2) return; e.preventDefault(); e.stopPropagation(); try { bar.setPointerCapture(e.pointerId); } catch (er) { /* 何もしない */ }
+    bar.classList.add('drag', 'act'); const y0 = e.clientY, t0 = m0.top;
+    const mv = ev => { ev.preventDefault(); const m = getM(); setTop(Math.max(0, Math.min(m.S - m.H, t0 + (ev.clientY - y0) * (m.S - m.H) / Math.max(1, m.track - m.h)))); };
+    const up = () => { bar.classList.remove('drag'); setTimeout(() => { if (!bar.classList.contains('drag')) bar.classList.remove('act'); }, 1200); bar.removeEventListener('pointermove', mv); bar.removeEventListener('pointerup', up); bar.removeEventListener('pointercancel', up); };
+    bar.addEventListener('pointermove', mv); bar.addEventListener('pointerup', up); bar.addEventListener('pointercancel', up); });
+  bar.addEventListener('touchstart', e => e.stopPropagation(), {passive:true}); // ページの横スワイプ・引っぱって更新が動かないように
+}
+// ページのスクロールバー：どのページも右はしに細いバーを出す。つかんで上下に動かすと早く移動できる
+function pageSbar() {
+  if (document.getElementById('psb')) return;
+  const bar = document.createElement('i'); bar.id = 'psb'; bar.className = 'psb'; bar.setAttribute('aria-hidden', 'true'); bar.setAttribute('data-noswipe', ''); document.body.appendChild(bar);
+  const area = () => { const tb = document.querySelector('.topbar'), bn = document.getElementById('bottom-nav'), r1 = tb ? tb.getBoundingClientRect() : null, r2 = bn && getComputedStyle(bn).display !== 'none' && bn.getBoundingClientRect().height ? bn.getBoundingClientRect() : null; /* 下のバーの上で止める */
+    const top = Math.max(0, r1 ? r1.bottom : 0) + 4, bot = (r2 ? r2.top : window.innerHeight) - 4; return {top, track:Math.max(40, bot - top)}; };
+  const M = () => { const H = window.innerHeight, S = document.documentElement.scrollHeight, a = area(), h = Math.max(36, a.track * H / Math.max(H, S)); return {H, S, top:window.scrollY, track:a.track, h, a}; };
+  let t = 0;
+  const upd = () => { const m = M(), over = m.S > m.H + 2 && !document.body.classList.contains('no-scroll') && !$('#modal-root').innerHTML; bar.classList.toggle('on', over); if (!over) return;
+    const y = m.a.top + (m.track - m.h) * Math.min(1, m.top / Math.max(1, m.S - m.H)); bar.style.top = '0px'; bar.style.height = m.h + 'px'; bar.style.transform = `translateY(${y}px)`; };
+  const show = () => { upd(); bar.classList.add('act'); clearTimeout(t); if (!bar.classList.contains('drag') && !touching) t = setTimeout(() => bar.classList.remove('act'), 1200); };
+  let touching = false;
+  window.addEventListener('scroll', show, {passive:true});
+  window.addEventListener('touchstart', e => { if (e.target === bar) return; touching = true; show(); }, {passive:true}); /* 画面にさわったら出す（すぐつかめるように） */
+  window.addEventListener('touchend', () => { touching = false; clearTimeout(t); t = setTimeout(() => { if (!bar.classList.contains('drag')) bar.classList.remove('act'); }, 1200); }, {passive:true});
+  window.addEventListener('resize', upd);
+  sbarDrag(bar, M, y => window.scrollTo(0, y));
+  try { new ResizeObserver(upd).observe(document.body); } catch (e) { /* 何もしない */ }
+  new MutationObserver(() => requestAnimationFrame(upd)).observe(document.getElementById('main') || document.body, {childList:true, subtree:true});
+  setInterval(upd, 1500); upd();
+}
 // 下から出る窓のスクロールバー：中身が窓より長いときは、右はしに細いバーをいつも出す（どこまで見たかわかるように）
 function attachSbar(sc, host) {
   if (!sc || !host || host.querySelector(':scope > .msb')) return;
@@ -4206,8 +4239,9 @@ function attachSbar(sc, host) {
     bar.style.height = h + 'px'; bar.style.transform = `translateY(${y}px)`;
   };
   let touching = false;
-  const show = () => { upd(); bar.classList.add('act'); clearTimeout(t); if (!touching) t = setTimeout(() => bar.classList.remove('act'), 700); };
+  const show = () => { upd(); bar.classList.add('act'); clearTimeout(t); if (!touching) t = setTimeout(() => bar.classList.remove('act'), 1200); };
   sc.addEventListener('scroll', show, {passive:true});
+  sbarDrag(bar, () => { const H = sc.clientHeight, S = sc.scrollHeight; return {H, S, top:sc.scrollTop, track:H - 12, h:Math.max(28, H * H / S)}; }, y => { sc.scrollTop = y; });
   sc.addEventListener('touchstart', () => { touching = true; show(); }, {passive:true});
   sc.addEventListener('touchend', () => { touching = false; clearTimeout(t); t = setTimeout(() => bar.classList.remove('act'), 700); }, {passive:true});
   sc.addEventListener('touchcancel', () => { touching = false; clearTimeout(t); t = setTimeout(() => bar.classList.remove('act'), 700); }, {passive:true});
@@ -16411,6 +16445,7 @@ function redirectTo(h) { try { history.replaceState({d:isRootHash(h) ? 0 : 1}, '
 function render() {
   try { SHOWN_DAY = todayStr(); } catch (e) { /* 何もしない */ }
   try { gateSync(); } catch (e) { /* 何もしない */ }
+  try { pageSbar(); } catch (e) { /* 何もしない */ }
   applyHelpPref();
   const r = parseRoute();
   // アカウント（すべて）・ホーム・記録一覧のボタンは、押しても沈まない（2026-11-16）
@@ -16639,7 +16674,7 @@ function ptrRepaint() {
   };
   const easeOutCubic = k => 1 - Math.pow(1 - k, 3);
   const easeSettle = k => 1 - Math.pow(1 - k, 4); // Safariの戻り方に近い：はじめは速く、最後はなめらかに減速
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs'));
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs,.psb,.msb'));
   const settle = () => { // settling：くるくるを消してから、画面を元の位置へ戻す
     phase = 'settling'; ptr.classList.add('fade');
     setTimeout(() => animate(0, 480, easeSettle, null, () => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; phase = 'idle'; }), 160);
