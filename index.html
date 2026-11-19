@@ -959,20 +959,11 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .rt-qsw .sc-ind{width:calc((100% - 6px) / 2);border-radius:999px;background:var(--green-d);box-shadow:0 1px 4px rgba(46,90,64,.25)}
 .rt-qsw .sc-tab{padding:5px 0;min-height:0;line-height:1.4;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px}
 .rt-qsw .sc-tab.on{color:#fff}
-/* 時短は黄色・文字は黒（グラデーションにはしない） */
-.rt-qsw .sc-ind.q{background:#E8B53A;box-shadow:0 1px 4px rgba(180,130,20,.3)}
-.rt-qsw .sc-tab.on[data-id="quick"]{color:#000}
-/* 色は、つまみが真ん中を通るとき（動きの約20%の時点）に切り替える */
-.rt-qsw.to-q .sc-ind{animation:scInd .3s cubic-bezier(.3,.7,.3,1),rtQy .3s linear}
-.rt-qsw.to-n .sc-ind{animation:scInd .3s cubic-bezier(.3,.7,.3,1),rtQn .3s linear}
-@keyframes rtQy{0%,20.5%{background-color:var(--green-d);animation-timing-function:step-start}}
-@keyframes rtQn{0%,20.5%{background-color:#E8B53A;animation-timing-function:step-start}}
-.rt-qsw.to-q .sc-tab.on{animation:rtTxtOff .3s linear}.rt-qsw.to-q .sc-tab:not(.on){animation:rtTxtW .3s linear}
-.rt-qsw.to-n .sc-tab.on{animation:rtTxtOff .3s linear}.rt-qsw.to-n .sc-tab:not(.on){animation:rtTxtB .3s linear}
-@keyframes rtTxtOff{0%,20.5%{color:var(--ink2);animation-timing-function:step-start}}
-@keyframes rtTxtW{0%,20.5%{color:#fff;animation-timing-function:step-start}}
-@keyframes rtTxtB{0%,20.5%{color:#000;animation-timing-function:step-start}}
-@media (prefers-reduced-motion:reduce){.rt-qsw.go .sc-ind,.rt-qsw.go .sc-tab{animation:none!important}}
+/* 時短は黄色・文字は黒。色は、つまみが真ん中を通った瞬間に変える（.cy＝黄色の状態。rtQColorFollow で切り替え） */
+.rt-qsw .sc-tab,.rt-qsw .sc-tab.on{color:var(--ink2);transition:none}
+.rt-qsw:not(.cy) .sc-tab[data-id="normal"]{color:#fff}
+.rt-qsw.cy .sc-ind{background:#E8B53A;box-shadow:0 1px 4px rgba(180,130,20,.3)}
+.rt-qsw.cy .sc-tab[data-id="quick"]{color:#000}
 .rt-qsw .sc-tab svg{width:15px;height:15px;flex:none}
 .rt-qnote{margin:0 0 10px;text-align:center}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
@@ -2933,7 +2924,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119224638'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119225546'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -10361,7 +10352,7 @@ function viewRoutine() {
   const tabs = `<nav class="home-tabs rt-tabs" role="tablist" aria-label="朝と夜">${[['am', 'sun', '朝のケア'], ['pm', 'moon', '夜のケア']].map(([k, ic, l]) => `<button type="button" class="ht ${slot === k ? 'active' : ''}" role="tab" aria-selected="${slot === k}" data-action="rt-tab" data-id="${k}">${icon(ic)}<span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 通常⇄時短の切り替え（時短：落とす・皮膚科の薬・保湿・日焼け止めだけにする）
   const quick = rtSettings().mode === 'quick';
-  const sw = `<div class="sc-tabs rt-qsw ${ui.rtQAnim ? (quick ? 'go to-q' : 'go to-n') : ''}" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${quick ? 'q' : ''} ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常', 'menu'], ['quick', '時短', 'clock']].map(([k, l, ic]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${icon(ic)}${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
+  const sw = `<div class="sc-tabs rt-qsw ${(ui.rtQAnim ? !quick : quick) ? 'cy' : ''}" role="radiogroup" aria-label="ケアの長さ"><span class="sc-ind ${ui.rtQAnim ? 'go' : ''}" style="--to:${quick ? 1 : 0};--from:${quick ? 0 : 1}" aria-hidden="true"></span>${[['normal', '通常', 'menu'], ['quick', '時短', 'clock']].map(([k, l, ic]) => `<div role="radio" tabindex="0" aria-checked="${(k === 'quick') === quick}" class="sc-tab ${(k === 'quick') === quick ? 'on' : ''}" data-action="rt-quick" data-id="${k}">${icon(ic)}${l}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></div>`).join('')}</div>`;
   ui.rtQAnim = false;
   return tabs + sw + `<div class="home-pane">${rtPaneHtml(slot)}</div>`; // 通常⇄時短は朝・夜で共通なので、横にスワイプしても動かさない（中身の外に置く）
 }
@@ -12505,6 +12496,13 @@ function careSkinPick() {
   return {good:g, avoid:avoid.filter(v => !g.some(x => normIng(chipText(x)) === normIng(chipText(v)))).slice(0, 5)};
 }
 function careSkinChips() { const S = careSkinPick(); return S.good.length || S.avoid.length ? advChips({area:'スキンケア', good:S.good, avoid:S.avoid}) : ''; }
+// 通常⇄時短：つまみが実際に真ん中を通った瞬間に色を変える（毎フレーム、つまみの位置を測る。iPhoneでも動きと色がずれない）
+function rtQColorFollow(toQuick) {
+  const box = document.querySelector('.rt-qsw'), ind = box && box.querySelector('.sc-ind'); if (!box || !ind) return;
+  const t0 = performance.now(), mid = () => { const a = box.getBoundingClientRect(), b = ind.getBoundingClientRect(); return (b.left + b.width / 2) > (a.left + a.width / 2); };
+  const step = () => { if (!document.body.contains(ind)) return; const right = mid(); box.classList.toggle('cy', right); if (right === toQuick || performance.now() - t0 > 600) { box.classList.toggle('cy', toQuick); return; } requestAnimationFrame(step); };
+  step();
+}
 function careTodayHtml() {
   let D; try { D = careTodayData(); } catch (e) { return ''; }
   // 肌（朝・夜。天気に合わせたケアもここ）・睡眠・食事・運動に分けて出す
@@ -15565,7 +15563,7 @@ function addDemo() {
    ========================================================= */
 const split2 = v => String(v).split('|');
 const actions = {
-  'rt-quick': k => { const rs = rtSettings(), was = rs.mode === 'quick' ? 'quick' : 'normal'; if (was === k) return; if (Date.now() - hapticAt > 300) hapticTick(); rs.mode = k === 'quick' ? 'quick' : 'normal'; ui.rtQAnim = true; save(); render(); },
+  'rt-quick': k => { const rs = rtSettings(), was = rs.mode === 'quick' ? 'quick' : 'normal'; if (was === k) return; if (Date.now() - hapticAt > 300) hapticTick(); rs.mode = k === 'quick' ? 'quick' : 'normal'; ui.rtQAnim = true; save(); render(); rtQColorFollow(k === 'quick'); },
   'rt-mode': k => { rtSettings().mode = k; ui.rtStep = 0; ui.rtOpen = ''; save(); hapticTick(); render(); },
   'rt-slot': k => { ui.rtSlot = k; ui.rtStep = 0; ui.rtOpen = ''; render(); },
   'rt-open': id => { if (ui._rtNoClick && Date.now() - ui._rtNoClick < 400) return; ui.rtOpen = ui.rtOpen === id ? '' : id; render(); },
