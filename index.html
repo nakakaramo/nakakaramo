@@ -2683,13 +2683,14 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .lf-row>span:first-child{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;flex:none}.lf-row input[type=time]{width:132px}.lf-list:has(#ex-list:empty){display:none}.lf-row .input,.lf-row .select{width:auto;min-width:0;max-width:170px;min-height:40px;font-size:16px;text-align:right}
 .lf-row b#sleep-calc{font-size:17px;color:var(--green-d)}.lf-in{display:flex;align-items:center;gap:6px}.lf-in .input{width:96px}.lf-in em{font-style:normal;color:var(--muted);font-size:14px}
 .lf-list #ex-list{flex:1;min-width:0}.lf-in .lf-in-b{margin-left:4px}
-.lf-same{width:100%;justify-content:center;min-height:48px;font-size:15px;margin-top:4px}
+.lf-same{width:100%;justify-content:center;min-height:52px;font-size:15px;margin:14px 0 12px}
 .im-irr{font-weight:700}.im-irr.red{color:#C0392B}.im-irr.warn{color:#B07A1A}.im-irr.green{color:var(--green-d)}
 .mf-l{margin:4px 0 8px;font-size:14px;font-weight:700;color:var(--ink)}.mf-l+.tm-pick{margin-bottom:14px}
 .ngf-p{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--surface2,#F6F3EE);margin-bottom:4px}.ngf-th{width:44px;height:44px;flex:none;border-radius:10px;overflow:hidden;position:relative;display:block}.ngf-th .thumb{width:100%;height:100%}.ngf-p b{font-size:15px;line-height:1.4}
 .ngf-q{padding:16px 0 4px;border-top:1px solid var(--line);margin-top:12px}.ngf-q:first-of-type{border-top:0}
 .ngf-q h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;font-weight:700}.ngf-q h3 i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green-d);color:#fff;font-style:normal;font-size:12px;flex:none}.ngf-q h3 small{font-size:12px;font-weight:500;color:var(--muted)}
 .ngf-chk{display:flex;flex-direction:column;gap:10px}.ngf-foot{margin:14px 0 0}
+.card>.rt-dl:first-child,.card>.rt-dl:first-of-type{border-top:0} /* カードのいちばん上の項目には、上の線を引かない */
 </style>
 </head>
 <body>
@@ -2914,7 +2915,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261119142449'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261119143709'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -11578,7 +11579,7 @@ function openLifeForm(id, part, forDate) {
     </div>
     <div class="field-error" data-err="food_${m.k}"></div></details>`;
   openModal({title: part ? `${LIFE_PARTS[part].t}の記録` : (ex ? '食事・運動・睡眠を編集' : '食事・運動・睡眠の記録'), body:`<form id="life-form" novalidate><div class="form-grid">
-    ${part === 'sleep' || part === 'exercise' ? '' : '<p class="small muted">分かる項目だけで大丈夫です。未入力の項目は「記録なし」として扱います。</p>'}
+    ${part ? '' : '<p class="small muted">分かる項目だけで大丈夫です。未入力の項目は「記録なし」として扱います。</p>'}
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint:'睡眠は「この日の朝に起きた睡眠」を記録します'})}
     <div class="form-grid" data-part="sleep" ${show('sleep')}>${part ? '' : '<div class="section-title">SLEEP 睡眠</div>'}
     ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="sleep">${icon('moon')}ヘルスケアから読み込む</button>` : ''}
@@ -11599,7 +11600,7 @@ function openLifeForm(id, part, forDate) {
     </div>
     <div class="field-error" data-err="exercise"></div><div class="field-error" data-err="steps"></div>
     ${(p => p && part ? `<button type="button" class="btn btn-soft lf-same" data-lsame="${esc(d.date || t)}|exercise">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'exercise'))}</div>
-    <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
+    <div class="form-grid" data-part="meal" ${show('meal')}>${part ? '' : '<div class="section-title">MEAL 食事</div>'}
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
       : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>
