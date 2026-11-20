@@ -3050,7 +3050,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120163810'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120165317'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9650,7 +9650,7 @@ function acneActiveNow() {
     const t = todayStr(); if (logsInRange(addDays(t, -13), t).some(l => (Number(l.acneCount) || 0) > 0 || (l.acneTypes || []).some(k => k !== 'ニキビ跡'))) return true;
     const ff = faceFindings(14); return !!(ff.inflamed || ff.comedo); } catch (e) { return true; }
 }
-const acneRxIdle = p => !!p && p.category === '皮膚科の塗り薬' && ACNE_RX_RE.test(`${p.name} ${p.ingredients || ''}`) && !acneActiveNow();
+const acneRxIdle = p => false; /* 2026-11-20 処方の塗り薬は、肌の記録で「使わない」にしない（続けるか・やめるかは医師が決める。アダパレン・過酸化ベンゾイルは、ニキビが落ち着いたあとの再発予防にも使う：尋常性痤瘡・酒皶治療ガイドライン2023） */
 function routineDesign(mode) { mode = mode || 'normal'; return rdMemo('R:' + mode, () => routineDesign0(mode)); }
 function routineDesign0(mode) {
   mode = mode || 'normal';
@@ -10419,23 +10419,23 @@ function rtPlan(slot, solo) {
       avoid:uniq([(oilT || acneT) && !dryT ? '油分の多い重いクリーム' : '', sensT ? '香料' : '']), today:ex || []}; };
   // 皮膚科の塗り薬：薬ごとに、朝・夜・順番を決める
   const RXP_ALL = R ? R.A.infos.filter(x => x.rx && x.step !== 'oral').map(rxPlanOf) : [];
-  // 登録してあるから出す、ではなく、今の肌に必要かで決める：ニキビの薬は、ニキビの悩み・最近の記録があるときだけ手順に入れる（ほかの薬は医師の指示どおり）
-  const acneRxOff = RXP_ALL.filter(r => acneRxIdle(r.x.p));
-  const RXP1 = RXP_ALL.filter(r => !acneRxOff.includes(r));
+  // 2026-11-20 処方の塗り薬は、医師の指示どおりがすべて手順に入る（肌の記録で外したり、選んだりしない）。薬ごとの使い方の違いは、説明として出す
+  const acneRxOff = [];
+  const RXP1 = RXP_ALL.slice();
   const ACL = r => { const t = `${r.x.p.name} ${r.x.p.ingredients || ''}`; return [/アダパレン|ディフェリン|エピデュオ/.test(t) && 'ada', /過酸化ベンゾイル|ベピオ|エピデュオ|デュアック/.test(t) && 'bpo', /クリンダマイシン|ナジフロキサシン|オゼノキサシン|ダラシン|アクアチム|ゼビアックス|デュアック/.test(t) && 'abx'].filter(Boolean); };
-  const acneRx = RXP1.filter(r => r.role === 'drug' && ACL(r).length), acneSel = new Map(), acneRest = []; let acneTip = '';
-  if (acneRx.length >= 2) {
-    // 最近14日に記録したニキビの種類 → 使われる成分（白・黒：アダパレン・過酸化ベンゾイル／赤：過酸化ベンゾイル・アダパレン・抗菌薬／黄：抗菌薬・過酸化ベンゾイル）
+  const acneRx = RXP1.filter(r => r.role === 'drug' && ACL(r).length), acneSel = new Map(), acneNote = new Map(), acneRest = []; let acneTip = '';
+  if (acneRx.length) {
+    // 最近14日に記録したニキビの種類 → その薬が使われるニキビ（白・黒：アダパレン・過酸化ベンゾイル／赤：過酸化ベンゾイル・アダパレン・抗菌薬／黄：抗菌薬・過酸化ベンゾイル）。どこに塗るかの目安として出すだけ
     const NEED = {'白ニキビ':['ada', 'bpo'], '黒ニキビ':['ada', 'bpo'], '赤ニキビ':['bpo', 'ada', 'abx'], '黄ニキビ（膿あり）':['abx', 'bpo']};
     const t0 = todayStr(), types = []; logsInRange(addDays(t0, -13), t0).forEach(l => (l.acneTypes || []).forEach(k => { if (NEED[k] && !types.includes(k)) types.push(k); }));
-    const want = new Set(types.flatMap(k => NEED[k])); if (!want.size) ['ada', 'bpo'].forEach(c => want.add(c));
-    const left = new Set(want), chosen = [];
-    while (left.size) { const best = acneRx.filter(r => !chosen.includes(r)).map(r => [r, ACL(r).filter(c => left.has(c)).length]).sort((a, b) => b[1] - a[1] || ACL(b[0]).length - ACL(a[0]).length)[0]; if (!best || !best[1]) break; chosen.push(best[0]); ACL(best[0]).forEach(c => left.delete(c)); }
-    const have = new Set(chosen.flatMap(ACL)), CLN = {ada:'アダパレン', bpo:'過酸化ベンゾイル', abx:'抗菌薬'};
-    acneRx.forEach(r => { if (chosen.includes(r)) { acneSel.set(r, types.filter(k => NEED[k].some(c => ACL(r).includes(c))).map(k => k.replace(/（.*?）/, ''))); return; }
-      acneRest.push(r); const dup = ACL(r).every(c => have.has(c));
-      RESTED.set(r.x.p.id, dup ? `同じ成分（${ACL(r).map(c => CLN[c]).join('・')}）が、ほかの塗り薬に入っているため` : `今記録しているニキビ（${types.map(k => k.replace(/（.*?）/, '')).join('・') || 'ニキビ'}）には使わない薬のため`); });
-    if (acneRest.length) acneTip = (`ニキビの塗り薬は、記録したニキビの種類に合う物を選び、成分が重なる物はのぞきました（${[...new Set(acneRest.map(r => rxIngLabel(r.x.p)))].join('、')}）。医師に一緒に使うよう言われているときは、その指示に合わせましょう。`);
+    const CLN = {ada:'アダパレン', bpo:'過酸化ベンゾイル', abx:'抗菌薬'};
+    acneRx.forEach((r, i) => { const tp = types.filter(k => NEED[k].some(c => ACL(r).includes(c))).map(k => k.replace(/（.*?）/, '')); if (tp.length >= 1 && acneRx.length >= 2) acneSel.set(r, tp);
+      const nt = [], same = acneRx.filter((q, j) => j < i && ACL(q).some(c => c !== 'abx' && ACL(r).includes(c)));
+      if (same.length) nt.push(`「${rxIngLabel(same[0].x.p)}」と同じ成分（${ACL(r).filter(c => ACL(same[0]).includes(c)).map(c => CLN[c]).join('・')}）が入っています。同じ場所に重ねて塗るかは、医師・薬剤師に確かめましょう`);
+      const days = r.x.p.startDate ? diffDays(r.x.p.startDate, t0) : 0;
+      if (ACL(r).includes('abx') && (days >= 84 || !acneActiveNow())) nt.push('抗菌薬の入った塗り薬は、長く続けると薬の効きにくい菌が出やすいため、使う期間は医師が決めます。いつまで使うかは医師に確かめましょう');
+      if (nt.length) acneNote.set(r, nt); });
+    if (!acneActiveNow() && acneRx.some(r => ACL(r).some(c => c === 'ada' || c === 'bpo'))) acneTip = `${[...new Set(acneRx.filter(r => ACL(r).some(c => c === 'ada' || c === 'bpo')).map(r => rxIngLabel(r.x.p)))].join('、')}の塗り薬は、ニキビが落ち着いたあとも、再発を防ぐために続けることがすすめられている薬です。医師の指示どおりに続けましょう。`;
   }
   const preg = pregNow(), pregRx = preg === 'preg' ? RXP1.filter(r => PREG_RX_RE.test(`${r.x.p.name} ${r.x.p.ingredients || ''}`)) : [];
   pregRx.forEach(r => RESTED.set(r.x.p.id, '妊娠中は使えない薬のため（添付文書で禁忌）。使う前に医師に相談しましょう')); /* 妊娠中：アダパレンなどは手順に入れない */
@@ -10454,8 +10454,8 @@ function rtPlan(slot, solo) {
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
   const pregAsk = state.settings.gender !== '男性' && (((state.settings.diag || {}).a || {}).preg || '') !== 'no';
-  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || []; add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
-    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
+  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || [], an = acneNote.get(r) || []; add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
+    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(an.map(t => T(t, '薬'))).concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const eyeT = has('darkcircle') || has('puffy');
   const eyeStep = () => { const L = R ? R.A.infos.filter(x => x.step === 'other' && /アイクリーム|アイセラム|アイジェル|アイケア|アイバーム|目元|目もと|eye/i.test(x.p.name) && !(R.paused || []).includes(x) && fitSlot(x)) : []; if (!L.length && !eyeT) return; /* 目元用の物は、黙って消さずに目元ケアの手順で使う */
     add('eye', {name:'目元ケア', prods:L, how:'薬指に米粒1つ分をとり、目のまわりの骨に沿って軽くたたくようにのせます。こすらないようにします。', good:uniq([has('puffy') ? 'カフェイン' : '', has('darkcircle') ? 'カフェイン' : '', has('darkcircle') && slot === 'pm' && !calm && !rxHard && !pregNow() ? 'レチノール（低い濃度）' : '', has('darkcircle') ? 'ビタミンC誘導体' : '', 'セラミド']).slice(0, 3), avoid:uniq([sensT ? '香料' : ''])}); };
@@ -10623,11 +10623,12 @@ function rtPlan(slot, solo) {
     const lab = uniq(OR.list.map(p => rxIngLabel(p))).slice(0, 4).join('・');
     tips.push(`飲んでいる物（${lab}）に合わせて組み立てています。${why.length ? why.join('。') + '。' : ''}`);
     if (OR.itch && slot === 'pm') tips.push('かゆみがあるときは、かかずに冷やすか、保湿でおさえます。爪は短くしておきます。');
+    { const ab = OR.list.filter(p => /ミノサイクリン|ドキシサイクリン|テトラサイクリン|ロキシスロマイシン|クラリスロマイシン|ファロペネム/.test(`${p.name} ${p.ingredients || ''}`) && p.startDate && diffDays(p.startDate, todayStr()) >= 84); if (ab.length && slot === 'pm') tips.push(`抗菌薬の飲み薬（${uniq(ab.map(p => rxIngLabel(p))).join('・')}）は、長く続けると薬の効きにくい菌が出やすいため、飲む期間は医師が決めます。いつまで飲むかは医師に確かめましょう。`); }
     if (preg && OR.preg) tips.push(`${preg === 'preg' ? '妊娠中' : '授乳中'}は、飲んでいる「${OR.lab('preg')}」について、必ず医師・薬剤師に伝えて確かめてください。`);
   }
   if (OR.iso) steps.forEach(st => { if (st.k === 'moist') st.today.push(T('イソトレチノインを飲んでいる間は、肌と唇が乾きやすくなります。保湿をいつもより丁寧にします', '薬')); });
   if (acneTip) tips.push(acneTip);
-  if (acneRxOff.length) { tips.push(`ニキビの塗り薬（${[...new Set(acneRxOff.map(r => rxIngLabel(r.x.p)))].join('、')}）は、今はニキビの悩み・記録がないので、手順に入れていません。ニキビがおさまったあとも予防で続けるよう医師に言われているときは、夜の保湿のあとに続けます。`); acneRxOff.forEach(r => RESTED.set(r.x.p.id, '今はニキビの悩み・記録がないため（医師に続けるよう言われているときは続けます）')); }
+  if (acneRxOff.length) { /* 2026-11-20 使わない（記録で外さない） */ tips.push(`ニキビの塗り薬（${[...new Set(acneRxOff.map(r => rxIngLabel(r.x.p)))].join('、')}）は、今はニキビの悩み・記録がないので、手順に入れていません。ニキビがおさまったあとも予防で続けるよう医師に言われているときは、夜の保湿のあとに続けます。`); acneRxOff.forEach(r => RESTED.set(r.x.p.id, '今はニキビの悩み・記録がないため（医師に続けるよう言われているときは続けます）')); }
   if (new Set(RXP.filter(r => r.slots.includes(slot) && r.role === 'drug').map(r => normIng(rxIngLabel(r.x.p)))).size >= 2) tips.push('塗り薬が2つ以上あるときは、医師に言われた場所に塗ります。重ねるときは数分あけます。');
   if (slot === 'pm' && acneT) tips.push('ニキビは触らない・つぶさない。枕カバーはこまめに替えます。');
   if (slot === 'am' && uv != null && uv >= 6) tips.push('日中は帽子や日傘も合わせると、日焼け止めの塗り直しが少なくて済みます。');
