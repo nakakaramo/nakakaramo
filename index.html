@@ -1579,7 +1579,9 @@ details.fold[open] summary{margin-bottom:10px}
 .modal.tall{height:calc(100vh - max(var(--sat),12px) - 8px);height:calc(100dvh - max(var(--sat),12px) - 8px);max-height:none} /* 検索のシートは高さを決めておく：文字を入れても結果が出ても、シートの上の位置が動かない */
 .modal-backdrop.kb .modal.tall{height:calc(var(--kb-h,100vh) - max(var(--sat),12px) - 8px)!important}
 @media(min-width:640px){.modal.tall{height:min(760px,88vh)}}
-.mpt-hint{margin:0 0 8px;min-height:40px;font-size:14px}
+.mpt-hint{margin:6px 0 0;min-height:40px;font-size:16px}
+/* 2026-11-20 料理名のヒントは、検索の欄に見えて紛らわしかったので、押したときだけ出す小さな文字にした */
+.mpt-hd{margin:0 0 10px}.mpt-hd-b{border:0;background:none;padding:2px 0;font:inherit;cursor:pointer;font-size:12.5px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;-webkit-tap-highlight-color:transparent;text-align:left}.mpt-hd.on .mpt-hd-b{color:var(--ink2);text-decoration:none;font-weight:600}.mpt-hint[hidden]{display:none}
 .ai-alts{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px}.ai-alt{border:1px solid var(--line2);background:var(--surface);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;color:var(--green-d);cursor:pointer}
 .find-sec{margin:10px 0 6px;font-size:12.5px;font-weight:700;color:var(--muted)}.find-sec:first-child{margin-top:0}
 body:has(#modal-root .modal-backdrop.kb)::before{transform:translate3d(0,var(--kb-top,0px),0)!important}
@@ -2925,7 +2927,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120111233'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120113044'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5208,7 +5210,7 @@ function findPaint() {
   if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
   if (!fs.items.length) { box.innerHTML = rxH + `<p class="small muted">${rxH ? '市販の商品は' : ''}見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
   box.innerHTML = rxH + (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + fs.items.slice(0, fs.more ? 60 : 3).map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
-      <span class="net-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 70))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
+      <span class="net-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 70))}</b>${SUN_RE.test(x.name || '') ? uvChip(x.name) : ''}<small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
       <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('')
     + (!fs.more && fs.items.length > 3 ? `<p style="margin:10px 0 0;text-align:center"><button type="button" class="link small" data-action="find-more">ほかの候補も見る（${fs.items.length - 3}件）</button></p>` : '');
 }
@@ -6103,9 +6105,26 @@ async function uvFill(items) {
       part.forEach(x => { if (uv[x.name] != null) UV_KNOWN.set(x.name, uv[x.name]); if (uv[x.name]) x.uv = uv[x.name]; });
     } catch (e) { break; }
   }
+  uvSave();
   items.forEach(x => { if (!x.uv && UV_KNOWN.get(x.name)) x.uv = UV_KNOWN.get(x.name); });
 }
-const uvChip = (name, cls) => { const u = uvSpec(name); return u ? `<i class="uv-chip ${cls || ''}">${esc(u)}</i>` : ''; };
+// 調べたSPF・PAは端末に覚えておく（同じ商品を何度も調べない）。SPFとPAの両方がわかった物だけ覚える
+const UV_LS = 'nk_uv_v1';
+try { const o = JSON.parse(localStorage.getItem(UV_LS) || '{}'); Object.entries(o).forEach(([k, v]) => { if (/SPF/.test(v) && /PA/.test(v)) UV_KNOWN.set(k, v); }); } catch (e) { /* 何もしない */ }
+function uvSave() { try { const o = {}; UV_KNOWN.forEach((v, k) => { if (/SPF/.test(v) && /PA/.test(v)) o[k] = v; }); const ks = Object.keys(o); ks.slice(0, Math.max(0, ks.length - 400)).forEach(k => delete o[k]); localStorage.setItem(UV_LS, JSON.stringify(o)); } catch (e) { /* 何もしない */ } }
+const uvNow = (name, q) => uvOfItem({name, uv:UV_KNOWN.get(q || name) || ''});
+const uvFull = u => /SPF/.test(u || '') && /PA/.test(u || '');
+const SUN_RE = /日焼け止め|日焼止め|サンスクリーン|UVカット|UVケア|UVプロテクト|UVミルク|UVジェル|UVクリーム|UVエッセンス|SPF\s*\d|PA\s*\+|サンミルク|サンジェル|デーケアレボリューション|トーンアップUV|パーフェクトUV|UV.{0,8}(ミルク|ジェル|クリーム|エッセンス|ローション|スプレー|プロテクト|ベース|BB)/i;
+// 日焼け止めのSPF・PA：商品名に書いていなければ、調べて入れる（調べている間は「調べ中」。わからなければ消す）
+const uvChip = (name, cls, q) => { const u = uvNow(name, q), full = uvFull(u); if (!u && q === false) return ''; return `<i class="uv-chip ${cls || ''}${full ? '' : ' uv-wait'}"${full ? '' : ` data-uvq="${esc(q || name)}" data-uvn="${esc(name)}"`}>${esc(u || 'SPF・PA 調べ中')}</i>`; };
+let uvScanT = 0;
+function uvScan() {
+  const els = [...document.querySelectorAll('[data-uvq]:not([data-uvt])')]; if (!els.length) return;
+  els.forEach(e => e.setAttribute('data-uvt', '1'));
+  const qs = [...new Set(els.map(e => e.dataset.uvq))], items = qs.map(q => ({name:q}));
+  uvFill(items).finally(() => { uvSave(); document.querySelectorAll('[data-uvq][data-uvt]').forEach(e => { if (!qs.includes(e.dataset.uvq)) return; const u = uvNow(e.dataset.uvn || e.dataset.uvq, e.dataset.uvq); if (u) { e.textContent = u; if (uvFull(u)) { e.classList.remove('uv-wait'); e.removeAttribute('data-uvq'); } else e.classList.remove('uv-wait'); } else e.remove(); }); });
+}
+try { new MutationObserver(() => { clearTimeout(uvScanT); uvScanT = setTimeout(uvScan, 250); }).observe(document.documentElement, {childList:true, subtree:true}); } catch (e) { /* 何もしない */ }
 function tidyName(n) {
   const t = (cleanShopName(n) || String(n || ''))
     .replace(/[＼\\][^／\/]*[／\/]/g, ' ')
@@ -6199,7 +6218,7 @@ function viewShop() {
     <div class="card shop-top">
       ${x.image ? extImgHtml(x.image, 'shop-img') : ''}
       <div class="shop-meta">${x.a8 ? '<span class="chip"><span class="pr-tag" style="margin:0 4px 0 0">PR</span>提携ブランド</span>' : ''}${x.fromIng ? `<span class="chip green">${esc(x.fromIng)}${x.a8 ? '入り' : `の人気${x.ingRank ? ` ${x.ingRank}位` : ''}`}</span>` : ''}${x.rank ? `<span class="chip">楽天ランキング${esc(String(x.rank))}位</span>` : ''}${x.reviews ? `<span class="chip">レビュー${Number(x.reviews).toLocaleString()}件</span>` : ''}</div>
-      <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>${x.a8 && x.brand ? `<div class="small muted">${esc(x.brand)}</div>` : ''}${x.a8 && /^https:\/\//.test(x.pixel || '') ? `<img src="${esc(x.pixel)}" width="1" height="1" alt="" style="position:absolute;opacity:0">` : ''}
+      <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>${SUN_RE.test(x.name || '') || /日焼け止め/.test(x.fromIng || '') ? uvChip(x.name) : ''}${x.a8 && x.brand ? `<div class="small muted">${esc(x.brand)}</div>` : ''}${x.a8 && /^https:\/\//.test(x.pixel || '') ? `<img src="${esc(x.pixel)}" width="1" height="1" alt="" style="position:absolute;opacity:0">` : ''}
       ${x.price ? `<div class="shop-price">¥${Number(x.price).toLocaleString()}<small>税込・${esc(x.site || '楽天市場')}</small></div>` : x.a8 ? '<p class="small muted" style="margin:4px 0 0">価格はお店で確認</p>' : ''}
     </div>
     <div class="card mt"><div class="card-h"><h2>購入サイト</h2></div>
@@ -6495,6 +6514,7 @@ function openLifeGoodSheet(area, word) {
     <div class="ing-b"><b>なぜいい？</b><p>${esc(why)}</p></div>
     ${hit ? `<div class="ing-b"><b>やり方</b><p>${esc(hit[3])}</p></div>` : ''}</div></div>`});
 }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-mhint]'); if (!b) return; const box = b.parentElement, i = box.querySelector('.mpt-hint'); if (!i) return; const show = i.hidden; i.hidden = !show; box.classList.toggle('on', show); if (show) i.focus(); });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-lifegood]'); if (!b) return; hapticTick(); const [a, ...w] = b.dataset.lifegood.split('|'); openLifeGoodSheet(a, w.join('|')); });
 function openLifeAvoidSheet(area, word) {
   const hit = LIFE_AVOID.find(([re]) => re.test(word));
@@ -7320,7 +7340,7 @@ function viewMy() {
       const period = p.status === '使用終了' ? `${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}（${days}日）` : p.status === STOCK ? `${fmtShort(p.startDate)} 購入` : (days > 0 ? `${days}日目` : `${fmtShort(p.startDate)}から`);
       const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing, p.timing === '必要なときだけ' ? '' : p.frequency, period].filter(Boolean).join('・');
       return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><button type="button" class="m-del" data-action="swipe-del" data-id="${esc(p.id)}" tabindex="-1">${icon('trash')}<span>削除</span></button><div class="mrow-in"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${myThumb(p)}
-        <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b>${(cat.category || p.category) === '日焼け止め' ? uvChip(p.name + ' ' + (cat.name || '')) : ''}<small>${esc(meta)}</small>${on && prodLifeChips(p) ? `<span class="mrow-life">${prodLifeChips(p)}</span>` : ''}</span></a>
+        <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b>${(cat.category || p.category) === '日焼け止め' ? uvChip(p.name + ' ' + (cat.name || ''), '', ((p.brand || '') + ' ' + p.name).trim()) : ''}<small>${esc(meta)}</small>${on && prodLifeChips(p) ? `<span class="mrow-life">${prodLifeChips(p)}</span>` : ''}</span></a>
         <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div></div>`;
     }).join('')}</div>`;
   }
@@ -7584,6 +7604,7 @@ function viewMyDetail(id) {
         <h1 class="detail-title" style="margin-top:0">${esc(p.name)}</h1>
         <dl class="kv" style="margin-top:12px">
           ${!isRx && p.brand ? `<dt>ブランド</dt><dd>${esc(p.brand)}</dd>` : ''}
+          ${!isRx && (p.category === '日焼け止め' || SUN_RE.test(p.name || '')) ? `<dt>SPF・PA</dt><dd>${uvChip(p.name, '', ((p.brand || '') + ' ' + p.name).trim())}</dd>` : ''}
           ${use ? `<dt>効果</dt><dd>${esc(use)}</dd>` : ''}
           <dt>使用頻度</dt><dd class="kv-e"><span>${esc(useFreqText(p))}</span>${fEd('use', '使用頻度')}</dd>
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd class="kv-e"><span>${fmtDate(p.startDate)}</span>${fEd('startDate', '使用開始日')}</dd>
@@ -7617,6 +7638,7 @@ function viewMyDetail(id) {
         <div class="small muted" style="margin-top:10px">${esc(p.brand)}</div>
         <h1 class="detail-title">${esc(p.name)}</h1>
         <dl class="kv">
+          ${(p.category === '日焼け止め' || SUN_RE.test(p.name || '')) ? `<dt>SPF・PA</dt><dd>${uvChip(p.name, '', ((p.brand || '') + ' ' + p.name).trim())}</dd>` : ''}
           ${p.status !== STOCK ? `<dt>使用頻度</dt><dd>${esc(useFreqText(p))}</dd>` : ''}
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd>${fmtDate(p.startDate)}</dd>
           ${p.status === '使用終了' ? `<dt>使用終了日</dt><dd>${fmtDate(p.endDate)}</dd>` : ''}
@@ -10125,9 +10147,9 @@ function rtPlan(slot, solo) {
     const strongX = x => ingsX(x).some(e => e.act >= 1);
     const fitX = x => ingsX(x).reduce((a, e) => a + (e.cs || []).filter(k => need.has(k)).length, 0) - ((sensT || calm) && strongX(x) ? 3 : 0);
     const photoX = x => !!x.nightOnly || (x.ings || []).some(e => e.time === '夜');
-    const spfX = x => Math.max(0, ...((String(x.p.name || '') + ' ' + String(x.p.memo || '')).match(/SPF\s*(\d+)/gi) || []).map(v => Number(v.replace(/\D/g, ''))));
+    const spfX = x => Math.max(0, ...((String(x.p.name || '') + ' ' + String(x.p.memo || '') + ' ' + uvNow(x.p.name, ((x.p.brand || '') + ' ' + x.p.name).trim())).match(/SPF\s*(\d+)/gi) || []).map(v => Number(v.replace(/\D/g, '')))); /* 商品名に書いていないSPFも、調べた値を使う */
     const kindX = x => x.step || '';
-    const nm = x => { const l = prodIngLabel(x.p), sp = x.step === 'sunscreen' || /日焼け止め/.test(x.p.category || '') ? (`${x.p.name || ''} ${x.p.ingredients || ''}`.match(/SPF\s*(\d+)/i) || [])[1] : ''; return '「' + (sp ? `SPF${sp}の${l}` : l) + '」'; }; /* 日焼け止めが2つあるときは、SPFで見分けられるようにする */
+    const nm = x => { const l = prodIngLabel(x.p), sp = x.step === 'sunscreen' || /日焼け止め/.test(x.p.category || '') ? (`${x.p.name || ''} ${x.p.ingredients || ''} ${uvNow(x.p.name, ((x.p.brand || '') + ' ' + x.p.name).trim())}`.match(/SPF\s*(\d+)/i) || [])[1] : ''; return '「' + (sp ? `SPF${sp}の${l}` : l) + '」'; }; /* 日焼け止めが2つあるときは、SPFで見分けられるようにする */
     const restN = (st, L, why, src) => { if (L.length) { st.today.push(T(`今日は${L.map(nm).join('・')}はお休みします（${why}）`, src || '肌')); L.forEach(x => RESTED.set(x.p.id, why)); } };
     // 毎日は使わない物（週1回・週2〜3回）：前に使った日から日が浅ければ休む。不定期の物は、今日の肌の悩みに合うときだけ
     const FQ_GAP = {'週1回':6, '週2〜3回':2};
@@ -11752,7 +11774,7 @@ function openLifeForm(id, part, forDate) {
     <div class="field-error" data-err="exercise"></div><div class="field-error" data-err="steps"></div>
     ${(p => p && part ? `<button type="button" class="btn btn-soft lf-same" data-lsame="${esc(d.date || t)}|exercise">${sameLabel(d.date || t, p)}</button>` : '')(lifePrev(d.date || t, 'exercise'))}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}>${part ? '' : '<div class="section-title">MEAL 食事</div>'}
-    ${isPremium() ? `<input type="text" class="input mpt-hint" id="meal-hint" maxlength="40" placeholder="料理名のヒント（任意）例：とんかつ定食" aria-label="料理名のヒント" autocomplete="off" enterkeyhint="done">` : ''}
+    ${isPremium() ? `<div class="mpt-hd"><button type="button" class="mpt-hd-b" data-mhint>料理名を先に伝える（任意）</button><input type="text" class="input mpt-hint" id="meal-hint" maxlength="40" placeholder="例：とんかつ定食" aria-label="写真の料理名（任意）" autocomplete="off" enterkeyhint="done" hidden></div>` : ''}
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
       : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>
