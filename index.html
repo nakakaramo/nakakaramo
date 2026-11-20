@@ -649,7 +649,27 @@ details.acc-cmp{margin-top:14px}
 .sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
 .sbig .input{min-height:44px;height:44px;padding-left:44px;padding-right:50px;font-size:16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
 .sbig .input::-webkit-search-cancel-button{display:none}
-.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px;pointer-events:none}.find-cam-b .hap-ov{border-radius:50%}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
+.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}
+/* 2026-11-20 カメラで登録：画面いっぱいのカメラ */
+.cl-ov{position:fixed;inset:0;z-index:5000;background:#111;color:#fff;opacity:0;transition:opacity .2s ease;touch-action:none;overscroll-behavior:none}.cl-ov.in{opacity:1}
+.cl-v{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#222}
+.cl-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.45),transparent 22%,transparent 68%,rgba(0,0,0,.55))}
+.cl-top{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px}
+.cl-t{font-size:17px;font-weight:700;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.4)}.cl-tr{display:flex;gap:4px}
+.cl-ib{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transform:none!important}.cl-ib svg{width:26px;height:26px}.cl-ib.on{color:#F2C230}.cl-ib[hidden]{display:none}
+.cl-bot{position:absolute;left:0;right:0;bottom:0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;align-items:center}
+.cl-tip{margin:0 0 14px;padding:8px 14px;border-radius:10px;background:rgba(20,22,24,.82);font-size:14px;line-height:1.4;text-align:center;max-width:330px}
+.cl-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;max-width:360px}
+.cl-sb{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transform:none!important}
+.cl-sb .cl-c{width:52px;height:52px;border-radius:50%;background:#fff;color:#1b1f1c;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}.cl-sb .cl-c svg{width:24px;height:24px}.cl-sb small{font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.cl-ov.bar [data-cl="bar"] .cl-c{background:var(--green);color:#fff}
+.cl-shut{width:84px;height:84px;border-radius:50%;border:4px solid rgba(255,255,255,.85);padding:4px;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;transform:none!important}.cl-shut span{display:flex;width:100%;height:100%;border-radius:50%;background:#fff;color:#1b1f1c;align-items:center;justify-content:center;transition:transform .1s}.cl-shut:active span{transform:scale(.92)}.cl-shut svg{width:26px;height:26px}
+.cl-sl{margin-top:6px;font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.cl-frame{position:absolute;left:7%;right:7%;top:29%;height:21%;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.9);pointer-events:none}.cl-frame i{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#E04848;box-shadow:0 0 8px #E04848;animation:clScan 1.6s ease-in-out infinite alternate}
+@keyframes clScan{from{transform:translateY(-34px)}to{transform:translateY(34px)}}
+.cl-msg{position:absolute;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 70px);padding:10px 14px;border-radius:12px;background:rgba(20,22,24,.88);font-size:13.5px;line-height:1.6}
+.cl-ov.flash::after{content:"";position:absolute;inset:0;background:#fff;animation:clFlash .25s ease-out forwards}@keyframes clFlash{from{opacity:.85}to{opacity:0}}
+.rx-sure{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-s)}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px;pointer-events:none}.find-cam-b .hap-ov{border-radius:50%}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .my-add{width:100%;justify-content:center}
@@ -3026,7 +3046,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120144739'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120150859'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5136,7 +5156,7 @@ function openRxSheet() {
     if (!hit.length) return `<p class="small muted" style="margin:12px 0">見つかりませんでした。ジェネリック（後発品）などで一覧にないときは、下の「一覧にない薬を入力」から登録できます。</p>`;
     return groups.map(g => { const ds = hit.filter(d => d[0] === g); return ds.length ? `<h3 class="rx-g">${esc(g)}</h3>${ds.map(d => `<button type="button" class="rx-item" data-rx="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}` : ''; }).join('');
   };
-  openModal({title:'皮膚科の塗り薬を追加', size:'tall', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す" aria-label="薬の名前で探す" autocomplete="off">
+  openModal({title:'皮膚科の塗り薬を追加', size:'tall', dismissable:true, body:`<div class="ac-wrap sbig find-bar find-cam">${icon('search')}<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す" aria-label="薬の名前で探す" autocomplete="off" enterkeyhint="search"><span role="button" tabindex="0" class="find-cam-b${isPremium() ? '' : ' is-locked'}" data-action="rx-camera" aria-label="カメラで塗り薬を探す">${icon('camera')}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></span></div>
     <div id="rx-list">${list('')}</div><div id="find-list" class="net-list" hidden></div>
     <button type="button" class="btn btn-ghost btn-sm" data-action="rx-manual" style="margin-top:12px;width:100%;justify-content:center">一覧にない薬を入力</button>
     <p class="hint" style="margin-top:10px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。このアプリは、使った日や残りの記録のためのものです。</p>`});
@@ -5417,6 +5437,113 @@ function openCamSheet(kind) {
     <div id="find-list" class="net-list" style="margin-top:12px"></div>
     <p class="small" style="margin-top:12px"><button type="button" class="link" data-action="add-manual" data-id="${kind}">数字か商品名を自分で入力する</button></p>`});
 }
+// ===== 2026-11-20 カメラで登録：画面いっぱいのカメラ（写真から選ぶ・撮って探す・バーコードを自動で読む）。化粧品と塗り薬の両方 =====
+const CL_SVG = {
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  torch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"/></svg>',
+  help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
+  bar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 8v8M11 8v8M14 8v8M17 8v8"/></svg>',
+};
+let CL = null;
+function clStop() { if (!CL) return; clearInterval(CL.scanT); try { (CL.stream && CL.stream.getTracks() || []).forEach(t => t.stop()); } catch (e) { /* 何もしない */ } const ov = CL.ov; CL = null; if (ov) { ov.classList.remove('in'); setTimeout(() => ov.remove(), 220); } try { unlockScroll(); } catch (e) { /* 何もしない */ } }
+async function openCamLive(kind) {
+  const rx = kind === 'rx';
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { rx ? openRxCamSheet() : openCamSheet(kind); return; } // カメラが使えない端末は、今までの「選ぶ・撮る」
+  clStop();
+  const ov = document.createElement('div'); ov.className = 'cl-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'カメラで登録');
+  ov.innerHTML = `<video class="cl-v" playsinline muted autoplay></video><div class="cl-shade"></div><div class="cl-frame" hidden><i></i></div>
+    <div class="cl-top"><button type="button" class="cl-ib" data-cl="back" aria-label="戻る">${CL_SVG.back}</button><b class="cl-t">${rx ? '塗り薬をカメラで探す' : 'カメラで探す'}</b><span class="cl-tr"><button type="button" class="cl-ib" data-cl="torch" aria-label="ライト" hidden>${CL_SVG.torch}</button><button type="button" class="cl-ib" data-cl="help" aria-label="使い方">${CL_SVG.help}</button></span></div>
+    <div class="cl-bot"><p class="cl-tip" id="cl-tip">写真を撮って${rx ? '薬' : '商品'}を探す</p>
+      <div class="cl-row"><label class="cl-sb"><span class="cl-c">${icon('image')}</span><small>写真</small><input type="file" accept="image/*" class="vh" id="cl-lib"></label>
+        <button type="button" class="cl-shut" data-cl="shot" aria-label="撮って探す"><span>${icon('search')}</span></button>
+        <button type="button" class="cl-sb" data-cl="bar"><span class="cl-c">${CL_SVG.bar}</span><small>バーコード</small></button></div>
+      <small class="cl-sl">カメラ</small></div>
+    <div class="cl-msg" id="cl-msg" hidden></div>`;
+  document.body.appendChild(ov); try { lockScroll(); } catch (e) { /* 何もしない */ }
+  requestAnimationFrame(() => ov.classList.add('in'));
+  CL = {ov, kind, mode:'photo', stream:null, track:null, torch:false, scanT:0};
+  const msg = (t, keep) => { const m = ov.querySelector('#cl-msg'); if (!m) return; m.textContent = t; m.hidden = !t; clearTimeout(msg.t); if (t && !keep) msg.t = setTimeout(() => { m.hidden = true; }, 3200); };
+  const tip = t => { const e = ov.querySelector('#cl-tip'); if (e) e.textContent = t; };
+  const v = ov.querySelector('video');
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}, audio:false});
+    if (!CL || CL.ov !== ov) { st.getTracks().forEach(t => t.stop()); return; }
+    CL.stream = st; CL.track = st.getVideoTracks()[0]; v.srcObject = st; try { await v.play(); } catch (e) { /* 何もしない */ }
+    try { const cap = CL.track.getCapabilities ? CL.track.getCapabilities() : {}; if (cap.torch) ov.querySelector('[data-cl="torch"]').hidden = false; if (cap.focusMode && cap.focusMode.includes('continuous')) CL.track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(() => {}); } catch (e) { /* 何もしない */ }
+  } catch (e) { msg('カメラを使えませんでした。設定でカメラを許可するか、左下の「写真」から選んでください。', true); }
+  // 撮った写真・選んだ写真を、今までと同じ流れで探す
+  const go = file => { const k = CL && CL.kind; clStop(); if (!file) return; setTimeout(() => { if (k === 'rx') { openRxCamSheet(); rxCamGot(file); } else { openCamSheet(k); camGot(file); } }, 230); };
+  const grab = (maxW, q) => new Promise(res => { const w = v.videoWidth, h = v.videoHeight; if (!w || !h) return res(null); const sc = Math.min(1, maxW / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.round(w * sc); c.height = Math.round(h * sc); c.getContext('2d').drawImage(v, 0, 0, c.width, c.height); c.toBlob(b => res(b ? new File([b], 'camera.jpg', {type:'image/jpeg'}) : null), 'image/jpeg', q); });
+  // バーコード：枠の中を何度も読んで、読めたらすぐ探す（13桁・8桁）
+  const bd = 'BarcodeDetector' in window ? (() => { try { return new window.BarcodeDetector({formats:['ean_13', 'ean_8']}); } catch (e) { return null; } })() : null;
+  const scan = async () => {
+    if (!CL || CL.ov !== ov || CL.mode !== 'bar' || CL.busy || !v.videoWidth) return; CL.busy = true;
+    try {
+      const w = v.videoWidth, h = v.videoHeight, cw = Math.round(w * 0.86), ch = Math.round(h * 0.42), c = document.createElement('canvas'); c.width = Math.min(1200, cw); c.height = Math.round(ch * c.width / cw);
+      c.getContext('2d', {willReadFrequently:true}).drawImage(v, (w - cw) / 2, (h - ch) / 2, cw, ch, 0, 0, c.width, c.height);
+      let jan = ''; if (bd) { try { const r = await bd.detect(c); if (r[0] && /^(\d{8}|\d{13})$/.test(r[0].rawValue)) jan = r[0].rawValue; } catch (e) { /* 次の方法へ */ } }
+      if (!jan) jan = eanDecodeImage(c);
+      if (jan && CL && CL.ov === ov) { try { if (typeof navigator.vibrate === 'function') navigator.vibrate(20); hapticTick(); } catch (e) { /* 何もしない */ } const k = CL.kind; clStop(); setTimeout(() => { if (k === 'rx') { openRxCamSheet(); const fs = findState; if (fs) { fs.noRx = true; const m = document.getElementById('cam-msg'); if (m) m.textContent = `バーコード ${jan} を読み取りました（処方薬のバーコードは読めないため、市販の薬を探しています）。`; findRun(jan); } } else { openCamSheet(k); const m = document.getElementById('cam-msg'); if (m) m.textContent = `バーコード ${jan} を読み取りました。当てはまる商品を選んでください。`; findRun(jan); } }, 230); }
+    } catch (e) { /* 何もしない */ }
+    if (CL) CL.busy = false;
+  };
+  const setMode = m => { if (!CL) return; CL.mode = m; ov.classList.toggle('bar', m === 'bar'); ov.querySelector('.cl-frame').hidden = m !== 'bar'; ov.querySelector('.cl-sl').textContent = m === 'bar' ? 'バーコード' : 'カメラ';
+    tip(m === 'bar' ? 'バーコードを枠の中に写すと、自動で読み取ります' : `写真を撮って${rx ? '薬' : '商品'}を探す`); clearInterval(CL.scanT); if (m === 'bar') CL.scanT = setInterval(scan, 380); };
+  ov.addEventListener('click', async e => {
+    const b = e.target.closest('[data-cl]'); if (!b || !CL) return; const a = b.dataset.cl; try { hapticTick(); } catch (er) { /* 何もしない */ }
+    if (a === 'back') { clStop(); setTimeout(() => (rx ? openRxSheet() : openAddSheet(kind)), 230); return; }
+    if (a === 'help') { msg(rx ? '薬の名前（例：ヒルドイドソフト軟膏0.3%）が大きく、ピントが合うように撮ってください。チューブや箱の正面がおすすめです。市販の薬はバーコードでも探せます。' : '商品の正面を、名前が大きく写るように撮ってください。バーコードがあれば、右下の「バーコード」で写すと自動で読み取ります。', true); return; }
+    if (a === 'torch') { try { CL.torch = !CL.torch; await CL.track.applyConstraints({advanced:[{torch:CL.torch}]}); b.classList.toggle('on', CL.torch); } catch (er) { msg('この端末ではライトを使えません。'); } return; }
+    if (a === 'bar') { setMode(CL.mode === 'bar' ? 'photo' : 'bar'); return; }
+    if (a === 'shot') { if (CL.mode === 'bar') { setMode('photo'); return; } const f = await grab(1600, 0.9); if (!f) { msg('カメラの準備ができていません。少し待ってからもう一度押してください。'); return; } ov.classList.add('flash'); go(f); }
+  });
+  ov.querySelector('#cl-lib').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) go(f); });
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && CL) clStop(); }); // 画面を離れたらカメラを止める
+// 塗り薬：写真から薬の名前を読んで、アプリに入っている塗り薬の一覧からいちばん近い物を出す（候補から選ぶ）
+function rxMatch(text) {
+  const raw = String(text || '').normalize('NFKC'), t = fnorm(raw); if (t.length < 2) return [];
+  const FORM = /(軟膏|クリーム|ローション|ゲル|液|スプレー|フォーム|ソリューション|ゾル|テープ|油性クリーム|外用)/;
+  const stem = n => fnorm(String(n).normalize('NFKC').replace(/[（(].*?[）)]/g, '').replace(/[\d.]+\s*(%|μg\/g|万単位\/g)?/g, '').replace(FORM, ''));
+  const pct = n => (String(n).normalize('NFKC').match(/(\d+(?:\.\d+)?)\s*%/) || [])[1] || '';
+  const tp = pct(raw), tf = (raw.match(FORM) || [])[1] || '';
+  return RX_DRUGS.map(d => { const nf = fnorm(d[1]), st = stem(d[1]), ing = fnorm(String(d[2]).split(/[・、]/)[0]); let sc = 0;
+    if (nf && t.includes(nf)) sc = 100 + nf.length;
+    else if (st.length >= 2 && t.includes(st)) { sc = 60 + st.length; const f = (String(d[1]).normalize('NFKC').match(FORM) || [])[1] || ''; if (f && tf && f === tf) sc += 20; else if (f && tf) sc -= 15; const p = pct(d[1]); if (p && tp && p === tp) sc += 15; else if (p && tp) sc -= 10; }
+    else if (ing.length >= 3 && t.includes(ing)) { sc = 35 + ing.length / 2; const f = (String(d[1]).normalize('NFKC').match(FORM) || [])[1] || ''; if (f && tf && f === tf) sc += 10; }
+    return {d, sc}; }).filter(x => x.sc >= 35).sort((a, b) => b.sc - a.sc).slice(0, 5);
+}
+function openRxCamSheet() {
+  findState = {kind:'my', q:'', items:null, loading:false, err:'', timer:null, cam:true, noRx:true, rxCam:true};
+  openModal({title:'塗り薬をカメラで探す', dismissable:true, body:`<div id="cam-prev"></div><p class="small" id="cam-msg" style="margin:8px 0 0"></p><div id="rxcam-list"></div>
+    <div id="find-list" class="net-list" style="margin-top:12px"></div>
+    <div class="cam-pick" style="margin-top:12px"><button type="button" class="btn btn-ghost" data-action="rx-camera">${icon('camera')}撮り直す</button></div>
+    <button type="button" class="btn btn-ghost btn-sm" data-action="rx-manual" style="margin-top:12px;width:100%;justify-content:center">一覧にない薬を入力</button>`});
+  const L = document.getElementById('rxcam-list'); if (L) L.addEventListener('click', e => { const b = e.target.closest('[data-rx]'); if (b) rxPick(b.dataset.rx); });
+}
+async function rxCamGot(file) {
+  const fs = findState; if (!fs || !fs.rxCam || !file) return;
+  const msg = t => { const m = document.getElementById('cam-msg'); if (m) m.textContent = t; };
+  let small, hi; try { small = await readImage(file, 640, 0.8); hi = await readImage(file, 1600, 0.9); } catch (e) { msg('写真を読み込めませんでした。'); return; }
+  const pv = document.getElementById('cam-prev'); if (pv) pv.innerHTML = `<img class="img-prev" src="${small}" alt="撮った写真" style="width:120px;height:120px">`;
+  const box = document.getElementById('rxcam-list');
+  if (!isPremium()) { msg(`写真から薬の名前を読むのは${PREMIUM_NAME}の機能です。上の検索に薬の名前を入れて探せます。`); return; }
+  if (box) box.innerHTML = skelHtml(3, {dots:true, label:'薬の名前を読み取り中'});
+  try {
+    const r = (await callVision('package', hi)).result || {};
+    if (findState !== fs) return;
+    const text = [r.brand, r.name, r.ingredients, r.volume].filter(Boolean).join(' ');
+    const M = rxMatch(text);
+    if (M.length) {
+      const top = M[0], sure = top.sc >= 100 && (!M[1] || M[1].sc < top.sc - 10);
+      msg(sure ? `「${top.d[1]}」だと思います。合っていれば押して登録してください。` : '近い薬を出しています。当てはまる物を押してください（濃さ・クリーム／軟膏などの種類も確かめてください）。');
+      if (box) box.innerHTML = `<p class="find-sec">皮膚科の塗り薬</p>` + M.map((x, i) => `<button type="button" class="rx-item${i === 0 && sure ? ' rx-sure' : ''}" data-rx="${esc(x.d[1])}">${rxSvg(x.d[1])}<span><b>${esc(x.d[1])}</b><small>${esc(x.d[2])}</small></span><i>${icon('plus')}</i></button>`).join('');
+    } else { if (box) box.innerHTML = ''; msg(text ? `「${truncate(fShort(text), 30)}」と読み取りました。一覧の塗り薬には見つからなかったので、市販の薬を探しています。` : '薬の名前を読み取れませんでした。名前が大きく写るように撮り直してください。'); }
+    const q = [r.brand, r.name].filter(Boolean).join(' ').slice(0, 60);
+    if (q && !(M[0] && M[0].sc >= 100)) await findRun(q); else { fs.items = null; fs.loading = false; const fl = document.getElementById('find-list'); if (fl) fl.innerHTML = ''; }
+  } catch (e) { if (findState === fs) { if (box) box.innerHTML = ''; msg(String((e && e.message) || '読み取れませんでした。もう一度撮ってください。')); } }
+}
+const fShort = t => String(t || '').replace(/\s+/g, ' ').trim();
 async function camGot(file) {
   const fs = findState; if (!fs || !fs.cam || !file) return;
   const msg = t => { const m = document.getElementById('cam-msg'); if (m) m.textContent = t; };
@@ -16006,8 +16133,9 @@ const actions = {
   'find-more': () => { if (findState) { findState.more = true; findPaint(); } },
   'add-camera': kind => {
     if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); return; }
-    closeModal(); setTimeout(() => { openCamSheet(kind || 'my'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); }, 200);
+    closeModal(); setTimeout(() => openCamLive(kind || 'my'), 200); /* 2026-11-20 画面いっぱいのカメラにする */
   },
+  'rx-camera': () => { if (!isPremium()) { closeModal(); openPremiumSheet('塗り薬のカメラ登録'); return; } closeModal(); setTimeout(() => openCamLive('rx'), 200); },
   'rx-sheet': () => { if (document.querySelector('#modal-root').innerHTML) { closeModal(); setTimeout(openRxSheet, 200); } else openRxSheet(); },
   'rx-manual': () => { closeModal(); setTimeout(() => { openMyForm(); setTimeout(() => { const c = document.querySelector('#my-form [name=category]'); if (c) { c.value = '皮膚科の塗り薬'; c.dispatchEvent(new Event('change', {bubbles:true})); } const b = document.querySelector('#my-form [name=brand]'); if (b && !b.value) b.value = '処方薬'; }, 60); }, 200); },
   'add-manual': kind => { closeModal(); setTimeout(() => { openFindSheet(kind || 'my'); const m = $('#modal-root .modal'); if (m) m._back = () => openAddSheet(kind || 'my'); }, 200); },
