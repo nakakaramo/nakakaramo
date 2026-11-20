@@ -1782,6 +1782,7 @@ body{line-break:strict;word-break:normal;overflow-wrap:break-word}
 .otp-ov.in{opacity:1}.otp-ov.out{opacity:0}
 .otp-card{width:min(400px,100%);background:var(--surface);border-radius:22px;padding:24px 20px 18px;box-shadow:0 18px 50px rgba(0,0,0,.22);transform:translateY(10px);transition:transform .2s}
 .otp-ov.in .otp-card{transform:none}
+#pol-ov .otp-card{max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain}
 .otp-t{margin:0 0 6px;font-size:18px;font-weight:700;color:var(--ink)}
 .otp-s{margin:0 0 14px;font-size:13.5px;color:var(--ink2);line-height:1.7}.otp-s b{word-break:break-all}
 .otp-in{width:100%;text-align:center;font-size:26px!important;letter-spacing:.35em;font-weight:700;height:58px}
@@ -3051,7 +3052,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120225639'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120234124'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3988,6 +3989,8 @@ function normalize(d) {
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
+  out.settings.policyAgreed = typeof ds.policyAgreed === 'string' ? ds.policyAgreed.slice(0, 20) : ''; // プライバシーポリシーに同意した版（健康に関する情報の取り扱いを含む）
+  out.settings.backupPaused = !!ds.backupPaused; // 同意しなかったので、クラウドへのバックアップを止めている
   out.settings.policySeen = typeof ds.policySeen === 'string' ? ds.policySeen.slice(0, 20) : ''; // 改定のお知らせを見た版
   out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
   out.settings.remindDone = !!ds.remindDone; out.settings.remindHide = !!ds.remindHide; out.settings.dermHide = isValidYmd(ds.dermHide) ? ds.dermHide : ''; out.settings.comboHide = typeof ds.comboHide === 'string' ? ds.comboHide.slice(0, 400) : '';
@@ -5939,6 +5942,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="username" maxlength="254" value="${esc(st.email)}">
         <label class="au-lbl" for="au-pw" style="margin-top:14px">パスワード</label>
         <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72">${eye('au-pw')}</div>
+        <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>（健康に関する情報の取り扱いを含む）に同意します</span></label>
         <button type="button" class="au-go" data-au="login" ${st.busy ? 'disabled' : ''}>${st.busy ? 'ログインしています…' : 'ログイン'}</button>
         <button type="button" class="au-link" data-au="forgot">パスワードを忘れた場合</button>
         ${sso}`;
@@ -5977,7 +5981,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       if (a === 'close') return finish(false);
       if (a === 'back') { st.step = 'email'; st.err = ''; st.info = ''; return paint('back'); }
       if (a === 'tologin' || a === 'tosignup') { st.email = pv('#au-email').trim() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint('fade'); }
-      if (a === 'google') { if (swState) { try { swSave(true); } catch (e) { /* 何もしない */ } } finish(false); return googleLogin(); } // はじめの質問の答えは、Googleの画面へ移る前に保存しておく
+      if (a === 'google') { if (st.mode === 'login' && !(ov.querySelector('#au-agree') || {}).checked) return setErr('プライバシーポリシーへの同意にチェックを入れてください'); policyAgree(); if (swState) { try { swSave(true); } catch (e) { /* 何もしない */ } } finish(false); return googleLogin(); } // はじめの質問の答えは、Googleの画面へ移る前に保存しておく
       if (a === 'next') {
         const em = pv('#au-email').trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください');
@@ -5995,11 +5999,13 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       if (a === 'login') {
         if (ov.querySelector('#au-email')) { const em = pv('#au-email').trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください'); st.email = em; }
         if (!pw) return setErr('パスワードを入力してください');
+        if (!(ov.querySelector('#au-agree') || {}).checked) return setErr('プライバシーポリシーへの同意にチェックを入れてください');
         st.busy = true; st.err = ''; paint();
         try {
           const c = await client(); const {error} = await withTO(c.auth.signInWithPassword({email:st.email, password:pw}));
-          if (error && /Email not confirmed/i.test(error.message || '')) { st.busy = false; paint(); if (await otpPrompt(st.email, {resendFirst:true})) return done('ログインしました'); throw error; }
+          if (error && /Email not confirmed/i.test(error.message || '')) { st.busy = false; paint(); if (await otpPrompt(st.email, {resendFirst:true})) { policyAgree(); return done('ログインしました'); } throw error; }
           if (error) throw error;
+          policyAgree();
           return done('ログインしました');
         } catch (e) { st.busy = false; paint(); setErr(authErrMsg(e)); }
         return;
@@ -6009,6 +6015,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         if (pv('#au-pw2') !== pw) return setErr('パスワード（確認）が一致しません');
         if (!(ov.querySelector('#au-agree') || {}).checked) return setErr('利用規約とプライバシーポリシーへの同意にチェックを入れてください');
         const wantSync = !!(ov.querySelector('#au-sync') || {}).checked;
+        policyAgree();
         st.busy = true; st.err = ''; paint();
         try {
           const c = await client(); const {data, error} = await withTO(c.auth.signUp({email:st.email, password:pw, options:{emailRedirectTo:appUrl()}}));
@@ -11133,8 +11140,44 @@ function startItems() {
 // 2026-11-20 プライバシーポリシーを改定したことを、前から使っている人に1回だけ知らせる
 const POLICY_VER = '2026-11-20';
 function policyNoticeHtml() {
-  if (state.settings.policySeen === POLICY_VER || !(state.myProducts.length || state.skinLogs.length)) return '';
+  if (policyAgreedNow() || state.settings.policySeen === POLICY_VER || !(state.myProducts.length || state.skinLogs.length)) return '';
   return `<div class="card pol-note"><div class="st-head"><h2>プライバシーポリシーを改定しました</h2><button type="button" class="st-x" data-action="policy-seen" aria-label="このお知らせを閉じる">×</button></div><p class="small" style="margin:6px 0 10px">${esc(LEGAL.updated)}に改定しました。Myアイテムに登録した飲み薬・サプリの記録の取り扱い（端末とバックアップへの保存・ケアの提案への利用）を書き足しました。研究への協力には送りません。</p><a class="btn btn-ghost btn-sm" href="#/privacy" data-action="policy-open">内容を見る</a></div>`;
+}
+// 同意の記録：設定に残す（クラウドの設定で上書きされても消えないよう、この端末にも残す）
+const POL_LS = 'nk_pol_ok';
+function policyAgree() {
+  state.settings.policyAgreed = POLICY_VER; state.settings.backupPaused = false; state.settings.policySeen = POLICY_VER;
+  try { localStorage.setItem(POL_LS, POLICY_VER); } catch (e) { /* 何もしない */ }
+  try { save(); } catch (e) { /* 何もしない */ }
+}
+function policyAgreedNow() {
+  if (state.settings.policyAgreed === POLICY_VER) return true;
+  let ls = ''; try { ls = localStorage.getItem(POL_LS) || ''; } catch (e) { /* 何もしない */ }
+  if (ls === POLICY_VER) { state.settings.policyAgreed = POLICY_VER; state.settings.backupPaused = false; try { save(); } catch (e) { /* 何もしない */ } return true; }
+  return false;
+}
+// 前からログインしている人：改定したポリシーへの同意を1回だけ聞く（同意しないときは、バックアップを止める）
+function policyGate() {
+  try {
+    if (!acct.user || SYNC.pulledFor !== acct.user.id || document.getElementById('pol-ov') || document.getElementById('login-gate')) return;
+    if (policyAgreedNow() || state.settings.backupPaused) return;
+    if ($('#modal-root') && $('#modal-root').innerHTML) { clearTimeout(policyGate.t); policyGate.t = setTimeout(policyGate, 3000); return; } // ほかの画面が開いているときは、閉じてから
+    const ov = document.createElement('div'); ov.className = 'otp-ov'; ov.id = 'pol-ov';
+    ov.innerHTML = `<div class="otp-card" role="dialog" aria-modal="true" aria-labelledby="pol-t">
+      <p class="otp-t" id="pol-t">プライバシーポリシーへの同意のお願い</p>
+      <p class="otp-s">Myアイテムに飲み薬・サプリを登録できるようになり、<b>健康に関する情報</b>（法律上の要配慮個人情報）を扱うため、プライバシーポリシーを改定しました（${esc(LEGAL.updated)}）。</p>
+      <p class="otp-s">記録のバックアップを続けるには、同意をお願いします。同意しない場合は、クラウドへのバックアップを止めて、記録はこの端末の中だけに残します。</p>
+      <p class="otp-s" style="margin-bottom:0"><a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシーを読む</a></p>
+      <button type="button" class="btn btn-primary otp-ok" data-pol="yes">同意する</button>
+      <div class="otp-sub" style="justify-content:center"><button type="button" class="otp-link otp-x" data-pol="no">同意しない（バックアップを止める）</button></div>
+    </div>`;
+    document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('in'));
+    ov.addEventListener('click', e => { const b = e.target.closest('[data-pol]'); if (!b) return;
+      try { hapticTick(); } catch (x) { /* 何もしない */ }
+      if (b.dataset.pol === 'yes') { policyAgree(); toast('同意しました。バックアップを続けます'); }
+      else { state.settings.backupPaused = true; state.settings.policySeen = POLICY_VER; save(); clearTimeout(SYNC.timer); SYNC.pending = false; toast('バックアップを止めました。記録はこの端末の中だけに残ります'); }
+      ov.classList.add('out'); setTimeout(() => ov.remove(), 200); try { render(); } catch (x) { /* 何もしない */ } });
+  } catch (e) { /* 何もしない */ }
 }
 function startHtml() {
   if (state.settings.startHidden) return '';
@@ -14602,7 +14645,7 @@ function syncKeepPhotos(remote) {
     (remote[k] || []).forEach(x => { const l = loc.get(x.id); if (l) Object.keys(l).forEach(f => { if (isDataImg(l[f]) && !x[f]) x[f] = l[f]; }); }); });
   return remote;
 }
-const syncOn = () => !!(acct.client && acct.user); // ログインしていれば、登録したメールアドレスのアカウントに自動でバックアップする（オン・オフはなし）
+const syncOn = () => !!(acct.client && acct.user && !(state.settings && state.settings.backupPaused)); // プライバシーポリシーに同意しなかった人は、バックアップを止める // ログインしていれば、登録したメールアドレスのアカウントに自動でバックアップする（オン・オフはなし）
 const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lifeLogs || []).some(l => !l.demo) || (s.myProducts || []).some(p => !p.isSample)));
 // ---------- 記録ごとに「いつ変えたか」「いつ消したか」を残す（2台で使っても、どちらかを選ばずに自動で合わせるため） ----------
 const recItemHash = x => phHash(JSON.stringify(x, (k, v) => isDataImg(v) ? 'img' : v));
@@ -14669,7 +14712,7 @@ async function syncPush() {
 // 起動・ログインのとき：クラウドのほうが新しければ、この端末のデータを置き換える（写真は残す）
 async function syncPull(ask) {
   if (!syncOn()) return;
-  const uid0 = acct.user.id, done = () => { if (acct.user && acct.user.id === uid0) { SYNC.pulledFor = uid0; if (SYNC.pending) { SYNC.pending = false; syncSoon(); } } };
+  const uid0 = acct.user.id, done = () => { if (acct.user && acct.user.id === uid0) { SYNC.pulledFor = uid0; setTimeout(policyGate, 800); if (SYNC.pending) { SYNC.pending = false; syncSoon(); } } };
   if (await syncPull0(ask, done)) done(); // 読み込めなかったとき（電波など）は、次に読めるまで送らない
 }
 async function syncPull0(ask, done) {
@@ -14787,7 +14830,9 @@ async function logoutAndWipe() {
     } catch (e) { saved = false; }
     acct.busy = false; ui.logoutMsg = ''; render();
   }
-  if (!saved) {
+  if (state.settings.backupPaused) {
+    if (!await confirmDialog('プライバシーポリシーに同意していないため、バックアップを止めています。\nこのままログアウトすると、この端末の記録・写真は消えて、元に戻せません。\n\n記録を残したいときは、先に「アカウント」の「自動バックアップ」から、同意してバックアップを再開してください。', {ok:'消えてもよいのでログアウト', title:'記録が消えます'})) return;
+  } else if (!saved) {
     if (!await confirmDialog('クラウドにまだ保存できていない記録（または写真）があります。\n電波のよい場所で、もう一度ログアウトしてください。\n\nこのままログアウトすると、保存できていない分は消えて、元に戻せません。', {ok:'保存せずにログアウト', title:'まだ保存されていません'})) return;
   } else if (!await confirmDialog('ログアウトすると、この端末から記録・写真・名前・アイコンが消えます。\nもう一度ログインすれば、クラウドから元に戻ります。', {ok:'ログアウト', danger:false, title:'ログアウト'})) return;
   acct.busy = true; render();
@@ -14796,7 +14841,7 @@ async function logoutAndWipe() {
   try { await upTo(acct.client.auth.signOut(), 5000); } catch (e) { /* 何もしない */ }
   acct.user = null; acct.sub = null; acct.confirm = false;
   clearTimeout(SYNC.timer); SYNC.pending = false;
-  try { LOGOUT_KEYS().forEach(k => localStorage.removeItem(k)); Object.keys(localStorage).filter(k => /^nk_trial_seen_/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('nk_relogin', '1'); } catch (e) { /* 何もしない */ }
+  try { LOGOUT_KEYS().forEach(k => localStorage.removeItem(k)); Object.keys(localStorage).filter(k => /^nk_trial_seen_/.test(k)).forEach(k => localStorage.removeItem(k)); localStorage.setItem('nk_relogin', '1'); localStorage.removeItem('nk_pol_ok'); } catch (e) { /* 何もしない */ }
   try { if (PH_DB.db) await new Promise(res => { const tx = PH_DB.db.transaction('p', 'readwrite'); tx.objectStore('p').clear(); tx.oncomplete = tx.onerror = tx.onabort = () => res(); }); } catch (e) { /* 何もしない */ }
   try { state = freshState(); localStorage.setItem(STORE_KEY, stateJSON()); } catch (e) { /* 何もしない */ }
   try { history.replaceState(null, '', location.pathname + location.search + '#/home'); } catch (e) { /* 何もしない */ }
@@ -14976,10 +15021,11 @@ function syncPaint() { const b = document.getElementById('sync-card'); if (b) b.
 function syncCardHtml() {
   const on = true; // ログインしていれば、いつも自動でバックアップ
   const status = !acct.user ? '<button type="button" class="btn btn-primary btn-sm" style="margin-top:4px" data-action="acc-login">ログインしてバックアップする</button>'
+    : state.settings.backupPaused ? '<button type="button" class="btn btn-primary btn-sm" style="margin-top:2px" data-action="policy-resume">同意してバックアップを再開する</button>'
     : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : '自動でバックアップします'}</p>` : '';
   return `<div class="card" id="sync-card"><div class="card-h"><h2>自動バックアップ</h2></div>
-    <p class="small muted" style="margin:0 0 10px">${acct.user ? '記録・化粧品・設定・写真を、あなたのアカウントに自動でバックアップしています。機種変更しても、ログインすれば続きから使えます。' : 'ログインしていないので、記録はこの端末の中だけにあり、バックアップされません。端末をなくしたり、アプリを消したりすると記録も消えます。ログイン（無料）すると、自動でバックアップされます。'}</p>
-    ${acct.user ? `<p class="small" style="margin:0">バックアップ先：<b>${esc((acct.user.email || 'Googleのアカウント'))}</b></p>` : ''}${status}</div>`;
+    <p class="small muted" style="margin:0 0 10px">${acct.user && state.settings.backupPaused ? '<span style="color:var(--warn)">プライバシーポリシーに同意していないため、バックアップを止めています。記録はこの端末の中だけにあり、機種変更やログアウトをすると戻せません。</span>' : acct.user ? '記録・化粧品・設定・写真を、あなたのアカウントに自動でバックアップしています。機種変更しても、ログインすれば続きから使えます。' : 'ログインしていないので、記録はこの端末の中だけにあり、バックアップされません。端末をなくしたり、アプリを消したりすると記録も消えます。ログイン（無料）すると、自動でバックアップされます。'}</p>
+    ${acct.user && !state.settings.backupPaused ? `<p class="small" style="margin:0">バックアップ先：<b>${esc((acct.user.email || 'Googleのアカウント'))}</b></p>` : ''}${status}</div>`;
 }
 async function initCloud() {
   if (acct.status === 'loading' || acct.status === 'ready') return;
@@ -16283,6 +16329,7 @@ const actions = {
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
   'reco-add': id => recoAdd(id),
   'shop-to-my': () => { const x = ui.shopItem; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); },
+  'policy-resume': async () => { if (!await confirmDialog('プライバシーポリシー（健康に関する情報の取り扱いを含む）に同意して、クラウドへのバックアップを再開しますか？', {ok:'同意して再開する', danger:false, title:'バックアップの再開'})) return; policyAgree(); toast('バックアップを再開しました'); render(); try { syncPull(); } catch (e) { /* 何もしない */ } },
   'policy-seen': () => { state.settings.policySeen = POLICY_VER; save(); render(); },
   'policy-open': () => { state.settings.policySeen = POLICY_VER; save(); location.hash = '#/privacy'; },
   'start-hide': () => { state.settings.startHidden = true; save(); render(); toast('「はじめにやること」を閉じました'); },
@@ -17050,6 +17097,7 @@ function redirectTo(h) { try { history.replaceState({d:isRootHash(h) ? 0 : 1}, '
 function render() {
   try { SHOWN_DAY = todayStr(); } catch (e) { /* 何もしない */ }
   try { gateSync(); } catch (e) { /* 何もしない */ }
+  setTimeout(policyGate, 600);
   applyHelpPref();
   const r = parseRoute();
   // アカウント（すべて）・ホーム・記録一覧のボタンは、押しても沈まない（2026-11-16）
