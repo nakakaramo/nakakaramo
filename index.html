@@ -3080,7 +3080,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121013555'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121044604'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -7956,7 +7956,7 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
     const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.target.closest('.m-del') || w.classList.contains('sw-open') || e.touches.length !== 1 || st) return;
     start(w, e.touches[0].clientX, e.touches[0].clientY);
   }, {passive:true});
-  setInterval(() => { if (st && performance.now() - (st.at || 0) > 4000) { if (st.drag) end(); else cancel(); } }, 1000); /* 2026-11-20 指を離した合図が来なかったときも、並べ替えを終わらせる（スクロールできないままにしない） */
+  setInterval(() => { if (st && performance.now() - (st.at || 0) > 4000) { if (st.drag) end(); else cancel(); } }, 250); /* 2026-11-21 見回り：1秒おきだと戻るまで最大5秒強かかっていたので0.25秒おきに確かめる。2026-11-20 指を離した合図が来なかったときも、並べ替えを終わらせる（スクロールできないままにしない） */
   document.addEventListener('touchmove', e => {
     if (!st) return; const t = e.touches[0]; st.at = performance.now();
     if (!st.drag) { if (Math.abs(t.clientY - st.y0) > 8 || Math.abs(t.clientX - st.x) > 8) cancel(); return; }

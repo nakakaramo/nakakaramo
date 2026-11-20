@@ -1438,6 +1438,21 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const pr2 = openAuth('signup'); await w(350); const ov2 = document.querySelector('.au-ov'); if (!ov2 || !(nx(ov2.querySelector('.au-err')) === ov2.querySelector('.au-go') || (nx(ov2.querySelector('.au-err')) || document.body).contains(ov2.querySelector('.au-go')) && nx(ov2.querySelector('.au-err')) !== null)) bad.push('登録の画面でも、まちがいの知らせがボタンのすぐ上にない'); ov2.querySelector('[data-au="close"]').click(); await pr2; await w(300);
     } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} document.querySelectorAll('.au-ov').forEach((x) => x.remove()); state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 見回り：Myアイテムで長押しして並べ替え中に、指を離した合図が来ないと、元に戻るまで5秒以上かかることがあった（確かめる間かくが1秒おきだった）
+  check('並べ替え中に指を離した合図が来なくても、5秒ほどで必ず元に戻る', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state);
+    try {
+      const d = todayStr(); state.settings.onboarded = true; state.myProducts = [0, 1, 2].map((i) => ({ id: 'rg' + i, demo: false, purchases: [], catalogId: null, name: 'テスト化粧水' + i, brand: 'テスト', category: '化粧水・トナー', purposes: [], ingredients: '水', timing: '朝・夜', frequency: '毎日', startDate: addDays(d, -5), status: '使用中', endDate: '', memo: '', pao: 0, order: null }));
+      state = normalize(JSON.parse(JSON.stringify(state))); try { closeModal(true); } catch (e) {} await w(800); /* 前の確かめの画面の切り替えが終わるのを待つ */
+      for (let k = 0; k < 10 && !document.querySelector('.mrow-w'); k++) { ui.myKind = 'cos'; location.hash = '#/my'; await w(300); render(); await w(200); }
+      for (const off of [0, 333, 666]) { /* 確かめる時刻のずれ方を変えて3回 */
+        await w(off); const row = document.querySelector('.mrow-w .mrow-in') || document.querySelector('.mrow-w'); if (!row) { bad.push('Myアイテムの行がない'); break; }
+        const r = row.getBoundingClientRect(), t0 = performance.now();
+        row.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+        await w(600); if (!document.body.classList.contains('m-dragging')) { bad.push('長押ししても持ち上がらない'); break; }
+        while (document.body.classList.contains('m-dragging') && performance.now() - t0 < 9000) await w(20);
+        const dt = performance.now() - t0; if (dt > 5700) bad.push(`元に戻るまで${Math.round(dt)}ミリ秒かかった`); await w(400); }
+    } catch (e) { bad.push('エラー ' + e.message); } finally { document.body.classList.remove('m-dragging'); try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
