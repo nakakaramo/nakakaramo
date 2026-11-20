@@ -3050,7 +3050,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120162721'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120163810'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4385,7 +4385,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '#ld-calbtn, .care-btn, .life-btns .btn, .t3-side [data-action="new-log"], .ct2-rec, .empty [data-action="new-log"], .empty [data-action="life-part"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '#ld-calbtn, .care-btn, .life-btns .btn, .t3-side [data-action="new-log"], .ct2-rec, .empty [data-action="new-log"], .empty [data-action="life-part"], #top-menu, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], [data-action="oral-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done), .btn-danger-ghost, .btn-danger, #photo-cancel'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 // ===== 切り替え（タブ・モード・期間など）に動きをつける =====
 // 選んでいる印（色の板）が、前に選んでいた場所から新しい場所へすべって動く。下の中身も、動いた向きからふわっと入れかわる
 // 動くしるしを付ける切り替えのまとまり（古いiPhone・ブラウザは :has() を使えずエラーになるので、.chips は自分で確かめる）
