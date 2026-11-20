@@ -2783,11 +2783,11 @@ const SITE_HOME = /^https?:/.test(location.protocol) && location.host ? location
 const COMPANY = 'ナカカラモ'; // 企業名（変更する場合はここだけ書き換えます） 
 const STORE_KEY = 'skinwise_data_v1'; // 第1版と同じ保存場所（データを引き継ぐため。サービス名を変えても変更しない）
 const CATEGORIES = ['クレンジング','洗顔','化粧水・トナー','美容液・アンプル','乳液','クリーム','シートマスク・パック','日焼け止め','スポットケア','皮膚科の塗り薬','飲み薬・サプリ','その他'];
-const ORAL_CAT = '飲み薬・サプリ'; // 2026-11-20 内服薬（処方の飲み薬・市販の飲み薬・漢方）とサプリメント
+const ORAL_CAT = '飲み薬・サプリ'; // 2026-11-20 飲み薬（処方の飲み薬・市販の飲み薬・漢方）とサプリメント
 const isMedCat = c => c === '皮膚科の塗り薬' || c === ORAL_CAT; // 薬（化粧品ではない物）
 // 2026-11-20 「化粧水」「美容液」など、一覧にない書き方の種類（AIの読み取り・前の版のデータ）も、正しい種類にそろえる。わからなければ名前から決める（それでもわからなければ「その他」）
 const CAT_SYN = {'化粧水':'化粧水・トナー', 'トナー':'化粧水・トナー', 'ローション':'化粧水・トナー', '拭き取り化粧水':'化粧水・トナー', '美容液':'美容液・アンプル', 'セラム':'美容液・アンプル', 'アンプル':'美容液・アンプル', 'エッセンス':'美容液・アンプル', '乳液':'乳液', 'ミルク':'乳液', 'エマルジョン':'乳液', 'ジェル':'乳液', 'クリーム':'クリーム', 'バーム':'クリーム', 'パック':'シートマスク・パック', 'シートマスク':'シートマスク・パック', 'マスク':'シートマスク・パック', '洗顔料':'洗顔', '洗顔フォーム':'洗顔', 'メイク落とし':'クレンジング', 'UV':'日焼け止め', 'サンスクリーン':'日焼け止め', '日焼け止め':'日焼け止め', '塗り薬':'皮膚科の塗り薬', '処方薬':'皮膚科の塗り薬'};
-function catFix(c, name) { const t = String(c || '').trim(); if (t === '皮膚科の塗り薬') { try { const d = RX_DRUGS.find(x => x[1] === name); if (d && isOralKind(d[0])) return ORAL_CAT; } catch (e) { /* まだ読み込み前 */ } } /* 前の版で塗り薬に入れた飲み薬・サプリは、飲み薬の欄へ */ if (CATEGORIES.includes(t) && t !== 'その他') return t; if (CAT_SYN[t]) return CAT_SYN[t]; if (t === 'その他') return t; const g = CAT_NAME_GUESS.find(([, re]) => re.test(String(name || ''))); return g ? g[0] : 'その他'; }
+function catFix(c, name) { const t = String(c || '').trim(); if (t === '皮膚科の塗り薬') { try { const d = RX_DRUGS.find(x => x[1] === name); if (d && isOralKind(d[0])) return ORAL_CAT; } catch (e) { /* まだ読み込み前 */ } } /* 前の版で塗り薬に入れた飲み薬・サプリは、飲み薬の欄へ */ if (t !== '皮膚科の塗り薬' && t !== '飲み薬・サプリ') { try { if (itemKindOf(name, t) === 'oral') return '飲み薬・サプリ'; } catch (e) { /* まだ読み込み前 */ } } /* 化粧品の種類に入った飲み薬・サプリも */ if (CATEGORIES.includes(t) && t !== 'その他') return t; if (CAT_SYN[t]) return CAT_SYN[t]; if (t === 'その他') return t; const g = CAT_NAME_GUESS.find(([, re]) => re.test(String(name || ''))); return g ? g[0] : 'その他'; }
 const CAT_NAME_GUESS = [['飲み薬・サプリ', /サプリ|錠剤|内服|飲み薬|エキス顆粒|漢方/], ['皮膚科の塗り薬', /軟膏|ゲル\d|ローション\d|処方/], ['クレンジング', /クレンジング|メイク落とし/], ['洗顔', /洗顔|フォーム|ソープ|石けん|石鹸/], ['日焼け止め', /日焼け止め|日焼止め|UV|SPF|サンスクリーン/i], ['シートマスク・パック', /マスク|パック/], ['美容液・アンプル', /美容液|セラム|アンプル|エッセンス/], ['化粧水・トナー', /化粧水|トナー|ローション/], ['乳液', /乳液|ミルク|エマルジョン/], ['クリーム', /クリーム|バーム/]]; // 名前から種類を決める（normalize より前に使うので、ここに置く）
 const CAT_EN = {'皮膚科の塗り薬':'Rx', '飲み薬・サプリ':'ORAL', 'クレンジング':'CLEANSING','洗顔':'CLEANSER','化粧水・トナー':'TONER','美容液・アンプル':'SERUM','乳液':'EMULSION','クリーム':'CREAM','シートマスク・パック':'MASK','日焼け止め':'SUN CARE','スポットケア':'SPOT CARE','その他':'SKIN CARE'};
 const CAT_BG = {'皮膚科の塗り薬':'#EEF1F8', '飲み薬・サプリ':'#F2EEF6', 'クレンジング':'#EEF3F4','洗顔':'#F1F5EF','化粧水・トナー':'#EEF4F0','美容液・アンプル':'#F6F0E5','乳液':'#F5F2EC','クリーム':'#F4EFE8','シートマスク・パック':'#EFF3EE','日焼け止め':'#F7F2E3','スポットケア':'#F3EEEE','その他':'#F2F1EE'};
@@ -3051,7 +3051,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120214955'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120222328'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3122,7 +3122,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
   ['肌の記録（3Dの顔・ニキビの場所・肌の写真）', '○', '○'],
   ['記録一覧・肌の調子カレンダー・週次レポート', '○', '○'],
   ['肌の変化のグラフ（30日まで）', '○', '○'],
-  ['Myアイテム（化粧品・塗り薬・内服薬）の管理、バーコードで登録', '○', '○'],
+  ['Myアイテム（化粧品・塗り薬・飲み薬）の管理、バーコードで登録', '○', '○'],
   ['成分の組み合わせチェック・成分辞典', '○', '○'],
   ['食事・運動・睡眠の記録', '○', '○'],
   ['天気（湿度・気温・紫外線）', '○', '○'],
@@ -3215,7 +3215,7 @@ const ING_DB = [
   {key:'tranexamic', name:'トラネキサム酸', aliases:['トラネキサム酸','m-トラネキサム酸'], groups:['tranexamic'],
    feature:'医薬部外品の有効成分として、肌あれ防止やメラニン生成を抑える目的で配合されることがあります。',
    purpose:'肌あれ防止、しみ・そばかすを防ぐ（医薬部外品の承認内容による）',
-   caution:'化粧品として塗る場合の一般的な注意は、製品の表示に従ってください。内服薬とは扱いが異なります。',
+   caution:'化粧品として塗る場合の一般的な注意は、製品の表示に従ってください。飲み薬とは扱いが異なります。',
    combo:'一般的に、ほかの成分との組み合わせで特別な注意が必要とはされていませんが、製品の使用方法を優先してください。'},
   {key:'hyaluronic', name:'ヒアルロン酸類', aliases:['ヒアルロン酸Na','加水分解ヒアルロン酸','アセチルヒアルロン酸Na','ヒアルロン酸','ヒアルロン酸クロスポリマーNa','ヒドロキシプロピルトリモニウムヒアルロン酸'], groups:['humectant'],
    feature:'水分を抱えこむ性質があり、保湿を目的に幅広い製品に配合されます。',
@@ -5166,8 +5166,8 @@ function rxPurposes(name, ing) {
 }
 const rxId = n => 'rx-' + fnorm(n).replace(/[^0-9a-z぀-ヿ一-龯]/g, '').slice(0, 40);
 function openRxSheet(oral) {
-  oral = oral === true; const DL = RX_DRUGS.filter(d => isOralKind(d[0]) === oral); /* 2026-11-20 塗り薬と内服薬（飲み薬・サプリ）は別の画面 */
-  const gR = g => /国内未承認/.test(g) ? 1.5 : /^飲み薬/.test(g) ? 1 : /^市販/.test(g) ? 2 : /^漢方/.test(g) ? 3 : /^サプリ/.test(g) ? 4 : 0; /* 内服薬：処方の飲み薬→市販の飲み薬→漢方→サプリの順 */
+  oral = oral === true; const DL = RX_DRUGS.filter(d => isOralKind(d[0]) === oral); /* 2026-11-20 塗り薬と飲み薬（飲み薬・サプリ）は別の画面 */
+  const gR = g => /国内未承認/.test(g) ? 1.5 : /^飲み薬/.test(g) ? 1 : /^市販/.test(g) ? 2 : /^漢方/.test(g) ? 3 : /^サプリ/.test(g) ? 4 : 0; /* 飲み薬：処方の飲み薬→市販の飲み薬→漢方→サプリの順 */
   const groups = [...new Set(DL.map(d => d[0]))].map((g, i) => [g, i]).sort((a, b) => gR(a[0]) - gR(b[0]) || a[1] - b[1]).map(x => x[0]);
   const list = q => {
     const k = fnorm(q || '');
@@ -5175,7 +5175,7 @@ function openRxSheet(oral) {
     if (!hit.length) return `<p class="small muted" style="margin:12px 0">一覧には見つかりませんでした。${oral ? '市販の飲み薬・サプリは下に出ます。出ないときは' : 'ジェネリック（後発品）などで一覧にないときは、'}下の「一覧にない${oral ? '物' : '薬'}を入力」から登録できます。</p>`;
     return groups.map(g => { const ds = hit.filter(d => d[0] === g); return ds.length ? `<h3 class="rx-g">${esc(g)}</h3>${ds.map(d => `<button type="button" class="rx-item" data-rx="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}` : ''; }).join('');
   };
-  openModal({title:oral ? '内服薬・サプリを追加' : '皮膚科の塗り薬を追加', size:'tall', dismissable:true, body:`<div class="ac-wrap sbig find-bar find-cam">${icon('search')}<input type="search" class="input" id="rx-q" placeholder="${oral ? '薬・サプリの名前・成分で探す' : '薬の名前・成分で探す'}" aria-label="${oral ? '薬・サプリの名前で探す' : '薬の名前で探す'}" autocomplete="off" enterkeyhint="search"><span role="button" tabindex="0" class="find-cam-b${isPremium() ? '' : ' is-locked'}" data-action="${oral ? 'oral-camera' : 'rx-camera'}" aria-label="${oral ? 'カメラで内服薬・サプリを探す' : 'カメラで塗り薬を探す'}">${icon('camera')}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></span></div>
+  openModal({title:oral ? '飲み薬・サプリを追加' : '皮膚科の塗り薬を追加', size:'tall', dismissable:true, body:`<div class="ac-wrap sbig find-bar find-cam">${icon('search')}<input type="search" class="input" id="rx-q" placeholder="${oral ? '薬・サプリの名前・成分で探す' : '薬の名前・成分で探す'}" aria-label="${oral ? '薬・サプリの名前で探す' : '薬の名前で探す'}" autocomplete="off" enterkeyhint="search"><span role="button" tabindex="0" class="find-cam-b${isPremium() ? '' : ' is-locked'}" data-action="${oral ? 'oral-camera' : 'rx-camera'}" aria-label="${oral ? 'カメラで飲み薬・サプリを探す' : 'カメラで塗り薬を探す'}">${icon('camera')}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></span></div>
     <div id="rx-list">${list('')}</div><div id="find-list" class="net-list" hidden></div>
     <button type="button" class="btn btn-ghost btn-sm" data-action="${oral ? 'oral-manual' : 'rx-manual'}" style="margin-top:12px;width:100%;justify-content:center">${oral ? '一覧にない物を入力' : '一覧にない薬を入力'}</button>
     <p class="hint" style="margin-top:10px">${oral ? '飲む量・回数・期間は、医師・薬剤師の指示や商品の表示に従ってください。このアプリは、飲んでいる物の記録と、それに合わせたスキンケアの提案のためのものです。' : '使う量・回数・期間は、医師・薬剤師の指示に従ってください。このアプリは、使った日や残りの記録のためのものです。'}</p>`});
@@ -5208,6 +5208,19 @@ const SKIN_ITEM_RE = /化粧水|ローション|トナー|美容液|セラム|�
 const NOT_SKIN_RE = /ファンデ|クッション(?!.*(クリーム|美容液))|口紅|ルージュ|リップ(スティック|ティント|グロス|ライナー|カラー)|ティント|グロス|アイシャドウ|アイライナー|マスカラ|アイブロウ|眉|チーク|ハイライター|シェーディング|コンシーラー|フェイスパウダー|おしろい|香水|フレグランス|オードトワレ|オードパルファム|デオドラント|制汗|ヘア|シャンプー|コンディショナー|頭皮|スカルプ|育毛|まつげ美容液|まつ毛美容液|ハンドクリーム|ハンドソープ|フット|かかと|ネイル|美顔器|ドライヤー|ブラシ|パフ|スポンジ|ケース|ポーチ|不織布|使い捨てマスク|サプリ|ドリンク|食品|お茶|プロテイン|ペット|洗剤|柔軟剤|入浴剤|日傘|帽子|サングラス|手袋|アームカバー|パーカー|カーテン|フィルム|書籍|雑誌/;
 const NOT_APPLY_RE = /美容器|美顔器|脱毛|除毛|ムダ毛|光美容|フラッシュ|アタッチメント|カートリッジ|替え?刃|シェーバー|ドライヤー|ヘアアイロン|充電式|家電|スチーマー|電動|ブラシ|ローラー|ES-[A-Z0-9]|ケーブル|アダプター|サプリ|錠剤|カプセル|飲む|ドリンク|内服/;
 const ORAL_ITEM_RE = /サプリ|錠|カプセル|粒|顆粒|ドリンク|内服|第[1-3１-３]類医薬品|指定第2類|漢方|タブレット|ビタミン|飲む|栄養機能食品|機能性表示食品|健康食品|パウダー|ゼリー|包/;
+// 2026-11-20 商品名から、化粧品・塗り薬・飲み薬（サプリ）のどれかを決める（化粧品の欄に飲み薬が入らないように。どの画面から登録しても同じ）
+const ORAL_NAME_RE = /サプリ|錠剤|\d+\s*錠|カプセル|顆粒|内服|飲む|飲料|ドリンク|タブレット|機能性表示食品|栄養機能食品|健康食品|\d+\s*粒|粒入|トランシーノ|ハイチオール|チョコラBB|シナール|ユベラ|ビタミン.{0,6}(錠|内服)|漢方(?!.*(化粧|クリーム|美容液))|エキス顆粒/;
+const ORAL_COSME_RE = /化粧水|美容液|セラム|乳液|ローション|クリーム|ジェル|洗顔|クレンジング|パック|マスク|日焼け止め|UV|SPF|フェイスパウダー|ルースパウダー|オイル(?!.*(サプリ|カプセル))|ミスト|バーム|塗る|外用|軟膏|ボディ|シャンプー|ヘア/i;
+const TOPICAL_DRUG_RE = /第[1-3１-３]類医薬品|指定第2類医薬品|軟膏|塗り薬|外用薬/;
+function itemKindOf(name, cat) {
+  const n = String(name || '').normalize('NFKC');
+  try { const d = RX_DRUGS.find(x => x[1] === name); if (d) return isOralKind(d[0]) ? 'oral' : 'rx'; } catch (e) { /* まだ読み込み前 */ }
+  if (ORAL_NAME_RE.test(n) && !ORAL_COSME_RE.test(n)) return 'oral';
+  if (cat === ORAL_CAT) return 'oral';
+  if (cat === '皮膚科の塗り薬' || (TOPICAL_DRUG_RE.test(n) && !ORAL_NAME_RE.test(n))) return 'rx';
+  return 'cos';
+}
+const KIND_CAT = {oral:ORAL_CAT, rx:'皮膚科の塗り薬'};
 const ORAL_NOT_RE = /化粧水|美容液|セラム|乳液|ローション|軟膏|洗顔|クレンジング|シートマスク|フェイスマスク|塗る|外用|ボディ|シャンプー|ヘア|ネイル|美顔器|ペット|犬用|猫用/;
 const PACK_RE = /パック(?![入詰]|ウチ)|シートマスク|フェイスマスク|マスクパック|ナイトマスク|スリーピングマスク|クレイマスク|ピールオフ|sheet\s*mask|face\s*mask|sleeping\s*mask|mask\s*pack/i; // 2026-11-20 パック・シートマスクは化粧品として出さない（Keiichiroの指示）。詰め替えのパック・パウチは除く
 const MED_RE = /第[1-3１-３]類医薬品|指定第2類|医薬品|医薬部外品|軟膏|塗り薬|外用|クリーム|ゲル|ローション|液|スプレー|乳剤/;
@@ -5371,14 +5384,16 @@ async function findRun(q) {
     fs.items = items.filter(x => x && x.name).filter(x => { const v = variantSig(x.name), k = v.n.slice(0, 40) + '|' + v.vol; if (seenN.has(k)) return false; seenN.add(k); return true; })
       .map((x, i) => ({x, i, o:odd(x.name), sim:jan ? 0 : similarity(fnorm(q), fnorm(cleanShopName(x.name)))})).sort((a, b) => a.o - b.o || b.sim - a.sim || a.i - b.i).map(v => v.x).slice(0, 60);
     /* 2026-11-20 美容家電・脱毛器・アタッチメントなど、肌に塗る物ではない商品は出さない。塗り薬の画面では、塗り薬・肌に塗る物だけにする */
-    fs.items = fs.items.filter(x => { const n = String(x.name || '').normalize('NFKC'); if (!fs.oral && PACK_RE.test(n.replace(/詰め?替え?用?パック|リフィル?パック/g, ''))) return false; /* パックは化粧品に入れない */ if (fs.oral) return ORAL_ITEM_RE.test(n) && !ORAL_NOT_RE.test(n); /* 内服薬の画面は、飲む物だけ */ if (NOT_APPLY_RE.test(n) && !NOT_APPLY_RE.test(q)) return false; return !(fs.noRx && OFFTOPIC_RE.test(n) && !OFFTOPIC_RE.test(q)); });
+    fs.items = fs.items.filter(x => { const n = String(x.name || '').normalize('NFKC'); if (!fs.oral && PACK_RE.test(n.replace(/詰め?替え?用?パック|リフィル?パック/g, ''))) return false; /* パックは化粧品に入れない */ if (fs.oral) return ORAL_ITEM_RE.test(n) && !ORAL_NOT_RE.test(n); /* 飲み薬の画面は、飲む物だけ */ if (itemKindOf(n) === 'oral') return true; /* 2026-11-20 化粧品・塗り薬の検索でも、飲み薬・サプリは出す（選ぶと飲み薬の欄に入る） */ if (NOT_APPLY_RE.test(n) && !NOT_APPLY_RE.test(q)) return false; return !(fs.noRx && OFFTOPIC_RE.test(n) && !OFFTOPIC_RE.test(q)); });
     fs.more = false;
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
 }
 // 入れた言葉に合う皮膚科の塗り薬（アプリに入っている一覧から）。化粧品の検索でも出す（処方薬は通販では売っていないため）
-function rxHits(q, n = 6) { const k = fnorm(q || ''); if (k.length < 2) return []; return RX_DRUGS.filter(d => !isOralKind(d[0])).filter(d => fnorm(d[1]).includes(k) || fnorm(d[2]).includes(k)).slice(0, n); }
-function rxHitsHtml(q) { const H = rxHits(q); return H.length ? `<p class="find-sec">皮膚科の塗り薬</p>${H.map(d => `<button type="button" class="rx-item" data-action="rx-pick" data-id="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}<p class="find-sec">市販の商品</p>` : ''; }
+function rxHits(q, n = 6, oral = false) { const k = fnorm(q || ''); if (k.length < 2) return []; return RX_DRUGS.filter(d => isOralKind(d[0]) === oral).filter(d => fnorm(d[1]).includes(k) || fnorm(d[2]).includes(k)).slice(0, n); }
+function rxHitsHtml(q) { const H = rxHits(q), O = rxHits(q, 6, true); /* 2026-11-20 化粧品の検索でも、塗り薬・飲み薬の一覧に合う物を出す（押すと、その欄に登録） */
+  const it = d => `<button type="button" class="rx-item" data-action="rx-pick" data-id="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`;
+  return H.length || O.length ? (H.length ? `<p class="find-sec">皮膚科の塗り薬</p>${H.map(it).join('')}` : '') + (O.length ? `<p class="find-sec">飲み薬・サプリ</p>${O.map(it).join('')}` : '') + '<p class="find-sec">市販の商品</p>' : ''; }
 function findPaint() {
   const box = document.getElementById('find-list') || (findState && findState.inPop ? document.getElementById('pop-list') : null), fs = findState; if (!box || !fs) return; // 化粧品を追加の画面の検索も、同じ表示
   const rxH = fs.oral ? '<p class="find-sec">市販の飲み薬・サプリ</p>' : fs.noRx ? '<p class="find-sec">市販の薬・化粧品</p>' : fs.cam ? '' : rxHitsHtml(((fs.inPop ? document.getElementById('pop-q') : document.getElementById('find-q')) || {}).value || fs.q || ''); /* いま入っている言葉で出す（前の言葉の結果を残さない） */
@@ -5535,7 +5550,7 @@ async function openCamLive(kind) {
   clStop();
   const ov = document.createElement('div'); ov.className = 'cl-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'カメラで登録');
   ov.innerHTML = `<video class="cl-v" playsinline muted autoplay></video><div class="cl-shade"></div><div class="cl-frame" hidden><i></i></div>
-    <div class="cl-top"><button type="button" class="cl-ib" data-cl="back" aria-label="戻る">${CL_SVG.back}</button><b class="cl-t">${oral ? '内服薬・サプリをカメラで探す' : rx ? '塗り薬をカメラで探す' : 'カメラで探す'}</b><span class="cl-tr"><button type="button" class="cl-ib" data-cl="torch" aria-label="ライト" hidden>${CL_SVG.torch}</button><button type="button" class="cl-ib" data-cl="help" aria-label="使い方">${CL_SVG.help}</button></span></div>
+    <div class="cl-top"><button type="button" class="cl-ib" data-cl="back" aria-label="戻る">${CL_SVG.back}</button><b class="cl-t">${oral ? '飲み薬・サプリをカメラで探す' : rx ? '塗り薬をカメラで探す' : 'カメラで探す'}</b><span class="cl-tr"><button type="button" class="cl-ib" data-cl="torch" aria-label="ライト" hidden>${CL_SVG.torch}</button><button type="button" class="cl-ib" data-cl="help" aria-label="使い方">${CL_SVG.help}</button></span></div>
     <div class="cl-bot"><p class="cl-tip" id="cl-tip"></p>
       <div class="cl-row"><label class="cl-sb"><span class="cl-c">${icon('image')}</span><small>写真</small><input type="file" accept="image/*" class="vh" id="cl-lib"></label>
         <button type="button" class="cl-shut" data-cl="shot" aria-label="撮って探す"><span>${icon('search')}</span></button>
@@ -5599,7 +5614,7 @@ function rxMatch(text, oral) {
 function openRxCamSheet(oral) {
   oral = oral === true;
   findState = Object.assign({kind:'my', q:'', items:null, loading:false, err:'', timer:null, cam:true, noRx:true, rxCam:true}, oral ? {oral:true, mode:'otc'} : {});
-  openModal({title:oral ? '内服薬・サプリをカメラで探す' : '塗り薬をカメラで探す', dismissable:true, body:`<div id="cam-prev"></div><p class="small" id="cam-msg" style="margin:8px 0 0"></p><div id="rxcam-list"></div>
+  openModal({title:oral ? '飲み薬・サプリをカメラで探す' : '塗り薬をカメラで探す', dismissable:true, body:`<div id="cam-prev"></div><p class="small" id="cam-msg" style="margin:8px 0 0"></p><div id="rxcam-list"></div>
     <div id="find-list" class="net-list" style="margin-top:12px"></div>
     <div class="cam-pick" style="margin-top:12px"><button type="button" class="btn btn-ghost" data-action="${oral ? 'oral-camera' : 'rx-camera'}">${icon('camera')}撮り直す</button></div>
     <button type="button" class="btn btn-ghost btn-sm" data-action="${oral ? 'oral-manual' : 'rx-manual'}" style="margin-top:12px;width:100%;justify-content:center">${oral ? '一覧にない物を入力' : '一覧にない薬を入力'}</button>`});
@@ -5623,7 +5638,7 @@ async function rxCamGot(file) {
       const top = M[0], sure = top.sc >= 100 && (!M[1] || M[1].sc < top.sc - 10);
       msg(sure ? `「${top.d[1]}」だと思います。合っていれば押して登録してください。` : '近い薬を出しています。当てはまる物を押してください（濃さ・クリーム／軟膏などの種類も確かめてください）。');
       const show = sure ? [top] : M.filter(x => x.sc >= top.sc - 15).slice(0, 3); /* 2026-11-20 撮った薬だけを出す（自信があるときは1つだけ。迷うときも近い物だけ） */
-      if (box) box.innerHTML = `<p class="find-sec">${oral ? '内服薬・サプリ' : '皮膚科の塗り薬'}</p>` + show.map((x, i) => `<button type="button" class="rx-item${i === 0 && sure ? ' rx-sure' : ''}" data-rx="${esc(x.d[1])}">${rxSvg(x.d[1])}<span><b>${esc(x.d[1])}</b><small>${esc(x.d[2])}</small></span><i>${icon('plus')}</i></button>`).join('');
+      if (box) box.innerHTML = `<p class="find-sec">${oral ? '飲み薬・サプリ' : '皮膚科の塗り薬'}</p>` + show.map((x, i) => `<button type="button" class="rx-item${i === 0 && sure ? ' rx-sure' : ''}" data-rx="${esc(x.d[1])}">${rxSvg(x.d[1])}<span><b>${esc(x.d[1])}</b><small>${esc(x.d[2])}</small></span><i>${icon('plus')}</i></button>`).join('');
     } else { if (box) box.innerHTML = ''; msg(text ? `「${truncate(fShort(text), 30)}」と読み取りました。${oral ? '一覧には見つからなかったので、市販の飲み薬・サプリを探しています。' : '一覧の塗り薬には見つからなかったので、市販の薬を探しています。'}` : `${oral ? '' : '薬の'}名前を読み取れませんでした。名前が大きく写るように撮り直してください。`); }
     const q = [r.brand, r.name].filter(Boolean).join(' ').slice(0, 60);
     if (q && !(M[0] && M[0].sc >= 100)) await findRun(q); else { fs.items = null; fs.loading = false; const fl = document.getElementById('find-list'); if (fl) fl.innerHTML = ''; }
@@ -5663,7 +5678,8 @@ document.addEventListener('change', e => { if (e.target.id === 'cam-lib' || e.ta
 function findPick(i) {
   const fs = findState, x = fs && fs.items && fs.items[Number(i)]; if (!x) return;
   const p = netToCat(x, fs.items); if (!p) return;
-  if (fs.oral) { p.category = ORAL_CAT; p.purposes = []; } /* 内服薬の画面で選んだ物は、飲み薬・サプリとして登録する */
+  if (fs.oral) { p.category = ORAL_CAT; p.purposes = []; } /* 飲み薬の画面で選んだ物は、飲み薬・サプリとして登録する */
+  else { const k = itemKindOf(p.name, p.category); if (KIND_CAT[k]) { p.category = KIND_CAT[k]; p.purposes = []; } } /* 化粧品・塗り薬の画面で選んでも、飲み薬・塗り薬ならその欄に入れる */
   const kind = fs.kind; findState = null; closeModal();
   if (kind === 'my') { ui.myKind = p.category === ORAL_CAT ? 'oral' : p.category === '皮膚科の塗り薬' ? 'rx' : 'cos'; setTimeout(() => openMyForm(null, p.id), 200); }
   else { location.hash = '#/product/' + encodeURIComponent(p.id); render(); }
@@ -5756,7 +5772,7 @@ const SUPPORT_FAQ = [
   [/記録一覧|過去の記録|前の日|カレンダー/, '下の「記録」→「記録一覧」で、日ごとの3Dの顔・顔写真・使った物・睡眠・運動・食事・メモを見られます。左右の矢印かカレンダーで日を変えられます。'],
   [/肌.*記録|記録(の仕方|の方法|する)|3D/, 'ホームの「今日の肌を記録」から記録できます。3Dの顔を押すと、ニキビの種類（白・黒・赤・黄ニキビなど）や乾燥・テカリを場所ごとに記録できます。'],
   [/睡眠|運動|歩数|食事|カロリー|栄養/, '睡眠・運動・食事は、記録一覧の日付の画面か、ホームの「記録する」から記録できます。睡眠・運動は「昨日と同じ」を押すと、昨日と同じ内容がすぐ入ります。運動の記録がない日は、運動しなかったことになります。'],
-  [/ケア管理|朝のケア|夜のケア|手順|おすすめケア|提案/, 'ケア管理（プレミアムプラン）では、肌の記録・肌の悩み・天気・登録した化粧品・塗り薬・内服薬から、朝と夜のスキンケアの順番を毎日組み立てます。今日の肌に合わない物は、理由と一緒にお休みにします。'],
+  [/ケア管理|朝のケア|夜のケア|手順|おすすめケア|提案/, 'ケア管理（プレミアムプラン）では、肌の記録・肌の悩み・天気・登録した化粧品・塗り薬・飲み薬から、朝と夜のスキンケアの順番を毎日組み立てます。今日の肌に合わない物は、理由と一緒にお休みにします。'],
   [/成分|併用|組み合わせ/, '成分の名前（緑の下線）を押すと、説明が出ます。「成分辞典」で成分を調べられ、「成分の組み合わせ」で2つの成分を一緒に使ってよいかを確かめられます。'],
   [/意見|要望|感想|改善/, 'ありがとうございます。お問い合わせのいちばん下の「ご意見・ご感想を送る」から送れます（返信はしていません）。'],
   [/個人情報|プライバシー|安全|データ.*(送|共有|使)/, '記録はこのスマホの中に保存されます。クラウドに保存するのは、ログインして「クラウドに保存する」をオンにしたときだけで、写真は送りません。くわしくは「アカウント」→「設定・プライバシー」のプライバシーポリシーをご覧ください。'],
@@ -7664,12 +7680,12 @@ function viewMy() {
   const kind = ui.myKind;
   const list = state.myProducts.filter(p => kOf(p) === kind)
     .sort((a,b) => myStRank(a) - myStRank(b) || (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
-  let html = ui.myKind === 'oral' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="oral-sheet">${icon('plus')}内服薬・サプリを追加</button></div>` : ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
+  let html = ui.myKind === 'oral' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="oral-sheet">${icon('plus')}飲み薬・サプリを追加</button></div>` : ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a class="mt-wide" href="#/combo">${icon('flask')}<span>成分の組み合わせ</span><i>›</i></a><a class="mt-wide" href="#/trouble">${icon('alert')}<span>肌に合わなかった化粧品</span>${(() => { const n = state.myProducts.filter(p => p.ng).length; return n ? `<em class="mt-n">${n}</em>` : ''; })()}<i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
-  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬'], ['oral', '内服薬']].map(([k, l]) => { const n = nK[k]; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span><b class="ht-n">${n}</b></button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
+  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬'], ['oral', '飲み薬']].map(([k, l]) => { const n = nK[k]; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span><b class="ht-n">${n}</b></button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
   if (state.myProducts.length && !list.length) {
-    html += `<div class="card">${kind === 'oral' ? emptyBox('flask', 'まだ内服薬・サプリが登録されていません', '飲んでいる薬（皮膚科・病院の飲み薬、市販の飲み薬、漢方）やサプリは、上の「内服薬・サプリを追加」から登録できます。飲んでいる物に合わせて、スキンケアの提案を変えます。') : emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
+    html += `<div class="card">${kind === 'oral' ? emptyBox('flask', 'まだ飲み薬・サプリが登録されていません', '飲んでいる薬（皮膚科・病院の飲み薬、市販の飲み薬、漢方）やサプリは、上の「飲み薬・サプリを追加」から登録できます。飲んでいる物に合わせて、スキンケアの提案を変えます。') : emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!state.myProducts.length) {
     html += `<div class="card">${emptyBox('bottle', 'まだアイテムが登録されていません', '使っている化粧品や、皮膚科で出された塗り薬、飲んでいる薬・サプリを登録すると、使用期間・成分・支出をまとめて管理できます。上のボタンから登録できます。')}</div>`;
   } else {
@@ -8091,6 +8107,7 @@ function quickAddMy(catId) {
   closeModal();
   { const dp = myDupOf(c.name, c.id, '', c.category); if (dp) { myDupToast(dp); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; } }
   const g = guessFromName(c.name);
+  { const k = itemKindOf(c.name, c.category); if (KIND_CAT[k] && c.category !== KIND_CAT[k]) c.category = KIND_CAT[k]; ui.myKind = k === 'oral' ? 'oral' : k === 'rx' ? 'rx' : 'cos'; } /* 2026-11-20 どこから登録しても、飲み薬・塗り薬は化粧品の欄に入れない */
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:c.id, name:c.name, brand:c.brand || g.brand || brandOrCompany(c.name, (String(c.source || '').match(/（(.+)）$/) || [])[1]) || '—',
     category:c.category && CATEGORIES.includes(c.category) ? c.category : (g.category || 'その他'), purposes:(c.purposes && c.purposes.length ? c.purposes : g.purposes || []).filter(v => PURPOSES.includes(v)), ingredients:'',
     timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
@@ -8181,7 +8198,7 @@ function openMyForm(id, fromCatId) {
     }
     if (!errors.name) { const dp = myDupOf(v('name'), ex ? '' : v('catalogId'), ex ? ex.id : '', v('category')); if (dp) errors.name = `「${truncate(dp.name, 24)}」がすでに登録されています${dp.status === '使用中' ? '' : `（${dp.status === '一時停止' ? '停止中' : dp.status}）`}。同じ商品は2つ登録できません。`; }
     if (!showErrors(form, errors)) return;
-    const data = {catalogId:v('catalogId'), name:v('name'), brand:v('brand'), category:v('category'), purposes:$$('input[name="purposes"]:checked', form).map(i => i.value),
+    const data = {catalogId:v('catalogId'), name:v('name'), brand:v('brand'), category:(() => { const c = v('category'), k = itemKindOf(v('name'), c); return isMedCat(c) ? c : (KIND_CAT[k] || c); })(), /* 飲み薬・塗り薬を化粧品の種類で入れても、その欄に入れる */ purposes:$$('input[name="purposes"]:checked', form).map(i => i.value),
       timing, frequency:v('frequency') || '毎日', startDate:v('startDate'), status, endDate:ex ? ex.endDate : '',
       ingredients:cleanIngText(v('ingredients')), memo:v('memo'), pao:Number(v('pao')) || 0};
     let target;
@@ -9407,7 +9424,7 @@ Object.assign(CARE_REFS, {
  ['飲み薬（ニキビ・国内未承認）', 'イソトレチノイン（内服）', 'イソトレチノイン'], ['飲み薬（ニキビ・抗菌薬）', 'ミノマイシン（ミノサイクリン）', 'ミノサイクリン'], ['飲み薬（ニキビ・抗菌薬）', 'ビブラマイシン（ドキシサイクリン）', 'ドキシサイクリン'],
  ['サプリメント', 'ビタミンAのサプリメント', 'ビタミンAサプリ']].forEach(d => { if (!RX_DRUGS.some(x => x[1] === d[1])) RX_DRUGS.push(d); });
 const isOralKind = k => /^飲み薬|^サプリ|^漢方|^市販の飲み薬/.test(k || '');
-// ===== 2026-11-20 内服薬（飲み薬）・サプリ：Myアイテムの「内服薬」の欄で選べる一覧（名前・主な成分）=====
+// ===== 2026-11-20 飲み薬（飲み薬）・サプリ：Myアイテムの「飲み薬」の欄で選べる一覧（名前・主な成分）=====
 [['飲み薬（ニキビ・抗菌薬）', 'ルリッド（ロキシスロマイシン）', 'ロキシスロマイシン'], ['飲み薬（ニキビ・抗菌薬）', 'クラリス（クラリスロマイシン）', 'クラリスロマイシン'], ['飲み薬（ニキビ・抗菌薬）', 'ファロム（ファロペネム）', 'ファロペネム'],
  ['飲み薬（ニキビ・ホルモン）', '低用量ピル', 'エチニルエストラジオール・黄体ホルモン'], ['飲み薬（ニキビ・ホルモン）', 'アルダクトンA（スピロノラクトン）', 'スピロノラクトン'],
  ['飲み薬（シミ・肝斑）', 'トランサミン（トラネキサム酸）', 'トラネキサム酸'], ['飲み薬（シミ・肝斑）', 'シナール（ビタミンC）', 'アスコルビン酸・パントテン酸カルシウム'], ['飲み薬（シミ・肝斑）', 'ハイチオール（L-システイン）', 'L-システイン'], ['飲み薬（シミ・肝斑）', 'ユベラ（ビタミンE）', 'トコフェロール酢酸エステル'],
@@ -9427,8 +9444,10 @@ const isOralKind = k => /^飲み薬|^サプリ|^漢方|^市販の飲み薬/.test
 const isOralName = n => { const d = RX_DRUGS.find(x => x[1] === n); return !!d && isOralKind(d[0]); };
 Object.assign(RX_USE, {'飲み薬（ニキビ・抗菌薬）':'ニキビ（赤いニキビの炎症）', '飲み薬（ニキビ・国内未承認）':'重いニキビ', '飲み薬（ニキビ・ホルモン）':'ニキビ（ホルモンが関わるもの）', '飲み薬（シミ・肝斑）':'シミ・肝斑・肌あれ', '飲み薬（ビタミン）':'肌あれ・ニキビ・口内炎', '飲み薬（かゆみ・じんましん）':'かゆみ・じんましん・アレルギー', '飲み薬（アトピー）':'アトピー性皮膚炎', '飲み薬（炎症をおさえる）':'強い炎症・アレルギー',
   '漢方（ニキビ・肌あれ）':'ニキビ・肌あれ', '漢方（月経まわり・冷え）':'月経まわりの不調・冷え', '漢方（かゆみ・赤み）':'かゆみ・赤み・湿疹', '市販の飲み薬（シミ・そばかす）':'シミ・そばかす', '市販の飲み薬（シミ・肝斑）':'シミ・肝斑', '市販の飲み薬（肌あれ・ニキビ）':'肌あれ・ニキビ', 'サプリメント':'栄養の補助'});
-// 前の版で「塗り薬」に入れた飲み薬・サプリは、内服薬の欄へ移す（保存は次に記録したときに一緒に）
+// 前の版で「塗り薬」に入れた飲み薬・サプリは、飲み薬の欄へ移す（保存は次に記録したときに一緒に）
 try { [state.myProducts, state.catalog].forEach(L => (L || []).forEach(p => { if (p && p.category === '皮膚科の塗り薬' && isOralName(p.name)) p.category = ORAL_CAT; })); } catch (e) { /* 何もしない */ }
+// 2026-11-20 前の版で化粧品の欄に入ってしまった飲み薬・サプリも、飲み薬の欄へ
+try { (state.myProducts || []).forEach(p => { if (p && !isMedCat(p.category) && itemKindOf(p.name, p.category) === 'oral') p.category = ORAL_CAT; }); } catch (e) { /* 何もしない */ }
 // 飲んでいる物で、スキンケアの考え方が変わるもの（成分の名前で判断。処方薬の商品名はアドバイスに出さない）
 const ORAL_FX = [
   {re:/イソトレチノイン/, iso:1, dry:1, sens:1, photo:1, preg:1, acne:1},
@@ -16293,7 +16312,7 @@ const actions = {
     closeModal(); setTimeout(() => openCamLive(kind || 'my'), 200); /* 2026-11-20 画面いっぱいのカメラにする */
   },
   'rx-camera': () => { if (!isPremium()) { closeModal(); openPremiumSheet('塗り薬のカメラ登録'); return; } closeModal(); setTimeout(() => openCamLive('rx'), 200); },
-  'oral-camera': () => { if (!isPremium()) { closeModal(); openPremiumSheet('内服薬・サプリのカメラ登録'); return; } closeModal(); setTimeout(() => openCamLive('oral'), 200); },
+  'oral-camera': () => { if (!isPremium()) { closeModal(); openPremiumSheet('飲み薬・サプリのカメラ登録'); return; } closeModal(); setTimeout(() => openCamLive('oral'), 200); },
   'oral-sheet': () => { if (document.querySelector('#modal-root').innerHTML) { closeModal(); setTimeout(() => openRxSheet(true), 200); } else openRxSheet(true); },
   'oral-manual': () => { closeModal(); ui.myKind = 'oral'; setTimeout(() => { openMyForm(); setTimeout(() => { const c = document.querySelector('#my-form [name=category]'); if (c) { c.value = ORAL_CAT; c.dispatchEvent(new Event('change', {bubbles:true})); } }, 60); }, 200); },
   'rx-sheet': () => { if (document.querySelector('#modal-root').innerHTML) { closeModal(); setTimeout(openRxSheet, 200); } else openRxSheet(); },
