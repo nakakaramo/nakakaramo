@@ -3051,7 +3051,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120222328'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120225639'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3988,6 +3988,7 @@ function normalize(d) {
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
+  out.settings.policySeen = typeof ds.policySeen === 'string' ? ds.policySeen.slice(0, 20) : ''; // 改定のお知らせを見た版
   out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
   out.settings.remindDone = !!ds.remindDone; out.settings.remindHide = !!ds.remindHide; out.settings.dermHide = isValidYmd(ds.dermHide) ? ds.dermHide : ''; out.settings.comboHide = typeof ds.comboHide === 'string' ? ds.comboHide.slice(0, 400) : '';
   out.settings.wxPref = typeof ds.wxPref === 'string' && (PREFS_NAMES.includes(ds.wxPref) || ds.wxPref === '現在地') ? ds.wxPref : ''; // 天気の地域（都道府県 or 現在地）
@@ -5031,7 +5032,7 @@ function viewHome() {
   const tabs = `<nav class="home-tabs hm-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
-  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + '</div>'; setTimeout(() => { wxFetch(false); }, 0); }
+  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + policyNoticeHtml() + startHtml() + todayCard + '</div>'; setTimeout(() => { wxFetch(false); }, 0); }
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + (careLocked() ? careLockHtml('おすすめケア') : careLockLoading() && PREMIUM_LOCK ? careLoadingHtml() : careCard) + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   // 広告と下の説明文も、スワイプで中身と一緒に動くように .home-pane の中に入れる
@@ -11129,6 +11130,12 @@ function startItems() {
     {k:'survey', l:'肌質診断をする', s:'肌質と肌悩みから、あなた専用の朝・夜のケアを組み立てます（2分ほど）', done:!!(st.diag && st.diag.r), a:'setup'},
   ];
 }
+// 2026-11-20 プライバシーポリシーを改定したことを、前から使っている人に1回だけ知らせる
+const POLICY_VER = '2026-11-20';
+function policyNoticeHtml() {
+  if (state.settings.policySeen === POLICY_VER || !(state.myProducts.length || state.skinLogs.length)) return '';
+  return `<div class="card pol-note"><div class="st-head"><h2>プライバシーポリシーを改定しました</h2><button type="button" class="st-x" data-action="policy-seen" aria-label="このお知らせを閉じる">×</button></div><p class="small" style="margin:6px 0 10px">${esc(LEGAL.updated)}に改定しました。Myアイテムに登録した飲み薬・サプリの記録の取り扱い（端末とバックアップへの保存・ケアの提案への利用）を書き足しました。研究への協力には送りません。</p><a class="btn btn-ghost btn-sm" href="#/privacy" data-action="policy-open">内容を見る</a></div>`;
+}
 function startHtml() {
   if (state.settings.startHidden) return '';
   const it = startItems(); if (it.every(x => x.done)) return '';
@@ -15458,7 +15465,7 @@ const SNS_ICON = {
   x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'};
 const LEGAL = {
   draft: false,              // 下書きのあいだは true（画面に「下書き」と表示）。2026-11-15 に正式に公開
-  updated: '2026年11月16日',  // 最終改定日
+  updated: '2026年11月20日',  // 最終改定日（2026-11-20 飲み薬・サプリの扱いを追記）
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額600円（税込）または年額6,000円（税込）'
@@ -15532,10 +15539,11 @@ function viewPrivacy() {
   return legalWrap('プライバシーポリシー', `
 <p>${C}（以下「運営者」）は、「${S}」（以下「本サービス」）における利用者の情報の取り扱いについて、次のとおり定めます。</p>
 <h3>1. 基本の考え方</h3>
-<p>本サービスは、肌の記録・食事・生活習慣などのデータを、まず利用者の端末のブラウザ内（localStorage）に保存します。<b>ログインしている場合は、これらの記録（肌の記録・Myアイテム・設定）を、データの消失を防ぐために、登録したメールアドレスのアカウントに自動でバックアップ（Supabaseのサーバーに保存）</b>します。写真も、本人だけが読み書きできる保存場所（Supabase Storage）に<b>バックアップ</b>します。<b>現在地はバックアップせず、端末の中だけに保存</b>します。ログインしていない場合、記録は運営者のサーバーに送信しません。また、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）を送信します。</p>
+<p>本サービスは、肌の記録・食事・生活習慣などのデータを、まず利用者の端末のブラウザ内（localStorage）に保存します。<b>ログインしている場合は、これらの記録（肌の記録・Myアイテム・設定。Myアイテムには、登録した化粧品・皮膚科の塗り薬・飲み薬・サプリメントを含みます）を、データの消失を防ぐために、登録したメールアドレスのアカウントに自動でバックアップ（Supabaseのサーバーに保存）</b>します。写真も、本人だけが読み書きできる保存場所（Supabase Storage）に<b>バックアップ</b>します。<b>現在地はバックアップせず、端末の中だけに保存</b>します。ログインしていない場合、記録は運営者のサーバーに送信しません。また、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）を送信します。</p>
 <h3>2. 取得する情報</h3>
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
+<li><b>健康に関する情報</b>：肌の状態の記録、Myアイテムに登録した皮膚科の塗り薬・飲み薬・サプリメントの名前・主な成分・使う時間と期間、肌質診断で答えた妊娠中・授乳中かどうか。これらは、病歴などの「要配慮個人情報」にあたることがあります。ログインして自動バックアップを使う場合や、AIによる分析を使う場合は、本ポリシーに同意したうえで、運営者が下の「5. 外部に送信される情報」の送信先を通じて取り扱います。ログインせずに使う場合は、端末の中だけに保存され、運営者には送られません。</li>
 <li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
 <li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li>
 <li><b>エラーの情報</b>：本サービスの画面で不具合（エラー）が起きたとき、エラーの内容・起きた画面の種類・ブラウザの種類・ログインしているかどうか。肌の記録・写真・メールアドレスなどは含みません。不具合を直すためだけに使い、30日で自動で消します。</li>
@@ -15544,18 +15552,19 @@ function viewPrivacy() {
 <ol><li>本サービス（有料プランを含む）の提供・本人確認・ログイン</li>
 <li>料金の請求、契約状況の管理、解約・アカウント削除の手続き</li>
 <li>天気の表示・写真の読み取り・お知らせなど、利用者が使った機能の実行</li>
+<li>登録した薬・サプリメント（飲んでいる物を含む）に合わせて、スキンケアの手順や注意（日焼け止め、一緒に使うと注意が必要な組み合わせなど）を提案するため。薬の飲み方・量や、続けるかやめるかの判断には使いません。</li>
 <li>お問い合わせへの対応、重要なお知らせの連絡</li>
 <li>不正利用の防止、障害への対応、サービスの改善</li></ol>
 <h3>4. 第三者への提供</h3>
 <p>運営者は、法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。ただし、次の「5. 外部に送信される情報」に記載した、サービスの提供に必要な委託先への送信は除きます。</p>
 <h3>4-2. 研究への協力（任意）</h3>
-<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、使っている皮膚科の薬の種類（「ニキビ」「ステロイド（強い）」などの区分だけで、薬の名前は含みません）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差、その成分が入っていた商品の種類）と、「肌に合わなかった」と記録したときのアンケート（症状・出るまでの時期・場所・強さ、使った期間、その商品の種類・入っていた成分の種類・皮膚科の薬の区分、記録したときの肌質など。商品名・薬の名前・日付・メモは含みません）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。</p>
+<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、使っている皮膚科の薬の種類（「ニキビ」「ステロイド（強い）」などの区分だけで、薬の名前は含みません）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差、その成分が入っていた商品の種類）と、「肌に合わなかった」と記録したときのアンケート（症状・出るまでの時期・場所・強さ、使った期間、その商品の種類・入っていた成分の種類・皮膚科の薬の区分、記録したときの肌質など。商品名・薬の名前・日付・メモは含みません）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。飲み薬・サプリメントの情報は、研究には送りません。</p>
 <p>受け取った統計は、スキンケアの研究と本サービスの改善に使い、<b>5人以上をまとめた集計結果</b>の形で、化粧品会社などの研究開発のために第三者に提供（有償の場合を含む）することがあります。特定の個人の記録が分かる形では提供しません。利用者は設定からいつでも協力をやめることができ、やめた時点で、受け取った統計（過去に受け取った分を含みます）を削除します。</p>
 <h3>5. 外部に送信される情報（電気通信事業法に基づく公表）</h3>
 <p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
 <div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
 ${row('Supabase（Supabase Inc.・サーバーは東京）', 'メールアドレス、パスワード、ログイン状態、契約状況', 'アカウントと有料プランの管理。ログイン・プラン画面を使ったときだけ')}
-${row('Supabase（自動バックアップ・東京）', '肌の記録・Myアイテム・設定などの記録と写真（現在地を除く）', 'データの消失を防ぐためのバックアップと、別の端末での復元。ログインしているときに、記録を保存・変更した数秒後')}
+${row('Supabase（自動バックアップ・東京）', '肌の記録・Myアイテム（塗り薬・飲み薬・サプリメントを含む）・設定などの記録と写真（現在地を除く）', 'データの消失を防ぐためのバックアップと、別の端末での復元。ログインしているときに、記録を保存・変更した数秒後')}
 ${row('Supabase（エラーの記録・東京）', 'エラーの内容、起きた画面の種類、ブラウザの種類、ログインしているかどうか', '不具合を見つけて直すため。画面でエラーが起きたときだけ（30日で自動で削除）')}
 ${row('Supabase（お知らせ・東京）', '通知の宛先、お知らせの時刻、最後に肌を記録した日、化粧品の名前と使用期限の目安の日付', '記録のお知らせ・使用期限のお知らせの送信。設定でお知らせをオンにした場合だけ')}
 ${row('Apple・Google・Mozilla（各ブラウザの通知の配信）', 'お知らせの文面（化粧品の名前を含むことがあります）', 'お知らせを端末に届けるため。お知らせをオンにした場合だけ')}
@@ -15570,7 +15579,7 @@ ${row('Stripe（Stripe, Inc.）', '支払いに必要な情報（カード情報
 ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', 'ログイン機能の部品の読み込み。プラン・アカウント画面を開いたとき')}
 ${row('cdnjs（Cloudflare）', 'IPアドレス、ブラウザの情報', '3D表示の部品（three.js）の読み込み。3Dの顔を表示したとき')}
 ${row('Open Food Facts', '食事の写真に写っていたバーコードの数字（JANコード）だけ', '食品の栄養成分表示を調べるため。バーコードが写っていたときだけ')}
-${row('Google（Gemini API）', '「写真から読み取る」で選んだ写真（食事・化粧品のパッケージ）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
+${row('Google（Gemini API）', '「写真から読み取る」で選んだ写真（食事・化粧品のパッケージ）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名・使っている塗り薬・飲み薬・サプリメントの成分名。薬の商品名は送りません）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
 ${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代・性別・肌悩み（答えた場合）、皮膚科の薬の種類（区分だけ）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、肌に合わなかったときのアンケート（症状・時期・場所・強さ・成分の種類）、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
@@ -16274,6 +16283,8 @@ const actions = {
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
   'reco-add': id => recoAdd(id),
   'shop-to-my': () => { const x = ui.shopItem; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); },
+  'policy-seen': () => { state.settings.policySeen = POLICY_VER; save(); render(); },
+  'policy-open': () => { state.settings.policySeen = POLICY_VER; save(); location.hash = '#/privacy'; },
   'start-hide': () => { state.settings.startHidden = true; save(); render(); toast('「はじめにやること」を閉じました'); },
   'sw-auth': () => swAuth(),
   'google-login': () => googleLogin(),
