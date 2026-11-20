@@ -649,6 +649,7 @@ details.acc-cmp{margin-top:14px}
 .sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
 .sbig .input{min-height:44px;height:44px;padding-left:44px;padding-right:50px;font-size:16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
 .sbig .input::-webkit-search-cancel-button{display:none}
+.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px}.find-cam-b.is-locked{opacity:.75}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .my-add{width:100%;justify-content:center}
@@ -731,7 +732,7 @@ details.acc-cmp{margin-top:14px}
 .my-adds{margin:0 0 12px;width:100%}
 /* 化粧品を追加・塗り薬を追加：緑の点線で囲む（塗りつぶさない） */
 .my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:var(--green-p,#F2F7F2)!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
-.my-adds .btn.btn-primary:active{background:var(--green-s,#E4EDE5)!important}
+.my-adds .btn.btn-primary:active,.my-adds .btn:active,.my-adds .hap-wrap:active .btn{background:var(--green-p,#F2F7F2)!important;transform:none!important;opacity:1!important} /* 2026-11-20 「化粧品を追加」「塗り薬を追加」は、押しても沈まない（小さくならない・色も変わらない） */
 .mk-pane.mk-in-r{animation:mkInR .54s cubic-bezier(.22,.7,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .54s cubic-bezier(.22,.7,.2,1) both}
 @keyframes mkInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes mkInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .my-kind{transition:color .2s}
@@ -3025,7 +3026,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120131216'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120132744'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5051,7 +5052,9 @@ const RX_DRUGS = [
   ['かゆみ', 'クロタミトンクリーム10%', 'クロタミトン'],
   ['酒さ（赤ら顔）', 'メトロニダゾールゲル0.75%', 'メトロニダゾール'],
   ['ヘルペス', 'アシクロビル軟膏5%', 'アシクロビル'], ['ヘルペス', 'ビダラビン軟膏3%', 'ビダラビン'],
-  ['傷・やけど', 'オルセノン軟膏0.25%', 'トレチノイントコフェリル'], ['傷・やけど', 'プロスタンディン軟膏0.003%', 'アルプロスタジルアルファデクス'], ['傷・やけど', 'アクトシン軟膏3%', 'ブクラデシンナトリウム'], ['傷・やけど', 'カデックス軟膏0.9%', 'ヨウ素'], ['傷・やけど', 'ユーパスタコーワ軟膏', '精製白糖・ポビドンヨード']
+  ['傷・やけど', 'オルセノン軟膏0.25%', 'トレチノイントコフェリル'], ['傷・やけど', 'プロスタンディン軟膏0.003%', 'アルプロスタジルアルファデクス'], ['傷・やけど', 'アクトシン軟膏3%', 'ブクラデシンナトリウム'], ['傷・やけど', 'カデックス軟膏0.9%', 'ヨウ素'], ['傷・やけど', 'ユーパスタコーワ軟膏', '精製白糖・ポビドンヨード'],
+  // 2026-11-20 よく処方される塗り薬を追加（クリーム・ローション・液の種類、爪・頭の薬、院内製剤など）
+  ['ニキビ', 'クリンダマイシンローション1%', 'クリンダマイシン'], ['ステロイド（とても強い）', 'リンデロンDPクリーム0.064%', 'ベタメタゾンジプロピオン酸エステル'], ['ステロイド（とても強い）', 'リンデロンDPゾル0.064%', 'ベタメタゾンジプロピオン酸エステル'], ['ステロイド（とても強い）', 'ネリゾナクリーム0.1%', 'ジフルコルトロン吉草酸エステル'], ['ステロイド（とても強い）', 'ネリゾナソリューション0.1%', 'ジフルコルトロン吉草酸エステル'], ['ステロイド（とても強い）', 'マイザーローション0.05%', 'ジフルプレドナート'], ['ステロイド（強い）', 'メサデルムクリーム0.1%', 'デキサメタゾンプロピオン酸エステル'], ['ステロイド（強い）', 'メサデルムローション0.1%', 'デキサメタゾンプロピオン酸エステル'], ['ステロイド（強い）', 'ボアラクリーム0.12%', 'デキサメタゾン吉草酸エステル'], ['ステロイド（強い）', 'ベトネベートクリーム0.12%', 'ベタメタゾン吉草酸エステル'], ['ステロイド（強い）', 'フルコートクリーム0.025%', 'フルオシノロンアセトニド'], ['ステロイド（強い）', 'エクラークリーム0.3%', 'デプロドンプロピオン酸エステル'], ['ステロイド（強い）', 'エクラーローション0.3%', 'デプロドンプロピオン酸エステル'], ['ステロイド（強い）', 'プロパデルム軟膏0.025%', 'ベクロメタゾンプロピオン酸エステル'], ['ステロイド（ふつう）', 'アルメタクリーム', 'アルクロメタゾンプロピオン酸エステル'], ['ステロイド（ふつう）', 'グリメサゾン軟膏', 'デキサメタゾン・脱脂大豆乾留タール'], ['ステロイド（弱い）', 'オイラゾンクリーム0.1%', 'デキサメタゾン・クロタミトン'], ['アトピー・湿疹（ステロイド以外）', 'デルゴシチニブ軟膏0.5%', 'デルゴシチニブ'], ['アトピー・湿疹（ステロイド以外）', 'ジファミラスト軟膏1%', 'ジファミラスト'], ['保湿・乾燥', 'ユベラ軟膏', 'トコフェロール・ビタミンA油'], ['保湿・乾燥', 'プラスチベース', '流動パラフィン・ポリエチレン'], ['保湿・乾燥', 'ヘパリン類似物質クリーム0.3%（ジェネリック）', 'ヘパリン類似物質'], ['化膿・とびひ（抗菌）', 'エリスロマイシン軟膏1%', 'エリスロマイシン'], ['化膿・とびひ（抗菌）', 'フシジンレオ軟膏2%（ジェネリック）', 'フシジン酸ナトリウム'], ['水虫・カビ（抗真菌）', 'ラミシール液1%', 'テルビナフィン塩酸塩'], ['水虫・カビ（抗真菌）', 'ラミシール外用スプレー1%', 'テルビナフィン塩酸塩'], ['水虫・カビ（抗真菌）', 'アスタット外用液1%', 'ラノコナゾール'], ['水虫・カビ（抗真菌）', 'マイコスポール外用液1%', 'ビホナゾール'], ['水虫・カビ（抗真菌）', 'アトラント軟膏1%', 'ネチコナゾール塩酸塩'], ['水虫・カビ（抗真菌）', 'アトラントクリーム1%', 'ネチコナゾール塩酸塩'], ['水虫・カビ（抗真菌）', 'フロリードDクリーム1%', 'ミコナゾール硝酸塩'], ['水虫・カビ（抗真菌）', 'クレナフィン爪外用液10%', 'エフィナコナゾール'], ['水虫・カビ（抗真菌）', 'ルコナック爪外用液5%', 'ルリコナゾール'], ['乾癬', 'ボンアルファ軟膏2μg/g', 'タカルシトール'], ['乾癬', 'ボンアルファハイローション20μg/g', 'タカルシトール'], ['乾癬', 'ドボネックスローション', 'カルシポトリオール'], ['かゆみ', 'ベナパスタ軟膏4%', 'ジフェンヒドラミン'], ['汗（多汗症）', 'ラピフォートワイプ2.5%', 'グリコピロニウムトシル酸塩'], ['ヘルペス', 'アラセナAクリーム3%', 'ビダラビン'], ['ヘルペス', 'ゾビラックスクリーム5%', 'アシクロビル'], ['傷・やけど', 'リフラップ軟膏5%', 'リゾチーム塩酸塩'], ['傷・やけど', 'ブロメライン軟膏5万単位/g', 'ブロメライン'], ['傷・やけど', 'フィブラストスプレー', 'トラフェルミン'], ['傷・やけど', 'イソジンゲル10%', 'ポビドンヨード'], ['シミ・肝斑', 'ハイドロキノンクリーム（院内製剤）', 'ハイドロキノン'], ['シミ・肝斑', 'トレチノインクリーム（院内製剤）', 'トレチノイン'], ['その他', 'スミスリンローション5%', 'フェノトリン'], ['その他', 'フロジン外用液5%', 'カルプロニウム塩化物'], ['その他', 'ベセルナクリーム5%', 'イミキモド'],
 ];
 // 塗り薬の絵（チューブ・ボトル・容器）。種類ごとに色を分けて、薬の名前を書く
 const RX_COL = {'ニキビ':'#3E8E7E','ステロイド（最も強い）':'#B23A48','ステロイド（とても強い）':'#D0613A','ステロイド（強い）':'#D99A2B','ステロイド（ふつう）':'#6A9A3A','ステロイド（弱い）':'#4F8FBF','アトピー・湿疹（ステロイド以外）':'#6B5BA8','保湿・乾燥':'#3F7FB5','化膿・とびひ（抗菌）':'#8A6D3B','水虫・カビ（抗真菌）':'#2F7F5F','乾癬':'#7B4F9E','かゆみ':'#C0587A','酒さ（赤ら顔）':'#C25B5B','汗（多汗症）':'#3D9BC2','ヘルペス':'#A0522D','傷・やけど':'#666'};
@@ -5121,7 +5124,6 @@ function openRxSheet() {
     return groups.map(g => { const ds = hit.filter(d => d[0] === g); return ds.length ? `<h3 class="rx-g">${esc(g)}</h3>${ds.map(d => `<button type="button" class="rx-item" data-rx="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}` : ''; }).join('');
   };
   openModal({title:'皮膚科の塗り薬を追加', size:'tall', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す" aria-label="薬の名前で探す" autocomplete="off">
-    <p class="small muted" style="margin:8px 0 4px">皮膚科で処方される主な塗り薬が、最初から入っています（全${RX_DRUGS.length}種類）。</p>
     <div id="rx-list">${list('')}</div><div id="find-list" class="net-list" hidden></div>
     <button type="button" class="btn btn-ghost btn-sm" data-action="rx-manual" style="margin-top:12px;width:100%;justify-content:center">一覧にない薬を入力</button>
     <p class="hint" style="margin-top:10px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。このアプリは、使った日や残りの記録のためのものです。</p>`});
@@ -5152,6 +5154,8 @@ const OFFTOPIC_RE = /サプリ|ドリンク|飲む|タブレット|カプセル|
 // スキンケアの商品か：スキンケアの種類の言葉が入っていて、メイク・髪・体・食品・道具などではない物
 const SKIN_ITEM_RE = /化粧水|ローション|トナー|美容液|セラム|エッセンス|アンプル|乳液|ミルク|エマルジョン|クリーム|ジェル|ゲル|オールインワン|パック|フェイスマスク|シートマスク|マスク|洗顔|フォーム|ウォッシュ|ソープ|石鹸|石けん|クレンジング|メイク落とし|日焼け止め|サンスクリーン|UV|SPF|バーム|オイル|ミスト|ピーリング|ゴマージュ|スクラブ|拭き取り|ふき取り|導入液|ブースター|スキンケア|保湿|医薬品|軟膏|ニキビ|スポッツ|美白|化粧品|toner|serum|essence|cream|lotion|gel|cleans|sunscreen|moistur/i;
 const NOT_SKIN_RE = /ファンデ|クッション(?!.*(クリーム|美容液))|口紅|ルージュ|リップ(スティック|ティント|グロス|ライナー|カラー)|ティント|グロス|アイシャドウ|アイライナー|マスカラ|アイブロウ|眉|チーク|ハイライター|シェーディング|コンシーラー|フェイスパウダー|おしろい|香水|フレグランス|オードトワレ|オードパルファム|デオドラント|制汗|ヘア|シャンプー|コンディショナー|頭皮|スカルプ|育毛|まつげ美容液|まつ毛美容液|ハンドクリーム|ハンドソープ|フット|かかと|ネイル|美顔器|ドライヤー|ブラシ|パフ|スポンジ|ケース|ポーチ|不織布|使い捨てマスク|サプリ|ドリンク|食品|お茶|プロテイン|ペット|洗剤|柔軟剤|入浴剤|日傘|帽子|サングラス|手袋|アームカバー|パーカー|カーテン|フィルム|書籍|雑誌/;
+const NOT_APPLY_RE = /美容器|美顔器|脱毛|除毛|ムダ毛|光美容|フラッシュ|アタッチメント|カートリッジ|替え?刃|シェーバー|ドライヤー|ヘアアイロン|充電式|家電|スチーマー|電動|ブラシ|ローラー|ES-[A-Z0-9]|ケーブル|アダプター|サプリ|錠剤|カプセル|飲む|ドリンク|内服/;
+const MED_RE = /第[1-3１-３]類医薬品|指定第2類|医薬品|医薬部外品|軟膏|塗り薬|外用|クリーム|ゲル|ローション|液|スプレー|乳剤/;
 const isSkinItem = x => { const n = String((x && x.name) || '').normalize('NFKC'); if (!SKIN_ITEM_RE.test(n)) return false; if (NOT_SKIN_RE.test(n)) return false; if (/ボディ|からだ|全身/.test(n) && !/顔|フェイス|face/i.test(n)) return false; return true; };
 const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0 || '')) && isSkinItem(x); };
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
@@ -5165,9 +5169,9 @@ async function popularLoad() {
 function popPaint() {
   const box = document.getElementById('pop-list'); if (!box || !POPULAR || (findState && findState.inPop)) return;
   const q = (document.getElementById('pop-q') || {}).value || '';
-  const k = fnorm(q), hit = POPULAR.items.filter(x => !k || fnorm(cleanShopName(x.name)).includes(k));
-  if (!POPULAR.items.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">人気ランキングを準備中です。上の「自分で入力」から探せます。</p>'; return; }
-  if (!hit.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">ランキングの中には見つかりませんでした。上の「自分で入力」から探せます。</p>'; return; }
+  const toks = String(q).normalize('NFKC').split(/[\s　]+/).map(fnorm).filter(Boolean), hit = POPULAR.items.filter(x => { const n = fnorm(cleanShopName(x.name) + ' ' + (x.brand || '') + ' ' + (x.shop || '')); return toks.every(t => n.includes(t)); }); /* ブランド名と商品名を空白で区切って入れても見つかる */
+  if (!POPULAR.items.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">人気ランキングを準備中です。上の検索から探せます。</p>'; return; }
+  if (!hit.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">ランキングの中には見つかりませんでした。</p>'; return; }
   box.innerHTML = hit.slice(0, popN).map(x => `<button type="button" class="pop-item" data-pop="${POPULAR.items.indexOf(x)}"><span class="pop-r">${x.rank || ''}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 60))}</b><small>${x.price ? '¥' + Number(x.price).toLocaleString() : ''}${x.reviews ? `・レビュー${Number(x.reviews).toLocaleString()}件` : ''}</small></span><i>${icon('plus')}</i></button>`).join('')
     + (hit.length > popN ? `<button type="button" class="btn btn-ghost btn-sm" id="pop-more" style="width:100%;justify-content:center;margin-top:6px">もっと見る（あと${hit.length - popN}件）</button>` : '');
   const more = document.getElementById('pop-more'); if (more) more.onclick = () => { popN += 30; popPaint(); };
@@ -5195,10 +5199,18 @@ async function popularMount() {
 }
 function openAddSheet(kind) {
   const my = kind === 'my';
-  openModal({title:my ? '化粧品を追加' : '商品を追加', size:my ? 'small tall' : 'small', dismissable:true, body:`<div class="add-opts">
-    <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
-    <button class="add-opt main${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `${premLock()}`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="商品名で探す（例：アヌア レチノール）" aria-label="商品名で探す" autocomplete="off" enterkeyhint="search"></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">何も入れていないときは、人気ランキング（毎日自動で入れ替わります）を出します。Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>` : ''}`});
-  if (my) popularMount();
+  /* 2026-11-20 化粧品を追加：塗り薬の画面と同じく、いちばん上に検索。カメラは検索の中のボタン。ブランド名・商品名・バーコードの数字で、実際に売られている商品を全部探せる */
+  const camB = `<button type="button" class="find-cam-b${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="${my ? 'my' : 'cat'}" aria-label="カメラで登録（バーコード・商品の写真）">${icon('camera')}</button>`;
+  if (my) {
+    openModal({title:'化粧品を追加', size:'small tall', dismissable:true, body:`<div id="pop-sec" class="pop-sec"><div class="ac-wrap sbig find-bar find-cam">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="ブランド名・商品名・バーコード" aria-label="ブランド名・商品名・バーコードの数字で探す" autocomplete="off" enterkeyhint="search">${camB}</div>
+      <div class="pop-h" style="margin-top:14px"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div>
+      <button type="button" class="btn btn-ghost btn-sm" data-action="add-full" data-id="my" style="margin-top:12px;width:100%;justify-content:center">見つからない化粧品を入力</button>
+      <p class="credit small muted" style="margin:10px 0 0">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>`});
+    popularMount(); return;
+  }
+  openModal({title:'商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
+    <button class="add-opt main" data-action="add-manual" data-id="cat">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
+    <button class="add-opt main${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="cat">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `${premLock()}`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>`});
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
 let findState = null;
@@ -5293,6 +5305,8 @@ async function findRun(q) {
     const seenN = new Set();
     fs.items = items.filter(x => x && x.name).filter(x => { const v = variantSig(x.name), k = v.n.slice(0, 40) + '|' + v.vol; if (seenN.has(k)) return false; seenN.add(k); return true; })
       .map((x, i) => ({x, i, o:odd(x.name), sim:jan ? 0 : similarity(fnorm(q), fnorm(cleanShopName(x.name)))})).sort((a, b) => a.o - b.o || b.sim - a.sim || a.i - b.i).map(v => v.x).slice(0, 60);
+    /* 2026-11-20 美容家電・脱毛器・アタッチメントなど、肌に塗る物ではない商品は出さない。塗り薬の画面では、塗り薬・肌に塗る物だけにする */
+    fs.items = fs.items.filter(x => { const n = String(x.name || '').normalize('NFKC'); if (NOT_APPLY_RE.test(n) && !NOT_APPLY_RE.test(q)) return false; return !(fs.noRx && OFFTOPIC_RE.test(n) && !OFFTOPIC_RE.test(q)); });
     fs.more = false;
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
@@ -12762,11 +12776,11 @@ function careTodayHtml() {
     const pt = ptOf(area);
     let chips = '';
     if (c === '肌') { const ch = careSkinChips(); if (ch) chips = `<div class="ct2-adv"><b class="adv1-t">今の肌に合う成分</b>${ch}</div>`; } /* ケア管理と同じ成分を出す（内容をそろえる） */
-    else if (pt && D.has[c]) { const tl = D.items.filter(x => x.cat === c && !/を記録する$/.test(x.title)).map(x => foodShortTitle(x.title)).join(' '); /* 見出しと同じことはチップに出さない */
+    else if (pt && (D.has[c] || c === '食事')) { /* 2026-11-20 食事は、記録がなくても、肌質・肌の悩みに合う食べ物を最初から出す */ const tl = D.items.filter(x => x.cat === c && !/を記録する$/.test(x.title)).map(x => foodShortTitle(x.title)).join(' '); /* 見出しと同じことはチップに出さない */
       const bg2 = t => { const x = String(t).replace(/[、。・\s「」（）()0-9.]/g, ''), o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
       const near = v => { const A = bg2(chipText(v)); return D.items.filter(x => x.cat === c && !/を記録する$/.test(x.title)).some(x => { const B = bg2(foodShortTitle(x.title)); let n = 0; A.forEach(y => { if (B.has(y)) n++; }); return n / Math.max(1, Math.min(A.size, B.size)) >= 0.5; }); };
       const exDone = c === '運動' && D.items.some(x => x.cat === '運動' && /今日は\d+分運動/.test(x.why)); /* 今日もう運動した人に、運動のおすすめは出さない */
-      const ch = advChips(Object.assign({}, pt, {area, good:exDone ? [] : (pt.good || []).filter(v => !tl.includes(chipText(v)) && !near(v))})); if (ch) chips = `<div class="ct2-adv">${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
+      const ch = advChips(Object.assign({}, pt, {area, good:exDone ? [] : (pt.good || []).filter(v => !tl.includes(chipText(v)) && !near(v))})); if (ch) chips = `<div class="ct2-adv">${!D.has[c] ? '<p class="small muted ct2-basis">肌質・肌の悩みに合わせた食べ物です</p>' : ''}${c === '肌' ? `<b class="adv1-t">今の肌に合う成分${pt.title && !/^肌の記録/.test(pt.title) ? '：' + esc(pt.title) : ''}</b>` : ''}${ch}</div>`; }
     const L = D.items.filter(x => x.cat === c), real = L.filter(x => !/を記録する$/.test(x.title)), ask = L.filter(x => /を記録する$/.test(x.title));
     const sorted = c === '肌' ? real.slice().sort((a, b) => (a.when === '朝' ? 0 : 1) - (b.when === '朝' ? 0 : 1)) : real;
     const show = sorted.slice(0, c === '肌' ? 4 : 2), more = sorted.slice(show.length);
@@ -12964,9 +12978,9 @@ function lifeAltGood(area, g, a) {
   if (!a.length) return g;
   const out = g.slice(), has = v => out.some(y => chipText(y) === chipText(v)) || a.some(y => chipText(y) === chipText(v));
   const add = []; a.forEach(w => { const r = LIFE_AVOID.find(([re]) => re.test(w)); (r && r[4] || []).forEach(v => { if (!has(v) && !add.includes(v)) add.push(v); }); });
-  out.unshift(...add);
+  const base = out.splice(0, 5); out.length = 0; out.push(...base, ...add.slice(0, Math.max(2, 8 - base.length))); /* 2026-11-20 もとのおすすめ（納豆など）を先に、代わりにすることはそのあとに（もとのおすすめが消えていた） */
   if (!out.length && LIFE_ALT_DEF[area]) out.push(LIFE_ALT_DEF[area]);
-  return out.slice(0, 6);
+  return out.slice(0, 8);
 }
 function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの']; let g = advClean(x.good), a = advClean(x.avoid, 24);
