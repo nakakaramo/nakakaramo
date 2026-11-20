@@ -109,7 +109,7 @@ html{-webkit-text-size-adjust:100%;background:var(--bg)}
    上で下に引っぱったときだけ、アプリの「引っぱって更新」が引き受ける（そのときは、ふつうの跳ね返りを止める） */
 html,body{overscroll-behavior-y:auto}
 /* スクロールしたときに右端に出る縦の線（位置の目印）は出さない。パソコン（マウス）では、操作しやすいように残す */
-@media (hover:none),(pointer:coarse){html,body{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}}
+@media (hover:none),(pointer:coarse){*{scrollbar-width:none}*::-webkit-scrollbar{display:none;width:0;height:0}} /* 2026-11-20 スマホでは、どの枠でもiPhoneの太いスクロールバーを出さない（窓・お問い合わせは細いバーを自前で出す） */
 #page{position:relative}
 #page{will-change:auto}
 .ptr{position:absolute;left:50%;bottom:calc(100% + 16px);width:30px;height:30px;margin-left:-15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-d);opacity:0;pointer-events:none;transform-origin:50% 50%}
@@ -658,7 +658,7 @@ details.acc-cmp{margin-top:14px}
 .cl-t{font-size:17px;font-weight:700;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.4)}.cl-tr{display:flex;gap:4px}
 .cl-ib{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transform:none!important}.cl-ib svg{width:26px;height:26px}.cl-ib.on{color:#F2C230}.cl-ib[hidden]{display:none}
 .cl-bot{position:absolute;left:0;right:0;bottom:0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;align-items:center}
-.cl-tip{margin:0 0 14px;padding:8px 14px;border-radius:10px;background:rgba(20,22,24,.82);font-size:14px;line-height:1.4;text-align:center;max-width:330px}
+.cl-tip:empty{display:none}.cl-tip{margin:0 0 14px;padding:8px 14px;border-radius:10px;background:rgba(20,22,24,.82);font-size:14px;line-height:1.4;text-align:center;max-width:330px}
 .cl-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;max-width:360px}
 .cl-sb{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transform:none!important}
 .cl-sb .cl-c{width:52px;height:52px;border-radius:50%;background:#fff;color:#1b1f1c;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}.cl-sb .cl-c svg{width:24px;height:24px}.cl-sb small{font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
@@ -747,6 +747,7 @@ details.acc-cmp{margin-top:14px}
 .mrow+.mrow{border-top:1px solid var(--line)}
 .mrow .thumb{width:52px;height:52px;border-radius:12px;aspect-ratio:1}
 .mrow .thumb .ph{font-size:0}
+.ngf-th .thumb .ph,.ir-img .thumb .ph,.pop-img .thumb .ph,.used-tile .thumb .ph{font-size:0;gap:0} /* 2026-11-20 小さい画像の枠では、種類の文字（TONERなど）が切れて「ONEI」のように見えるので出さない */
 .mrow-t{display:flex;flex-direction:column;min-width:0}
 .mrow-b{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow-t b{font-size:14.5px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1859,10 +1860,10 @@ body.gated #bottom-nav{visibility:hidden}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-danger{color:#2A120C}:root:not([data-theme="light"]) .prem-sub{color:#3A2A08}}
 
 /* ===== お問い合わせ（AIサポート） ===== */
-.sp-page{height:100%;min-height:0}
+.sp-page{height:100%;min-height:0;position:relative} /* 2026-11-20 お問い合わせのスクロールバー：iPhoneの太いバーを消して、ほかの窓と同じ細いバー（さわっている間だけ）にする */
 .sp-ov .au-page{height:100%;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
 .sp-page .au-head{min-height:48px}.sp-page .au-head h2{font-size:16px}
-.sp-log{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:12px 2px 10px;display:flex;flex-direction:column;gap:12px}
+.sp-log::-webkit-scrollbar{display:none}.sp-log{scrollbar-width:none;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:12px 8px 10px 2px;display:flex;flex-direction:column;gap:12px}
 .sp-msg{max-width:86%;display:flex;flex-direction:column;gap:8px}
 .sp-msg p{margin:0;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.65;word-break:break-word}
 .sp-msg.ai{align-self:flex-start}.sp-msg.ai p{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px;color:var(--ink)}
@@ -3050,7 +3051,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120204007'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120212452'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3121,7 +3122,7 @@ const PLAN_ROWS = [ // 実際の機能と合わせる（機能を変えたら、
   ['肌の記録（3Dの顔・ニキビの場所・肌の写真）', '○', '○'],
   ['記録一覧・肌の調子カレンダー・週次レポート', '○', '○'],
   ['肌の変化のグラフ（30日まで）', '○', '○'],
-  ['Myアイテム（化粧品・塗り薬）の管理、バーコードで登録', '○', '○'],
+  ['Myアイテム（化粧品・塗り薬・内服薬）の管理、バーコードで登録', '○', '○'],
   ['成分の組み合わせチェック・成分辞典', '○', '○'],
   ['食事・運動・睡眠の記録', '○', '○'],
   ['天気（湿度・気温・紫外線）', '○', '○'],
@@ -5535,7 +5536,7 @@ async function openCamLive(kind) {
   const ov = document.createElement('div'); ov.className = 'cl-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'カメラで登録');
   ov.innerHTML = `<video class="cl-v" playsinline muted autoplay></video><div class="cl-shade"></div><div class="cl-frame" hidden><i></i></div>
     <div class="cl-top"><button type="button" class="cl-ib" data-cl="back" aria-label="戻る">${CL_SVG.back}</button><b class="cl-t">${oral ? '内服薬・サプリをカメラで探す' : rx ? '塗り薬をカメラで探す' : 'カメラで探す'}</b><span class="cl-tr"><button type="button" class="cl-ib" data-cl="torch" aria-label="ライト" hidden>${CL_SVG.torch}</button><button type="button" class="cl-ib" data-cl="help" aria-label="使い方">${CL_SVG.help}</button></span></div>
-    <div class="cl-bot"><p class="cl-tip" id="cl-tip">写真を撮って${rx ? '薬' : '商品'}を探す</p>
+    <div class="cl-bot"><p class="cl-tip" id="cl-tip"></p>
       <div class="cl-row"><label class="cl-sb"><span class="cl-c">${icon('image')}</span><small>写真</small><input type="file" accept="image/*" class="vh" id="cl-lib"></label>
         <button type="button" class="cl-shut" data-cl="shot" aria-label="撮って探す"><span>${icon('search')}</span></button>
         <button type="button" class="cl-sb" data-cl="bar"><span class="cl-c">${CL_SVG.bar}</span><small>バーコード</small></button></div>
@@ -5570,7 +5571,7 @@ async function openCamLive(kind) {
     if (CL) CL.busy = false;
   };
   const setMode = m => { if (!CL) return; CL.mode = m; ov.classList.toggle('bar', m === 'bar'); ov.querySelector('.cl-frame').hidden = m !== 'bar'; ov.querySelector('.cl-sl').textContent = m === 'bar' ? 'バーコード' : 'カメラ';
-    tip(m === 'bar' ? 'バーコードを枠の中に写すと、自動で読み取ります' : `写真を撮って${rx ? '薬' : '商品'}を探す`); clearInterval(CL.scanT); if (m === 'bar') CL.scanT = setInterval(scan, 380); };
+    tip(m === 'bar' ? 'バーコードを枠の中に写すと、自動で読み取ります' : ''); /* 2026-11-20 写真のときの「写真を撮って〇〇を探す」は出さない（Keiichiroの指示） */ clearInterval(CL.scanT); if (m === 'bar') CL.scanT = setInterval(scan, 380); };
   ov.addEventListener('click', async e => {
     const b = e.target.closest('[data-cl]'); if (!b || !CL) return; const a = b.dataset.cl; try { hapticTick(); } catch (er) { /* 何もしない */ }
     if (a === 'back') { clStop(); setTimeout(() => (rx ? openRxSheet() : openAddSheet(kind)), 230); return; }
@@ -5755,7 +5756,7 @@ const SUPPORT_FAQ = [
   [/記録一覧|過去の記録|前の日|カレンダー/, '下の「記録」→「記録一覧」で、日ごとの3Dの顔・顔写真・使った物・睡眠・運動・食事・メモを見られます。左右の矢印かカレンダーで日を変えられます。'],
   [/肌.*記録|記録(の仕方|の方法|する)|3D/, 'ホームの「今日の肌を記録」から記録できます。3Dの顔を押すと、ニキビの種類（白・黒・赤・黄ニキビなど）や乾燥・テカリを場所ごとに記録できます。'],
   [/睡眠|運動|歩数|食事|カロリー|栄養/, '睡眠・運動・食事は、記録一覧の日付の画面か、ホームの「記録する」から記録できます。睡眠・運動は「昨日と同じ」を押すと、昨日と同じ内容がすぐ入ります。運動の記録がない日は、運動しなかったことになります。'],
-  [/ケア管理|朝のケア|夜のケア|手順|おすすめケア|提案/, 'ケア管理（プレミアムプラン）では、肌の記録・肌の悩み・天気・登録した化粧品と塗り薬から、朝と夜のスキンケアの順番を毎日組み立てます。今日の肌に合わない物は、理由と一緒にお休みにします。'],
+  [/ケア管理|朝のケア|夜のケア|手順|おすすめケア|提案/, 'ケア管理（プレミアムプラン）では、肌の記録・肌の悩み・天気・登録した化粧品・塗り薬・内服薬から、朝と夜のスキンケアの順番を毎日組み立てます。今日の肌に合わない物は、理由と一緒にお休みにします。'],
   [/成分|併用|組み合わせ/, '成分の名前（緑の下線）を押すと、説明が出ます。「成分辞典」で成分を調べられ、「成分の組み合わせ」で2つの成分を一緒に使ってよいかを確かめられます。'],
   [/意見|要望|感想|改善/, 'ありがとうございます。お問い合わせのいちばん下の「ご意見・ご感想を送る」から送れます（返信はしていません）。'],
   [/個人情報|プライバシー|安全|データ.*(送|共有|使)/, '記録はこのスマホの中に保存されます。クラウドに保存するのは、ログインして「クラウドに保存する」をオンにしたときだけで、写真は送りません。くわしくは「アカウント」→「設定・プライバシー」のプライバシーポリシーをご覧ください。'],
@@ -5856,7 +5857,7 @@ function openSupport() {
     };
     ov.addEventListener('touchend', end); ov.addEventListener('touchcancel', end);
   }
-  const logBox = ov.querySelector('#sp-log'), inp = ov.querySelector('#sp-in');
+  const logBox = ov.querySelector('#sp-log'), inp = ov.querySelector('#sp-in'); try { attachSbar(logBox, ov.querySelector('.sp-page')); } catch (e) { /* 何もしない */ }
   let busy = false;
   const paint = () => {
     if (!logBox) return;
@@ -8591,7 +8592,7 @@ function openGeoHelp() {
   openModal({title:'現在地を使えませんでした', dismissable:true, body:`<p class="small" style="margin:0 0 10px">${denied ? '位置情報が「許可しない」になっています。次の手順で許可すると使えます。' : '現在地をうまく取れませんでした。'}</p>
     <ol class="a2hs-steps">${steps.map(t => `<li><b>${esc(t)}</b></li>`).join('')}</ol>
     <p class="small muted" style="margin:10px 0 0">位置情報を使わずに、住んでいる都道府県の天気を出すこともできます。</p>
-    <p class="small muted" style="margin:6px 0 0;font-size:11px">原因の番号：${WX_GEO_ERR || '-'} ${esc(WX_GEO_MSG.slice(0, 80))}${navigator.geolocation ? '' : '（位置情報に未対応）'}</p>`,
+    <p class="small muted" style="margin:6px 0 0;font-size:11px">原因の番号：${WX_GEO_ERR || '-'}${navigator.geolocation ? '' : '（位置情報に未対応）'}</p>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="wx-setup">都道府県を選ぶ</button><button type="button" class="btn btn-primary" data-action="wx-geo-retry">もう一度試す</button>`});
   wxTopRefresh();
 }
@@ -10715,6 +10716,10 @@ function rtPlan(slot, solo) {
     st.good = fb; });
   const hasAcneRx = RXP.some(r => /ニキビ/.test(((RX_DRUGS.find(z => z[1] === r.x.p.name) || [])[0]) || '') || /アダパレン|過酸化ベンゾイル|クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(String(r.x.p.ingredients || '') + r.x.p.name));
   const skinL = uniq([dryT && '乾燥', oilT && 'テカリ', sensT && '赤み・敏感', acneT && 'ニキビ', markT && 'ニキビ跡・くすみ', poreT && '毛穴・ざらつき', ageT && 'ハリ・小じわ', calm && '肌を休ませる日', lowHum && '空気が乾燥', uv != null && uv >= 6 && '紫外線が強い', hot && '暑い日']);
+  { const sun = steps.find(z => z.k === 'sunscreen'); if (sun && sun.today) { /* 2026-11-20 日焼け止めの理由が「薬の注意」2つ＋「肌の記録から」1つのように重なっていたので、1つにまとめる */
+      const rxN = sun.today.filter(t => t && t.src === '薬' && /塗り薬を使っている間/.test(t.t)), orN = sun.today.filter(t => t && t.src === '薬' && /飲んでいる|でシミ・くすみのケア/.test(t.t));
+      if (rxN.length && orN.length) { const lb = uniq([OR.lab('photo'), OR.lab('spot')].filter(Boolean)).join('・'); const merged = T(`塗り薬と、飲んでいる「${lb}」で、肌が紫外線の影響を受けやすい時期です。毎朝欠かさず塗り、外では2〜3時間ごとに塗り直しましょう`, '薬'); sun.today = sun.today.filter(t => !rxN.includes(t) && !orN.includes(t)); sun.today.unshift(merged); }
+      if (sun.today.some(t => t && t.src === '薬')) sun.today = sun.today.filter(t => !(t && t.src === '肌' && /紫外線で(濃く|悪く)なりやすい/.test(t.t))); } }
   { const seenIng = new Set(); steps.forEach(st => { st.today = (st.today || []).filter(t => { if (!t || t.src !== '成分') return true; const k = String(t.t); if (seenIng.has(k)) return false; seenIng.add(k); return true; }); }); } /* 2026-11-20 同じ成分の説明（サリチル酸：…）を、洗顔と部分用の両方に書かない */
   return {steps, d, w, tips, lead, calm, hasProd:all.length > 0, R, acne:acneT, hasAcneRx, skinL, rested:RESTED};
 }
@@ -15899,7 +15904,7 @@ const RS_CAT = {'クレンジング':'cleanse', '洗顔':'wash', '化粧水・�
 let RS_DAYS = null; // 成分ごとの「使った日」（学習で、同じ日にしか使っていない成分を見分けるため。送信はしない）
 function researchSummary() {
   const logs = state.skinLogs.filter(l => !l.demo).slice().sort((a, b) => a.date.localeCompare(b.date));
-  const st = state.settings, prods = state.myProducts.filter(p => !p.demo);
+  const st = state.settings, prods = state.myProducts.filter(p => !p.demo && p.category !== ORAL_CAT); /* 2026-11-20 飲み薬・サプリは研究に送らない（プライバシーポリシーに書いていないため） */
   const recorded = logs.some(l => l.usageRecorded);
   const prodIngs = new Map(prods.map(p => [p.id, knownIngs(ingsOfMy(p)).map(k => k.entry)]));
   // その日に使った化粧品：「使ったアイテム」を記録していればそれを使い、なければ使用期間から考える
@@ -15948,7 +15953,7 @@ async function researchNgSync() {
   const r = researchState(); if (!r || !r.on || !r.adult || researchNgSync.busy) return;
   researchNgSync.busy = true;
   try {
-    for (const p of state.myProducts.filter(x => x.ng && !x.demo && x.ng.rid)) {
+    for (const p of state.myProducts.filter(x => x.ng && !x.demo && x.ng.rid && x.category !== ORAL_CAT)) { /* 飲み薬・サプリは研究に送らない */
       const pl = ngPayload(p), h = strHash(JSON.stringify(pl)); if (p.ng.sentH === h) continue;
       const res = await fetch(`${CLOUD.url}/rest/v1/rpc/research_ng_submit`, {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({cid:rsCid(r), rid:p.ng.rid, payload:pl})}).catch(() => null);
       if (res && res.ok) { p.ng.sentH = h; save(); } else break;
@@ -17133,6 +17138,10 @@ document.addEventListener('click', e => {
 });
 function sheetGo(hash) { if (MODAL_REOPEN) SHEET_RET = {from:MODAL_FROM, y:lockedY != null ? lockedY : window.scrollY, reopen:MODAL_REOPEN, at:Date.now()}; closeModal(true); location.hash = hash; }
 window.addEventListener('hashchange', () => {
+  /* 2026-11-20 画面を移ったら（なぞって戻ったときも）、全画面の3D・アイコン変更のメニュー・カメラを閉じる（ほかの画面の上に残らない） */
+  try { if ($('#f3-full')) { if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; } $('#f3-full').remove(); unlockScroll(); } } catch (e) { /* 何もしない */ }
+  try { const av = document.getElementById('av-menu'); if (av) av.remove(); } catch (e) { /* 何もしない */ }
+  try { if (typeof CL !== 'undefined' && CL) clStop(); } catch (e) { /* 何もしない */ }
   const viaBar = Date.now() - NAV_SRC.bar < 1500;
   if ($('#modal-root').innerHTML) { if (MODAL_REOPEN && MODAL_FROM && MODAL_FROM !== location.hash) SHEET_RET = {from:MODAL_FROM, y:lockedY != null ? lockedY : window.scrollY, reopen:MODAL_REOPEN, at:Date.now()}; closeModal(true); } // シートの中のリンクで移ったとき
   render();
