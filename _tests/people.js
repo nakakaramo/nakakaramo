@@ -40,4 +40,7 @@ const PERSONAS = [
   { k: '15_化粧品だけ_乾燥敏感', a: base({ tight: 'yes', sens: 'yes', red: 'often', acne: 'rare', concerns: ['dry', 'sensitive', 'redness'] }), log: { acneCount: 0, dryness: 5, redness: 4 },
     prods: [P('e1', 'ミルククレンジング', 'クレンジング', '水、ミネラルオイル'), P('e2', 'アミノ酸 洗顔', '洗顔', 'ココイルグルタミン酸Na'), P('e3', '高保湿 化粧水', '化粧水・トナー', '水、グリセリン、セラミドNP'), P('e4', 'グリコール酸 ピーリング美容液', '美容液・アンプル', '水、グリコール酸'), P('e5', 'セラミド クリーム', 'クリーム', 'セラミドNP、スクワラン'), P('e6', '香料入り クリーム', 'クリーム', '水、香料、エタノール')] },
 ];
-module.exports = { PERSONAS, P, RX, OR, base };
+// 2026-11-21 はじめの質問は「年代」ではなく「生年月日」。テストの人物の年代に合う生年月日を入れる
+const BD_OF = (band) => ({ '17歳以下': '2011-06-15', '18〜19歳': '2007-06-15', '20代': '2001-06-15', '30代': '1991-06-15', '40代': '1981-06-15', '50代': '1971-06-15', '60代以上': '1955-06-15' })[band] || '';
+const setBD = (p, band) => p.evaluate((d) => { const e = document.getElementById('sw-bd'); if (!e) return false; e.value = d; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); return true; }, BD_OF(band)).catch(() => false);
+module.exports = { PERSONAS, P, RX, OR, base, BD_OF, setBD };

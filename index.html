@@ -196,6 +196,9 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .acc-row svg{width:22px;height:22px;color:var(--green-d)}
 .ai-sec.acc-grp-h{margin:24px 6px 8px!important;font-size:13px;letter-spacing:.04em}
 .acc-grp{margin-bottom:0}
+.acc-quick{position:relative;cursor:pointer}
+.acc-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;margin:0;padding:0;font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none;background:transparent}
+.acc-num-u{display:flex;align-items:center;gap:8px}.acc-num-u .input{flex:1}
 .acc-sec.acc-grp .acc-row{grid-template-columns:22px 1fr auto 12px;min-height:52px;padding:0 18px;box-sizing:border-box}
 .acc-grp button.acc-row{width:100%;background:none;border:0;border-radius:0;font:inherit;text-align:left;cursor:pointer}
 .acc-grp .acc-row+.acc-row{border-top:1px solid var(--line)}
@@ -1830,6 +1833,8 @@ body.gated #bottom-nav{visibility:hidden}
 .au-or{margin:30px 0 16px;text-align:center;font-size:13.5px;color:var(--ink2)}
 .au-sso{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:50px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .au-sso svg{position:absolute;left:20px}
+.au-in:-webkit-autofill,.au-in:-webkit-autofill:hover,.au-in:-webkit-autofill:focus,.input:-webkit-autofill,.input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px var(--surface) inset!important;box-shadow:0 0 0 1000px var(--surface) inset!important;-webkit-text-fill-color:var(--ink)!important;caret-color:var(--ink);transition:background-color 99999s ease 0s} /* 自動入力した欄が黄色くならないように */
+.au-err{margin:12px 2px 0!important}
 .au-fine{margin:10px 4px 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
 .au-who{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 22px;padding:12px 14px;border-radius:12px;background:var(--surface2);font-size:14.5px;color:var(--ink);word-break:break-all}
 .au-chg{flex:none;background:none;border:0;font:inherit;font-size:13.5px;color:var(--green-d);text-decoration:underline;cursor:pointer;padding:4px}
@@ -2806,6 +2811,12 @@ const FREQ_RANGE = {'毎日':[7,7],'週4〜6回':[4,6],'週2〜3回':[2,3],'週1
 const STOCK = 'ストック（未開封）';
 const SKIN_TYPES = ['乾燥肌','脂性肌','混合肌','普通肌'];
 const AGE_BANDS = ['17歳以下','18〜19歳','20代','30代','40代','50代','60代以上'];
+// 2026-11-21 年代は、生年月日から自動で決める（誕生日が来たら、年代も自動で変わる）
+const BD_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+function ageOfBirth(bd, today) { const m = BD_RE.exec(String(bd || '')); if (!m) return null; const t = String(today || (typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0, 10))); const [ty, tm, td] = t.split('-').map(Number); let a = ty - Number(m[1]); if (tm < Number(m[2]) || (tm === Number(m[2]) && td < Number(m[3]))) a--; return a; }
+function validBirth(bd) { const m = BD_RE.exec(String(bd || '')); if (!m) return false; const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])); if (d.getFullYear() !== Number(m[1]) || d.getMonth() !== Number(m[2]) - 1 || d.getDate() !== Number(m[3])) return false; const a = ageOfBirth(bd); return a != null && a >= 0 && a <= 120; }
+function ageBandOfBirth(bd) { const a = ageOfBirth(bd); if (a == null) return ''; return a < 18 ? '17歳以下' : a < 20 ? '18〜19歳' : a < 60 ? `${Math.floor(a / 10) * 10}代` : '60代以上'; }
+const fmtBirth = bd => { const m = BD_RE.exec(String(bd || '')); return m ? `${Number(m[1])}年${Number(m[2])}月${Number(m[3])}日` : ''; };
 const isAdultBand = b => !!b && b !== '17歳以下'; // 研究への協力は18歳以上だけ
 const STATUSES = ['使用中','一時停止',STOCK,'使用終了'];
 const AREAS = [{id:'forehead',name:'額'},{id:'nose',name:'鼻'},{id:'rcheek',name:'右頬'},{id:'lcheek',name:'左頬'},{id:'mouth',name:'口まわり'},{id:'chin',name:'顎'}];
@@ -3058,7 +3069,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121001248'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121010359'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3987,7 +3998,8 @@ function normalize(d) {
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
-  out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
+  out.settings.birthDate = validBirth(ds.birthDate) ? ds.birthDate : ''; // 生年月日（任意）
+  out.settings.ageBand = out.settings.birthDate ? ageBandOfBirth(out.settings.birthDate) : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
   out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
   out.settings.permAsked2 = !!ds.permAsked2; // 最初の「はじめの設定」（位置情報・お知らせ）を出したか
@@ -5698,7 +5710,7 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard() {
   const st = state.settings;
-  swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
+  swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', birthDate:st.birthDate || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
   openModal({title:'肌質診断', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
@@ -5941,6 +5953,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       const up = st.mode === 'signup', s1 = !up || st.step === 'email'; // ログインは、メールアドレスとパスワードを同じ画面で入れる
       const title = up ? 'アカウントを作る' : 'ログイン';
       let body = '';
+      const ERR = `<p class="au-err" role="alert" ${st.err ? '' : 'hidden'}>${esc(st.err)}</p>`; // まちがいの知らせは、押すボタンのすぐ上に出す
       const sso = CLOUD.google ? `<p class="au-or">または以下の方法でも${up ? '登録' : 'ログイン'}できます</p>
         <button type="button" class="au-sso" data-au="google">${GICON}<span>Googleで続行</span></button>
         ${up ? '<p class="au-fine">Googleで続行すると、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意したことになります。</p>' : ''}` : '';
@@ -5949,11 +5962,13 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <label class="au-lbl" for="au-pw" style="margin-top:14px">パスワード</label>
         <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72">${eye('au-pw')}</div>
         <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>（健康に関する情報の取り扱いを含む）に同意します</span></label>
+        ${ERR}
         <button type="button" class="au-go" data-au="login" ${st.busy ? 'disabled' : ''}>${st.busy ? 'ログインしています…' : 'ログイン'}</button>
         <button type="button" class="au-link" data-au="forgot">パスワードを忘れた場合</button>
         ${sso}`;
       else if (s1) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
         <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(st.email)}">
+        ${ERR}
         <button type="button" class="au-go" data-au="next">続行</button>
         ${CLOUD.google ? `<p class="au-or">または以下の方法でも${up ? '登録' : 'ログイン'}できます</p>
         <button type="button" class="au-sso" data-au="google">${GICON}<span>Googleで続行</span></button>
@@ -5966,11 +5981,12 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <div class="au-pw"><input class="au-in" id="au-pw2" type="password" autocomplete="new-password" maxlength="72">${eye('au-pw2')}</div>
         <p class="small muted au-chk" style="margin:4px 0 0">記録と写真は、登録したメールアドレスのアカウントに自動でバックアップされます。</p>
         <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>
+        ${ERR}
         <button type="button" class="au-go" data-au="signup" ${st.busy ? 'disabled' : ''}>${st.busy ? '登録しています…' : '登録する'}</button>`;
       const keep = {}; if (!dir) ov.querySelectorAll('input').forEach(i => { if (i.id) keep[i.id] = i.type === 'checkbox' ? i.checked : i.value; });
       ov.innerHTML = `<div class="au-page" role="dialog" aria-modal="true" aria-labelledby="au-t">
         <div class="au-head"><button type="button" class="au-back" data-au="${s1 ? 'close' : 'back'}" aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button><h2 id="au-t">${title}</h2><span></span></div>
-        <div class="au-body">${st.info ? `<p class="au-info">${esc(st.info)}</p>` : ''}${body}<p class="au-err" ${st.err ? '' : 'hidden'}>${esc(st.err)}</p></div>
+        <div class="au-body">${st.info ? `<p class="au-info">${esc(st.info)}</p>` : ''}${body}</div>
         <div class="au-foot">${s1 ? (up ? '<p>既にアカウントをお持ちですか？</p><button type="button" data-au="tologin">ログイン</button>' : '<p>アカウントをまだ持っていませんか？</p><button type="button" data-au="tosignup">登録</button>') : ''}</div>
       </div>`;
       Object.keys(keep).forEach(id => { const i = ov.querySelector('#' + id); if (i) { if (i.type === 'checkbox') i.checked = keep[id]; else i.value = keep[id]; } });
@@ -5984,18 +6000,19 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
     const done = msg => { toast(msg); finish(true); };
     const act = async a => {
       const pv = id => (ov.querySelector(id) || {}).value || '';
+      const emv = () => String(pv('#au-email')).normalize('NFKC').replace(/[\s\u200b-\u200d\u2060\ufeff]/g, ''); // 全角の文字・見えない空白（自動入力で入ることがある）を取りのぞく
       if (a === 'close') return finish(false);
       if (a === 'back') { st.step = 'email'; st.err = ''; st.info = ''; return paint('back'); }
-      if (a === 'tologin' || a === 'tosignup') { st.email = pv('#au-email').trim() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint('fade'); }
+      if (a === 'tologin' || a === 'tosignup') { st.email = emv() || st.email; st.mode = a === 'tologin' ? 'login' : 'signup'; st.err = ''; st.info = ''; return paint('fade'); }
       if (a === 'google') { if (st.mode === 'login' && !(ov.querySelector('#au-agree') || {}).checked) return setErr('プライバシーポリシーへの同意にチェックを入れてください'); policyAgree(); if (swState) { try { swSave(true); } catch (e) { /* 何もしない */ } } finish(false); return googleLogin(); } // はじめの質問の答えは、Googleの画面へ移る前に保存しておく
       if (a === 'next') {
-        const em = pv('#au-email').trim();
+        const em = emv();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください');
         st.email = em; st.step = 'pw'; st.err = ''; st.info = ''; return paint('fwd');
       }
       if (a === 'forgot') {
         setErr('');
-        if (ov.querySelector('#au-email')) { const em = pv('#au-email').trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('パスワードを再設定するメールアドレスを入力してください'); st.email = em; }
+        if (ov.querySelector('#au-email')) { const em = emv(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('パスワードを再設定するメールアドレスを入力してください'); st.email = em; }
         try { const c = await client(); const {error} = await withTO(c.auth.resetPasswordForEmail(st.email, {redirectTo:appUrl()})); if (error) throw error; st.info = `${st.email} にパスワード再設定のメールを送りました。メールのボタンを押して、新しいパスワードを決めてください。`; paint(); }
         catch (e) { setErr(authErrMsg(e)); }
         return;
@@ -6003,7 +6020,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       if (st.busy) return;
       const pw = pv('#au-pw');
       if (a === 'login') {
-        if (ov.querySelector('#au-email')) { const em = pv('#au-email').trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください'); st.email = em; }
+        if (ov.querySelector('#au-email')) { const em = emv(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setErr('メールアドレスを正しく入力してください'); st.email = em; }
         if (!pw) return setErr('パスワードを入力してください');
         if (!(ov.querySelector('#au-agree') || {}).checked) return setErr('プライバシーポリシーへの同意にチェックを入れてください');
         st.busy = true; st.err = ''; paint();
@@ -6040,6 +6057,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       if (ey) { const i = ov.querySelector('#' + ey.dataset.eye); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; ey.innerHTML = show ? EYE_OFF : EYE_ON; ey.setAttribute('aria-label', show ? 'パスワードを隠す' : 'パスワードを表示'); ey.classList.toggle('on', show); return; }
       const b = e.target.closest('[data-au]'); if (b) act(b.dataset.au);
     });
+    ov.addEventListener('input', () => { if (st.err) setErr(''); }); // 入れ直したら、前のまちがいの知らせは消す
     ov.addEventListener('keydown', e => { if (e.key !== 'Enter' || e.isComposing) return; const go = ov.querySelector('.au-go'); if (go && e.target.matches('input')) { e.preventDefault(); act(go.dataset.au); } });
     paint();
   });
@@ -6104,7 +6122,7 @@ function swStepHtml(step) {
     <div class="auth-entry sw-entry"><button type="button" class="btn btn-primary" data-swauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-swauth="login">ログイン</button></div>
     ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}`; }
   if (step === 'gender') h = `<p class="sw-q">性別</p>` + swOpts('gender', [['男性', '男性'], ['女性', '女性'], ['', '回答しない', 1]], v.gender);
-  if (step === 'age') h = `<p class="sw-q">年代</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '回答しない']]), v.ageBand);
+  if (step === 'age') h = `<p class="sw-q">生年月日</p><p class="sw-sub">年代に合わせたケアの提案と、17歳以下かどうかの確認に使います。空欄でも大丈夫です</p><input class="input sw-bd" type="date" id="sw-bd" min="1900-01-01" max="${todayStr()}" value="${esc(v.birthDate || '')}" aria-label="生年月日">`;
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
     <div class="sw-nums"><label>身長<span class="unit"><input class="input" id="sw-h" inputmode="decimal" placeholder="例：160" value="${esc(v.height)}">cm</span></label><label>体重<span class="unit"><input class="input" id="sw-w" inputmode="decimal" placeholder="例：52" value="${esc(v.weight)}">kg</span></label></div>`;
   const dq = (k, first) => { const q = DIAG_Q.find(x => x.k === k); return `<p class="sw-sec${first ? ' sw-sec1' : ''}">${esc(q.q)}${q.multi ? '<small>（いくつでも）</small>' : ''}</p>` + swOpts(k, q.o, q.multi ? (Array.isArray(v[k]) ? v[k] : []) : (v[k] || ''), q.multi); };
@@ -6126,6 +6144,7 @@ function swStepHtml(step) {
 function swGrab() { // 入力欄の今の値を覚えておく（描き直しても消えないように）
   const v = swState.v, g = id => { const e = $('#' + id); return e ? e.value : null; };
   const h = g('sw-h'), w = g('sw-w'), sl = g('sw-sleep'), bg = g('sw-budget');
+  const bd = g('sw-bd'); if (bd !== null) { v.birthDate = validBirth(bd) ? bd : ''; if (v.birthDate) v.ageBand = ageBandOfBirth(v.birthDate); }
   if (h !== null) v.height = h; if (w !== null) v.weight = w; if (sl !== null) v.sleepNeed = Number(sl) || 420; if (bg !== null) v.budget = bg;
 }
 function swPaint() {
@@ -6139,12 +6158,13 @@ function swPaint() {
   f.innerHTML = `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-action="setup-finish">診断する</button>`;
   if (mb) mb.scrollTop = top;
 }
-const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.tight || v.oilDay) : step === 'concerns' ? v.concerns.length > 0 : true; };
+const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? true : step === 'skin' ? !!(v.tight || v.oilDay) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
   const v = swState.v, err = $('#sw-err');
   const bad = (m, at) => { const sec = $('#sw-s-' + at); if (sec) { sec.classList.add('sw-bad'); const p = document.createElement('p'); p.className = 'sw-err sw-err-in'; p.textContent = m; sec.appendChild(p); sec.scrollIntoView({block:'center', behavior:'smooth'}); } else if (err) { err.hidden = false; err.textContent = m; } return false; };
   $$('.sw-card.sw-bad').forEach(x => x.classList.remove('sw-bad')); $$('.sw-err-in').forEach(x => x.remove()); if (err) err.hidden = true;
+  if ($('#sw-bd')) { const bd = $('#sw-bd').value; if (bd && !validBirth(bd)) return bad('生年月日を正しく選んでください（空欄でも大丈夫です）', 'age'); v.birthDate = bd || ''; if (bd) v.ageBand = ageBandOfBirth(bd); }
   if ($('#sw-h')) {
     const h = toHalf($('#sw-h').value).trim(), w = toHalf($('#sw-w').value).trim();
     if (h && !(Number(h) >= 80 && Number(h) <= 250)) return bad('身長は80〜250の数字で入れてください（空欄でも大丈夫です）', 'body');
@@ -6191,7 +6211,7 @@ function swSyncOpts(box, k) {
 function swSave(done) {
   const st = state.settings, v = swState ? swState.v : null;
   if (v && done) {
-    st.gender = v.gender; st.ageBand = v.ageBand;
+    st.gender = v.gender; st.birthDate = v.birthDate || ''; st.ageBand = st.birthDate ? ageBandOfBirth(st.birthDate) : v.ageBand;
     // 肌質診断：答えを保存して、肌質を判断する（前からある肌質・肌悩みの項目にも入れる）
     const a = {}; DIAG_Q.forEach(q => { a[q.k] = q.multi ? (Array.isArray(v[q.k]) ? v[q.k].slice() : []) : (v[q.k] || ''); });
     st.diag = {a, r:null}; setConcernKeys(v.concerns || []); st.diag.r = diagCompute(a, st.concernKeys);
@@ -15293,7 +15313,7 @@ async function callBilling(action, extra) {
 }
 function authErrMsg(e) {
   const m = String((e && e.message) || '');
-  if (/Invalid login credentials/i.test(m)) return 'メールアドレスまたはパスワードが違います。';
+  if (/Invalid login credentials/i.test(m)) return 'メールアドレスまたはパスワードを正しく入力してください';
   if (/Email not confirmed/i.test(m)) return 'メールアドレスの確認が済んでいません。届いたメールのボタンを押すか、6桁のコードを入力してください。';
   if (/already (been )?registered/i.test(m)) return 'このメールアドレスは登録済みです。「ログイン」からお入りください。';
   if (/not authorized|error sending|sending (confirmation|recovery)/i.test(m)) return '確認メールを送れませんでした。準備中のため、しばらくしてからもう一度お試しください（登録せずに「スキップ」で使うこともできます）。';
@@ -15518,7 +15538,7 @@ const SNS_ICON = {
   x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'};
 const LEGAL = {
   draft: false,              // 下書きのあいだは true（画面に「下書き」と表示）。2026-11-15 に正式に公開
-  updated: '2026年11月20日',  // 最終改定日（2026-11-20 飲み薬・サプリの扱いを追記）
+  updated: '2026年11月21日',  // 最終改定日（2026-11-20 飲み薬・サプリの扱いを追記、2026-11-21 生年月日などのプロフィールを追記）
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額600円（税込）または年額6,000円（税込）'
@@ -15596,6 +15616,7 @@ function viewPrivacy() {
 <h3>2. 取得する情報</h3>
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
+<li><b>プロフィール</b>：答えた場合だけ、性別・生年月日・身長・体重。この端末に保存し、ログインしている場合は自動バックアップに含めます。生年月日は年代の計算に使い、研究への協力では年代だけを送ります（生年月日は送りません）。</li>
 <li><b>健康に関する情報</b>：肌の状態の記録、Myアイテムに登録した皮膚科の塗り薬・飲み薬・サプリメントの名前・主な成分・使う時間と期間、肌質診断で答えた妊娠中・授乳中かどうか。これらは、病歴などの「要配慮個人情報」にあたることがあります。ログインして自動バックアップを使う場合や、AIによる分析を使う場合は、本ポリシーに同意したうえで、運営者が下の「5. 外部に送信される情報」の送信先を通じて取り扱います。ログインせずに使う場合は、端末の中だけに保存され、運営者には送られません。</li>
 <li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
 <li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li>
@@ -15767,7 +15788,7 @@ const ACC_SECTIONS = {
     body:() => `<div class="mb-card" id="acc-money">${moneyCardHtml()}</div>`},
   plan: {icon:'user', t:'プラン・アカウント', d:() => acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み',
     body:() => embedView(() => viewPlan({}))},
-  body: {icon:'bodyskin', t:'からだと肌', d:() => '身長・体重、肌質・性別・年代・肌悩み', body:() => settingsEmbedHtml('body')},
+  body: {icon:'bodyskin', t:'からだと肌', d:() => '身長・体重、肌質・性別・生年月日・肌悩み', body:() => settingsEmbedHtml('body')},
   settings: {icon:'gear', t:'設定', d:() => 'お知らせ、画面の表示、アプリとして使う', body:() => settingsEmbedHtml('settings')},
   privacy: {icon:'shield', t:'プライバシー', d:() => 'クラウド保存、研究への協力、データの管理', body:() => settingsEmbedHtml('privacy')}
 };
@@ -15947,10 +15968,10 @@ function accItemDefs() {
   const pick = (re) => () => { const m = P(), k = Object.keys(m).find(x => re.test(x)); return k ? m[k] : ''; };
   const d = diagNow(), ck = concernKeysNow(), r = researchState();
   return {
-    gender: {t:'性別', icon:'user', val:() => st.gender || '未設定', html:() => card('性別', genderFieldHtml())},
-    age: {t:'年代', icon:'calendar', val:() => st.ageBand || '未設定', html:() => card('年代', ageFieldHtml())},
-    height: {t:'身長', icon:'bodyskin', val:() => st.height ? st.height + 'cm' : '未設定', html:pick(/^身長・体重$/)},
-    weight: {t:'体重', icon:'weight', val:() => st.weight ? st.weight + 'kg' : '未設定', html:pick(/^身長・体重$/)},
+    gender: {t:'性別', icon:'user', val:() => st.gender || '未設定', html:() => card('性別', genderFieldHtml()), quick:() => `<select class="acc-native" id="acc-q-gender" aria-label="性別を変える">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<option value="${v}" ${(st.gender || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`},
+    age: {t:'生年月日', icon:'calendar', val:() => fmtBirth(st.birthDate) || '未設定', html:() => card('生年月日', ageFieldHtml()), quick:() => `<input type="date" class="acc-native" id="acc-q-birth" min="1900-01-01" max="${todayStr()}" value="${esc(st.birthDate || '')}" aria-label="生年月日を変える">`},
+    height: {t:'身長', icon:'bodyskin', val:() => st.height ? st.height + 'cm' : '未設定', html:pick(/^身長・体重$/), action:'acc-num', id:'height'},
+    weight: {t:'体重', icon:'weight', val:() => st.weight ? st.weight + 'kg' : '未設定', html:pick(/^身長・体重$/), action:'acc-num', id:'weight'},
     skintype: {t:'肌質', icon:'drop', val:() => d ? typeLabel(d) : '未診断', html:() => card('肌質', skinTypePartHtml())},
     concerns: {t:'肌悩み', icon:'spark', val:() => ck.length ? ck.length + '件' : '未設定', html:() => card('肌悩み', concernsPartHtml())},
     notify: {t:'お知らせ', icon:'bell', hide:NATIVE_APP, html:pick(/^お知らせ$/)},
@@ -15965,13 +15986,26 @@ function accItemDefs() {
     support: {t:'お問い合わせ', icon:'chat', action:'support-open'}
   };
 }
+// その場で変えたあと、一覧の右の値を書き直す
+function accQuickPaint() { if (parseRoute().name !== 'account') return; const D = accItemDefs(); ['gender', 'age', 'height', 'weight'].forEach(k => { const el = document.querySelector(`#acc-it-${k} .acc-val`); if (el && D[k].val) el.textContent = D[k].val(); }); }
+// 身長・体重：押すと、その1つだけを入れる小さな画面がすぐ出る
+function openAccNum(k) {
+  const st = state.settings, H = k === 'height', lbl = H ? '身長' : '体重', unit = H ? 'cm' : 'kg', lo = H ? 80 : 20, hi = 250, cur = st[k] || '';
+  openModal({title:lbl, body:`<form id="acc-num-form" data-k="${k}" novalidate><div class="field"><label class="lbl" for="acc-num-in">${lbl}</label><span class="unit acc-num-u"><input class="input" id="acc-num-in" name="v" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${esc(String(cur))}" placeholder="例：${H ? 160 : 55}">${unit}</span><p class="hint">${H ? 'たんぱく質の目安などの計算に使います。' : '運動の消費カロリーや、たんぱく質の目安の計算に使います。'}空欄にすると消えます。</p><div class="field-error" data-err="v"></div></div></form>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="acc-num-form" class="btn btn-primary">保存する</button>`});
+  const i = document.getElementById('acc-num-in'); if (i) { try { i.focus({preventScroll:true}); const n = i.value.length; i.setSelectionRange(n, n); } catch (e) { /* 何もしない */ } }
+  const f = document.getElementById('acc-num-form'); if (f) f.addEventListener('submit', e => { e.preventDefault(); const raw = toHalf(i.value).trim(), n = raw === '' ? 0 : Number(raw);
+    if (!(n === 0 || (n >= lo && n <= hi))) { showErrors(f, {v:`${lo}〜${hi}の数字で入力してください（空欄でも大丈夫です）。`}); return; }
+    st[k] = Math.round(n * 10) / 10; if (save()) { closeModal(); hapticSaved(); toast('保存しました'); render(); } });
+}
 function accGroupsHtml() {
   const D = accItemDefs();
   return ACC_GROUPS.map(([g, keys]) => { const rows = keys.map(k => [k, D[k]]).filter(([, x]) => x && !x.hide);
     if (!rows.length) return '';
     return `<h3 class="ai-sec acc-grp-h">${esc(g)}</h3><div class="card acc-sec acc-grp">${rows.map(([k, x]) => { const v = x.val ? x.val() : '';
       const inner = `${icon(x.icon)}<span><b>${esc(x.t)}</b></span><em class="acc-val">${esc(v)}</em><i aria-hidden="true">›</i>`;
-      return x.action ? `<button type="button" class="acc-row" data-action="${x.action}" id="acc-it-${k}">${inner}</button>` : `<a class="acc-row" href="#/account/s/${k}" id="acc-it-${k}">${inner}</a>`; }).join('')}</div>`; }).join('');
+      if (x.quick) return `<div class="acc-row acc-quick" id="acc-it-${k}">${inner}${x.quick()}</div>`; // 押すと、その場で選べる（性別・生年月日）
+      return x.action ? `<button type="button" class="acc-row" data-action="${x.action}"${x.id ? ` data-id="${x.id}"` : ''} id="acc-it-${k}">${inner}</button>` : `<a class="acc-row" href="#/account/s/${k}" id="acc-it-${k}">${inner}</a>`; }).join('')}</div>`; }).join('');
 }
 function accItems(sec) {
   const tpl = document.createElement('template'); tpl.innerHTML = ACC_SECTIONS[sec].body();
@@ -15991,7 +16025,7 @@ function settingsEmbedHtml(kind) {
   const sub = (title, c) => c ? `<div class="set-sub"><h3>${esc(title)}</h3>${inner(c)}</div>` : '';
   const out = [], P = [], B = [];
   if (cards['身長・体重']) B.push(cards['身長・体重'].outerHTML); // からだと肌（自分の情報）
-  const skinC = cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) B.push(skinC.outerHTML);
+  const skinC = cards['肌質・性別・生年月日・肌悩み'] || cards['肌質・性別・年代・肌悩み'] || cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) B.push(skinC.outerHTML);
   if (!NATIVE_APP) { out.push(notifyCardHtml()); setTimeout(notifyHealth, 300); } // お知らせ（通知）
   if (cards['クラウドに保存']) P.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) P.push(cards['研究への協力'].outerHTML);
@@ -16115,12 +16149,12 @@ function researchPreviewHtml() {
 function skinTypePartHtml() { const d = diagNow(); return `<p>${d ? `肌質：<b>${esc(typeLabel(d))}</b>（${fmtDate(d.at)}の肌質診断）` : '肌質：<span class="muted">未診断</span>'}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">${d ? '<a class="btn btn-ghost btn-sm" href="#/care/diag">診断結果を見る</a>' : ''}<button type="button" class="btn btn-soft btn-sm" data-action="setup">${d ? '肌質診断をやり直す' : '肌質診断をする'}</button></div>`; }
 function genderFieldHtml() { const st = state.settings; return `<div class="field"><label class="lbl" for="f_gender">性別<span class="opt">任意</span></label><select class="select" id="f_gender">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<option value="${v}" ${(st.gender || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`; }
-function ageFieldHtml() { const st = state.settings; return `<div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; }
+function ageFieldHtml() { const st = state.settings; return `<div class="field"><label class="lbl" for="f_birth">生年月日<span class="opt">任意</span></label><input class="input" type="date" id="f_birth" min="1900-01-01" max="${todayStr()}" value="${esc(st.birthDate || '')}"><p class="hint">年代（${st.ageBand ? esc(st.ageBand) : '未設定'}）は、生年月日から自動で決まります。研究への協力では、年代だけを送ります。</p></div>`; }
 function concernsPartHtml() { const ck = concernKeysNow(); return `<p class="lbl" style="margin:14px 0 6px">肌悩み<span class="opt">いくつでも</span></p>
     <div class="checks">${CONCERN_MASTER.map(c => `<label class="check"><input type="checkbox" name="st-concern2" value="${c.k}" ${ck.includes(c.k) ? 'checked' : ''}>${esc(c.l)}</label>`).join('')}</div>
     <p class="small muted" style="margin:8px 0 0">肌悩みは、ケア管理とホームの「おすすめケア」に使います。このブラウザ内に保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p>`; }
 function skinProfileCardHtml() {
-  return `<div class="card"><div class="card-h"><h2>肌質・性別・年代・肌悩み</h2></div>
+  return `<div class="card"><div class="card-h"><h2>肌質・性別・生年月日・肌悩み</h2></div>
     ${skinTypePartHtml()}
     ${genderFieldHtml()}
     ${ageFieldHtml()}
@@ -16439,6 +16473,7 @@ const actions = {
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
   'vision-diag': () => runVisionDiag(),
   'life-goal': () => openLifeGoal(),
+  'acc-num': (id) => openAccNum(id === 'weight' ? 'weight' : 'height'),
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
   'photo-delete': async id => {
@@ -16841,7 +16876,12 @@ document.addEventListener('change', e => {
 });
 // 肌質・年代・敏感肌
 document.addEventListener('change', e => {
-  const id = e.target.id; if (!['f_skinType', 'f_ageBand', 'f_sensitive', 'f_gender'].includes(id)) return;
+  const id = e.target.id;
+  if (id === 'f_birth' || id === 'acc-q-birth') { const v = e.target.value; if (v && !validBirth(v)) { toast('生年月日を正しく選んでください', 'error'); return; } const st = state.settings; st.birthDate = v || ''; if (v) st.ageBand = ageBandOfBirth(v);
+    if (st.ageBand === '17歳以下' && researchState().on) setTimeout(() => researchWithdraw(), 0); // 17歳以下は研究に協力しない（送ったデータも消す）
+    if (save()) { hapticSaved(); if (researchState().on) researchSend(); accQuickPaint(); } return; }
+  if (id === 'acc-q-gender') { state.settings.gender = e.target.value; if (save()) { hapticSaved(); if (researchState().on) researchSend(); accQuickPaint(); } return; }
+  if (!['f_skinType', 'f_ageBand', 'f_sensitive', 'f_gender'].includes(id)) return;
   const st = state.settings;
   if (id === 'f_skinType') st.skinType = e.target.value; else if (id === 'f_ageBand') st.ageBand = e.target.value; else if (id === 'f_gender') st.gender = e.target.value; else st.sensitive = e.target.checked;
   save(); if (researchState().on) researchSend();

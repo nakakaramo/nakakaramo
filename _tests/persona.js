@@ -3,6 +3,7 @@
 // 肌質診断 → 化粧品・塗り薬 → 肌・睡眠・運動・食事の記録 → ホーム・おすすめケア・ケア管理・記録一覧・Myアイテム・アカウント…を、人ごとに通して、
 // エラー・「undefined」などの変な文字・画面からのはみ出し・押せないボタン・その人に合わない提案（妊娠中にレチノールなど）を探す
 const { chromium } = require('playwright');
+const { setBD } = require('./people.js');
 const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html'), SHOT = process.argv[3] || '';
 const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
@@ -90,7 +91,7 @@ const RETINOID = /レチノ|レチナール|ハイドロキノン|アダパレ�
     if (!opened) note('はじめに肌質診断が開かない');
     if (pz.skip) await tap('[data-action="setup-later"]', 'あとで');
     else {
-      for (const [k, v] of Object.entries(pz.a)) for (const x of [].concat(v)) await tap(`[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`, `${k}=${x}`);
+      for (const [k, v] of Object.entries(pz.a)) for (const x of [].concat(v)) if (k === 'ageBand') await setBD(p, x); else await tap(`[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`, `${k}=${x}`);
       await check('肌質診断');
       await tap('[data-action="setup-finish"]', '診断する'); await W(700);
       const st = await ev(() => ({ on: !!state.settings.onboarded, diag: !!(state.settings.diag), skin: state.settings.skinType, preg: pregNow(), c: concernKeysNow() }));

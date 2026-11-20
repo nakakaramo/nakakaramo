@@ -5,7 +5,7 @@
 //  ・画面：手順のメモが画面に出ていない／同じ文のかたまりが2回／「〇〇」を押して、と書いてあるのにそのボタンがない／中身のない見出し／タブの数と一覧の数がちがう
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
-const { PERSONAS } = require('./people.js');
+const { PERSONAS, setBD } = require('./people.js');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html');
 const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
@@ -23,7 +23,7 @@ const ROUTES = ['#/home', '#/home?care', '#/routine', '#/routine?pm', '#/log', '
     const W = (ms) => p.waitForTimeout(ms);
     const ev = (f, a) => p.evaluate(f, a).catch((e) => { note(`${where}：止まった ${String(e.message).split('\n')[0].slice(0, 140)}`); return null; });
     await ev(() => { window.isPremium = () => true; window.open = () => null; navigator.vibrate = () => true; });
-    for (const [k, v] of Object.entries(pz.a)) if (v !== undefined) for (const x of [].concat(v)) await ev((s) => { const e = document.querySelector(s); if (e) e.click(); }, `[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`);
+    for (const [k, v] of Object.entries(pz.a)) if (v !== undefined) for (const x of [].concat(v)) if (k === 'ageBand') await setBD(p, x); else await ev((s) => { const e = document.querySelector(s); if (e) e.click(); }, `[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`);
     await ev(() => { const e = document.querySelector('[data-action="setup-finish"]'); if (e) e.click(); }); await W(600);
     await ev(() => { try { closeModal(true); } catch (e) {} const s = document.querySelector('.pm-skip'); if (s) s.click(); state.settings.permAsked2 = true; });
     await ev(([L, lg]) => { const d = todayStr(); L.forEach((x) => { const y = Object.assign({}, x, { startDate: addDays(d, -(x.ago || 20)) }); delete y.ago; state.myProducts.push(y); });

@@ -2,6 +2,7 @@
 // 使い方：node hadatomo-cloud/tests/features.js [skinwise.html のパス]（ONLY=名前の頭 で1人だけ）
 // 通販の検索・写真の読み取り（AI）は、にせの返事にする（外へは送らない）。各手順のあとに、エラー・変な文字・はみ出し・保存されたかを確かめる
 const { chromium } = require('playwright');
+const { setBD } = require('./people.js');
 const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html');
 const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
@@ -68,7 +69,7 @@ const ROUTES = ['#/home', '#/home?care', '#/log', '#/charts', '#/my', '#/combo',
     // ① 肌質診断
     where = '肌質診断';
     if (pz.skip) await click('[data-action="setup-later"]', 'あとで');
-    else { for (const [k, v] of Object.entries(pz.a)) if (v !== undefined) for (const x of [].concat(v)) await ev((s) => { const e = document.querySelector(s); if (e) e.click(); }, `[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`);
+    else { for (const [k, v] of Object.entries(pz.a)) if (v !== undefined) for (const x of [].concat(v)) if (k === 'ageBand') await setBD(p, x); else await ev((s) => { const e = document.querySelector(s); if (e) e.click(); }, `[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`);
       await look('肌質診断'); await click('[data-action="setup-finish"]', '診断する'); await W(500); await look('診断の結果');
       if (!(await ev(() => !!state.settings.diag))) note('肌質診断が保存されない'); }
     await close(); await ev(() => { const s = document.querySelector('.pm-skip'); if (s) s.click(); state.settings.permAsked2 = true; save(); }); await W(300);

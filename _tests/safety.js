@@ -15,7 +15,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html');
 const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
-const { PERSONAS, RX, OR } = require('./people.js');
+const { PERSONAS, RX, OR, setBD } = require('./people.js');
 const ROUTES = ['#/home', '#/home?care', '#/routine', '#/my', '#/combo', '#/plan', '#/visit'];
 const RETINOID = /レチノ|レチナール|ハイドロキノン|アダパレン|トレチノイン|ディフェリン|エピデュオ|タザロテン/;
 const STOP = /(薬|塗り薬|飲み薬|処方)[^。]{0,24}(やめ(ま|て|る|よう)|中止|減ら(し|す)|飲まないで|塗らないで)|(やめ(ま|て|る|よう)|中止|減ら(し|す))[^。]{0,12}(薬|塗り薬|飲み薬)/;
@@ -36,7 +36,7 @@ const DOSE = /\d+(\.\d+)?\s*(mg|ミリグラム|錠|カプセル)(?![^。]*(美�
     await ev(() => { window.isPremium = () => true; window.open = () => null; navigator.vibrate = () => true; });
     // ① 肌質診断（画面から答える）
     where = '肌質診断';
-    for (const [k, v] of Object.entries(pz.a)) if (v !== undefined) for (const x of [].concat(v)) await ev(([s]) => { const e = document.querySelector(s); if (e) e.click(); }, [`[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`]);
+    for (const [k, v] of Object.entries(pz.a)) if (v !== undefined) for (const x of [].concat(v)) if (k === 'ageBand') await setBD(p, x); else await ev(([s]) => { const e = document.querySelector(s); if (e) e.click(); }, [`[data-sw="${k}"][data-v="${x === '回答しない' ? '' : x}"]`]);
     await ev(() => { const e = document.querySelector('[data-action="setup-finish"]'); if (e) e.click(); }); await W(700);
     await ev(() => { try { closeModal(true); } catch (e) {} const s = document.querySelector('.pm-skip'); if (s) s.click(); state.settings.permAsked2 = true; });
     // ② 持っている物・今日の肌の記録
