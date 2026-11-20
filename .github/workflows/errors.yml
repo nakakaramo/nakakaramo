@@ -1,0 +1,36 @@
+name: 不具合のまとめを1時間ごとに受け取る
+# 使っている人の画面から届いたエラー・表示のおかしさのまとめ（記録・個人情報は含まない）を、合言葉（Secrets の NK_OPS_TOKEN）を使って受け取り、
+# ops-errors ブランチの errors.json に置く。1時間ごとの見回り（Claude）がこれを読んで、直せる不具合を直す（パソコンが寝ていても動く）
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency: errors-digest
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: エラーのまとめを受け取る
+        env:
+          TOK: ${{ secrets.NK_OPS_TOKEN }}
+        run: |
+          if [ -z "$TOK" ]; then echo "合言葉（NK_OPS_TOKEN）がまだ登録されていません"; exit 1; fi
+          jq -n --arg tok "$TOK" '{tok:$tok, hours:6}' > body.json
+          code=$(curl -sS --max-time 60 -o rows.json -w '%{http_code}' -X POST 'https://qrcgdukoptqhprhksfou.supabase.co/rest/v1/rpc/error_digest' \
+            -H 'apikey: sb_publishable_xtJnC2PNzWSlbUGFLWcwWQ_DhntVy35' -H 'Content-Type: application/json' --data @body.json)
+          rm -f body.json
+          echo "結果: $code"
+          if [ "$code" != "200" ]; then head -c 300 rows.json; exit 1; fi
+          jq '{rows: .}' rows.json > digest.json
+      - name: 変わっていたら ops-errors ブランチに置く
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git clone -q --depth 1 --branch ops-errors "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ops 2>/dev/null || { mkdir ops && cd ops && git init -q -b ops-errors && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" && cd ..; }
+          old=$(jq -c '.rows' ops/errors.json 2>/dev/null || echo '')
+          new=$(jq -c '.rows' digest.json)
+          if [ "$old" = "$new" ]; then echo "変更なし"; exit 0; fi
+          jq --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {fetched_at:$at}' digest.json > ops/errors.json
+          cd ops && git add errors.json && git commit -qm "不具合のまとめを更新" && git push -q origin ops-errors
