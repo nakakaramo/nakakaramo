@@ -3050,7 +3050,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120200228'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120204007'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -6289,7 +6289,7 @@ async function pickCleanImage(p, x, others) {
   others.filter(o => o !== x && sameProduct({name:o.name, jan:o.jan}, {name:x.name, jan:x.jan})).forEach(o => (o.images && o.images.length ? o.images : [o.image]).forEach(add)); // 同じ商品（種類・容量も同じ）の画像だけ
   if (urls.length < 2) return;
   try {
-    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'pickimg', urls:urls.slice(0, 8)})});
+    const res = await withTO(fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'pickimg', urls:urls.slice(0, 8)})}), 25000);
     const j = await res.json().catch(() => ({}));
     if (!res.ok || !(j.best >= 0) || !urls[j.best]) return;
     const cur = getCat(p.id); if (!cur) return;
@@ -6439,7 +6439,7 @@ async function uvFill(items) {
   for (let i = 0; i < need.length; i += 10) {
     const part = need.slice(i, i + 10);
     try {
-      const r = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'uvinfo', names:part.map(x => ({name:x.name, url:x.url || ''}))})});
+      const r = await withTO(fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'uvinfo', names:part.map(x => ({name:x.name, url:x.url || ''}))})}), 25000);
       const j = await r.json().catch(() => ({})); const uv = j.uv || {};
       part.forEach(x => { if (uv[x.name] != null) UV_KNOWN.set(x.name, uv[x.name]); if (uv[x.name]) x.uv = uv[x.name]; });
     } catch (e) { break; }
@@ -7888,14 +7888,15 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
       document.body.classList.remove('m-dragging');
     }, 210);
   };
-  const start = (w, x, y) => { w.classList.add('press'); st = {w, x, y, y0:y, drag:false, t:setTimeout(() => { if (st && !st.drag) begin(); }, 400)}; };
+  const start = (w, x, y) => { w.classList.add('press'); st = {w, x, y, y0:y, drag:false, at:performance.now() + 1000, t:setTimeout(() => { if (st && !st.drag) begin(); }, 400)}; };
   const cancel = () => { if (st) { clearTimeout(st.t); st.w.classList.remove('press'); st = null; } };
   document.addEventListener('touchstart', e => {
     const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.target.closest('.m-del') || w.classList.contains('sw-open') || e.touches.length !== 1 || st) return;
     start(w, e.touches[0].clientX, e.touches[0].clientY);
   }, {passive:true});
+  setInterval(() => { if (st && performance.now() - (st.at || 0) > 4000) { if (st.drag) end(); else cancel(); } }, 1000); /* 2026-11-20 指を離した合図が来なかったときも、並べ替えを終わらせる（スクロールできないままにしない） */
   document.addEventListener('touchmove', e => {
-    if (!st) return; const t = e.touches[0];
+    if (!st) return; const t = e.touches[0]; st.at = performance.now();
     if (!st.drag) { if (Math.abs(t.clientY - st.y0) > 8 || Math.abs(t.clientX - st.x) > 8) cancel(); return; }
     e.preventDefault(); moveTo(t.clientY);
   }, {passive:false});
@@ -12529,10 +12530,10 @@ function face3dSmoothEyes(m) {
 function face3dLoad() {
   if (FACE3D.three && FACE3D.mesh) return Promise.resolve();
   if (FACE3D.loading) return FACE3D.loading;
-  FACE3D.loading = Promise.all([
+  FACE3D.loading = Promise.race([Promise.all([
     window.THREE ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'),
     fetch('face3d.json?v=20261101').then(r => { if (!r.ok) throw new Error('face'); return r.json(); })
-  ]).then(([, m]) => { FACE3D.three = window.THREE; face3dSmoothEyes(m); FACE3D.base = m; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
+  ]), new Promise((_, rej) => setTimeout(() => rej(new Error('face3d timeout')), 20000))]).then( /* 2026-11-20 電波が悪くて読み込みが止まっても、20秒であきらめて次にもう一度読む（くるくるが回り続けない） */([, m]) => { FACE3D.three = window.THREE; face3dSmoothEyes(m); FACE3D.base = m; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
   return FACE3D.loading;
 }
 // 性別に合わせた顔：女性は同じ顔の形のデータ（点の数・部位・マス目は同じ）を少し変形して作る
@@ -15183,7 +15184,7 @@ function openPremiumSheet(feature) {
 // ホーム画面に追加したアプリでは、外の画面がアプリの上に重なって開き、「×」で閉じるとこの画面にそのまま戻る。
 // そのとき「準備しています…」のまま押せなくならないように、戻ってきたら（または移れなかったら）ボタンを元に戻す
 // 通信の返事が来ないまま「準備しています…」で止まらないように、時間を区切る
-const withTO = (pr, ms = 25000) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('fetch timeout')), ms))]);
+function withTO(pr, ms = 25000) { return Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('fetch timeout')), ms))]); } // どこからでも使えるように関数で
 let extLeaving = 0;
 function goExternal(url) { extLeaving = Date.now(); location.href = url; setTimeout(() => { if (extLeaving && document.visibilityState === 'visible') extBack(); }, 8000); }
 function extBack() {
@@ -16906,7 +16907,11 @@ function placeHomeTabInd() {
   const indBack = () => { const ind = document.querySelector('.home-tabs .ht-ind'), a = indAt(page().cur); if (!ind || a == null) return; ind.style.transition = ''; ind.style.transform = `translateX(${a}px)`; indX = null;
     ind.parentElement.querySelectorAll('.ht').forEach(x => { x.style.transition = 'color .54s cubic-bezier(.22,.7,.2,1)'; x.style.color = ''; }); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
+  let lastMv = 0;
+  const swReset = () => { if (lock === 'x' || (pane && pane.style.transform) || document.querySelector('.hp-ghost')) back(); x0 = null; lock = ''; window.__hSwipe = false; };
+  setInterval(() => { if ((lock === 'x' || window.__hSwipe) && !pend && performance.now() - lastMv > 1500) swReset(); }, 500); /* 2026-11-20 指を離した合図が来ない・2本目の指で止まったときも、となりのタブがのぞいたまま・ずれたままにしない */
   window.addEventListener('touchstart', e => {
+    if (lock === 'x' && !pend) swReset(); /* 前の横スワイプが終わっていなければ、元に戻してから */
     x0 = null; lock = '';
     if (pend) pend(); // 前の切り替えの動きの途中で触ったら、すぐに切り替えを終わらせて、続けて次のスワイプを受けつける（2回なぞらなくても動くように）
     const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'routine', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
@@ -16918,9 +16923,10 @@ function placeHomeTabInd() {
     x0 = sx = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0; tot = 0;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
+    lastMv = performance.now();
     if (x0 == null) return;
     if (document.body.classList.contains('m-dragging')) { if (lock === 'x') back(); x0 = null; return; } // 長押しで並べ替え中は、横に動かさない
-    if (e.touches.length !== 1) { x0 = null; if (lock === 'x') back(); return; }
+    if (e.touches.length !== 1) { x0 = null; if (lock === 'x') { back(); lock = ''; window.__hSwipe = false; } return; }
     const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
     if (!lock) {
       // 横向きに動き始めたら、最初の動きから縦のスクロールを止める（iPhoneは最初に止めないと、縦と横が同時に動く）
