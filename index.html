@@ -3047,7 +3047,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120155209'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120160249'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3853,7 +3853,7 @@ function normFood(x) {
 // 写真にバーコードが写っていれば、スマホの機能（なければアプリの中）で読み、Open Food Facts（食品のパッケージ表示を集めた無料のデータベース）で調べる
 async function janFromFile(file) {
   try {
-    const hi = await readImage(file, 1400, 0.9), img = new Image(); img.src = hi; await img.decode();
+    const hi = await readImage(file, 2000, 0.92), img = new Image(); img.src = hi; await img.decode();
     if ('BarcodeDetector' in window) { try { const r = await new window.BarcodeDetector({formats:['ean_13', 'ean_8']}).detect(img); if (r[0] && /^(\d{8}|\d{13})$/.test(r[0].rawValue)) return r[0].rawValue; } catch (e) { /* 次の方法へ */ } }
     return eanDecodeImage(img) || '';
   } catch (e) { return ''; }
@@ -4638,6 +4638,12 @@ function skelHtml(rows = 3, opts = {}) {
   const w = ['', 'w8', 'w6', 'w8', 'w4'];
   const line = i => opts.dots ? `<div class="skel-row"><span class="skel dot"></span><div><span class="skel h"></span><span class="skel ${w[(i % 4) + 1]}"></span></div></div>` : `<span class="skel ${w[i % 5]}"></span>`;
   return `<div class="skel-wrap" aria-busy="true" aria-label="${esc(opts.label || '読み込み中')}">${Array.from({length:rows}, (_, i) => line(i)).join('')}${opts.note ? `<p class="small muted" style="margin:8px 0 0">${esc(opts.note)}</p>` : ''}</div>`;
+}
+// AIに送る写真：できるだけ高画質で。送れる大きさ（約1.8MB）を超えるときだけ、少しずつ小さくする
+async function readImageAI(file, max=2048, quality=0.92) {
+  let m = max, q = quality, u = await readImage(file, m, q);
+  while (u.length > 1800000 && m > 800) { m = Math.round(m * 0.8); q = Math.max(0.8, q - 0.03); u = await readImage(file, m, q); }
+  return u;
 }
 function readImage(file, max=640, quality=0.75) {
   return new Promise((resolve, reject) => {
@@ -5519,14 +5525,14 @@ async function openCamLive(kind) {
   const tip = t => { const e = ov.querySelector('#cl-tip'); if (e) e.textContent = t; };
   const v = ov.querySelector('video');
   try {
-    const st = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}, audio:false});
+    const st = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:3840}, height:{ideal:2160}}, audio:false});
     if (!CL || CL.ov !== ov) { st.getTracks().forEach(t => t.stop()); return; }
     CL.stream = st; CL.track = st.getVideoTracks()[0]; v.srcObject = st; try { await v.play(); } catch (e) { /* 何もしない */ }
     try { const cap = CL.track.getCapabilities ? CL.track.getCapabilities() : {}; if (cap.torch) ov.querySelector('[data-cl="torch"]').hidden = false; if (cap.focusMode && cap.focusMode.includes('continuous')) CL.track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(() => {}); } catch (e) { /* 何もしない */ }
   } catch (e) { msg('カメラを使えませんでした。設定でカメラを許可するか、左下の「写真」から選んでください。', true); }
   // 撮った写真・選んだ写真を、今までと同じ流れで探す
   const go = file => { const k = CL && CL.kind; clStop(); if (!file) return; setTimeout(() => { if (k === 'rx') { openRxCamSheet(); rxCamGot(file); } else { openCamSheet(k); camGot(file); } }, 230); };
-  const grab = (maxW, q) => new Promise(res => { const w = v.videoWidth, h = v.videoHeight; if (!w || !h) return res(null); const sc = Math.min(1, maxW / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.round(w * sc); c.height = Math.round(h * sc); c.getContext('2d').drawImage(v, 0, 0, c.width, c.height); c.toBlob(b => res(b ? new File([b], 'camera.jpg', {type:'image/jpeg'}) : null), 'image/jpeg', q); });
+  const grab = (maxW, q) => new Promise(res => { const w = v.videoWidth, h = v.videoHeight; if (!w || !h) return res(null); const sc = Math.min(1, maxW / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.round(w * sc); c.height = Math.round(h * sc); const gx = c.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(v, 0, 0, c.width, c.height); c.toBlob(b => res(b ? new File([b], 'camera.jpg', {type:'image/jpeg'}) : null), 'image/jpeg', q); });
   // バーコード：枠の中を何度も読んで、読めたらすぐ探す（13桁・8桁）
   const bd = 'BarcodeDetector' in window ? (() => { try { return new window.BarcodeDetector({formats:['ean_13', 'ean_8']}); } catch (e) { return null; } })() : null;
   const scan = async () => {
@@ -5548,7 +5554,7 @@ async function openCamLive(kind) {
     if (a === 'help') { msg(rx ? '薬の名前（例：ヒルドイドソフト軟膏0.3%）が大きく、ピントが合うように撮ってください。チューブや箱の正面がおすすめです。市販の薬はバーコードでも探せます。' : '商品の正面を、名前が大きく写るように撮ってください。バーコードがあれば、右下の「バーコード」で写すと自動で読み取ります。', true); return; }
     if (a === 'torch') { try { CL.torch = !CL.torch; await CL.track.applyConstraints({advanced:[{torch:CL.torch}]}); b.classList.toggle('on', CL.torch); } catch (er) { msg('この端末ではライトを使えません。'); } return; }
     if (a === 'bar') { setMode(CL.mode === 'bar' ? 'photo' : 'bar'); return; }
-    if (a === 'shot') { if (CL.mode === 'bar') { setMode('photo'); return; } const f = await grab(1600, 0.9); if (!f) { msg('カメラの準備ができていません。少し待ってからもう一度押してください。'); return; } ov.classList.add('flash'); go(f); }
+    if (a === 'shot') { if (CL.mode === 'bar') { setMode('photo'); return; } let f = null; try { if (window.ImageCapture && CL.track) f = await Promise.race([new window.ImageCapture(CL.track).takePhoto(), new Promise(r => setTimeout(() => r(null), 2500))]); if (f && !f.type) f = null; } catch (er) { f = null; } /* 使える端末は、カメラ本来の画素数で撮る */ if (!f) f = await grab(2560, 0.93); if (!f) { msg('カメラの準備ができていません。少し待ってからもう一度押してください。'); return; } ov.classList.add('flash'); go(f); }
   });
   ov.querySelector('#cl-lib').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) go(f); });
 }
@@ -5577,7 +5583,7 @@ function openRxCamSheet() {
 async function rxCamGot(file) {
   const fs = findState; if (!fs || !fs.rxCam || !file) return;
   const msg = t => { const m = document.getElementById('cam-msg'); if (m) m.textContent = t; };
-  let small, hi; try { small = await readImage(file, 640, 0.8); hi = await readImage(file, 1600, 0.9); } catch (e) { msg('写真を読み込めませんでした。'); return; }
+  let small, hi; try { small = await readImage(file, 640, 0.8); hi = await readImageAI(file, 2048, 0.92); } catch (e) { msg('写真を読み込めませんでした。'); return; }
   const pv = document.getElementById('cam-prev'); if (pv) pv.innerHTML = `<img class="img-prev" src="${small}" alt="撮った写真" style="width:120px;height:120px">`;
   const box = document.getElementById('rxcam-list');
   if (!isPremium()) { msg(`写真から薬の名前を読むのは${PREMIUM_NAME}の機能です。上の検索に薬の名前を入れて探せます。`); return; }
@@ -5602,7 +5608,7 @@ async function camGot(file) {
   const fs = findState; if (!fs || !fs.cam || !file) return;
   const msg = t => { const m = document.getElementById('cam-msg'); if (m) m.textContent = t; };
   let small, hi;
-  try { small = await readImage(file, 640, 0.8); hi = await readImage(file, 1400, 0.9); } catch (e) { msg('写真を読み込めませんでした。'); return; }
+  try { small = await readImage(file, 640, 0.8); hi = await readImageAI(file, 2048, 0.92); } catch (e) { msg('写真を読み込めませんでした。'); return; }
   const pv = document.getElementById('cam-prev'); if (pv) pv.innerHTML = `<img class="img-prev" src="${small}" alt="選んだ写真" style="width:120px;height:120px;margin-top:10px">`;
   fs.items = null; fs.loading = true; fs.reading = 'バーコードを読み取り中'; findPaint(); msg('');
   // ① バーコード（スマホの機能があればそれを使い、なければアプリの中で読む）
@@ -11400,7 +11406,7 @@ async function openFaceScan(done, o = {}) {
   // カメラ（許可がまだのときは、ここでiPhoneが許可を聞く）と、顔の形を読む部品を同時に準備する
   const loadP = faceMeshLoad();
   try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false});
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1920}, height:{ideal:1440}}, audio:false});
     if (closed) { stop(); return; }
     video.setAttribute('playsinline', ''); video.muted = true; video.srcObject = stream;
     await new Promise((res, rej) => { if (video.readyState >= 1) return res(); video.onloadedmetadata = res; setTimeout(() => rej(new Error('t')), 8000); });
@@ -11420,7 +11426,7 @@ async function openFaceScan(done, o = {}) {
     let w = fw * 1.7, h = w * 4 / 3; w = Math.min(w, vw, vh * 3 / 4); h = w * 4 / 3;
     const sx = Math.max(0, Math.min(vw - w, cx - w / 2)), sy = Math.max(0, Math.min(vh - h, cy - h * 0.48));
     const W = Math.min(maxW, Math.round(w)), H = Math.round(W * 4 / 3), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const c = cv.getContext('2d'); if (mirror) { c.translate(W, 0); c.scale(-1, 1); } c.drawImage(video, sx, sy, w, h, 0, 0, W, H);
+    const c = cv.getContext('2d'); c.imageSmoothingQuality = 'high'; if (mirror) { c.translate(W, 0); c.scale(-1, 1); } c.drawImage(video, sx, sy, w, h, 0, 0, W, H);
     return cv.toDataURL('image/jpeg', 0.85);
   };
   const light = (dx, dy, n) => { // 顔を向けた方向の目盛りを光らせる（画面は鏡写しなので、左右を合わせる）
@@ -11430,7 +11436,7 @@ async function openFaceScan(done, o = {}) {
   };
   let curPitch = 0;
   const take = (k, bb) => {
-    shots[k] = {ai:snap(bb, false, 1024)}; if (k === 'f') { shots.f.photo = snap(bb, true, 800); p0 = curPitch; }
+    shots[k] = {ai:snap(bb, false, 1280)}; if (k === 'f') { shots.f.photo = snap(bb, true, 800); p0 = curPitch; }
     hapticTick(); const fl = root.querySelector('.fs-flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
     const st = root.querySelector(`.fs-steps [data-s="${k}"]`); if (st) st.classList.add('ok');
     if (k === 'f') lines.forEach((l, i) => { if (i % 2 === 0) { lit.add(i); l.classList.add('half'); } });
@@ -11496,7 +11502,7 @@ async function openGuideCam(done, o = {}) {
     fin.onchange = async e => { const f = e.target.files[0]; if (!f) { close(); return; } try { const url = await readImage(f, o.w || 640, o.w > 640 ? 0.85 : 0.72); close(); done(url); } catch (err) { toast(err.message, 'error'); } };
   };
   try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false});
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1920}, height:{ideal:1440}}, audio:false});
     video.setAttribute('playsinline', ''); video.muted = true; video.srcObject = stream;
     await new Promise((res, rej) => { if (video.readyState >= 1) return res(); video.onloadedmetadata = res; setTimeout(() => rej(new Error('t')), 8000); });
     await video.play().catch(() => {});
@@ -11510,7 +11516,7 @@ async function openGuideCam(done, o = {}) {
       const view = root.querySelector('.gcam-view'), ar = view.clientWidth / view.clientHeight; // 画面に見えている範囲（3:4）だけを切り出す
       let sw = vw, sh = vw / ar; if (sh > vh) { sh = vh; sw = vh * ar; }
       const W = o.w || 640, H = Math.round(W / ar), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-      const c = cv.getContext('2d'); c.translate(W, 0); c.scale(-1, 1); // 鏡のように見えていたまま保存する
+      const c = cv.getContext('2d'); c.imageSmoothingQuality = 'high'; c.translate(W, 0); c.scale(-1, 1); // 鏡のように見えていたまま保存する
       c.drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, W, H);
       hapticTick(); const url = cv.toDataURL('image/jpeg', o.w > 640 ? 0.85 : 0.72); close(); done(url);
     }
@@ -12256,7 +12262,7 @@ function openLifeForm(id, part, forDate) {
         // ① バーコードが写っていれば、AIを使わずに一瞬で出す（② なければAIで読む。③ 表示が写っていない商品は、公式情報を裏で調べて入れる）
         const file = pendingFile[k], t0 = Date.now(); let r = null;
         if (file) { const jan = await janFromFile(file), off = jan ? await offNutrition(jan) : null; if (off) r = {items:[off]}; }
-        if (!r) { box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'商品名と栄養成分表示を読み取っています'}); r = (await callVision('meal', file ? await readImage(file, 800, 0.8) : img, {hint:(($('#meal-hint', form) || {}).value || '').trim().slice(0, 40), fixes:foodFixes().slice(-10)})).result || {items:[]}; r.items = foodFixApply(r.items || []); }
+        if (!r) { box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'商品名と栄養成分表示を読み取っています'}); r = (await callVision('meal', file ? await readImageAI(file, 1280, 0.88) : img, {hint:(($('#meal-hint', form) || {}).value || '').trim().slice(0, 40), fixes:foodFixes().slice(-10)})).result || {items:[]}; r.items = foodFixApply(r.items || []); }
         aiRes[k] = r.items || []; const sec = ((Date.now() - t0) / 1000).toFixed(1);
         if (aiRes[k].some(x => x.needOfficial)) officialFill(aiRes[k]).then(got => { let gi = 0; const chk = $$(`[data-aipick="${k}"]`, form).map(c => c.checked); aiRes[k] = aiRes[k].map(x => x.needOfficial ? (got[gi++] || Object.assign({}, x, {needOfficial:false})) : x); paintAi(); $$(`[data-aipick="${k}"]`, form).forEach((c, i) => { if (chk[i] === false) c.checked = false; }); });
         const paintAi = () => {
@@ -16649,7 +16655,7 @@ document.addEventListener('change', e => {
 });
 async function onScanPhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
-  try { ui.scan.photo = await readImage(file, 640, 0.8); ui.scan.photoHi = await readImage(file, 1280, 0.85).catch(() => ui.scan.photo); ui.scan.aiMsg = ''; }
+  try { ui.scan.photo = await readImage(file, 640, 0.8); ui.scan.photoHi = await readImageAI(file, 1600, 0.9).catch(() => ui.scan.photo); ui.scan.aiMsg = ''; }
   catch (err) { toast(err.message, 'error'); input.value = ''; return; }
   ui.scan.msg = '';
   if ('BarcodeDetector' in window) {
