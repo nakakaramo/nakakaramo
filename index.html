@@ -3050,7 +3050,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120184912'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120200228'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5208,8 +5208,9 @@ const NOT_SKIN_RE = /ファンデ|クッション(?!.*(クリーム|美容液))|
 const NOT_APPLY_RE = /美容器|美顔器|脱毛|除毛|ムダ毛|光美容|フラッシュ|アタッチメント|カートリッジ|替え?刃|シェーバー|ドライヤー|ヘアアイロン|充電式|家電|スチーマー|電動|ブラシ|ローラー|ES-[A-Z0-9]|ケーブル|アダプター|サプリ|錠剤|カプセル|飲む|ドリンク|内服/;
 const ORAL_ITEM_RE = /サプリ|錠|カプセル|粒|顆粒|ドリンク|内服|第[1-3１-３]類医薬品|指定第2類|漢方|タブレット|ビタミン|飲む|栄養機能食品|機能性表示食品|健康食品|パウダー|ゼリー|包/;
 const ORAL_NOT_RE = /化粧水|美容液|セラム|乳液|ローション|軟膏|洗顔|クレンジング|シートマスク|フェイスマスク|塗る|外用|ボディ|シャンプー|ヘア|ネイル|美顔器|ペット|犬用|猫用/;
+const PACK_RE = /パック(?![入詰]|ウチ)|シートマスク|フェイスマスク|マスクパック|ナイトマスク|スリーピングマスク|クレイマスク|ピールオフ|sheet\s*mask|face\s*mask|sleeping\s*mask|mask\s*pack/i; // 2026-11-20 パック・シートマスクは化粧品として出さない（Keiichiroの指示）。詰め替えのパック・パウチは除く
 const MED_RE = /第[1-3１-３]類医薬品|指定第2類|医薬品|医薬部外品|軟膏|塗り薬|外用|クリーム|ゲル|ローション|液|スプレー|乳剤/;
-const isSkinItem = x => { const n = String((x && x.name) || '').normalize('NFKC'); if (!SKIN_ITEM_RE.test(n)) return false; if (NOT_SKIN_RE.test(n)) return false; if (/ボディ|からだ|全身/.test(n) && !/顔|フェイス|face/i.test(n)) return false; return true; };
+const isSkinItem = x => { const n = String((x && x.name) || '').normalize('NFKC'); if (PACK_RE.test(n.replace(/詰め?替え?用?パック|リフィル?パック/g, ''))) return false; if (!SKIN_ITEM_RE.test(n)) return false; if (NOT_SKIN_RE.test(n)) return false; if (/ボディ|からだ|全身/.test(n) && !/顔|フェイス|face/i.test(n)) return false; return true; };
 const shopSingle = (x, w0) => { const n = String(x.name || '').normalize('NFKC'); return !SET_RE.test(n) && (!OFFTOPIC_RE.test(n) || OFFTOPIC_RE.test(w0 || '')) && isSkinItem(x); };
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
 let POPULAR = null, popN = 20;
@@ -5369,7 +5370,7 @@ async function findRun(q) {
     fs.items = items.filter(x => x && x.name).filter(x => { const v = variantSig(x.name), k = v.n.slice(0, 40) + '|' + v.vol; if (seenN.has(k)) return false; seenN.add(k); return true; })
       .map((x, i) => ({x, i, o:odd(x.name), sim:jan ? 0 : similarity(fnorm(q), fnorm(cleanShopName(x.name)))})).sort((a, b) => a.o - b.o || b.sim - a.sim || a.i - b.i).map(v => v.x).slice(0, 60);
     /* 2026-11-20 美容家電・脱毛器・アタッチメントなど、肌に塗る物ではない商品は出さない。塗り薬の画面では、塗り薬・肌に塗る物だけにする */
-    fs.items = fs.items.filter(x => { const n = String(x.name || '').normalize('NFKC'); if (fs.oral) return ORAL_ITEM_RE.test(n) && !ORAL_NOT_RE.test(n); /* 内服薬の画面は、飲む物だけ */ if (NOT_APPLY_RE.test(n) && !NOT_APPLY_RE.test(q)) return false; return !(fs.noRx && OFFTOPIC_RE.test(n) && !OFFTOPIC_RE.test(q)); });
+    fs.items = fs.items.filter(x => { const n = String(x.name || '').normalize('NFKC'); if (!fs.oral && PACK_RE.test(n.replace(/詰め?替え?用?パック|リフィル?パック/g, ''))) return false; /* パックは化粧品に入れない */ if (fs.oral) return ORAL_ITEM_RE.test(n) && !ORAL_NOT_RE.test(n); /* 内服薬の画面は、飲む物だけ */ if (NOT_APPLY_RE.test(n) && !NOT_APPLY_RE.test(q)) return false; return !(fs.noRx && OFFTOPIC_RE.test(n) && !OFFTOPIC_RE.test(q)); });
     fs.more = false;
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
@@ -5502,7 +5503,7 @@ async function camSearch(fs, r, q, msg) {
   if (findState !== fs) return;
   const seen = new Set(), all = [];
   res.flat().forEach(x => { if (!x || !x.name) return; const v = variantSig(x.name), k = (x.url || '') + '|' + v.n.slice(0, 40) + '|' + v.vol; if (seen.has(k)) return; seen.add(k); all.push(x); });
-  const S = all.map((x, i) => Object.assign({x, i}, camScore(x, Q))).filter(v => v.hasB || !Q.brand.length).sort((a, b) => b.sc - a.sc || a.i - b.i);
+  const S = all.filter(x => !PACK_RE.test(String(x.name || '').normalize('NFKC').replace(/詰め?替え?用?パック|リフィル?パック/g, ''))).map((x, i) => Object.assign({x, i}, camScore(x, Q))).filter(v => v.hasB || !Q.brand.length).sort((a, b) => b.sc - a.sc || a.i - b.i);
   fs.loading = false; fs.reading = '';
   if (!S.length) { fs.items = []; fs.near = false; findPaint(); msg(`「${q}」と読み取りましたが、通販では見つかりませんでした。撮り直すか、下から自分で入力してください。`); return; }
   const full = (Q.brand.length ? 4 : 0) + Q.nums.length * 3 + Q.con.reduce((s, c) => s + (c[1] ? 2 : 1), 0); // 写真の文字がすべて合ったときの点
@@ -7095,7 +7096,7 @@ function openCatForm(id, prefill) {
     ${ex && ex.isSample ? '<div class="notice warn span2" style="margin:0">サンプル商品です。編集しても「サンプル（架空）」の表示は残ります。</div>' : ''}
     ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}" placeholder="例：〇〇 トナー">`, {name:'name', required:true, cls:'span2', hint:'容量違い・セット品・リニューアル品は、別の商品として登録すると比較を間違えにくくなります'})}
     ${field('ブランド名', `<input class="input" id="f_brand" name="brand" maxlength="40" list="brand-list" value="${esc(p.brand)}" placeholder="例：COSRX"><datalist id="brand-list">${BRAND_SUGGEST.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`, {name:'brand', required:true, hint:'候補から選ぶか、直接入力できます'})}
-    ${field('カテゴリ', selectHtml('category', CATEGORIES, p.category), {name:'category', required:true})}
+    ${field('カテゴリ', selectHtml('category', CATEGORIES.filter(c => c !== 'シートマスク・パック' || c === p.category), p.category), {name:'category', required:true})}
     ${field('区分（日本・韓国）', selectHtml('origin', ORIGINS, p.origin), {name:'origin', required:true})}
     ${field('価格（円）', `<input class="input" id="f_price" name="price" inputmode="numeric" value="${esc(p.price || '')}" placeholder="例：2200">`, {name:'price', hint:'定価・参考価格など'})}
     ${field('内容量', `<input class="input" id="f_volume" name="volume" maxlength="20" value="${esc(p.volume)}" placeholder="例：150ml、50g、30枚">`, {name:'volume', hint:'「ml」「g」「枚」を付けると、1mlあたりの価格を計算します'})}
@@ -8106,7 +8107,7 @@ function openMyForm(id, fromCatId) {
     <input type="hidden" name="catalogId" value="${esc(p.catalogId)}">
     ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}" autocomplete="off"><div class="hint name-auto" id="name-auto"></div>`, {name:'name', required:true, cls:'span2'})}
     ${field('ブランド名', `<input class="input" id="f_brand" name="brand" maxlength="40" list="brand-list2" value="${esc(p.brand)}"><datalist id="brand-list2">${BRAND_SUGGEST.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`, {name:'brand', required:true})}
-    ${field('カテゴリ', selectHtml('category', CATEGORIES, p.category), {name:'category', required:true})}
+    ${field('カテゴリ', selectHtml('category', CATEGORIES.filter(c => c !== 'シートマスク・パック' || c === p.category), p.category), {name:'category', required:true})}
     ${field('効果', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
     <div class="span2 form-grid two" id="use-wrap" style="gap:16px">
       ${field('使用タイミング', `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`, {name:'timing', required:true, cls:'span2', hint:'朝と夜の両方に使うときは、2つとも選んでください'})}
@@ -17158,9 +17159,10 @@ async function appNewerBuild() {
   if (!/^https?:$/.test(location.protocol)) return false;
   try {
     const ctl = typeof AbortController === 'function' ? new AbortController() : null; const tm = setTimeout(() => ctl && ctl.abort(), 6000);
-    const res = await fetch(location.pathname.replace(/[^/]*$/, '') + 'index.html?v=' + Date.now(), {cache:'no-store', credentials:'same-origin', signal:ctl ? ctl.signal : undefined}); clearTimeout(tm);
-    if (!res.ok) return false;
-    const m = (await res.text()).match(/const APP_BUILD = '([^']*)'/);
+    const res = await fetch(location.pathname.replace(/[^/]*$/, '') + 'index.html?v=' + Date.now(), {cache:'no-store', credentials:'same-origin', signal:ctl ? ctl.signal : undefined});
+    if (!res.ok) { clearTimeout(tm); return false; }
+    const body = await Promise.race([res.text(), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 6000))]); clearTimeout(tm); /* 2026-11-20 本文の読み込みが止まっても、待ち続けない */
+    const m = body.match(/const APP_BUILD = '([^']*)'/);
     return !!(m && m[1] && m[1] !== APP_BUILD);
   } catch (e) { return false; }
 }
@@ -17246,15 +17248,26 @@ function ptrRepaint() {
     ptr.style.opacity = '1'; svg.style.transform = ''; arc.setAttribute('stroke-dashoffset', String(56.5 * 0.72)); ptr.classList.add('spin');
     if (canVibrate) hapticTick(); else tickLater = true; // iPhoneは指を離した瞬間でないと鳴らせないので、離したときに鳴らす
     const t0 = performance.now();
-    ptrRefresh(true).catch(() => {}).finally(() => setTimeout(() => { done = true; if (!touching) { ptrRepaint(); settle(); } }, Math.max(250, 800 - (performance.now() - t0))));
+    let fin = false; const finish = () => { if (fin) return; fin = true; setTimeout(() => { done = true; if (!touching) { ptrRepaint(); settle(); } }, Math.max(250, 800 - (performance.now() - t0))); };
+    Promise.race([ptrRefresh(true), new Promise(r => setTimeout(r, 12000))]).catch(() => {}).finally(finish); /* 2026-11-20 何があっても12秒で更新を終える（くるくるが回り続けない） */
   };
-  let ptrDZ = 6;
+  let ptrDZ = 6, lastTouch = 0;
+  // 2026-11-20 くるくるが止まらない・画面が下にずれたまま（上の帯とタブが分かれる）にならないように：指を離した合図（touchend）が来なかったときも、元に戻す
+  const resetNow = () => { cancelAnimationFrame(raf); touching = false; y0 = null; started = false; window.__ptrOn = false; setY(0); ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; phase = 'idle'; };
+  window.__ptrState = () => ({phase, d, touching, done}); window.__ptrReset = resetNow;
+  setInterval(() => { if (phase === 'idle') return; const quiet = performance.now() - lastTouch;
+    if (touching && quiet > 4000) { touching = false; if (phase === 'refreshing') { if (done) { ptrRepaint(); settle(); } } else if (phase === 'pulling') resetNow(); } /* 指を離した合図が来なかった */
+    else if (!touching && quiet > 15000) resetNow(); /* 15秒たっても戻っていなければ、元に戻す */ }, 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && phase !== 'refreshing') resetNow(); else if (document.visibilityState !== 'visible') touching = false; });
   window.addEventListener('touchstart', e => {
+    lastTouch = performance.now();
+    if (phase === 'refreshing' && done) { ptrRepaint(); resetNow(); } /* 更新が終わったのに戻っていないときは、次にさわった時に戻す */
     if (phase !== 'idle' || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target) || e.touches[0].clientX < 30) { y0 = null; return; } // 左の端から：前の画面に戻る動き（ブラウザ）に任せる
     y0 = e.touches[0].clientY; ptrX0 = e.touches[0].clientX; started = false;
     ptrDZ = e.target.closest && e.target.closest('button,a,[data-action],label,input,select,.btn,[role=button]') ? 16 : 6; /* 2026-11-20 ボタンを押したときの指の小さなずれで、画面ごと下に沈んでいた：少し動いただけでは引っぱりを始めない */
   }, {passive:true});
   window.addEventListener('touchmove', e => {
+    lastTouch = performance.now();
     if (document.body.classList.contains('m-dragging') || window.__hSwipe) { y0 = null; return; } // 並べ替え中・横にスワイプ中は、引っぱって更新しない
     if (y0 == null || (phase !== 'idle' && phase !== 'pulling' && !(phase === 'refreshing' && touching))) return;
     const dy = e.touches[0].clientY - y0;
@@ -17269,7 +17282,8 @@ function ptrRepaint() {
     if (phase === 'pulling') { drawPull(); if (d >= GO) startRefresh(); }
   }, {passive:false});
   const end = () => {
-    if (y0 == null) return; y0 = null;
+    lastTouch = performance.now();
+    if (y0 == null) { if (touching && phase !== 'idle') { touching = false; if (phase === 'refreshing' && done) { ptrRepaint(); settle(); } } return; } y0 = null;
     window.__ptrOn = false;
     if (!started) return; touching = false;
     if (tickLater) { tickLater = false; hapticTick(); } // 更新が始まっていれば、指を離したこの瞬間に「カチッ」
@@ -17286,9 +17300,9 @@ function ptrRepaint() {
   // 更新中（くるくるが回っている間）にスクロールしたら、ずらしていた画面をすぐ元の位置に戻す
   // （画面だけ下にずれたままだと、上にくっつくタブのバーが「ナカカラモ」の帯から離れて見えるため）。更新はそのまま続ける
   window.addEventListener('scroll', () => {
-    if (touching || d <= 0 || window.scrollY <= 0 || (phase !== 'refreshing' && phase !== 'settling')) return;
+    if (touching || d <= 0 || window.scrollY <= 0) return;
     cancelAnimationFrame(raf); setY(0); ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = '';
-    if (phase === 'settling') phase = 'idle';
+    if (phase !== 'refreshing') phase = 'idle'; /* 引っぱり途中・戻る途中でスクロールしても、ずれを残さない */
   }, {passive:true});
 })();
 // （一番下の跳ね返りは、iPhoneのふつうの動きに任せる。自前の動きは不自然だったのでやめた）
