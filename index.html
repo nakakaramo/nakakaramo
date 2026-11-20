@@ -3047,7 +3047,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120153938'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120155209'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5477,7 +5477,8 @@ async function camSearch(fs, r, q, msg) {
   const S = all.map((x, i) => Object.assign({x, i}, camScore(x, Q))).filter(v => v.hasB || !Q.brand.length).sort((a, b) => b.sc - a.sc || a.i - b.i);
   fs.loading = false; fs.reading = '';
   if (!S.length) { fs.items = []; fs.near = false; findPaint(); msg(`「${q}」と読み取りましたが、通販では見つかりませんでした。撮り直すか、下から自分で入力してください。`); return; }
-  const top = S[0], sure = top.sc >= 7 && (!S[1] || top.sc - S[1].sc >= 2 || variantSig(S[1].x.name).n === variantSig(top.x.name).n);
+  const full = (Q.brand.length ? 4 : 0) + Q.nums.length * 3 + Q.con.reduce((s, c) => s + (c[1] ? 2 : 1), 0); // 写真の文字がすべて合ったときの点
+  const top = S[0], sure = top.sc >= 7 && (!S[1] || top.sc >= full - 1 || top.sc - S[1].sc >= 2 || variantSig(S[1].x.name).n === variantSig(top.x.name).n);
   fs.items = S.slice(0, 30).map(v => v.x); fs.near = false; fs.sure = sure; findPaint();
   msg(sure ? `「${truncate(cleanShopName(top.x.name) || top.x.name, 40)}」が見つかりました。合っていれば「これを選ぶ」を押してください。` : `「${q}」と読み取りました。近い商品を、合っていそうな順に出しています。`);
 }
