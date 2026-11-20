@@ -959,11 +959,10 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .rt-qsw .sc-ind{width:calc((100% - 6px) / 2);border-radius:999px;background:var(--green-d);box-shadow:0 1px 4px rgba(46,90,64,.25)}
 .rt-qsw .sc-tab{padding:5px 0;min-height:0;line-height:1.4;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px}
 .rt-qsw .sc-tab.on{color:#fff}
-/* 時短は黄色・文字は黒。色は、つまみが真ん中を通った瞬間に変える（.cy＝黄色の状態。rtQColorFollow で切り替え） */
+/* 通常・時短とも緑・文字は白。文字の色は、つまみが真ん中を通った瞬間に変える（.cy＝時短の側。rtQColorFollow で切り替え） */
 .rt-qsw .sc-tab,.rt-qsw .sc-tab.on{color:var(--ink2);transition:none}
 .rt-qsw:not(.cy) .sc-tab[data-id="normal"]{color:#fff}
-.rt-qsw.cy .sc-ind{background:#E8B53A;box-shadow:0 1px 4px rgba(180,130,20,.3)}
-.rt-qsw.cy .sc-tab[data-id="quick"]{color:#000}
+.rt-qsw.cy .sc-tab[data-id="quick"]{color:#fff} /* 通常・時短とも緑（白い文字） */
 .rt-qsw .sc-tab svg{width:15px;height:15px;flex:none}
 .rt-qnote{margin:0 0 10px;text-align:center}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
@@ -2930,7 +2929,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120001110'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120095425'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -6456,23 +6455,23 @@ function openOwnedSheet(name, pids) {
     ${L.some(p => isRxP(p)) ? L.filter(p => isRxP(p)).slice(0, 2).map(rxInfoHtml).join('') : e ? `<div class="ing-dl" style="margin-top:12px">${ingInfoHtml(e, name)}</div>` : ''}</div>`});
   document.querySelectorAll('[data-ownpick]').forEach(b => b.onclick = () => sheetGo('#/my/' + encodeURIComponent(b.dataset.ownpick)));
 }
-// 運動・睡眠・食事の「控えたいもの」を押したときの説明：[当てはまる言葉, 説明, なぜ控える？, 代わりにこうする]
+// 運動・睡眠・食事の「控えたいもの」を押したときの説明：[当てはまる言葉, 説明, なぜ控える？, 代わりにこうする, 代わりにおすすめに出す言葉, その言葉がなぜいい？（空なら食べ物として説明）]
 const LIFE_AVOID = [
-  [/菓子パン|ドーナツ|ケーキ|チョコ|お菓子|スイーツ|甘いもの|甘い物|クッキー|アイス/, '砂糖と脂質が多い食べ物です。', '血糖値が急に上がりやすく、皮脂が増えたりニキビが悪化したりしやすいと報告されています。', 'おやつは、ナッツ・ヨーグルト・果物にします。'],
-  [/ジュース|缶コーヒー|清涼飲料|甘い飲み物|加糖|エナジードリンク/, '砂糖が多く入った飲み物です。', '飲み物の砂糖は吸収が早く、血糖値が上がりやすいため、皮脂やニキビに影響しやすくなります。', '水・お茶・無糖の炭酸水にします。'],
-  [/ポテトチップス|スナック|フライドポテト|唐揚げ|からあげ|揚げ|フライ|天ぷら|とんかつ/, '油で揚げた、脂質と塩分が多い食べ物です。', '続くと野菜やたんぱく質が足りなくなりがちで、肌の調子が乱れやすくなります。', '焼く・蒸す・煮る料理を選び、揚げ物は回数を減らします。'],
-  [/ラーメン|カップ麺|インスタント|麺類|単品/, '炭水化物と塩分が多く、野菜やたんぱく質が少なくなりがちな食事です。', '単品だと、肌に必要なたんぱく質・ビタミンが足りなくなりやすいです。', '卵・野菜を足すか、定食にします。'],
-  [/お酒|アルコール|ビール|飲酒|寝酒/, 'お酒です。', '飲みすぎると肌が乾燥しやすく、眠りも浅くなります。', '量を控えて、同じくらいの水を一緒に飲みます。'],
-  [/スマホ|画面|ブルーライト|ゲーム|動画/, '寝る直前に、スマホ・パソコンの画面を見ることです。', '画面の光と刺激で寝つきが悪くなり、眠りが浅くなります。睡眠不足は肌の回復を妨げます。', '寝る30分〜1時間前には、画面を見るのをやめます。'],
-  [/カフェイン|コーヒー|緑茶|紅茶/, '夕方以降のコーヒー・緑茶・エナジードリンクです。', 'カフェインの目を覚ます作用は数時間続き、寝つきを悪くします。', '夕方からは、麦茶などカフェインのない飲み物にします。'],
-  [/辛い|激辛|香辛料|唐辛子/, '唐辛子など、辛い物です。', '体が温まって血管が広がり、赤みやほてりが強くなりやすいです。', '赤み・肌あれがある間は、辛さ控えめにします。'],
-  [/夜更かし|寝不足|遅くまで|不規則/, '寝る時間が遅い・短いことです。', '肌は寝ている間に修復されるため、睡眠が短いと肌荒れしやすくなります。', '毎日同じ時刻に寝て、同じ時刻に起きます。'],
-  [/夜食|寝る前の食事|遅い夕食|寝る直前/, '寝る直前に食べることです。', '消化のために眠りが浅くなりやすいです。', '夕食は、寝る3時間前までにすませます。'],
-  [/汗/, '運動でかいた汗を、ふかずにそのままにすることです。', '汗と皮脂が毛穴にたまると、ニキビやかゆみの原因になります。', '清潔なペーパータオル（キッチンペーパーなど）で押さえるようにふき、早めに洗い流します。'],
-  [/座りっぱなし|運動不足|動かない/, '長い時間、座ったまま動かないことです。', '血のめぐりが悪くなり、肌に栄養が届きにくくなります。', '1時間に1回は立って、体を動かします。'],
-  [/紫外線|日差し|日中の屋外|炎天下|日焼け/, '日差しの強い時間の、屋外での運動です。', '紫外線は、シミ・くすみ・肌荒れの原因になります。', '朝や夕方に運動し、日焼け止め・帽子を使います。'],
-  [/激しい|やりすぎ|無理|追い込/, '息が切れるほどの激しい運動を、長く続けることです。', '疲れがたまると、睡眠や肌の回復に影響することがあります。', '会話ができるくらいの強さで、続けられる量にします。'],
-  [/顔を触|タオル|マスク|ヘルメット/, '運動中に、汗をかいた顔を触ったり、こすったりすることです。', '摩擦と汚れで、ニキビや赤みが出やすくなります。', '顔は清潔なタオルで押さえるだけにします。'],
+  [/菓子パン|ドーナツ|ケーキ|チョコ|お菓子|スイーツ|甘いもの|甘い物|クッキー|アイス/, '砂糖と脂質が多い食べ物です。', '血糖値が急に上がりやすく、皮脂が増えたりニキビが悪化したりしやすいと報告されています。', 'おやつは、ナッツ・ヨーグルト・果物にします。', ['ナッツ', 'ヨーグルト', '果物'], ''],
+  [/ジュース|缶コーヒー|清涼飲料|甘い飲み物|加糖|エナジードリンク/, '砂糖が多く入った飲み物です。', '飲み物の砂糖は吸収が早く、血糖値が上がりやすいため、皮脂やニキビに影響しやすくなります。', '水・お茶・無糖の炭酸水にします。', ['水・お茶'], ''],
+  [/ポテトチップス|スナック|フライドポテト|唐揚げ|からあげ|揚げ|フライ|天ぷら|とんかつ/, '油で揚げた、脂質と塩分が多い食べ物です。', '続くと野菜やたんぱく質が足りなくなりがちで、肌の調子が乱れやすくなります。', '焼く・蒸す・煮る料理を選び、揚げ物は回数を減らします。', ['焼き魚', '蒸し鶏'], ''],
+  [/ラーメン|カップ麺|インスタント|麺類|単品/, '炭水化物と塩分が多く、野菜やたんぱく質が少なくなりがちな食事です。', '単品だと、肌に必要なたんぱく質・ビタミンが足りなくなりやすいです。', '卵・野菜を足すか、定食にします。', ['卵', '野菜スープ'], ''],
+  [/お酒|アルコール|ビール|飲酒|寝酒/, 'お酒です。', '飲みすぎると肌が乾燥しやすく、眠りも浅くなります。', '量を控えて、同じくらいの水を一緒に飲みます。', ['飲むなら同じ量の水も'], '体の水分が保たれ、肌の乾燥と眠りが浅くなるのを防げます。'],
+  [/スマホ|画面|ブルーライト|ゲーム|動画/, '寝る直前に、スマホ・パソコンの画面を見ることです。', '画面の光と刺激で寝つきが悪くなり、眠りが浅くなります。睡眠不足は肌の回復を妨げます。', '寝る30分〜1時間前には、画面を見るのをやめます。', ['寝る前は画面を見ない'], '画面の光を避けると寝つきがよくなり、眠りが深くなります。睡眠中に肌の修復が進みます。'],
+  [/カフェイン|コーヒー|緑茶|紅茶/, '夕方以降のコーヒー・緑茶・エナジードリンクです。', 'カフェインの目を覚ます作用は数時間続き、寝つきを悪くします。', '夕方からは、麦茶などカフェインのない飲み物にします。', ['夕方からは麦茶'], 'カフェインがないので、寝つきを悪くしません。'],
+  [/辛い|激辛|香辛料|唐辛子/, '唐辛子など、辛い物です。', '体が温まって血管が広がり、赤みやほてりが強くなりやすいです。', '赤み・肌あれがある間は、辛さ控えめにします。', ['辛さ控えめの料理'], '体がほてりにくく、赤みが出にくくなります。'],
+  [/夜更かし|寝不足|遅くまで|不規則/, '寝る時間が遅い・短いことです。', '肌は寝ている間に修復されるため、睡眠が短いと肌荒れしやすくなります。', '毎日同じ時刻に寝て、同じ時刻に起きます。', ['毎日同じ時刻に寝る'], '体内時計が整うと眠りが深くなり、寝ている間の肌の修復が進みやすくなります。'],
+  [/夜食|寝る前の食事|遅い夕食|寝る直前/, '寝る直前に食べることです。', '消化のために眠りが浅くなりやすいです。', '夕食は、寝る3時間前までにすませます。', ['夕食は寝る3時間前まで'], '消化が終わってから眠れるので、眠りが深くなります。'],
+  [/汗/, '運動でかいた汗を、ふかずにそのままにすることです。', '汗と皮脂が毛穴にたまると、ニキビやかゆみの原因になります。', '清潔なペーパータオル（キッチンペーパーなど）で押さえるようにふき、早めに洗い流します。', ['汗を押さえてふく'], '汗と皮脂を毛穴にためないので、ニキビやかゆみを防げます。'],
+  [/座りっぱなし|運動不足|動かない/, '長い時間、座ったまま動かないことです。', '血のめぐりが悪くなり、肌に栄養が届きにくくなります。', '1時間に1回は立って、体を動かします。', ['1時間に1回立つ'], '血のめぐりがよくなり、肌に栄養が届きやすくなります。'],
+  [/紫外線|日差し|日中の屋外|炎天下|日焼け/, '日差しの強い時間の、屋外での運動です。', '紫外線は、シミ・くすみ・肌荒れの原因になります。', '朝や夕方に運動し、日焼け止め・帽子を使います。', ['朝か夕方に運動'], '紫外線の弱い時間なので、シミ・くすみ・肌荒れを防げます。'],
+  [/激しい|やりすぎ|無理|追い込/, '息が切れるほどの激しい運動を、長く続けることです。', '疲れがたまると、睡眠や肌の回復に影響することがあります。', '会話ができるくらいの強さで、続けられる量にします。', ['会話できる強さで運動'], '疲れをためずに続けられ、睡眠と肌の回復を妨げません。'],
+  [/顔を触|タオル|マスク|ヘルメット/, '運動中に、汗をかいた顔を触ったり、こすったりすることです。', '摩擦と汚れで、ニキビや赤みが出やすくなります。', '顔は清潔なタオルで押さえるだけにします。', ['汗を押さえてふく'], '摩擦と汚れを減らせるので、ニキビや赤みが出にくくなります。'],
 ];
 // 運動・睡眠の「おすすめ」を押したときの説明：[当てはまる言葉, 説明, なぜいい？, やり方]
 const LIFE_GOOD = [
@@ -6492,10 +6491,11 @@ const LIFE_GOOD = [
   [/ジョギング|ランニング|有酸素|サイクリング|水泳/, '息が少しはずむくらいの運動です。', '血のめぐりがよくなり、ストレスもやわらぎます。', '会話ができるくらいの強さで、20〜30分を週2〜3回から始めます。'],
 ];
 function openLifeGoodSheet(area, word) {
-  const hit = LIFE_GOOD.find(([re]) => re.test(word));
+  const alt = LIFE_AVOID.find(r => (r[4] || []).includes(word) && r[5]); /* 控えたいことの「代わりにこうする」から出したおすすめ */
+  const hit = alt ? [alt[0], '', alt[5], alt[3]] : LIFE_GOOD.find(([re]) => re.test(word));
   const why = hit ? hit[2] : area === '睡眠' ? 'よく眠れると、寝ている間に肌の修復が進み、肌の調子が整いやすくなります。' : '体を動かすと血のめぐりがよくなり、肌に栄養が届きやすくなります。';
   openModal({title:esc(word), size:'small', dismissable:true, body:`<div class="ing-sheet"><div class="ing-dl">
-    ${hit ? `<div class="ing-b"><b>説明</b><p>${esc(hit[1])}</p></div>` : ''}
+    ${hit && hit[1] ? `<div class="ing-b"><b>説明</b><p>${esc(hit[1])}</p></div>` : ''}
     <div class="ing-b"><b>なぜいい？</b><p>${esc(why)}</p></div>
     ${hit ? `<div class="ing-b"><b>やり方</b><p>${esc(hit[3])}</p></div>` : ''}</div></div>`});
 }
@@ -6503,10 +6503,9 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
 function openLifeAvoidSheet(area, word) {
   const hit = LIFE_AVOID.find(([re]) => re.test(word));
   const why = hit ? hit[2] : area === '食事' ? '今の肌の状態と食事の記録から、控えたほうが肌によいと考えたものです。' : area === '睡眠' ? '眠りの質が下がると、肌の回復が遅れやすくなります。' : '肌の負担になりやすいことです。';
+  /* 運動・睡眠・食事の言葉は意味がわかりやすいので、説明は出さず理由だけ。「代わりにこうする」はカードの「おすすめ」に出す */
   openModal({title:esc(word), size:'small', dismissable:true, body:`<div class="ing-sheet av-sheet"><div class="ing-dl">
-    ${hit ? `<div class="ing-b"><b>説明</b><p>${esc(hit[1])}</p></div>` : ''}
-    <div class="ing-b warn"><b>なぜ控えたほうがいい？</b><p>${esc(why)}</p></div>
-    ${hit ? `<div class="ing-b"><b>代わりにこうする</b><p>${esc(hit[3])}</p></div>` : ''}</div></div>`});
+    <div class="ing-b warn"><b>なぜ控えたほうがいい？</b><p>${esc(why)}</p></div></div></div>`});
 }
 // Myアイテムに、自分で撮った・選んだ写真を付ける（この商品だけに付く）
 document.addEventListener('change', async e => { const inp = e.target; if (!inp || !inp.dataset || !inp.dataset.myphoto) return; const p = getMy(inp.dataset.myphoto), f = inp.files && inp.files[0]; if (!p || !f) return;
@@ -12811,18 +12810,29 @@ function advSane(area, good, avoid) {
   const g = good.filter(v => !bad(v) && !(area === '食事' && pregNow() && PREG_FOOD_RE.test(v)) && !avoid.some(a => chipText(a) === chipText(v)));
   return [g, avoid];
 }
+// 控えたいこと・気をつけることがあるときは、必ず「代わりにこうする」をおすすめにも出す
+const LIFE_ALT_DEF = {運動:'運動後すぐの洗顔・保湿', 睡眠:'毎日同じ時刻に起きる', 食事:'水・お茶'};
+function lifeAltGood(area, g, a) {
+  if (!a.length) return g;
+  const out = g.slice(), has = v => out.some(y => chipText(y) === chipText(v)) || a.some(y => chipText(y) === chipText(v));
+  const add = []; a.forEach(w => { const r = LIFE_AVOID.find(([re]) => re.test(w)); (r && r[4] || []).forEach(v => { if (!has(v) && !add.includes(v)) add.push(v); }); });
+  out.unshift(...add);
+  if (!out.length && LIFE_ALT_DEF[area]) out.push(LIFE_ALT_DEF[area]);
+  return out.slice(0, 6);
+}
 function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの']; let g = advClean(x.good), a = advClean(x.avoid, 24);
-  if (x.area !== 'スキンケア') [g, a] = advSane(x.area, g, a);
+  if (x.area !== 'スキンケア') { [g, a] = advSane(x.area, g, a); g = lifeAltGood(x.area, g, a); }
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
   if (skin) { const pool = comboPool(), careK = new Set(); try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => st.good.forEach(v => careK.add(normIng(chipText(v)))))); } catch (e) { /* 何もしない */ } const out = []; for (let i = 0; i < g.length; i++) { const c = careK.has(normIng(chipText(g[i]))) ? null : comboConflict(g[i], pool); if (c) { out.push(comboAvoidWord(g[i], c)); g.splice(i, 1); i--; continue; } const tw = tagsOfWord(g[i]); if (tw.tags.size) pool.push({id:'g:' + g[i], name:chipText(g[i]), tags:tw.tags, rx:false, act:tw.act}); } out.forEach(o => { if (!a.some(v => chipText(v) === chipText(o))) a.push(o); }); }
   if (skin) { const PL = personalLearn(); if (PL.good.size || PL.bad.size) { // あなたの記録で合わなかった成分はおすすめから外し、合っていた成分を先に出す
     for (let i = g.length - 1; i >= 0; i--) { const row = plOf(g[i], PL.bad); if (row) { const w = `${chipText(g[i])}（${row.ng ? '肌に合わなかった物に入っていた' : 'あなたの記録で、使った日の肌が悪い傾向'}）`; if (!a.some(v => chipText(v) === chipText(g[i]))) a.push(w); g.splice(i, 1); } }
     g.sort((x, y) => (plOf(y, PL.good) ? 1 : 0) - (plOf(x, PL.good) ? 1 : 0)); } }
+  if (skin && !g.length && a.length) g = ['セラミド', 'パンテノール'].filter(v => !a.some(y => normIng(chipText(y)) === normIng(v))); // 控えたい成分があるときは、必ず代わりのおすすめも出す
   if (skin) ING_AVOID_CTX = a.slice(); // おすすめ成分から商品を出すときに、ここの「控えたい成分」が入った商品は省く
   if (!g.length && !a.length) return '';
-  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<button type="button" class="adv-c good adv-ing" data-lifegood="${esc(x.area + '|' + v)}">${esc(v)}<i>›</i></button>`).join('')}</div></div>` : ''}`
+  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : x.area === '食事' && !LIFE_AVOID.some(r => (r[4] || []).includes(v) && r[5]) ? `<button type="button" class="adv-c good adv-ing" data-food="${esc(v)}">${esc(v)}<i>›</i></button>` : `<button type="button" class="adv-c good adv-ing" data-lifegood="${esc(x.area + '|' + v)}">${esc(v)}<i>›</i></button>`).join('')}</div></div>` : ''}`
     + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => skin ? `<button type="button" class="adv-c bad adv-ing" data-avoidsheet="${esc(v)}">${esc(chipText(v))}<i>›</i></button>` : `<button type="button" class="adv-c bad adv-ing" data-lifeavoid="${esc(x.area + '|' + v)}">${esc(v)}<i>›</i></button>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
