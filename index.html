@@ -649,7 +649,7 @@ details.acc-cmp{margin-top:14px}
 .sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
 .sbig .input{min-height:44px;height:44px;padding-left:44px;padding-right:50px;font-size:16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
 .sbig .input::-webkit-search-cancel-button{display:none}
-.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px}.find-cam-b.is-locked{opacity:.75}
+.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .my-add{width:100%;justify-content:center}
@@ -704,7 +704,7 @@ details.acc-cmp{margin-top:14px}
 .pcard .body{padding:0 44px 0 12px;gap:1px;min-width:0}
 .pcard .name{font-size:14px;-webkit-line-clamp:2}
 .pcard .price{margin-top:4px;padding-top:0}
-.pcard .fav-heart{top:50%;right:8px;transform:translateY(-50%);width:34px;height:34px;box-shadow:none;background:var(--surface2)}
+.pcard .fav-heart{top:0;bottom:0;margin:auto 0;right:8px;transform:none!important;width:34px;height:34px;box-shadow:none;background:var(--surface2)}
 /* 追加の選択 */
 .add-opts{display:flex;flex-direction:column;gap:10px}
 .add-opt{display:grid;grid-template-columns:26px 1fr 12px;gap:12px;align-items:center;text-align:left;padding:11px 16px;border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
@@ -2421,7 +2421,7 @@ a.acc-me:active{transform:scale(.96)}
 /* 2つを選んで調べる：入力＋候補 */
 .cc-pick{position:relative}.cc-in{position:static;min-width:0}.cc-iw{position:relative;display:block}
 .cc-in .input{width:100%;font-size:16px;padding-right:30px}
-.cc-x{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:0;border-radius:50%;background:var(--surface2);color:var(--muted);font:inherit;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cc-x{position:absolute;right:4px;top:0;bottom:0;margin:auto 0;transform:none!important;width:26px;height:26px;border:0;border-radius:50%;background:var(--surface2);color:var(--muted);font:inherit;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .cc-sug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:300px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:4px}
 .cc-opt{display:flex;align-items:baseline;justify-content:space-between;gap:8px;width:100%;border:0;background:none;border-radius:10px;padding:10px 10px;font:inherit;text-align:left;color:var(--ink);cursor:pointer}
 .cc-opt b{font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cc-opt small{flex:none;font-size:11px;color:var(--muted)}
@@ -3026,7 +3026,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120132744'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120135132'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3040,6 +3040,19 @@ function logError(msg, src, stack) {
       body:JSON.stringify({msg, src:where.replace(/^https?:\/\/[^/]+/, '').slice(0, 280), stack:String(stack || '').replace(/https?:\/\/[^/\s)]+/g, '').replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '(mail)').slice(0, 2900), page, ver:APP_VER, ua:String(navigator.userAgent || '').slice(0, 280), logged_in:!!(typeof acct !== 'undefined' && acct && acct.user)})}).catch(() => {});
   } catch (e) { /* 何もしない */ }
 }
+// 2026-11-20 エラーにならない表示のおかしさ（「undefined」「NaN」などの文字・画面の横へのはみ出し）も、使っている人の画面で見つけて知らせる（運営が自動で直すため。記録の中身は送らない）
+let UI_CHK_T = 0; const UI_CHK_SEEN = new Set();
+function uiSelfCheck() {
+  try {
+    const page = String(location.hash || '#/').split('?')[0].split('/').slice(0, 2).join('/');
+    const box = [document.getElementById('main'), document.getElementById('modal-root')].filter(Boolean);
+    const RE = /(^|[^a-zA-Z])(undefined|NaN|\[object Object\]|Infinity)(?![a-zA-Z])/;
+    for (const b of box) { if (!RE.test(b.textContent || '')) continue; const tw = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { const m = (n.textContent || '').match(RE); if (!m || !n.parentElement || n.parentElement.closest('textarea,input,[contenteditable],.memo,.prose')) continue; const el = n.parentElement, cls = [el.tagName.toLowerCase(), ...String(el.className || '').split(' ').filter(Boolean).slice(0, 2)].join('.'), par = el.parentElement ? String(el.parentElement.className || '').split(' ')[0] : ''; const k = page + '|' + m[2] + '|' + cls; if (UI_CHK_SEEN.has(k)) continue; UI_CHK_SEEN.add(k); logError(`表示: 「${m[2]}」が出ている（${par ? par + ' > ' : ''}${cls}）`, 'ui-check:' + (b.id || '')); break; } } /* 書いた文字（メモなど）は送らない。どの部品かだけ */
+    const vw = window.innerWidth, wk = page + '|wide'; if (!UI_CHK_SEEN.has(wk)) { const sc = e => { for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) { const st = getComputedStyle(x); if (/(auto|scroll)/.test(st.overflowX) || (st.overflowX === 'hidden' && x.scrollWidth > x.clientWidth + 1) || st.position === 'fixed') return true; } return false; };
+      const L = document.querySelectorAll('#main *'); for (let n = 0; n < L.length && n < 1500; n++) { const e = L[n], r = e.getBoundingClientRect(); if (!r.width || r.right <= vw + 2 || r.left >= vw || r.bottom < 0) continue; if (sc(e)) continue; UI_CHK_SEEN.add(wk); logError(`表示: 画面の横にはみ出している（${[e.tagName.toLowerCase(), ...String(e.className || '').split(' ').filter(Boolean).slice(0, 2)].join('.')}・右端${Math.round(r.right)}>${vw}）`, 'ui-check:wide'); break; } }
+  } catch (e) { /* 何もしない */ }
+}
+try { new MutationObserver(() => { clearTimeout(UI_CHK_T); UI_CHK_T = setTimeout(uiSelfCheck, 1500); }).observe(document.documentElement, {childList:true, subtree:true}); } catch (e) { /* 何もしない */ }
 window.addEventListener('error', e => { if (e && e.target && e.target !== window && !e.message) return; logError(e.message || (e.error && e.error.message), `${e.filename || ''}:${e.lineno || 0}:${e.colno || 0}`, e.error && e.error.stack); }); // 画像の読み込み失敗などは送らない
 window.addEventListener('unhandledrejection', e => { const r = e && e.reason; if (r && /AbortError|NotAllowedError|Load failed|Failed to fetch|NetworkError|fetch timeout/i.test(String(r.name || '') + ' ' + String(r.message || r))) return; logError((r && r.message) || String(r), 'promise', r && r.stack); }); // 通信が切れただけのものは送らない
 /* ---------- 広告（無料プランだけに表示。プレミアムでは表示しない） ----------
@@ -16953,9 +16966,11 @@ function ptrRepaint() {
     const t0 = performance.now();
     ptrRefresh(true).catch(() => {}).finally(() => setTimeout(() => { done = true; if (!touching) { ptrRepaint(); settle(); } }, Math.max(250, 800 - (performance.now() - t0))));
   };
+  let ptrDZ = 6;
   window.addEventListener('touchstart', e => {
     if (phase !== 'idle' || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target) || e.touches[0].clientX < 30) { y0 = null; return; } // 左の端から：前の画面に戻る動き（ブラウザ）に任せる
     y0 = e.touches[0].clientY; ptrX0 = e.touches[0].clientX; started = false;
+    ptrDZ = e.target.closest && e.target.closest('button,a,[data-action],label,input,select,.btn,[role=button]') ? 16 : 6; /* 2026-11-20 ボタンを押したときの指の小さなずれで、画面ごと下に沈んでいた：少し動いただけでは引っぱりを始めない */
   }, {passive:true});
   window.addEventListener('touchmove', e => {
     if (document.body.classList.contains('m-dragging') || window.__hSwipe) { y0 = null; return; } // 並べ替え中・横にスワイプ中は、引っぱって更新しない
@@ -16963,12 +16978,12 @@ function ptrRepaint() {
     const dy = e.touches[0].clientY - y0;
     if (!started) {
       // 一番上で、下向きに動かし始めた最初の1回から引き受ける（ブラウザのスクロールに取られて途中で止まらないように）
-      if (dy <= 0 || window.scrollY > 0) { if (dy < 0) y0 = null; return; }
+      if (dy <= ptrDZ || window.scrollY > 0) { if (dy < 0) y0 = null; return; }
       if (Math.abs(e.touches[0].clientX - ptrX0) * 1.5 >= dy) { y0 = null; return; } // 横向きのスワイプ（ホームのタブ切り替え）は、更新にしない
-      started = true; touching = true; phase = 'pulling'; window.__ptrOn = true; ptr.classList.remove('spin', 'fade');
+      y0 += ptrDZ; /* 遊びの分は引かず、そこから動き始める（急に飛ばない） */ started = true; touching = true; phase = 'pulling'; window.__ptrOn = true; ptr.classList.remove('spin', 'fade');
     }
     e.preventDefault();
-    setY(dy > 0 ? rubber(dy) : 0);
+    { const d2 = e.touches[0].clientY - y0; setY(d2 > 0 ? rubber(d2) : 0); }
     if (phase === 'pulling') { drawPull(); if (d >= GO) startRefresh(); }
   }, {passive:false});
   const end = () => {
