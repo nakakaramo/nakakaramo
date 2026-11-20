@@ -665,7 +665,7 @@ details.acc-cmp{margin-top:14px}
 .cl-ov.bar [data-cl="bar"] .cl-c{background:var(--green);color:#fff}
 .cl-shut{width:84px;height:84px;border-radius:50%;border:4px solid rgba(255,255,255,.85);padding:4px;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;transform:none!important}.cl-shut span{display:flex;width:100%;height:100%;border-radius:50%;background:#fff;color:#1b1f1c;align-items:center;justify-content:center;transition:transform .1s}.cl-shut:active span{transform:scale(.92)}.cl-shut svg{width:26px;height:26px}
 .cl-sl{margin-top:6px;font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-.cl-frame{position:absolute;left:7%;right:7%;top:29%;height:21%;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.9);pointer-events:none}.cl-frame i{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#E04848;box-shadow:0 0 8px #E04848;animation:clScan 1.6s ease-in-out infinite alternate}
+.cl-frame{position:absolute;left:7%;right:7%;top:37%;height:22%;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.9);pointer-events:none}.cl-frame i{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#E04848;box-shadow:0 0 8px #E04848;animation:clScan 1.6s ease-in-out infinite alternate}
 @keyframes clScan{from{transform:translateY(-34px)}to{transform:translateY(34px)}}
 .cl-msg{position:absolute;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 70px);padding:10px 14px;border-radius:12px;background:rgba(20,22,24,.88);font-size:13.5px;line-height:1.6}
 .cl-ov.flash::after{content:"";position:absolute;inset:0;background:#fff;animation:clFlash .25s ease-out forwards}@keyframes clFlash{from{opacity:.85}to{opacity:0}}
@@ -3046,7 +3046,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120150859'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120152531'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5362,7 +5362,7 @@ function findPaint() {
 }
 // ---------- カメラで登録：選ぶ／撮る → バーコードを読む（だめなら、プレミアムは商品の写真から商品名を読む）→ 候補から選ぶ ----------
 // バーコード（JAN／EAN-13・EAN-8）を写真から読む（外部のライブラリを使わない、簡単な読み取り）
-function eanDecodeImage(img) {
+function eanDecodeImage(img, lines = 60) { /* lines：何本の線で読むか（カメラで続けて読むときは少なめにして軽くする） */
   const W0 = img.naturalWidth || img.width, H0 = img.naturalHeight || img.height; if (!W0 || !H0) return '';
   const sc = Math.min(1, 1200 / Math.max(W0, H0)), W = Math.max(1, Math.round(W0 * sc)), H = Math.max(1, Math.round(H0 * sc));
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const cx = cv.getContext('2d', {willReadFrequently:true}); cx.drawImage(img, 0, 0, W, H);
@@ -5412,18 +5412,28 @@ function eanDecodeImage(img) {
   const scanLine = (get, len) => {
     const raw = new Float32Array(len); for (let i = 0; i < len; i++) raw[i] = get(i);
     const v = new Float32Array(len); for (let i = 0; i < len; i++) v[i] = (raw[Math.max(0, i - 1)] + raw[i] * 2 + raw[Math.min(len - 1, i + 1)]) / 4; // ざらつきをならす
-    // 近くの一番明るい所と一番暗い所の真ん中を境にする（線が太く・細くならないように）
-    const win = Math.max(12, Math.round(len / 40)), bits = new Uint8Array(len);
-    for (let i = 0; i < len; i++) { let lo = 255, hi = 0; for (let j = Math.max(0, i - win); j < Math.min(len, i + win); j++) { if (v[j] < lo) lo = v[j]; if (v[j] > hi) hi = v[j]; } bits[i] = hi - lo > 30 && v[i] < (lo + hi) / 2 ? 1 : 0; }
-    const runs = []; let cur = bits[0], n = 0, start = -1;
-    for (let i = 0; i < len; i++) { if (start < 0) { if (bits[i] !== 1) continue; start = i; cur = 1; n = 0; } if (bits[i] === cur) n++; else { runs.push(n); cur = bits[i]; n = 1; } }
-    if (n) runs.push(n);
-    if (runs.length < 43) return '';
-    return decodeRuns(runs) || decodeRuns(runs.slice().reverse().slice(runs.length % 2 ? 0 : 1));
+    // 2026-11-20 ピントが少し甘い写真でも読めるように、①そのまま ②くっきりさせた線 の2通りで、線と線の境目を小数点まで細かく求めて読む
+    const sh = new Float32Array(len); for (let i = 0; i < len; i++) { let a = 0, n = 0; for (let j = Math.max(0, i - 3); j <= Math.min(len - 1, i + 3); j++) { a += v[j]; n++; } sh[i] = Math.max(0, Math.min(255, v[i] + 1.6 * (v[i] - a / n))); }
+    const win = Math.max(12, Math.round(len / 40));
+    const tryV = (s) => {
+      const lo = new Float32Array(len), hi = new Float32Array(len); // 近くの一番明るい所と一番暗い所（真ん中を境にする）
+      { const B = win, nb = Math.ceil(len / B), bl = new Float32Array(nb).fill(255), bh = new Float32Array(nb); for (let i = 0; i < len; i++) { const k = (i / B) | 0; if (s[i] < bl[k]) bl[k] = s[i]; if (s[i] > bh[k]) bh[k] = s[i]; } /* 区切りごとの明るさで、近くの明るい所・暗い所を速く求める（携帯でも重くならないように） */
+        for (let i = 0; i < len; i++) { const k = (i / B) | 0, a = Math.max(0, k - 1), b = Math.min(nb - 1, k + 1); lo[i] = Math.min(bl[a], bl[k], bl[b]); hi[i] = Math.max(bh[a], bh[k], bh[b]); } }
+      const thr = i => (lo[i] + hi[i]) / 2, dark = i => hi[i] - lo[i] > 24 && s[i] < thr(i);
+      const edges = []; let prev = dark(0);
+      for (let i = 1; i < len; i++) { const d = dark(i); if (d !== prev) { const t0 = thr(i), a = s[i - 1], b = s[i]; const f = a === b ? 0.5 : Math.max(0, Math.min(1, (t0 - a) / (b - a))); edges.push({x:i - 1 + f, d}); prev = d; } }
+      const st = edges.findIndex(e => e.d); if (st < 0) return '';
+      const runs = []; for (let k = st; k + 1 < edges.length; k++) runs.push(edges[k + 1].x - edges[k].x);
+      if (runs.length < 43) return '';
+      return decodeRuns(runs) || decodeRuns(runs.slice().reverse().slice(runs.length % 2 ? 0 : 1));
+    };
+    return tryV(v) || tryV(sh);
   };
   const votes = {};
-  for (let k = 1; k < 60; k++) { const y = Math.round(H * k / 60); const r = scanLine(i => gray[y * W + i], W); if (r) votes[r] = (votes[r] || 0) + 1; }
-  if (!Object.values(votes).some(v => v >= 2)) for (let k = 1; k < 60; k++) { const x = Math.round(W * k / 60); const r = scanLine(i => gray[i * W + x], H); if (r) votes[r] = (votes[r] || 0) + 1; }
+  const order = Array.from({length:lines - 1}, (_, k) => k + 1).sort((a, b) => Math.abs(a - lines / 2) - Math.abs(b - lines / 2)); /* 真ん中の線から読む（早く見つかる） */
+  const two = () => Object.entries(votes).some(([k, v]) => v >= 2 && k.length === 13);
+  for (const k of order) { const y = Math.round(H * k / lines); const r = scanLine(i => gray[y * W + i], W); if (r) votes[r] = (votes[r] || 0) + 1; if (two()) break; }
+  if (!Object.values(votes).some(v => v >= 2)) for (const k of order) { const x = Math.round(W * k / lines); const r = scanLine(i => gray[i * W + x], H); if (r) votes[r] = (votes[r] || 0) + 1; if (two()) break; }
   // 13桁を優先。8桁は2本以上の線で同じ数字が読めたときだけ（まちがいを防ぐ）
   const best = Object.entries(votes).filter(([k, v]) => v >= 2).sort((a, b) => (b[0].length - a[0].length) || (b[1] - a[1]))[0];
   return best ? best[0] : '';
@@ -5431,10 +5441,10 @@ function eanDecodeImage(img) {
 
 function openCamSheet(kind) {
   findState = {kind, q:'', items:null, loading:false, err:'', timer:null, cam:true};
-  openModal({title:'カメラで登録', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">バーコードが大きく、ピントが合うように撮ってください。バーコードがないときは、商品の正面を撮ります${isPremium() ? '' : `（商品の写真から探すのは${PREMIUM_NAME}の機能です）`}。</p>
-    <div class="cam-pick"><label class="btn btn-primary">${icon('image')}選ぶ<input type="file" accept="image/*" id="cam-lib" class="vh"></label><label class="btn btn-primary">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" id="cam-shot" class="vh"></label></div>
-    <div id="cam-prev"></div><p class="small" id="cam-msg" style="margin:8px 0 0"></p>
+  /* 2026-11-20 撮る・選ぶは画面いっぱいのカメラでするので、ここには結果と「撮り直す」だけ */
+  openModal({title:'カメラで登録', dismissable:true, body:`<div id="cam-prev"></div><p class="small" id="cam-msg" style="margin:8px 0 0"></p>
     <div id="find-list" class="net-list" style="margin-top:12px"></div>
+    <div class="cam-pick" style="margin-top:12px"><button type="button" class="btn btn-ghost" data-action="add-camera" data-id="${kind}">${icon('camera')}撮り直す</button></div>
     <p class="small" style="margin-top:12px"><button type="button" class="link" data-action="add-manual" data-id="${kind}">数字か商品名を自分で入力する</button></p>`});
 }
 // ===== 2026-11-20 カメラで登録：画面いっぱいのカメラ（写真から選ぶ・撮って探す・バーコードを自動で読む）。化粧品と塗り薬の両方 =====
@@ -5479,10 +5489,10 @@ async function openCamLive(kind) {
   const scan = async () => {
     if (!CL || CL.ov !== ov || CL.mode !== 'bar' || CL.busy || !v.videoWidth) return; CL.busy = true;
     try {
-      const w = v.videoWidth, h = v.videoHeight, cw = Math.round(w * 0.86), ch = Math.round(h * 0.42), c = document.createElement('canvas'); c.width = Math.min(1200, cw); c.height = Math.round(ch * c.width / cw);
+      const w = v.videoWidth, h = v.videoHeight, cw = Math.round(w * 0.86), ch = Math.round(h * 0.42), c = document.createElement('canvas'); c.width = Math.min(1000, cw); c.height = Math.round(ch * c.width / cw);
       c.getContext('2d', {willReadFrequently:true}).drawImage(v, (w - cw) / 2, (h - ch) / 2, cw, ch, 0, 0, c.width, c.height);
       let jan = ''; if (bd) { try { const r = await bd.detect(c); if (r[0] && /^(\d{8}|\d{13})$/.test(r[0].rawValue)) jan = r[0].rawValue; } catch (e) { /* 次の方法へ */ } }
-      if (!jan) jan = eanDecodeImage(c);
+      if (!jan) jan = eanDecodeImage(c, 24);
       if (jan && CL && CL.ov === ov) { try { if (typeof navigator.vibrate === 'function') navigator.vibrate(20); hapticTick(); } catch (e) { /* 何もしない */ } const k = CL.kind; clStop(); setTimeout(() => { if (k === 'rx') { openRxCamSheet(); const fs = findState; if (fs) { fs.noRx = true; const m = document.getElementById('cam-msg'); if (m) m.textContent = `バーコード ${jan} を読み取りました（処方薬のバーコードは読めないため、市販の薬を探しています）。`; findRun(jan); } } else { openCamSheet(k); const m = document.getElementById('cam-msg'); if (m) m.textContent = `バーコード ${jan} を読み取りました。当てはまる商品を選んでください。`; findRun(jan); } }, 230); }
     } catch (e) { /* 何もしない */ }
     if (CL) CL.busy = false;
