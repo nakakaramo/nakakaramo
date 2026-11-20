@@ -3050,7 +3050,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120165317'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120170302'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -10435,7 +10435,8 @@ function rtPlan(slot, solo) {
       const days = r.x.p.startDate ? diffDays(r.x.p.startDate, t0) : 0;
       if (ACL(r).includes('abx') && (days >= 84 || !acneActiveNow())) nt.push('抗菌薬の入った塗り薬は、長く続けると薬の効きにくい菌が出やすいため、使う期間は医師が決めます。いつまで使うかは医師に確かめましょう');
       if (nt.length) acneNote.set(r, nt); });
-    if (!acneActiveNow() && acneRx.some(r => ACL(r).some(c => c === 'ada' || c === 'bpo'))) acneTip = `${[...new Set(acneRx.filter(r => ACL(r).some(c => c === 'ada' || c === 'bpo')).map(r => rxIngLabel(r.x.p)))].join('、')}の塗り薬は、ニキビが落ち着いたあとも、再発を防ぐために続けることがすすめられている薬です。医師の指示どおりに続けましょう。`;
+    const keepRx = acneRx.filter(r => ACL(r).some(c => c === 'ada' || c === 'bpo') && !(pregNow() === 'preg' && PREG_RX_RE.test(`${r.x.p.name} ${r.x.p.ingredients || ''}`))); /* 妊娠中に使えない薬は「続けましょう」と言わない */
+    if (!acneActiveNow() && keepRx.length) acneTip = `${[...new Set(keepRx.map(r => rxIngLabel(r.x.p)))].join('、')}の塗り薬は、ニキビが落ち着いたあとも、再発を防ぐために続けることがすすめられている薬です。医師の指示どおりに続けましょう。`;
   }
   const preg = pregNow(), pregRx = preg === 'preg' ? RXP1.filter(r => PREG_RX_RE.test(`${r.x.p.name} ${r.x.p.ingredients || ''}`)) : [];
   pregRx.forEach(r => RESTED.set(r.x.p.id, '妊娠中は使えない薬のため（添付文書で禁忌）。使う前に医師に相談しましょう')); /* 妊娠中：アダパレンなどは手順に入れない */
