@@ -98,7 +98,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     return T.every((x) => !/控えたい成分/.test(x)) && T[0].includes('控えたい'); }));
   // 2026-11-16 「＜」を押すと下に動いて指から外れ、何回押しても戻れなかった（押している間も位置が変わらず、1回で戻れること）
   {
-    await ev(async () => { location.hash = '#/account'; await new Promise((r) => setTimeout(r, 300)); location.hash = '#/account/settings'; await new Promise((r) => setTimeout(r, 450)); document.querySelectorAll('.pm-ov,.au-ov,#prem-sheet,.ps-wrap').forEach((e) => e.remove()); }); // 初回の案内・前の確認で開いたプレミアムの案内は、テストでは閉じる
+    await ev(async () => { location.hash = '#/account'; await new Promise((r) => setTimeout(r, 300)); location.hash = '#/account/s/display'; await new Promise((r) => setTimeout(r, 450)); document.querySelectorAll('.pm-ov,.au-ov,#prem-sheet,.ps-wrap').forEach((e) => e.remove()); }); // 初回の案内・前の確認で開いたプレミアムの案内は、テストでは閉じる
     const k = await p.$('.topbar .tt-bk'); const r0 = k && await k.boundingBox();
     let ok = false;
     if (r0) { await p.mouse.move(r0.x + r0.width / 2, r0.y + r0.height / 2); await p.mouse.down(); await p.waitForTimeout(80); const r1 = await k.boundingBox(); await p.mouse.up(); await p.waitForTimeout(500);
@@ -1354,6 +1354,35 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       // クラウドの設定で上書きされても、この端末で同意していれば聞き直さない
       state.settings.policyAgreed = ''; try { localStorage.setItem('nk_pol_ok', POLICY_VER); } catch (e) {} policyGate(); await w(250); if (document.getElementById('pol-ov')) bad.push('この端末で同意したのに、また同意のお願いが出る');
     } catch (e) { bad.push('エラー ' + e.message); } finally { window.confirmDialog = kcd; const o = document.getElementById('pol-ov'); if (o) o.remove(); document.querySelectorAll('.au-ov').forEach((x) => x.remove()); try { localStorage.removeItem('nk_pol_ok'); } catch (e) {} acct.user = ku; acct.client = kc; SYNC.pulledFor = kp; acct.busy = false; state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-20 アカウントの設定を6つの区分（プロフィール・肌の情報・アプリ設定・データ・サービス・サポート）に整理。前からある項目が1つも消えず、正しい区分に入り、押すと前と同じ中身が出ること
+  check('アカウントの設定が6つの区分に整理され、全部の項目が正しい区分にあり、前と同じように動く', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state);
+    try {
+      state.settings.onboarded = true; document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
+      state.skinLogs.push({id: 'demo-x', date: todayStr(), demo: true, condition: 3}); // デモデータがあるときの「デモデータを削除」
+      location.hash = '#/account'; await w(400); render(); await w(200);
+      const want = [['プロフィール', ['性別', '年代', '身長', '体重']], ['肌の情報', ['肌質', '肌悩み']], ['アプリ設定', ['お知らせ', '画面の表示', 'アプリとして使う']], ['データ', ['データ']], ['サービス', ['ナカカラモについて', '研究への協力']], ['サポート', ['プライバシー', 'お問い合わせ']]];
+      const hs = [...document.querySelectorAll('#main .acc-grp-h')].map((h) => h.textContent.trim());
+      if (hs.join(',') !== want.map((x) => x[0]).join(',')) bad.push('区分の見出しが違う：' + hs.join(','));
+      [...document.querySelectorAll('#main .acc-grp-h')].forEach((h, i) => { const rows = [...h.nextElementSibling.querySelectorAll('.acc-row b')].map((b) => b.textContent.trim()); if (want[i] && rows.join(',') !== want[i][1].join(',')) bad.push(`「${h.textContent}」の項目が違う：${rows.join(',')}`); });
+      const rows = [...document.querySelectorAll('#main .acc-grp .acc-row')]; const st = rows.map((r) => getComputedStyle(r)); if (new Set(st.map((x) => x.paddingLeft + x.fontSize)).size !== 1) bad.push('項目の左の余白・文字の大きさがそろっていない');
+      if (rows.some((r) => r.getBoundingClientRect().height < 44)) bad.push('項目が小さくて押しにくい');
+      if (rows.some((r) => !r.querySelector('svg'))) bad.push('アイコンがない項目がある');
+      // 前からある設定の枠が、どこかの項目のページに必ず入っている（消えていない）
+      const t = document.createElement('template'); t.innerHTML = embedView(viewSettings); const titles = [...t.content.children].filter((c) => c.classList.contains('card')).map((c) => { const h = c.querySelector('.card-h h2'); return h ? h.textContent.trim() : ''; }).filter((x) => x && !/^(プラン・アカウント|記録のリマインダー)$/.test(x));
+      const D = accItemDefs(), pages = {}; for (const k of Object.keys(D)) { if (D[k].hide || !D[k].html) continue; pages[k] = D[k].html(); if (!pages[k] || pages[k].length < 40) bad.push(`「${D[k].t}」のページが空`); }
+      const all = Object.values(pages).join('');
+      const conc = {'身長・体重': '身長・体重を設定する', '肌質・性別・年代・肌悩み': 'f_gender', '自動バックアップ': 'sync-sub', 'データの保存状況': '保存状況', 'すべてのデータを削除': 'delete-all', 'デモデータ': 'demo-remove'};
+      titles.forEach((x) => { const needle = conc[x] || x; if (!all.includes(needle)) bad.push(`前からある「${x}」が、どの項目にも入っていない`); });
+      for (const [k, needle] of [['gender', 'f_gender'], ['age', 'f_ageBand'], ['height', 'life-goal'], ['weight', 'life-goal'], ['skintype', 'data-action="setup"'], ['concerns', 'st-concern2'], ['display', 'data-action="theme"'], ['data', 'delete-all'], ['data', 'sync-sub'], ['research', '研究'], ['privacy', 'プライバシーポリシー'], ['about', 'サービス名']]) if (!(pages[k] || '').includes(needle)) bad.push(`「${D[k].t}」のページに、前と同じ設定がない`);
+      // 押すと開く・タイトル・戻る
+      location.hash = '#/account/s/gender'; await w(400); if (!document.getElementById('f_gender')) bad.push('「性別」を押しても開かない'); if (!/性別/.test((document.querySelector('.topbar') || document.body).textContent)) bad.push('項目のページの上に名前が出ない');
+      const sel = document.getElementById('f_gender'); if (sel) { sel.value = '男性'; sel.dispatchEvent(new Event('change', {bubbles: true})); await w(100); if (state.settings.gender !== '男性') bad.push('性別を変えても保存されない'); }
+      location.hash = '#/account'; await w(400); if (!/男性/.test((document.getElementById('acc-it-gender') || {}).textContent || '')) bad.push('一覧に今の性別が出ない');
+      if (!document.querySelector('#acc-it-support[data-action="support-open"]')) bad.push('お問い合わせが前と同じに開かない');
+      for (const old of ['body', 'settings', 'privacy', 'settings/0']) { location.hash = '#/account/' + old; await w(400); if (/^#\/account\/(body|settings|privacy)/.test(location.hash)) bad.push(`前の画面（${old}）へのリンクが行き止まり`); }
+      { const src = await (await fetch(location.href.split('#')[0])).text(); if (/#\/account\/(body|settings|privacy)['"]/.test(src)) bad.push('前の区分へのリンクが残る'); if (/「設定」の「肌質・年代」|先に「肌質・年代」/.test(src)) bad.push('なくなった区分の名前が説明に残る'); }
+    } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();

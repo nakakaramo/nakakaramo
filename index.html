@@ -194,6 +194,12 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .acc-row{display:grid;grid-template-columns:22px 1fr 12px;align-items:center;gap:12px;padding:14px 18px;color:var(--ink);text-decoration:none}
 .acc-row+.acc-row{border-top:1px solid var(--line)}
 .acc-row svg{width:22px;height:22px;color:var(--green-d)}
+.ai-sec.acc-grp-h{margin:24px 6px 8px!important;font-size:13px;letter-spacing:.04em}
+.acc-grp{margin-bottom:0}
+.acc-sec.acc-grp .acc-row{grid-template-columns:22px 1fr auto 12px;min-height:52px;padding:0 18px;box-sizing:border-box}
+.acc-grp button.acc-row{width:100%;background:none;border:0;border-radius:0;font:inherit;text-align:left;cursor:pointer}
+.acc-grp .acc-row+.acc-row{border-top:1px solid var(--line)}
+.acc-val{font-style:normal;font-size:14px;color:var(--muted);max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-row b{display:block;font-size:15px}
 .acc-row small{display:block;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
 .acc-row i{font-style:normal;color:var(--muted);font-size:18px}
@@ -3052,7 +3058,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120234124'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121001248'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -6113,7 +6119,7 @@ function swStepHtml(step) {
   if (step === 'research') h = `<p class="sw-q">研究に協力してもらえますか？</p><p class="sw-sub">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます</p>
     <ul class="sw-list"><li><b>送るもの</b>：肌質・年代、肌の状態の平均、成分ごとの肌の変化（数字だけ）</li><li><b>送らないもの</b>：名前・メール・写真・メモ・日付・商品名・位置</li><li>5人以上をまとめた統計にしてから使います。いつでも設定からやめられて、やめると送ったデータも消えます</li></ul>`
     + swOpts('research', [['no', '同意しない'], ['yes', '同意する']], v.research);
-  if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
+  if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「アカウント」の「プロフィール」と「肌の情報」から答え直せます。</p>`;
   return h;
 }
 // アンケート：質問を1ページに並べて、スクロールしながら答えられるようにする
@@ -14187,7 +14193,7 @@ function personalAnalysis() {
   // ⑦ 足りない情報（勝手に決めずに聞く）
   const ask = [];
   if (!d) ask.push({t:'肌質に合わせた提案になります', act:'setup', b:'肌質診断をする'});
-  if (d && !ck.length && !(d.priority && d.priority.length)) ask.push({t:'気になる悩みを教えてください', a:'#/account/body', b:'肌悩みを選ぶ'});
+  if (d && !ck.length && !(d.priority && d.priority.length)) ask.push({t:'気になる悩みを教えてください', a:'#/account/s/concerns', b:'肌悩みを選ぶ'});
   if (L28.length < 3) ask.push({t:`あと${3 - L28.length}日記録すると、今の肌に合わせます`, a:'#/log', b:'肌を記録する', act:'new-log'});
   if (!inUse.length) ask.push({t:'登録すると、今の物で足りるか分かります', a:'#/my', b:'Myアイテムに登録'});
   if (slN < 3) ask.push({t:'睡眠と肌の関係が分かります', act:'life-part', id:'sleep', b:'睡眠を記録'});
@@ -14831,7 +14837,7 @@ async function logoutAndWipe() {
     acct.busy = false; ui.logoutMsg = ''; render();
   }
   if (state.settings.backupPaused) {
-    if (!await confirmDialog('プライバシーポリシーに同意していないため、バックアップを止めています。\nこのままログアウトすると、この端末の記録・写真は消えて、元に戻せません。\n\n記録を残したいときは、先に「アカウント」の「自動バックアップ」から、同意してバックアップを再開してください。', {ok:'消えてもよいのでログアウト', title:'記録が消えます'})) return;
+    if (!await confirmDialog('プライバシーポリシーに同意していないため、バックアップを止めています。\nこのままログアウトすると、この端末の記録・写真は消えて、元に戻せません。\n\n記録を残したいときは、先に「アカウント」の「データ」の「自動バックアップ」から、同意してバックアップを再開してください。', {ok:'消えてもよいのでログアウト', title:'記録が消えます'})) return;
   } else if (!saved) {
     if (!await confirmDialog('クラウドにまだ保存できていない記録（または写真）があります。\n電波のよい場所で、もう一度ログアウトしてください。\n\nこのままログアウトすると、保存できていない分は消えて、元に戻せません。', {ok:'保存せずにログアウト', title:'まだ保存されていません'})) return;
   } else if (!await confirmDialog('ログアウトすると、この端末から記録・写真・名前・アイコンが消えます。\nもう一度ログインすれば、クラウドから元に戻ります。', {ok:'ログアウト', danger:false, title:'ログアウト'})) return;
@@ -15017,7 +15023,8 @@ function syncAsk(row) {
     <p class="small muted">選ばなかったほうのデータは上書きされます。写真はどちらを選んでもこの端末に残ります。</p>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="sync-use-local">この端末</button><button type="button" class="btn btn-primary" data-action="sync-use-cloud">クラウド</button>`});
 }
-function syncPaint() { const b = document.getElementById('sync-card'); if (b) b.outerHTML = syncCardHtml(); }
+function syncPaint() { const b = document.getElementById('sync-card'); if (b) b.outerHTML = syncCardHtml();
+  const s2 = document.getElementById('sync-sub'); if (s2) { const t = document.createElement('template'); t.innerHTML = syncCardHtml(); const c = t.content.firstElementChild, h = c && c.querySelector('.card-h'); if (h) h.remove(); if (c) s2.innerHTML = c.innerHTML; } } // アカウントの「データ」の中の自動バックアップも書き直す
 function syncCardHtml() {
   const on = true; // ログインしていれば、いつも自動でバックアップ
   const status = !acct.user ? '<button type="button" class="btn btn-primary btn-sm" style="margin-top:4px" data-action="acc-login">ログインしてバックアップする</button>'
@@ -15898,9 +15905,12 @@ function viewAccount() {
       <button type="button" class="btn btn-primary" data-action="name-save" style="width:100%;justify-content:center;margin-top:14px">保存する</button></div></div>`;
   }
   if (sub === 'me') return viewAccountMe().replace('</a>', '</a><div class="acc-thin">') + '</div>'; // 「← アカウント」は外に出す（戻るが2つにならないように）
-  // からだと肌・設定・プライバシー：開くと項目の名前だけを並べ、押すと右から、その項目のくわしいページが出る
+  // 区分の中の項目：押すと右から、その項目のページが出る（2026-11-20 6つの区分に整理）
   const [sec, idx] = String(sub).split('/');
-  if (['body', 'settings', 'privacy'].includes(sec)) {
+  if (sec === 's') { const it = accItemDefs()[idx]; if (!it || it.hide) { redirectTo('#/account'); return ''; }
+    return `<a class="back" href="#/account">← アカウント</a><div class="acc-page acc-item">${it.html()}</div>`; }
+  if (['body', 'settings', 'privacy'].includes(sec)) { redirectTo(sec === 'body' ? '#/account/s/concerns' : '#/account'); return ''; } // 前の区分（からだと肌・設定・プライバシー）へのリンクは、新しい区分へ
+  if (false) {
     const items = accItems(sec);
     if (idx != null && idx !== '') { const it = items[Number(idx)]; if (!it) { redirectTo('#/account/' + sec); return ''; }
       return `<a class="back" href="#/account/${sec}">← ${esc(ACC_SECTIONS[sec].t)}</a><div class="acc-page acc-item">${it.html}</div>`; }
@@ -15908,6 +15918,7 @@ function viewAccount() {
   }
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
+  return '<div class="acc-thin">' + accMeHtml() + accGroupsHtml() + '</div>';
   return '<div class="acc-thin">' + accMeHtml() + ['body', 'settings', 'privacy'].map(accSectionHtml).join('') + // プラン・アカウントは一番上のプロフィールにまとめた // 支出はなくした
     `<button type="button" class="card acc-sec acc-link" data-action="support-open"><span class="acc-row">${icon('chat')}<span><b>お問い合わせ</b></span><i>›</i></span></button></div>`;
 }
@@ -15926,6 +15937,42 @@ function widgetPreviewCard() {
     <div class="wg-row">${small}${medium}</div></div>`;
 }
 // からだと肌・設定・プライバシーの中身を、カードごとに分ける（名前はカードの見出し）
+// ===== アカウントの設定：6つの区分（プロフィール・肌の情報・アプリ設定・データ・サービス・サポート）に分けて、項目を一覧で並べる =====
+const ACC_GROUPS = [['プロフィール', ['gender', 'age', 'height', 'weight']], ['肌の情報', ['skintype', 'concerns']], ['アプリ設定', ['notify', 'display', 'install', 'reminder', 'widget']], ['データ', ['data']], ['サービス', ['about', 'research']], ['サポート', ['privacy', 'support']]];
+function accPool() { // 前からある設定の枠（タイトル → 中身）
+  const m = {}; ['body', 'settings', 'privacy'].forEach(k => accItems(k).forEach(x => { m[x.t] = x.html; })); return m;
+}
+function accItemDefs() {
+  const st = state.settings, P = () => accPool(), card = (t, h) => `<div class="card"><div class="card-h"><h2>${esc(t)}</h2></div>${h}</div>`;
+  const pick = (re) => () => { const m = P(), k = Object.keys(m).find(x => re.test(x)); return k ? m[k] : ''; };
+  const d = diagNow(), ck = concernKeysNow(), r = researchState();
+  return {
+    gender: {t:'性別', icon:'user', val:() => st.gender || '未設定', html:() => card('性別', genderFieldHtml())},
+    age: {t:'年代', icon:'calendar', val:() => st.ageBand || '未設定', html:() => card('年代', ageFieldHtml())},
+    height: {t:'身長', icon:'bodyskin', val:() => st.height ? st.height + 'cm' : '未設定', html:pick(/^身長・体重$/)},
+    weight: {t:'体重', icon:'weight', val:() => st.weight ? st.weight + 'kg' : '未設定', html:pick(/^身長・体重$/)},
+    skintype: {t:'肌質', icon:'drop', val:() => d ? typeLabel(d) : '未診断', html:() => card('肌質', skinTypePartHtml())},
+    concerns: {t:'肌悩み', icon:'spark', val:() => ck.length ? ck.length + '件' : '未設定', html:() => card('肌悩み', concernsPartHtml())},
+    notify: {t:'お知らせ', icon:'bell', hide:NATIVE_APP, html:pick(/^お知らせ$/)},
+    display: {t:'画面の表示', icon:'moon', val:() => ({auto:'自動', light:'ライト', dark:'ダーク'})[themePref()], html:pick(/^画面の表示$/)},
+    install: {t:'アプリとして使う', icon:'grid', html:pick(/^アプリとして使う/)},
+    reminder: {t:'記録のリマインダー', icon:'clock', hide:!NATIVE_APP, html:pick(/^記録のリマインダー$/)},
+    widget: {t:'ウィジェット', icon:'grid', hide:!NATIVE_APP, html:pick(/^ウィジェット/)},
+    data: {t:'データ', icon:'note', html:pick(/^データ$/)},
+    about: {t:'ナカカラモについて', icon:'leaf', html:pick(/について$/)},
+    research: {t:'研究への協力', icon:'flask', val:() => r.on ? '協力中' : 'オフ', html:pick(/^研究への協力/)},
+    privacy: {t:'プライバシー', icon:'shield', html:pick(/^プライバシー$/)},
+    support: {t:'お問い合わせ', icon:'chat', action:'support-open'}
+  };
+}
+function accGroupsHtml() {
+  const D = accItemDefs();
+  return ACC_GROUPS.map(([g, keys]) => { const rows = keys.map(k => [k, D[k]]).filter(([, x]) => x && !x.hide);
+    if (!rows.length) return '';
+    return `<h3 class="ai-sec acc-grp-h">${esc(g)}</h3><div class="card acc-sec acc-grp">${rows.map(([k, x]) => { const v = x.val ? x.val() : '';
+      const inner = `${icon(x.icon)}<span><b>${esc(x.t)}</b></span><em class="acc-val">${esc(v)}</em><i aria-hidden="true">›</i>`;
+      return x.action ? `<button type="button" class="acc-row" data-action="${x.action}" id="acc-it-${k}">${inner}</button>` : `<a class="acc-row" href="#/account/s/${k}" id="acc-it-${k}">${inner}</a>`; }).join('')}</div>`; }).join('');
+}
 function accItems(sec) {
   const tpl = document.createElement('template'); tpl.innerHTML = ACC_SECTIONS[sec].body();
   return [...tpl.content.children].map(el => {
@@ -15951,14 +15998,14 @@ function settingsEmbedHtml(kind) {
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
   if (NATIVE_APP && cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
   if (NATIVE_APP) out.push(widgetPreviewCard());
-  P.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
+  P.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${cards['自動バックアップ'] ? `<div class="set-sub"><h3>自動バックアップ</h3><div id="sync-sub">${inner(cards['自動バックアップ'])}</div></div>` : ''}${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('デモデータ', cards['デモデータ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
   if (cards['プライバシー']) P.push(`<details class="fold set-fold set-fold-solo"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details>`);
   const install = top.find(c => /アプリとして使う/.test(c.textContent)); if (install) out.push(install.outerHTML);
   const about = Object.keys(cards).find(k => /について$/.test(k)); if (about) out.push(cards[about].outerHTML);
   return (kind === 'privacy' ? P : kind === 'body' ? B : out).join('');
 }
 // 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
-function refreshAccPanel(k) { const r = parseRoute(); if (r.name === 'account' && (r.id === k || r.id.startsWith(k + '/')) && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render(); }
+function refreshAccPanel(k) { const r = parseRoute(); if (r.name === 'account' && (r.id === k || r.id.startsWith(k + '/') || (k === 'settings' && r.id === 's/research')) && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render(); }
 // ---------- 研究への協力（任意）：肌質ごとに「どの成分を使って、肌がどう変わったか」を統計にする ----------
 // 送るのは、肌質・年代と「成分ごとの肌の変化の平均」だけ。日付・メモ・写真・商品名・メールアドレス・位置は送らない
 const RESEARCH_MIN_LOGS = 14;
@@ -16064,16 +16111,20 @@ function researchPreviewHtml() {
   return `<p class="small muted" style="margin:0 0 6px">その成分を使った日と使わなかった日の差（あなたの記録）。肌の調子は＋が良い、ほかは−が良い変化です。</p>
     <div class="rs-list">${sm.ings.slice(0, 12).map(x => `<div class="rs-row"><b>${esc(truncate(x.name.replace(/（.*?）/g, ''), 16))}<small>使った日 ${x.du}日</small></b><span>調子 ${arrow(x.d.cond, 'up')}</span><span>ニキビ ${arrow(x.d.acne, 'down')}</span><span>赤み ${arrow(x.d.red, 'down')}</span><span>乾燥 ${arrow(x.d.dry, 'down')}</span></div>`).join('')}</div>`;
 }
-function skinProfileCardHtml() {
-  const st = state.settings, d = diagNow(), ck = concernKeysNow();
-  return `<div class="card"><div class="card-h"><h2>肌質・性別・年代・肌悩み</h2></div>
-    <p>${d ? `肌質：<b>${esc(typeLabel(d))}</b>（${fmtDate(d.at)}の肌質診断）` : '肌質：<span class="muted">未診断</span>'}</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">${d ? '<a class="btn btn-ghost btn-sm" href="#/care/diag">診断結果を見る</a>' : ''}<button type="button" class="btn btn-soft btn-sm" data-action="setup">${d ? '肌質診断をやり直す' : '肌質診断をする'}</button></div>
-    <div class="field"><label class="lbl" for="f_gender">性別<span class="opt">任意</span></label><select class="select" id="f_gender">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<option value="${v}" ${(st.gender || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
-    <p class="lbl" style="margin:14px 0 6px">肌悩み<span class="opt">いくつでも</span></p>
+// 肌質・性別・年代・肌悩み：アカウントの区分ごとのページでも、1つずつ使えるように分けておく
+function skinTypePartHtml() { const d = diagNow(); return `<p>${d ? `肌質：<b>${esc(typeLabel(d))}</b>（${fmtDate(d.at)}の肌質診断）` : '肌質：<span class="muted">未診断</span>'}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px">${d ? '<a class="btn btn-ghost btn-sm" href="#/care/diag">診断結果を見る</a>' : ''}<button type="button" class="btn btn-soft btn-sm" data-action="setup">${d ? '肌質診断をやり直す' : '肌質診断をする'}</button></div>`; }
+function genderFieldHtml() { const st = state.settings; return `<div class="field"><label class="lbl" for="f_gender">性別<span class="opt">任意</span></label><select class="select" id="f_gender">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<option value="${v}" ${(st.gender || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`; }
+function ageFieldHtml() { const st = state.settings; return `<div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; }
+function concernsPartHtml() { const ck = concernKeysNow(); return `<p class="lbl" style="margin:14px 0 6px">肌悩み<span class="opt">いくつでも</span></p>
     <div class="checks">${CONCERN_MASTER.map(c => `<label class="check"><input type="checkbox" name="st-concern2" value="${c.k}" ${ck.includes(c.k) ? 'checked' : ''}>${esc(c.l)}</label>`).join('')}</div>
-    <p class="small muted" style="margin:8px 0 0">肌悩みは、ケア管理とホームの「おすすめケア」に使います。このブラウザ内に保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p></div>`;
+    <p class="small muted" style="margin:8px 0 0">肌悩みは、ケア管理とホームの「おすすめケア」に使います。このブラウザ内に保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p>`; }
+function skinProfileCardHtml() {
+  return `<div class="card"><div class="card-h"><h2>肌質・性別・年代・肌悩み</h2></div>
+    ${skinTypePartHtml()}
+    ${genderFieldHtml()}
+    ${ageFieldHtml()}
+    ${concernsPartHtml()}</div>`;
 }
 function researchCardHtml() {
   const r = researchState(), n = state.skinLogs.filter(l => !l.demo).length;
@@ -16090,7 +16141,7 @@ function researchCardHtml() {
     : state.settings.ageBand === '17歳以下' ? '<p class="small muted" style="margin:10px 0 0">研究への協力は、18歳以上の方だけにお願いしています。</p>'
     : `<label class="check" style="margin-top:10px"><input type="checkbox" id="f_adult"> 18歳以上です</label>
       <button class="btn btn-primary btn-sm" style="margin-top:10px;display:flex" data-action="research-on">内容に同意して協力する</button>
-      ${state.settings.skinType ? '' : '<p class="hint">先に「肌質・年代」で肌質を選ぶと、肌質ごとの統計に入ります。</p>'}`}
+      ${state.settings.skinType ? '' : '<p class="hint">先に「肌の情報」の「肌質」で肌質を選ぶと、肌質ごとの統計に入ります。</p>'}`}
   </div>`;
 }
 function viewSettings() {
@@ -17136,7 +17187,7 @@ function render() {
   html = sepLinks(html); renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   { const mb = document.getElementById('my-menu'); if (mb) mb.hidden = !(r.name === 'my' && !r.id); } // Myアイテムだけ、右上にメニュー
-  setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'account' && /^(body|settings|privacy)\/\d+$/.test(r.id) ? ((accItems(r.id.split('/')[0])[Number(r.id.split('/')[1])] || {}).t || '') : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分の組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分の組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : r.name === 'care' && r.id !== 'diag' && r.id !== 'guide' ? 'ケア管理' : r.name === 'care' && r.id === 'guide' ? '洗い方ガイド' : r.name === 'account' && ACC_SECTIONS[r.id] ? ACC_SECTIONS[r.id].t : r.name === 'account' && /^s\/\w+$/.test(r.id) ? ((accItemDefs()[r.id.slice(2)] || {}).t || '') : r.name === 'account' && /^(body|settings|privacy)\/\d+$/.test(r.id) ? ((accItems(r.id.split('/')[0])[Number(r.id.split('/')[1])] || {}).t || '') : r.name === 'combo' && r.id ? ({ng:'併用注意', ok:'併用OK', search:'成分で調べる'})[r.id] || '成分の組み合わせ' : ({log:'記録', mycare:'あなたの肌の分析', routine:'ケア管理', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分の組み合わせ', trouble:'注意アイテム', care:'肌質診断', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   topBack(); // 画面の中の戻るボタンは出さずに、上の見出しの前に「＜」を付けて、見出しごと押すと戻る
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
