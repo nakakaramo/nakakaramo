@@ -649,7 +649,7 @@ details.acc-cmp{margin-top:14px}
 .sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
 .sbig .input{min-height:44px;height:44px;padding-left:44px;padding-right:50px;font-size:16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
 .sbig .input::-webkit-search-cancel-button{display:none}
-.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
+.pop-sec:first-child{margin-top:0;border-top:0;padding-top:0}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px;pointer-events:none}.find-cam-b .hap-ov{border-radius:50%}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .my-add{width:100%;justify-content:center}
@@ -3026,7 +3026,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120142343'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120144739'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5213,7 +5213,8 @@ async function popularMount() {
 function openAddSheet(kind) {
   const my = kind === 'my';
   /* 2026-11-20 化粧品を追加：塗り薬の画面と同じく、いちばん上に検索。カメラは検索の中のボタン。ブランド名・商品名・バーコードの数字で、実際に売られている商品を全部探せる */
-  const camB = `<button type="button" class="find-cam-b${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="${my ? 'my' : 'cat'}" aria-label="カメラで登録（バーコード・商品の写真）">${icon('camera')}</button>`;
+  /* 2026-11-20 カメラのボタンも、押すとiPhoneで「コツッ」と震える（中に見えないスイッチを重ねる。位置がずれないように、包む箱は使わない） */
+  const camB = `<span role="button" tabindex="0" class="find-cam-b${isPremium() ? '' : ' is-locked'}" data-action="add-camera" data-id="${my ? 'my' : 'cat'}" aria-label="カメラで登録（バーコード・商品の写真）">${icon('camera')}<label class="hap-ov hap-in-l" aria-hidden="true"><input type="checkbox" switch tabindex="-1" class="hap-in"></label></span>`;
   if (my) {
     openModal({title:'化粧品を追加', size:'small tall', dismissable:true, body:`<div id="pop-sec" class="pop-sec"><div class="ac-wrap sbig find-bar find-cam">${icon('search')}<input type="search" class="input" id="pop-q" placeholder="ブランド名・商品名・バーコード" aria-label="ブランド名・商品名・バーコードの数字で探す" autocomplete="off" enterkeyhint="search">${camB}</div>
       <div class="pop-h" style="margin-top:14px"><b id="pop-title">人気の化粧品</b><small>楽天ランキング</small></div><div id="pop-list" style="margin-top:10px"><p class="small muted" style="margin:6px 0">読み込み中…</p></div>
