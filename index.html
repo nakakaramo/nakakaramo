@@ -957,6 +957,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 /* 通常⇄時短：3D⇄写真の切り替えと同じ見た目（白いつまみ・文字はどちらも同じ色・太さ） */
 .rt-qsw{grid-template-columns:repeat(2,1fr);max-width:240px;margin:2px auto 10px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px}
 .rt-qsw .sc-ind{width:calc((100% - 6px) / 2);border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.rt-qsw.cy .sc-ind{background:#E8B53A;box-shadow:0 1px 4px rgba(180,130,20,.3)} /* 2026-11-20 時短のときだけ、つまみを黄色に（文字の色・太さは通常と同じ） */
 .rt-qsw .sc-tab,.rt-qsw .sc-tab.on,.rt-qsw.cy .sc-tab{padding:5px 0;min-height:0;line-height:1.4;font-size:13.5px;font-weight:700;color:var(--ink2);border-radius:999px;gap:5px;transition:none}
 .rt-qsw .sc-tab svg{width:15px;height:15px;flex:none}
 .rt-qnote{margin:0 0 10px;text-align:center}.sc-ch{margin-top:12px}.sc-ch-h{margin:0 0 4px;font-size:13.5px;font-weight:700}.sc-ch-h small{font-weight:500;color:var(--muted);font-size:11.5px;margin-left:6px}
@@ -1244,7 +1245,7 @@ a.used-tile{color:inherit;text-decoration:none}
 @keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
 #main.pg-push{animation:pgPush .54s cubic-bezier(.22,.7,.2,1) both!important}#main.pg-pop{animation:pgPop .54s cubic-bezier(.22,.7,.2,1) both!important} /* ホームの「今日の記録⇄おすすめケア」と同じ速さ */
 .my-del-btn{justify-content:center;gap:6px}.my-del-btn svg{width:16px;height:16px}
-.my-acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:16px}.my-acts>*{min-width:0;display:flex}.my-acts .btn{width:100%;justify-content:center;white-space:nowrap}
+.my-acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:16px}.my-acts>*{min-width:0;display:flex}.my-acts .btn{width:100%;justify-content:center;white-space:normal;text-align:center;line-height:1.25;padding:4px 8px} /* 2026-11-20 文字が長くても枠からはみ出さない（収まらないときは2行に） */
 .fade-once{animation:fadeOnce .7s ease both}
 @keyframes fadeOnce{from{opacity:0}to{opacity:1}}
 .kt{display:inline-block;opacity:0;transform:translateY(.55em);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
@@ -2690,7 +2691,13 @@ html[data-nosink] :is(#main,.topbar) :is(button,a,label,.btn,.tab,.used-tile,.mr
 .lf-row>span:first-child{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;flex:none}.lf-row input[type=time]{width:132px}.lf-list:has(#ex-list:empty){display:none}.lf-row .input,.lf-row .select{width:auto;min-width:0;max-width:170px;min-height:40px;font-size:16px;text-align:right}
 .lf-row b#sleep-calc{font-size:17px;color:var(--green-d)}.lf-in{display:flex;align-items:center;gap:6px}.lf-in .input{width:96px}.lf-in em{font-style:normal;color:var(--muted);font-size:14px}
 .lf-list #ex-list{flex:1;min-width:0}.lf-in .lf-in-b{margin-left:4px}
-.lf-same{width:100%;justify-content:center;min-height:52px;font-size:15px;margin:2px 0 0}
+.lf-same{width:auto;justify-self:center;justify-content:center;min-height:36px;padding:0 18px;font-size:13.5px;margin:4px auto 0} /* 2026-11-20 「昨日と同じ」は小さく、真ん中に */
+/* 2026-11-20 運動の記録：見出しの幅をそろえ、入力欄の左の位置をそろえて読みやすく */
+[data-field="exercise"] .lf-row{display:grid;grid-template-columns:76px minmax(0,1fr);justify-content:stretch}
+[data-field="exercise"] .lf-row .select{max-width:none;width:100%;text-align:left}
+[data-field="exercise"] .lf-in{justify-self:stretch}[data-field="exercise"] .lf-in .input{width:96px;flex:none}[data-field="exercise"] .lf-in em{min-width:1.4em}
+[data-field="exercise"] #ex-add{margin-left:auto}
+[data-field="exercise"] .lf-list{display:block}[data-field="exercise"] .lf-list:has(#ex-list:empty){display:none}
 .modal-body > form + .modal-foot{margin-top:18px} /* 入力の枠と、下の区切り線をくっつけない（どの入力画面でも） */ /* 上の枠との間と、下の区切り線との間を同じにする */
 .im-irr{font-weight:700}.im-irr.red{color:#C0392B}.im-irr.warn{color:#B07A1A}.im-irr.green{color:var(--green-d)}
 .mf-l{margin:4px 0 8px;font-size:14px;font-weight:700;color:var(--ink)}.mf-l+.tm-pick{margin-bottom:14px}
@@ -2924,7 +2931,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120102640'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120104007'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -7598,7 +7605,7 @@ function viewMyDetail(id) {
         </dl>
         ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : (() => { const sp = p.ingredients ? p : getCat(p.catalogId); const h = sp && fullIngsOfMy(p) ? ingSrcHtml(sp, true) : ''; return h ? `<p class="small muted" style="margin-top:10px">${h}</p>` : !fullIngsOfMy(p) && offBusy[p.id] ? '<p class="small muted" style="margin-top:10px">全成分を調べています（10〜30秒）…</p>' : ''; })()}
         <div class="my-acts">
-          <button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録' : '肌に合わなかった'}</button>
           <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
         </div>
       </div>
@@ -7625,7 +7632,7 @@ function viewMyDetail(id) {
         </dl>
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
-          ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録を見る' : '肌に合わなかった'}</button>` : ''}
+          ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="ng-open" data-id="${esc(p.id)}">${p.ng ? '合わなかった記録' : '肌に合わなかった'}</button>` : ''}
         </div>
       </div>
     </div>
@@ -16090,6 +16097,7 @@ const actions = {
     if (save()) { toast('すべてのデータを削除しました'); location.hash = '#/home'; render(); }
   }
 };
+const ACT_LAST = {el:null, a:'', t:0};
 document.addEventListener('click', e => {
   const card = e.target.closest('[data-shop]');
   if (card && !e.target.closest('a,button,input,select,label')) { selectShop(Number(card.dataset.shop), true); return; }
@@ -16098,6 +16106,8 @@ document.addEventListener('click', e => {
   { const inner = e.target.closest('a,button'); if (inner && inner !== el && el.contains(inner)) return; } // 押せる行の中のリンク・ボタンは、そのものの動きを優先する
   const fn = actions[el.dataset.action];
   if (!fn) return;
+  /* iPhoneで1回押しただけで、重ねたスイッチと下のボタンの両方から押されたことになり、切り替えが2回（行って戻る）になることがあった。同じ物が0.4秒以内にもう一度押されたら1回とみなす */
+  { const now = Date.now(), dup = ACT_LAST.el === el && ACT_LAST.a === el.dataset.action && now - ACT_LAST.t < 400 && !/step/.test(el.dataset.action); ACT_LAST.el = el; ACT_LAST.a = el.dataset.action; ACT_LAST.t = now; if (dup) return; }
   if (el.tagName === 'A' || el.tagName === 'BUTTON') e.preventDefault();
   if (/^delete-/.test(el.dataset.action)) { runWithUndo(() => fn(el.dataset.id, el, e)); return; }
   fn(el.dataset.id, el, e);
