@@ -1500,9 +1500,10 @@ html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-
 .ld-card .ld-cal{right:0;left:auto}
 /* 3Dの顔⇄顔写真の切り替え（左上の小さなスイッチ。押すたびに切り替わる） */
 .ld-vsw{position:absolute;top:14px;left:14px;z-index:6;display:grid;grid-template-columns:1fr 1fr;padding:2px;background:var(--bg);border-radius:999px;border:1px solid var(--line);font:inherit;cursor:pointer}
-.ld-vsw::before{content:"";position:absolute;top:2px;bottom:2px;left:2px;width:calc(50% - 2px);border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .22s cubic-bezier(.3,.7,.3,1)}
+.ld-vsw::before{content:"";position:absolute;top:2px;bottom:auto;height:22px;left:2px;width:calc(50% - 2px);border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .22s cubic-bezier(.3,.7,.3,1)}
 .ld-vsw.is-ph::before{transform:translateX(100%)} /* 「ph」は写真の一覧の箱と同じ名前で、幅が変わってしまうので is-ph にする */
-.ld-vsw span{position:relative;font-size:10.5px;font-weight:700;color:var(--muted);padding:3px 6px;min-width:0;text-align:center;transition:color .2s;white-space:nowrap}
+.ld-vsw span{position:relative;font-size:10.5px;font-weight:700;color:var(--muted);padding:0 6px;min-width:0;height:22px;line-height:22px;display:flex;align-items:center;justify-content:center;text-align:center;transition:color .2s;white-space:nowrap}
+.ld-vsw{height:28px;box-sizing:border-box;align-items:start} /* 2026-11-20 iPhoneで白いつまみが下にずれていた：高さを数字で決めて、つまみ（22px）と文字の行（22px）をぴったり重ねる */
 .ld-vsw span,.ld-vsw:not(.is-ph) span:first-child,.ld-vsw.is-ph span:last-child{color:var(--ink2);font-weight:700} /* 2026-11-20 選んでいる側もいない側も、文字の色・太さは同じ（白いつまみで見分ける） */
 .ld-photo{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;background:var(--surface);z-index:3}
 .ld-photo{overflow:hidden;border-radius:16px;-webkit-mask-image:-webkit-radial-gradient(white,black)} /* 写真の角を丸く */
@@ -2924,7 +2925,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120104905'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120111233'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
