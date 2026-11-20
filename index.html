@@ -3025,7 +3025,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120125913'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120131216'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -10188,7 +10188,8 @@ function rtPlan(slot, solo) {
     G.forEach(({r, more}) => { rxStep(r); if (more.length) steps[steps.length - 1].prods.push(...more); }); };
   const calmItem = D && D.items.find(x => /をお休み$/.test(x.title));
   if (slot === 'am') {
-    const water = !hot && (m.oil || 0) < 3 && (dryT || sensT || lowHum || cold || (m.dry || 0) >= 3) && !(oilT && !dryT);
+    const todayW = (m.dry || 0) >= 3 || (m.red || 0) >= 3 || lowHum || cold; /* 2026-11-20 おすすめケアの「朝はぬるま湯だけで洗う」と同じ条件の日は、ケア管理も必ずぬるま湯にする（混合肌の人で食いちがっていた） */
+    const water = !hot && (m.oil || 0) < 3 && (todayW || ((dryT || sensT) && !(oilT && !dryT)));
     const why = uniq([lowHum ? T('空気が乾いているので、洗いすぎを防ぎます', '天気') : null, cold ? T('寒くて、肌のうるおいが逃げやすい日です', '天気') : null, (m.dry || 0) >= 3 ? T(`${D && D.skinLabel || '記録'}で乾燥が強めなので、洗いすぎないようにします`, '肌') : null, (m.red || 0) >= 3 ? T('赤み・肌あれがあるので、こすらずに洗います', '肌') : null]);
     if (water) add('water', {name:'ぬるま湯で洗う', how:'32℃くらいのぬるま湯を手ですくって、顔にやさしくかけます。ペーパータオル（キッチンペーパーなど）を押し当てて水分をとります。', avoid:['熱いお湯', 'ゴシゴシこする'], today:why.slice(0, 2)});
     else add('wash', Object.assign(washO(), {today:uniq([hot ? T('暑くて、汗と皮脂が出やすい日です', '天気') : null, (m.oil || 0) >= 3 ? T(`${D && D.skinLabel || '記録'}でテカリが強めです`, '肌') : null])}));
@@ -12695,7 +12696,7 @@ function careTodayData() {
     if (protLow) add('生活', '次の食事で、卵・魚・大豆を足す', [`今日のたんぱく質は${Math.round(totT.p)}g（1日の目安${goalP}g）です`, '肌をつくる材料になります'], ['食事']);
     else if ((dull || uvHi || inflamed) && vitCLow) add('生活', 'ビタミンCの多い物を1品足す', ['今日の食事に、ビタミンCの多い野菜・果物がまだありません', dull ? 'くすみ・ニキビ跡のケアに役立ちます' : uvHi ? '紫外線が強い日は特に大切です' : '赤いニキビのあとを残しにくくします'], ['食事', dull || inflamed ? '肌' : '', uvHi ? '天気' : '']);
     else if (vegLow) add('生活', '次の食事で、野菜を1品足す', [`今日の野菜は${Math.round(totT.veg)}g（1日の目安350g）です`, '肌の調子を整えるビタミン・食物繊維がとれます'], ['食事']);
-    if (!items.some(x => x.src.includes('食事'))) { if (mealsDone >= 2) add('生活', '今の食事を続ける', [`今日の食事（${mealsDone}回分）に、大きなかたよりはありません`], ['食事']); else add('生活', '次の食事も記録する', ['1日の食事がそろうと、足りない栄養がわかります'], ['食事']); } /* 1回分だけでは決めつけない */
+    if (!items.some(x => x.src.includes('食事'))) { if (mealsDone >= 2) add('生活', '今の食事を続ける', [`今日の食事（${mealsDone}回分）に、大きなかたよりはありません`], ['食事']); else if (new Date().getHours() >= 20) add('生活', '明日も食事を記録する', ['朝・昼・夜の食事がそろうと、足りない栄養がわかります'], ['食事']); else add('生活', '次の食事も記録する', ['1日の食事がそろうと、足りない栄養がわかります'], ['食事']); } /* 2026-11-20 夜8時をすぎたら「次の食事」ではなく「明日」 */ /* 1回分だけでは決めつけない */
   } else if (HB) { // 今日の記録がないときは、この2週間の食事の記録（習慣）から出す（記録がない日は決めつけない）
     const lab = `この2週間の記録（${HB.days}日分）`;
     if ((acne || oil >= 3) && HB.sweet >= 3) add('生活', '甘い間食をナッツ・ヨーグルトに替える', [`${lab}で、甘い間食が${HB.sweet}日ありました`, '甘い物が多いと、皮脂やニキビが増えることがあります'], ['食事', '肌']);
