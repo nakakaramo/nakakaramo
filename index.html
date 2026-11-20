@@ -3050,7 +3050,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120170302'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120175053'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5193,7 +5193,7 @@ function rxPick(name) {
     purposes:rxPurposes(d[1], d[2]), ingredients:d[2], features:oral ? `${d[0]}（主な成分：${d[2]}）` : `${d[0]}の処方薬（有効成分：${d[2]}）`, usage:oral ? '医師・薬剤師の指示や、商品の表示どおりに飲んでください。' : '医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
   ui.myKind = oral ? 'oral' : 'rx';
   // 登録画面は出さずに、そのまま登録する（使用開始日＝今日、朝・夜／毎日、効果は薬の効能どおり）
-  if (state.myProducts.some(x => x.catalogId === id && x.status === '使用中')) { closeModal(); toast(oral && /^サプリ/.test(d[0]) ? 'このサプリはすでに登録されています' : 'この薬はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
+  { const dp = myDupOf(d[1], id, '', CAT); if (dp) { closeModal(); myDupToast(dp); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; } }
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:id, name:d[1], brand:BR, category:CAT, purposes:rxPurposes(d[1], d[2]), ingredients:d[2],
     timing:oral ? (/^サプリ/.test(d[0]) ? '朝' : '朝・夜') : rxDefaultTiming(d[1], d[2]), frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
   if (save()) { closeModal(); hapticSaved(); toast(`「${d[1]}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); const nid = state.myProducts[state.myProducts.length - 1].id; setTimeout(() => comboAfterAdd(nid), 450); }
@@ -5284,6 +5284,15 @@ function variantSig(name) {
   return {n, words, vol};
 }
 // 2つが同じ商品か（名前がとても似ていて、種類と容量が同じ）
+// 2026-11-20 Myアイテムに同じ商品を2つ登録しない（使い終わった物は、もう一度使い始められるように対象外）
+function myDupOf(name, catalogId, exceptId, cat) {
+  const nn = fnorm(cleanShopName(name || '') || name || ''), med = isMedCat(cat || '');
+  return state.myProducts.find(x => x.id !== exceptId && !x.demo && x.status !== '使用終了' && (
+    (catalogId && x.catalogId === catalogId) ||
+    (nn && fnorm(cleanShopName(x.name || '') || x.name || '') === nn) ||
+    (!!cat && isMedCat(x.category) === med && sameProduct({name:x.name}, {name:name})))) || null;
+}
+function myDupToast(d) { toast(`「${truncate(d.name, 20)}」はすでに登録されています${d.status === '使用中' ? '' : `（${d.status === '一時停止' ? '停止中' : d.status}）`}`); }
 function sameProduct(a, b) {
   if (a.jan && b.jan) return a.jan === b.jan;
   const x = variantSig(a.name), y = variantSig(b.name);
@@ -8077,7 +8086,7 @@ function quickAddMy(catId) {
   if (isMedCat(c.category) && RX_DRUGS.some(d => d[1] === c.name)) return rxPick(c.name);
   ui.myKind = c.category === ORAL_CAT ? 'oral' : c.category === '皮膚科の塗り薬' ? 'rx' : 'cos';
   closeModal();
-  if (state.myProducts.some(x => x.catalogId === c.id && x.status === '使用中')) { toast('この商品はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
+  { const dp = myDupOf(c.name, c.id, '', c.category); if (dp) { myDupToast(dp); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; } }
   const g = guessFromName(c.name);
   state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:c.id, name:c.name, brand:c.brand || g.brand || brandOrCompany(c.name, (String(c.source || '').match(/（(.+)）$/) || [])[1]) || '—',
     category:c.category && CATEGORIES.includes(c.category) ? c.category : (g.category || 'その他'), purposes:(c.purposes && c.purposes.length ? c.purposes : g.purposes || []).filter(v => PURPOSES.includes(v)), ingredients:'',
@@ -8167,6 +8176,7 @@ function openMyForm(id, fromCatId) {
       else if (price > 0 && !isValidYmd(v('purchaseDate'))) errors.purchaseDate = '購入日を選択してください。';
       else if (price > 0 && v('purchaseDate') > t) errors.purchaseDate = '未来の日付は選べません。';
     }
+    if (!errors.name) { const dp = myDupOf(v('name'), ex ? '' : v('catalogId'), ex ? ex.id : '', v('category')); if (dp) errors.name = `「${truncate(dp.name, 24)}」がすでに登録されています${dp.status === '使用中' ? '' : `（${dp.status === '一時停止' ? '停止中' : dp.status}）`}。同じ商品は2つ登録できません。`; }
     if (!showErrors(form, errors)) return;
     const data = {catalogId:v('catalogId'), name:v('name'), brand:v('brand'), category:v('category'), purposes:$$('input[name="purposes"]:checked', form).map(i => i.value),
       timing, frequency:v('frequency') || '毎日', startDate:v('startDate'), status, endDate:ex ? ex.endDate : '',
@@ -10455,8 +10465,8 @@ function rtPlan(slot, solo) {
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
   const pregAsk = state.settings.gender !== '男性' && (((state.settings.diag || {}).a || {}).preg || '') !== 'no';
-  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || [], an = acneNote.get(r) || []; add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', prods:[r.x], fixed:true, per:r.per, how:r.how,
-    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(an.map(t => T(t, '薬'))).concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
+  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || [], an = (acneNote.get(r) || []).concat(OR.iso && ACL(r).some(c => c === 'ada' || c === 'bpo') ? [`イソトレチノインを飲んでいる間に${ACL(r).includes('ada') ? 'アダパレン' : '過酸化ベンゾイル'}を重ねると、乾燥・刺激が強く出るおそれがあります。一緒に使うよう医師に言われているか確かめましょう`] : []); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : `皮膚科の塗り薬（${rxIngLabel(r.x.p)}）`, prods:[r.x], fixed:true, per:r.per, how:r.how,
+    today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(an.map(t => T(t, '確認'))) /* 医師・薬剤師に確かめること：薬の手順でも、いつも見せる */.concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const eyeT = has('darkcircle') || has('puffy');
   const eyeStep = () => { const L = R ? R.A.infos.filter(x => x.step === 'other' && /アイクリーム|アイセラム|アイジェル|アイケア|アイバーム|目元|目もと|eye/i.test(x.p.name) && !(R.paused || []).includes(x) && fitSlot(x)) : []; if (!L.length && !eyeT) return; /* 目元用の物は、黙って消さずに目元ケアの手順で使う */
     add('eye', {name:'目元ケア', prods:L, how:'薬指に米粒1つ分をとり、目のまわりの骨に沿って軽くたたくようにのせます。こすらないようにします。', good:uniq([has('puffy') ? 'カフェイン' : '', has('darkcircle') ? 'カフェイン' : '', has('darkcircle') && slot === 'pm' && !calm && !rxHard && !pregNow() ? 'レチノール（低い濃度）' : '', has('darkcircle') ? 'ビタミンC誘導体' : '', 'セラミド']).slice(0, 3), avoid:uniq([sensT ? '香料' : ''])}); };
@@ -10620,7 +10630,7 @@ function rtPlan(slot, solo) {
       if (off.length) st.prods = st.prods.filter(x => !off.includes(x)); }); }
   const tips = [];
   if (OR.any) { /* 飲んでいる物に合わせて、何を変えたか */
-    const why = uniq([OR.iso ? '刺激の強い成分（レチノール・ピーリングなど）は使わず、保湿を中心にしています' : '', OR.photo && slot === 'am' ? '日焼けしやすくなる薬なので、日焼け止めを欠かさないようにしています' : '', OR.spot && !OR.iso ? 'シミ・くすみのケアに合わせて、紫外線対策と、シミ・くすみに合う成分を入れています' : '', OR.sens && !OR.iso ? '肌への刺激が少ない、やさしいケアにしています' : '', OR.acne && !OR.iso ? 'ニキビに合わせたケアを入れています' : '']);
+    const why = uniq([OR.iso ? '刺激の強い化粧品（レチノール・ピーリングなど）は使わず、保湿を中心にしています' : '', OR.photo && slot === 'am' ? '日焼けしやすくなる薬なので、日焼け止めを欠かさないようにしています' : '', OR.spot && !OR.iso ? 'シミ・くすみのケアに合わせて、紫外線対策と、シミ・くすみに合う成分を入れています' : '', OR.sens && !OR.iso ? '肌への刺激が少ない、やさしいケアにしています' : '', OR.acne && !OR.iso ? 'ニキビに合わせたケアを入れています' : '']);
     const lab = uniq(OR.list.map(p => rxIngLabel(p))).slice(0, 4).join('・');
     tips.push(`飲んでいる物（${lab}）に合わせて組み立てています。${why.length ? why.join('。') + '。' : ''}`);
     if (OR.itch && slot === 'pm') tips.push('かゆみがあるときは、かかずに冷やすか、保湿でおさえます。爪は短くしておきます。');
@@ -10745,10 +10755,10 @@ function rtPaneHtml(slot) {
   const retPause = P.steps.some(st => (st.avoid || []).some(v => /^レチノ/.test(chipText(v)) && !/併用|と/.test(chipText(v))) || (st.avoidOwn || []).some(a => /レチノ|レチナ/.test(ingsOfMy(a.p) + a.p.name))); // 赤みなどでレチノールを控える日は、レチノールの仲間（アダパレン）も出さない
   const dChips = () => ''; void drugStep; void retPause; void ownsIng; // ニキビの塗り薬は、下の「ニキビの種類ごとの塗り薬」にまとめて出す
   const stepH = (s, i) => `<li class="cm-step ${done(s) ? 'done' : ''}" id="cm-s${i}">
-    <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${esc(s.name)}</b></div></div>
+    <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${s.fixed && /^皮膚科の塗り薬（.+）$/.test(s.name) ? '皮膚科の塗り薬（' + s.name.slice(8, -1).split('・').map(rxIngLink).join('・') + '）' : esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${ingLinkHtml(esc(letsTone(s.how)), s._lk = new Set())}</p>
-      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' ? 'rx' : ''}"><i>${x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(letsTone(x.t), s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
+      ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' || x.src === '確認' ? 'rx' : ''}"><i>${x.src === '確認' ? '医師・薬剤師に確認' : x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(letsTone(x.t), s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
       ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${aoChips(s)}${chips(s.avoid.filter(v => !(s.avoidOwn || []).some(o => prodIngLabel(o.p) === chipText(v))))}</div></div>` : ''}
     </div></li>`;
