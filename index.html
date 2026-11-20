@@ -669,7 +669,8 @@ details.acc-cmp{margin-top:14px}
 @keyframes clScan{from{transform:translateY(-34px)}to{transform:translateY(34px)}}
 .cl-msg{position:absolute;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 70px);padding:10px 14px;border-radius:12px;background:rgba(20,22,24,.88);font-size:13.5px;line-height:1.6}
 .cl-ov.flash::after{content:"";position:absolute;inset:0;background:#fff;animation:clFlash .25s ease-out forwards}@keyframes clFlash{from{opacity:.85}to{opacity:0}}
-.rx-sure{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-s)}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px;pointer-events:none}.find-cam-b .hap-ov{border-radius:50%}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
+.rx-sure{border-color:var(--green)!important;box-shadow:0 0 0 2px var(--green-s)}
+.net-sure{background:var(--green-p);border-radius:14px;padding:10px!important;box-shadow:0 0 0 2px var(--green-s)}.find-cam .input{padding-right:56px}.find-cam-b{position:absolute;right:5px;top:0;bottom:0;margin:auto 0;transform:none!important;transition:background-color .1s;width:36px;height:36px;border:0;border-radius:50%;background:var(--green-s);color:var(--green-d);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;z-index:2}.find-cam-b svg{width:19px;height:19px;pointer-events:none}.find-cam-b .hap-ov{border-radius:50%}.find-cam-b:active{background:var(--green-l)} /* 2026-11-20 押したときに、ほかのボタンと同じ「縮む動き」でカメラが下にずれていた（位置をtransformで決めていたため） */.find-cam-b.is-locked{opacity:.75}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .my-add{width:100%;justify-content:center}
@@ -3046,7 +3047,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120152531'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120153938'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5355,7 +5356,7 @@ function findPaint() {
   if (fs.err) { box.innerHTML = rxH + `<p class="small muted">${esc(fs.err)}</p>`; return; }
   if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
   if (!fs.items.length) { box.innerHTML = rxH + `<p class="small muted">${rxH ? '市販の商品は' : ''}見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
-  box.innerHTML = rxH + (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + fs.items.slice(0, fs.more ? 60 : 3).map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+  box.innerHTML = rxH + (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + fs.items.slice(0, fs.more ? 60 : 3).map((x, i) => `<div class="net-item${i === 0 && fs.sure ? ' net-sure' : ''}">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 70))}</b>${SUN_RE.test(x.name || '') ? uvChip(x.name) : ''}<small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
       <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('')
     + (!fs.more && fs.items.length > 3 ? `<p style="margin:10px 0 0;text-align:center"><button type="button" class="link small" data-action="find-more">ほかの候補も見る（${fs.items.length - 3}件）</button></p>` : '');
@@ -5439,6 +5440,47 @@ function eanDecodeImage(img, lines = 60) { /* lines：何本の線で読むか�
   return best ? best[0] : '';
 }
 
+// 2026-11-20 カメラで読んだ商品名から、通販の商品を確実に見つける：英語のままだと日本の通販の名前（カタカナ）と合わないので、
+// ①そのまま ②ブランド名・成分名などを日本語にした言葉 ③ブランド名＋数字（0.3・15 など）の何通りかで探し、いちばん合う物を先に出す
+const CAM_JA = {anua:'アヌア', medicube:'メディキューブ', cosrx:'COSRX', torriden:'トリデン', roundlab:'ラウンドラボ', numbuzin:'ナンバーズイン', skin1004:'SKIN1004', beautyofjoseon:'朝鮮美女', isntree:'イズントゥリー', dalba:'ダルバ', laneige:'ラネージュ', innisfree:'イニスフリー', drjart:'ドクタージャルト', larocheposay:'ラロッシュポゼ', cetaphil:'セタフィル', cerave:'セラヴィ', theordinary:'オーディナリー', paulaschoice:'ポーラチョイス', biore:'ビオレ', curel:'キュレル', hadalabo:'肌ラボ', melano:'メラノ', anessa:'アネッサ', skinaqua:'スキンアクア', minon:'ミノン', elixir:'エリクシール', obagi:'オバジ', mediheal:'メディヒール', abib:'アビブ', axisy:'アクシージ', mixsoon:'ミクスン', goodal:'グーダル', manyo:'魔女工場', purito:'プリト', tirtir:'ティルティル', celimax:'セリマックス', biodance:'バイオダンス', vt:'VT', dermatory:'ダーマトリー', aestura:'エストラ', illiyoon:'イリユン', skinfood:'スキンフード', klairs:'クレアス', missha:'ミシャ', etude:'エチュード', banilaco:'バニラコ', sulwhasoo:'雪花秀', clinique:'クリニーク', kiehls:'キールズ', shiseido:'資生堂', kose:'コーセー', kanebo:'カネボウ', orbis:'オルビス', fancl:'ファンケル', dhc:'DHC', muji:'無印良品', naturie:'ナチュリエ', bioderma:'ビオデルマ', avene:'アベンヌ', vichy:'ヴィシー', nivea:'ニベア', senka:'専科', melanocc:'メラノCC', transino:'トランシーノ', ipsa:'イプサ', decorte:'コスメデコルテ', sk2:'SK-II', sk:'SK-II', lancome:'ランコム', esteelauder:'エスティローダー', ordinary:'オーディナリー', numbuzinno:'ナンバーズイン', mamonde:'マモンド', hince:'ヒンス'};
+const CAM_WORD = {retinol:'レチノール', retinal:'レチナール', niacin:'ナイアシン', niacinamide:'ナイアシンアミド', azelaic:'アゼライン酸', serum:'セラム', toner:'トナー', essence:'エッセンス', ampoule:'アンプル', ampule:'アンプル', cream:'クリーム', lotion:'ローション', emulsion:'乳液', cleansing:'クレンジング', oil:'オイル', foam:'フォーム', cleanser:'洗顔', mask:'マスク', pad:'パッド', pads:'パッド', sunscreen:'日焼け止め', suncream:'日焼け止め', gel:'ジェル', vitamin:'ビタミン', cica:'シカ', heartleaf:'ドクダミ', hyaluronic:'ヒアルロン酸', ceramide:'セラミド', peptide:'ペプチド', collagen:'コラーゲン', pdrn:'PDRN', calming:'カーミング', soothing:'スージング', renewing:'リニューイング', intense:'インテンス', moisture:'モイスチャー', hydrating:'ハイドレーティング', barrier:'バリア', brightening:'ブライトニング', glow:'グロウ', rice:'ライス', centella:'センテラ', madecassoside:'マデカソサイド', tranexamic:'トラネキサム酸', panthenol:'パンテノール', snail:'スネイル', propolis:'プロポリス', bakuchiol:'バクチオール', salicylic:'サリチル酸', glycolic:'グリコール酸', toning:'トーニング', dokdami:'ドクダミ', houttuynia:'ドクダミ', mugwort:'ヨモギ', birch:'白樺', green:'グリーン', tea:'ティー', water:'ウォーター', balm:'バーム', milk:'ミルク', capsule:'カプセル', spot:'スポット', acne:'アクネ', clear:'クリア', ultra:'ウルトラ', deep:'ディープ', repair:'リペア'};
+function camQueries(brand, name) {
+  const all = `${brand || ''} ${name || ''}`.normalize('NFKC'), toks = all.split(/[\s　/／,、|]+/).filter(Boolean);
+  const key = t => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const bKey = key(brand || ''), bJa = CAM_JA[bKey] || CAM_JA[key(toks[0] || '')] || '';
+  const nums = (all.match(/\d+(?:\.\d+)?/g) || []).filter(n => !/^\d{3,}$/.test(n)).slice(0, 2); // 0.3・15 などの数字（容量の大きい数字は除く）
+  const ja = []; toks.forEach(t => { const k = key(t), w = CAM_WORD[k] || CAM_WORD[k.replace(/s$/, '')]; if (w && !ja.includes(w)) ja.push(w); else if (/[ぁ-んァ-ヶ一-龠]/.test(t) && !ja.includes(t)) ja.push(t); });
+  const kw = ja.filter(w => !/^(セラム|トナー|クリーム|ローション|エッセンス|アンプル|ジェル|マスク|パッド|オイル|フォーム|ミルク|バーム)$/.test(w)); // 成分・特徴の言葉を先に
+  const qs = [all.trim(), [bJa || brand, ...kw.slice(0, 2), ...nums.slice(0, 1)].filter(Boolean).join(' '), [bJa || brand, ...ja.slice(0, 4)].filter(Boolean).join(' '), [brand, ...nums, ...toks.filter(t => /^[a-z]{4,}$/i.test(t) && key(t) !== bKey).slice(0, 1)].filter(Boolean).join(' ')];
+  /* 同じ意味の言葉（英語とカタカナ）は1つとして数える（英語の名前が全部入ったシートマスクが、撮った美容液より上にならないように） */
+  const con = []; toks.forEach(t => { const k = key(t); if (k.length < 3 || k === bKey || /^\d/.test(k)) return; const w = CAM_WORD[k] || CAM_WORD[k.replace(/s$/, '')]; if (!con.some(c => c[0] === k)) con.push([k, w || '']); }); ja.filter(w => /[ぁ-んァ-ヶ一-龠]/.test(w) && !con.some(c => c[1] === w)).forEach(w => con.push(['', w]));
+  return {qs:[...new Set(qs.map(q => q.replace(/\s+/g, ' ').trim()).filter(q => q.length >= 2))].slice(0, 4), brand:[brand, bJa].filter(Boolean), nums, con};
+}
+function camScore(x, Q) {
+  const n = fnorm(cleanShopName(x.name) || x.name), raw = String(x.name || '').normalize('NFKC'); let sc = 0;
+  const hasB = Q.brand.some(b => b && n.includes(fnorm(b))); if (hasB) sc += 4;
+  Q.nums.forEach(d => { if (new RegExp(`(^|[^0-9.])${d.replace('.', '\\.')}(?![0-9])`).test(raw)) sc += 3; });
+  Q.con.forEach(([en, ja]) => { const a = en && n.includes(fnorm(en)), b = ja && n.includes(fnorm(ja)); if (a || b) sc += ja ? 2 : 1; });
+  const qAll = Q.qs.join(' ');
+  if (/マスク|パック|シート|枚入|mask/i.test(raw) && !/mask|マスク|pack|パック|sheet|シート/i.test(qAll)) sc -= 6; // 美容液を撮ったのに、同じ名前のシートマスク
+  if (/セット|詰め?替|つめかえ|リフィル|トライアル|サンプル|ミニ|お試し|\d+個|\d+本/.test(raw) && !/set|セット|refill|mini|ミニ/i.test(qAll)) sc -= 3;
+  if (/serum|セラム|美容液|アンプル|ampoule|essence|エッセンス/i.test(qAll) && /化粧水|トナー|クリーム|クレンジング|洗顔|日焼け止め/.test(raw) && !/セラム|美容液|アンプル|エッセンス|serum/i.test(raw)) sc -= 2;
+  return {sc, hasB};
+}
+async function camSearch(fs, r, q, msg) {
+  const Q = camQueries(r.brand, r.name);
+  fs.q = q; fs.items = null; fs.loading = true; findPaint();
+  const res = await Promise.all(Q.qs.map(x => findFetch({q:x, mode:'discover'}).catch(() => [])));
+  if (findState !== fs) return;
+  const seen = new Set(), all = [];
+  res.flat().forEach(x => { if (!x || !x.name) return; const v = variantSig(x.name), k = (x.url || '') + '|' + v.n.slice(0, 40) + '|' + v.vol; if (seen.has(k)) return; seen.add(k); all.push(x); });
+  const S = all.map((x, i) => Object.assign({x, i}, camScore(x, Q))).filter(v => v.hasB || !Q.brand.length).sort((a, b) => b.sc - a.sc || a.i - b.i);
+  fs.loading = false; fs.reading = '';
+  if (!S.length) { fs.items = []; fs.near = false; findPaint(); msg(`「${q}」と読み取りましたが、通販では見つかりませんでした。撮り直すか、下から自分で入力してください。`); return; }
+  const top = S[0], sure = top.sc >= 7 && (!S[1] || top.sc - S[1].sc >= 2 || variantSig(S[1].x.name).n === variantSig(top.x.name).n);
+  fs.items = S.slice(0, 30).map(v => v.x); fs.near = false; fs.sure = sure; findPaint();
+  msg(sure ? `「${truncate(cleanShopName(top.x.name) || top.x.name, 40)}」が見つかりました。合っていれば「これを選ぶ」を押してください。` : `「${q}」と読み取りました。近い商品を、合っていそうな順に出しています。`);
+}
 function openCamSheet(kind) {
   findState = {kind, q:'', items:null, loading:false, err:'', timer:null, cam:true};
   /* 2026-11-20 撮る・選ぶは画面いっぱいのカメラでするので、ここには結果と「撮り直す」だけ */
@@ -5547,7 +5589,8 @@ async function rxCamGot(file) {
     if (M.length) {
       const top = M[0], sure = top.sc >= 100 && (!M[1] || M[1].sc < top.sc - 10);
       msg(sure ? `「${top.d[1]}」だと思います。合っていれば押して登録してください。` : '近い薬を出しています。当てはまる物を押してください（濃さ・クリーム／軟膏などの種類も確かめてください）。');
-      if (box) box.innerHTML = `<p class="find-sec">皮膚科の塗り薬</p>` + M.map((x, i) => `<button type="button" class="rx-item${i === 0 && sure ? ' rx-sure' : ''}" data-rx="${esc(x.d[1])}">${rxSvg(x.d[1])}<span><b>${esc(x.d[1])}</b><small>${esc(x.d[2])}</small></span><i>${icon('plus')}</i></button>`).join('');
+      const show = sure ? [top] : M.filter(x => x.sc >= top.sc - 15).slice(0, 3); /* 2026-11-20 撮った薬だけを出す（自信があるときは1つだけ。迷うときも近い物だけ） */
+      if (box) box.innerHTML = `<p class="find-sec">皮膚科の塗り薬</p>` + show.map((x, i) => `<button type="button" class="rx-item${i === 0 && sure ? ' rx-sure' : ''}" data-rx="${esc(x.d[1])}">${rxSvg(x.d[1])}<span><b>${esc(x.d[1])}</b><small>${esc(x.d[2])}</small></span><i>${icon('plus')}</i></button>`).join('');
     } else { if (box) box.innerHTML = ''; msg(text ? `「${truncate(fShort(text), 30)}」と読み取りました。一覧の塗り薬には見つからなかったので、市販の薬を探しています。` : '薬の名前を読み取れませんでした。名前が大きく写るように撮り直してください。'); }
     const q = [r.brand, r.name].filter(Boolean).join(' ').slice(0, 60);
     if (q && !(M[0] && M[0].sc >= 100)) await findRun(q); else { fs.items = null; fs.loading = false; const fl = document.getElementById('find-list'); if (fl) fl.innerHTML = ''; }
@@ -5580,7 +5623,7 @@ async function camGot(file) {
     fs.brandHint = String(r.brand || '').slice(0, 30);
     const q = (r.brand && r.name && fnorm(r.name).includes(fnorm(r.brand)) ? r.name : [r.brand, r.name].filter(Boolean).join(' ')).split(/\s+/).filter((w, i, a) => a.indexOf(w) === i).join(' ').slice(0, 60);
     if (!q) throw new Error('商品名を読み取れませんでした。文字が大きく写るように、商品の正面を撮り直してください。');
-    msg(`「${q}」で探しました。当てはまる商品を選んでください。`); fs.reading = ''; await findRun(q);
+    fs.reading = '商品を探しています'; findPaint(); await camSearch(fs, r, q, msg);
   } catch (e) { if (findState === fs) { fs.loading = false; fs.reading = ''; findPaint(); msg(String(e.message || e)); } }
 }
 document.addEventListener('change', e => { if (e.target.id === 'cam-lib' || e.target.id === 'cam-shot') { const f = e.target.files && e.target.files[0]; e.target.value = ''; camGot(f); } });
