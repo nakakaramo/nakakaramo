@@ -732,7 +732,7 @@ details.acc-cmp{margin-top:14px}
 .my-adds{margin:0 0 12px;width:100%}
 /* 化粧品を追加・塗り薬を追加：緑の点線で囲む（塗りつぶさない） */
 .my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:var(--green-p,#F2F7F2)!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
-.my-adds .btn.btn-primary:active,.my-adds .btn:active,.my-adds .hap-wrap:active .btn{background:var(--green-p,#F2F7F2)!important;transform:none!important;opacity:1!important} /* 2026-11-20 「化粧品を追加」「塗り薬を追加」は、押しても沈まない（小さくならない・色も変わらない） */
+.my-adds .btn.btn-primary:active,.my-adds .btn:active,.my-adds .hap-wrap:active .btn,.my-adds .hap-keep:active > .btn,.my-adds :active > .btn{background:var(--green-p,#F2F7F2)!important;transform:none!important;opacity:1!important} /* 2026-11-20 「化粧品を追加」「塗り薬を追加」は、押しても沈まない（小さくならない・色も変わらない） */
 .mk-pane.mk-in-r{animation:mkInR .54s cubic-bezier(.22,.7,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .54s cubic-bezier(.22,.7,.2,1) both}
 @keyframes mkInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes mkInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .my-kind{transition:color .2s}
@@ -3026,7 +3026,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120135132'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120142343'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
