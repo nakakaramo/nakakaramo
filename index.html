@@ -3051,7 +3051,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261120212452'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261120214955'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -11075,11 +11075,11 @@ function setConcernKeys(keys) {
 async function careAiRun() {
   if (!isPremium() || ui.careAiBusy) return;
   const d = diagNow(), A = prodAnalysis(), S = ingSuggest(d, A.infos), R = routineDesign('normal');
-  const nm = s => s.missing ? `${s.label}（未登録）` : s.x ? `${s.label}：${truncate(s.x.p.name, 30)}${s.day ? `（${s.day}日）` : ''}` : s.label;
+  const nm = s => s.missing ? `${s.label}（未登録）` : s.x ? `${s.label}：${isMedCat(s.x.p.category) ? prodIngLabel(s.x.p) : truncate(s.x.p.name, 30)}${s.day ? `（${s.day}日）` : ''}` : s.label;
   const data = {
     skinType:d ? typeLabel(d) : '未診断', reasons:d ? d.why.slice(0, 6) : [], priority:(d ? d.priority : concernKeysNow()).slice(0, 5).map(k => concernOf(k).l),
     ingredients:S.top.map(x => ({name:x.e.ja, evidence:x.e.ev, owned:x.owned.length > 0})), avoid:S.avoid.map(a => a[0]).slice(0, 5),
-    morning:R.am.map(nm), night:R.pm.map(nm), adjust:R.notes.map(n => n.t).slice(0, 5), notUsed:R.dropped.map(o => truncate(o.x.p.name, 24) + '：' + o.why).slice(0, 5),
+    morning:R.am.map(nm), night:R.pm.map(nm), adjust:R.notes.map(n => n.t).slice(0, 5), notUsed:R.dropped.map(o => (isMedCat(o.x.p.category) ? prodIngLabel(o.x.p) : truncate(o.x.p.name, 24)) + '：' + o.why).slice(0, 5),
     missing:R.A.missing.filter(m => !m.soft).map(m => m.l)
   };
   ui.careAiBusy = true; ui.careAiErr = ''; render();
