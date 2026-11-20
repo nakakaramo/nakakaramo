@@ -1372,12 +1372,12 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const t = document.createElement('template'); t.innerHTML = embedView(viewSettings); const titles = [...t.content.children].filter((c) => c.classList.contains('card')).map((c) => { const h = c.querySelector('.card-h h2'); return h ? h.textContent.trim() : ''; }).filter((x) => x && !/^(プラン・アカウント|記録のリマインダー)$/.test(x));
       const D = accItemDefs(), pages = {}; for (const k of Object.keys(D)) { if (D[k].hide || !D[k].html) continue; pages[k] = D[k].html(); if (!pages[k] || pages[k].length < 40) bad.push(`「${D[k].t}」のページが空`); }
       const all = Object.values(pages).join('');
-      const conc = {'身長・体重': '身長・体重を設定する', '肌質・性別・生年月日・肌悩み': 'f_gender', '自動バックアップ': 'sync-sub', 'データの保存状況': '保存状況', 'すべてのデータを削除': 'delete-all', 'デモデータ': 'demo-remove'};
+      const conc = {'身長・体重': 'acc-num-form', '肌質・性別・生年月日・肌悩み': 'st-concern2', '自動バックアップ': 'sync-sub', 'データの保存状況': '保存状況', 'すべてのデータを削除': 'delete-all', 'デモデータ': 'demo-remove'};
       titles.forEach((x) => { const needle = conc[x] || x; if (!all.includes(needle)) bad.push(`前からある「${x}」が、どの項目にも入っていない`); });
-      for (const [k, needle] of [['gender', 'f_gender'], ['age', 'f_birth'], ['height', 'life-goal'], ['weight', 'life-goal'], ['skintype', 'data-action="setup"'], ['concerns', 'st-concern2'], ['display', 'data-action="theme"'], ['data', 'delete-all'], ['data', 'sync-sub'], ['research', '研究'], ['privacy', 'プライバシーポリシー'], ['about', 'サービス名']]) if (!(pages[k] || '').includes(needle)) bad.push(`「${D[k].t}」のページに、前と同じ設定がない`);
+      for (const [k, needle] of [['gender', 'acc-gender'], ['age', 'bd-wheel'], ['height', 'acc-num-form'], ['weight', 'acc-num-form'], ['skintype', 'data-action="setup"'], ['concerns', 'st-concern2'], ['display', 'data-action="theme"'], ['data', 'delete-all'], ['data', 'sync-sub'], ['research', '研究'], ['privacy', 'プライバシーポリシー'], ['about', 'サービス名']]) if (!(pages[k] || '').includes(needle)) bad.push(`「${D[k].t}」のページに、前と同じ設定がない`);
       // 押すと開く・タイトル・戻る
-      location.hash = '#/account/s/gender'; await w(400); if (!document.getElementById('f_gender')) bad.push('「性別」を押しても開かない'); if (!/性別/.test((document.querySelector('.topbar') || document.body).textContent)) bad.push('項目のページの上に名前が出ない');
-      const sel = document.getElementById('f_gender'); if (sel) { sel.value = '男性'; sel.dispatchEvent(new Event('change', {bubbles: true})); await w(100); if (state.settings.gender !== '男性') bad.push('性別を変えても保存されない'); }
+      location.hash = '#/account/s/gender'; await w(400); if (!document.querySelector('#main .pick-row')) bad.push('「性別」を押しても開かない'); if (!/性別/.test((document.querySelector('.topbar') || document.body).textContent)) bad.push('項目のページの上に名前が出ない');
+      const pr0 = document.querySelector('#main .pick-row'); if (pr0) { pr0.click(); await w(700); if (state.settings.gender !== '男性') bad.push('性別を変えても保存されない'); }
       location.hash = '#/account'; await w(400); if (!/男性/.test((document.getElementById('acc-it-gender') || {}).textContent || '')) bad.push('一覧に今の性別が出ない');
       if (!document.querySelector('#acc-it-support[data-action="support-open"]')) bad.push('お問い合わせが前と同じに開かない');
       for (const old of ['body', 'settings', 'privacy', 'settings/0']) { location.hash = '#/account/' + old; await w(400); if (/^#\/account\/(body|settings|privacy)/.test(location.hash)) bad.push(`前の画面（${old}）へのリンクが行き止まり`); }
@@ -1392,27 +1392,39 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (validBirth('2026-02-30') || validBirth('2999-01-01') || validBirth('abc')) bad.push('ありえない生年月日を受け付ける');
       { const n = normalize(Object.assign(JSON.parse(keep), {settings: Object.assign(JSON.parse(keep).settings, {birthDate: '1995-05-05', ageBand: '60代以上'})})); if (n.settings.birthDate !== '1995-05-05' || n.settings.ageBand !== ageBandOfBirth('1995-05-05')) bad.push('生年月日が保存されない・年代が生年月日に合わない'); }
       { const src = await (await fetch(location.href.split('#')[0])).text(); if (/id="f_ageBand"|swOpts\('ageBand'/.test(src)) bad.push('年代を選ぶ欄が残っている'); if (!/au-in:-webkit-autofill/.test(src)) bad.push('自動入力の欄が黄色くなる'); }
-      // アカウントの一覧：性別・生年月日はその場で選べる
+      // 2026-11-21 性別・生年月日・身長・体重は、押すとそれぞれのページが開いて設定できる。生年月日はカレンダーではなく、くるくる回して選ぶ形
       state.settings.onboarded = true; document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
       location.hash = '#/account'; await w(400); render(); await w(200);
-      const rowB = document.getElementById('acc-it-age'), qb = document.getElementById('acc-q-birth');
-      if (!rowB || !/生年月日/.test(rowB.textContent)) bad.push('一覧に「生年月日」がない');
-      if (!qb || qb.type !== 'date') bad.push('生年月日を押しても、すぐ日付を選べない');
-      else { const a = rowB.getBoundingClientRect(), b = qb.getBoundingClientRect(); if (Math.abs(a.width - b.width) > 2 || Math.abs(a.height - b.height) > 2) bad.push('生年月日の行のどこを押しても選べるようになっていない');
-        qb.value = '1990-04-10'; qb.dispatchEvent(new Event('change', {bubbles: true})); await w(150); if (state.settings.birthDate !== '1990-04-10' || state.settings.ageBand !== ageBandOfBirth('1990-04-10')) bad.push('生年月日を選んでも保存されない');
-        if (!/1990年4月10日/.test(rowB.textContent)) bad.push('選んだ生年月日が一覧に出ない'); }
-      const qg = document.getElementById('acc-q-gender'); if (!qg || qg.tagName !== 'SELECT') bad.push('性別を押しても、すぐ選べない');
-      else { qg.value = '男性'; qg.dispatchEvent(new Event('change', {bubbles: true})); await w(150); if (state.settings.gender !== '男性' || !/男性/.test(document.getElementById('acc-it-gender').textContent)) bad.push('性別を選んでも保存されない・一覧に出ない'); }
-      // 身長・体重：押すとその1つだけの入力がすぐ出る
-      for (const [k, v, unit] of [['height', '170', 'cm'], ['weight', '６２．５', 'kg']]) {
-        document.getElementById('acc-it-' + k).click(); await w(450); const inp = document.getElementById('acc-num-in'); const mr = document.getElementById('modal-root');
-        if (!inp) { bad.push(`${k === 'height' ? '身長' : '体重'}を押しても入力が出ない`); continue; }
-        if (document.getElementById('acc-num-form').querySelectorAll('input').length !== 1) bad.push(`${k === 'height' ? '身長' : '体重'}の画面に、ほかの入力欄も出る`);
-        if (document.activeElement !== inp) bad.push(`${k === 'height' ? '身長' : '体重'}の入力欄に、すぐ入力できない`);
-        inp.value = '5'; document.getElementById('acc-num-form').requestSubmit(); await w(200); if (!/の数字で入力/.test(mr.textContent)) bad.push('ありえない数字でもエラーが出ない');
-        inp.value = v; document.getElementById('acc-num-form').requestSubmit(); await w(500); const want = k === 'height' ? 170 : 62.5;
-        if (state.settings[k] !== want) bad.push(`${k === 'height' ? '身長' : '体重'}が保存されない（${state.settings[k]}）`);
-        if (!new RegExp(String(want) + unit).test((document.getElementById('acc-it-' + k) || {}).textContent || '')) bad.push(`${k === 'height' ? '身長' : '体重'}が一覧に出ない`); }
+      for (const k of ['gender', 'age', 'height', 'weight']) { const r = document.getElementById('acc-it-' + k); if (!r || r.getAttribute('href') !== '#/account/s/' + k) bad.push(`${k}を押してもページが開かない`); }
+      if (!/生年月日/.test((document.getElementById('acc-it-age') || {}).textContent || '')) bad.push('一覧に「生年月日」がない');
+      // 性別
+      location.hash = '#/account/s/gender'; await w(450); const gb = [...document.querySelectorAll('#main .pick-row')];
+      if (gb.map((b) => b.textContent.trim()).join(',') !== '男性,女性,回答しない') bad.push('性別のページの選ぶところが違う');
+      else { gb[0].click(); await w(700); if (state.settings.gender !== '男性') bad.push('性別を選んでも保存されない'); if (location.hash !== '#/account') bad.push('性別を選んだあと一覧に戻らない'); await w(200); if (!/男性/.test((document.getElementById('acc-it-gender') || {}).textContent || '')) bad.push('選んだ性別が一覧に出ない'); }
+      // 生年月日：回して選ぶ
+      location.hash = '#/account/s/age'; await w(500); const wh = document.getElementById('bd-wheel');
+      if (!wh || wh.querySelectorAll('.wh-col').length !== 3) bad.push('生年月日が、年・月・日を回して選ぶ形になっていない');
+      else { if (document.querySelector('#main input[type="date"]')) bad.push('生年月日にカレンダーの欄が残っている');
+        const col = (k) => wh.querySelector('.wh-' + k), idxOf = (k, v) => [...col(k).querySelectorAll('.wh-it')].findIndex((x) => Number(x.dataset.v) === v);
+        if (whVal('y') !== 2000 || whVal('m') !== 1 || whVal('d') !== 1) bad.push('まだ設定していないとき、2000年1月1日から始まらない');
+        if (getComputedStyle(col('y')).scrollSnapType.indexOf('y') < 0) bad.push('回したとき、1つずつ止まらない');
+        whTo(col('y'), idxOf('y', 2001)); whTo(col('m'), idxOf('m', 2)); whTo(col('d'), idxOf('d', 31)); whSettle(col('d')); await w(700);
+        if (whVal('d') !== 28) bad.push('2月31日のような、ない日を選べてしまう（' + whVal('d') + '日）');
+        whTo(col('y'), idxOf('y', 1990)); whTo(col('m'), idxOf('m', 4)); whTo(col('d'), idxOf('d', 10)); whSettle(col('d')); await w(300);
+        if (!/30代/.test(((document.getElementById('bd-band') || {}).textContent || '').replace(/\u200b/g, ''))) bad.push('回すと、年代の表示が変わらない');
+        document.querySelector('[data-action="acc-birth-save"]').click(); await w(500);
+        if (state.settings.birthDate !== '1990-04-10' || state.settings.ageBand !== ageBandOfBirth('1990-04-10')) bad.push('生年月日を選んで保存しても保存されない：' + state.settings.birthDate);
+        await w(200); if (!/1990年4月10日/.test((document.getElementById('acc-it-age') || {}).textContent || '')) bad.push('選んだ生年月日が一覧に出ない');
+        location.hash = '#/account/s/age'; await w(500); if (whVal('y') !== 1990 || whVal('m') !== 4 || whVal('d') !== 10) bad.push('もう一度開くと、保存した生年月日の位置になっていない'); }
+      // 身長・体重：それぞれのページで1つだけ
+      for (const [k, v, unit] of [['height', '170', 'cm'], ['weight', '６２．５', 'kg']]) { const nm = k === 'height' ? '身長' : '体重';
+        location.hash = '#/account/s/' + k; await w(450); const f = document.getElementById('acc-num-form'), inp = document.getElementById('acc-num-in');
+        if (!f || !inp) { bad.push(`${nm}のページに入力がない`); continue; }
+        if (f.querySelectorAll('input:not([switch])').length !== 1) /* 押したときの振動用の見えないスイッチは数えない */ bad.push(`${nm}のページに、ほかの入力欄も出る`);
+        inp.value = '5'; f.requestSubmit(); await w(200); if (!/の数字で入力/.test(f.textContent.replace(/\u200b/g, ''))) bad.push('ありえない数字でもエラーが出ない');
+        inp.value = v; f.requestSubmit(); await w(600); const want = k === 'height' ? 170 : 62.5;
+        if (state.settings[k] !== want) bad.push(`${nm}が保存されない（${state.settings[k]}）`);
+        if (!new RegExp(String(want) + unit).test((document.getElementById('acc-it-' + k) || {}).textContent || '')) bad.push(`${nm}が一覧に出ない`); }
       // はじめの質問：年代ではなく生年月日
       { const tmp = document.createElement('div'); swState = {v: {birthDate: ''}}; tmp.innerHTML = swStepHtml('age'); swState = null; if (!tmp.querySelector('input[type="date"]') || /20代/.test(tmp.textContent)) bad.push('はじめの質問が生年月日になっていない'); }
       // ログイン：まちがいの知らせはログインボタンのすぐ上・見えない空白や全角が入っていても通る・入れ直すと消える

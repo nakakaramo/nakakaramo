@@ -196,8 +196,19 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .acc-row svg{width:22px;height:22px;color:var(--green-d)}
 .ai-sec.acc-grp-h{margin:24px 6px 8px!important;font-size:13px;letter-spacing:.04em}
 .acc-grp{margin-bottom:0}
-.acc-quick{position:relative;cursor:pointer}
-.acc-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;margin:0;padding:0;font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none;background:transparent}
+.pick-list{margin:-4px 0}
+.pick-row{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:50px;padding:0 4px;background:none;border:0;border-radius:0;font:inherit;font-size:16px;color:var(--ink);text-align:left;cursor:pointer}
+.pick-row+.pick-row{border-top:1px solid var(--line)}
+.pick-row i{display:flex;color:var(--green-d);opacity:0}.pick-row i svg{width:20px;height:20px}
+.pick-row.on{font-weight:600}.pick-row.on i{opacity:1}
+.acc-save{width:100%;justify-content:center;margin-top:14px}.acc-save+.acc-save{margin-top:8px}
+.wh{position:relative;display:flex;justify-content:center;gap:2px;height:200px;margin:4px 0 6px;user-select:none;-webkit-user-select:none}
+.wh::before{content:'';position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:rgba(127,127,127,.13);pointer-events:none}
+.wh-col{position:relative;z-index:1;flex:0 0 31%;height:200px;overflow-y:auto;scroll-snap-type:y mandatory;padding:80px 0;box-sizing:border-box;scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);outline:none}
+.wh-col::-webkit-scrollbar{display:none}
+.wh-it{height:40px;line-height:40px;scroll-snap-align:center;text-align:center;font-size:19px;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;transition:color .15s}
+.wh-it.on{color:var(--ink);font-size:21px;font-weight:600}
+.wh-it.wh-x{opacity:.3}
 .acc-num-u{display:flex;align-items:center;gap:8px}.acc-num-u .input{flex:1}
 .acc-sec.acc-grp .acc-row{grid-template-columns:22px 1fr auto 12px;min-height:52px;padding:0 18px;box-sizing:border-box}
 .acc-grp button.acc-row{width:100%;background:none;border:0;border-radius:0;font:inherit;text-align:left;cursor:pointer}
@@ -3069,7 +3080,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121010359'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121013555'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -15929,6 +15940,7 @@ function viewAccount() {
   // 区分の中の項目：押すと右から、その項目のページが出る（2026-11-20 6つの区分に整理）
   const [sec, idx] = String(sub).split('/');
   if (sec === 's') { const it = accItemDefs()[idx]; if (!it || it.hide) { redirectTo('#/account'); return ''; }
+    if (idx === 'age') setTimeout(whInit, 0);
     return `<a class="back" href="#/account">← アカウント</a><div class="acc-page acc-item">${it.html()}</div>`; }
   if (['body', 'settings', 'privacy'].includes(sec)) { redirectTo(sec === 'body' ? '#/account/s/concerns' : '#/account'); return ''; } // 前の区分（からだと肌・設定・プライバシー）へのリンクは、新しい区分へ
   if (false) {
@@ -15968,10 +15980,10 @@ function accItemDefs() {
   const pick = (re) => () => { const m = P(), k = Object.keys(m).find(x => re.test(x)); return k ? m[k] : ''; };
   const d = diagNow(), ck = concernKeysNow(), r = researchState();
   return {
-    gender: {t:'性別', icon:'user', val:() => st.gender || '未設定', html:() => card('性別', genderFieldHtml()), quick:() => `<select class="acc-native" id="acc-q-gender" aria-label="性別を変える">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<option value="${v}" ${(st.gender || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`},
-    age: {t:'生年月日', icon:'calendar', val:() => fmtBirth(st.birthDate) || '未設定', html:() => card('生年月日', ageFieldHtml()), quick:() => `<input type="date" class="acc-native" id="acc-q-birth" min="1900-01-01" max="${todayStr()}" value="${esc(st.birthDate || '')}" aria-label="生年月日を変える">`},
-    height: {t:'身長', icon:'bodyskin', val:() => st.height ? st.height + 'cm' : '未設定', html:pick(/^身長・体重$/), action:'acc-num', id:'height'},
-    weight: {t:'体重', icon:'weight', val:() => st.weight ? st.weight + 'kg' : '未設定', html:pick(/^身長・体重$/), action:'acc-num', id:'weight'},
+    gender: {t:'性別', icon:'user', val:() => st.gender || '未設定', html:() => card('性別', `<div class="pick-list" role="radiogroup" aria-label="性別">${[['男性', '男性'], ['女性', '女性'], ['', '回答しない']].map(([v, l]) => `<button type="button" class="pick-row${(st.gender || '') === v ? ' on' : ''}" role="radio" aria-checked="${(st.gender || '') === v}" data-action="acc-gender" data-id="${v}"><span>${l}</span><i aria-hidden="true">${icon('check')}</i></button>`).join('')}</div>`)},
+    age: {t:'生年月日', icon:'calendar', val:() => fmtBirth(st.birthDate) || '未設定', html:() => card('生年月日', birthWheelHtml())},
+    height: {t:'身長', icon:'bodyskin', val:() => st.height ? st.height + 'cm' : '未設定', html:() => card('身長', accNumHtml('height'))},
+    weight: {t:'体重', icon:'weight', val:() => st.weight ? st.weight + 'kg' : '未設定', html:() => card('体重', accNumHtml('weight'))},
     skintype: {t:'肌質', icon:'drop', val:() => d ? typeLabel(d) : '未診断', html:() => card('肌質', skinTypePartHtml())},
     concerns: {t:'肌悩み', icon:'spark', val:() => ck.length ? ck.length + '件' : '未設定', html:() => card('肌悩み', concernsPartHtml())},
     notify: {t:'お知らせ', icon:'bell', hide:NATIVE_APP, html:pick(/^お知らせ$/)},
@@ -15988,15 +16000,46 @@ function accItemDefs() {
 }
 // その場で変えたあと、一覧の右の値を書き直す
 function accQuickPaint() { if (parseRoute().name !== 'account') return; const D = accItemDefs(); ['gender', 'age', 'height', 'weight'].forEach(k => { const el = document.querySelector(`#acc-it-${k} .acc-val`); if (el && D[k].val) el.textContent = D[k].val(); }); }
-// 身長・体重：押すと、その1つだけを入れる小さな画面がすぐ出る
-function openAccNum(k) {
-  const st = state.settings, H = k === 'height', lbl = H ? '身長' : '体重', unit = H ? 'cm' : 'kg', lo = H ? 80 : 20, hi = 250, cur = st[k] || '';
-  openModal({title:lbl, body:`<form id="acc-num-form" data-k="${k}" novalidate><div class="field"><label class="lbl" for="acc-num-in">${lbl}</label><span class="unit acc-num-u"><input class="input" id="acc-num-in" name="v" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${esc(String(cur))}" placeholder="例：${H ? 160 : 55}">${unit}</span><p class="hint">${H ? 'たんぱく質の目安などの計算に使います。' : '運動の消費カロリーや、たんぱく質の目安の計算に使います。'}空欄にすると消えます。</p><div class="field-error" data-err="v"></div></div></form>`,
-    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="acc-num-form" class="btn btn-primary">保存する</button>`});
-  const i = document.getElementById('acc-num-in'); if (i) { try { i.focus({preventScroll:true}); const n = i.value.length; i.setSelectionRange(n, n); } catch (e) { /* 何もしない */ } }
-  const f = document.getElementById('acc-num-form'); if (f) f.addEventListener('submit', e => { e.preventDefault(); const raw = toHalf(i.value).trim(), n = raw === '' ? 0 : Number(raw);
-    if (!(n === 0 || (n >= lo && n <= hi))) { showErrors(f, {v:`${lo}〜${hi}の数字で入力してください（空欄でも大丈夫です）。`}); return; }
-    st[k] = Math.round(n * 10) / 10; if (save()) { closeModal(); hapticSaved(); toast('保存しました'); render(); } });
+// 身長・体重：それぞれのページで、1つだけ入れる
+function accNumHtml(k) {
+  const st = state.settings, H = k === 'height', unit = H ? 'cm' : 'kg';
+  return `<form id="acc-num-form" data-k="${k}" novalidate><div class="field"><label class="lbl" for="acc-num-in">${H ? '身長' : '体重'}</label><span class="unit acc-num-u"><input class="input" id="acc-num-in" name="v" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="${esc(String(st[k] || ''))}" placeholder="例：${H ? 160 : 55}">${unit}</span><p class="hint">${H ? 'たんぱく質の目安などの計算に使います。' : '運動の消費カロリーや、たんぱく質の目安の計算に使います。'}空欄にして保存すると消えます。このブラウザ内に保存されます。</p><div class="field-error" data-err="v"></div></div>
+    <button type="submit" class="btn btn-primary acc-save">保存する</button></form>`;
+}
+// 生年月日：年・月・日を、指でくるくる回して選ぶ（iPhoneの時刻の選び方と同じ形）
+const WH_H = 40;
+function birthWheelHtml() {
+  const st = state.settings, m = BD_RE.exec(st.birthDate || ''), ty = Number(todayStr().slice(0, 4));
+  const y0 = m ? Number(m[1]) : 2000, mo0 = m ? Number(m[2]) : 1, d0 = m ? Number(m[3]) : 1;
+  const col = (k, from, to, cur, suf) => { let h = ''; for (let v = from; v <= to; v++) h += `<div class="wh-it${v === cur ? ' on' : ''}" data-v="${v}">${v}${suf}</div>`; return `<div class="wh-col wh-${k}" data-k="${k}" role="listbox" aria-label="${suf === '年' ? '年' : suf === '月' ? '月' : '日'}" tabindex="0">${h}</div>`; };
+  return `<div class="wh" id="bd-wheel">${col('y', 1900, ty, y0, '年')}${col('m', 1, 12, mo0, '月')}${col('d', 1, 31, d0, '日')}</div>
+    <p class="hint" id="bd-band" style="text-align:center">${m ? `年代：${esc(st.ageBand || '')}（生年月日から自動で決まります）` : 'まだ設定していません'}</p>
+    <button type="button" class="btn btn-primary acc-save" data-action="acc-birth-save">保存する</button>
+    ${m ? '<button type="button" class="btn btn-ghost acc-save" data-action="acc-birth-clear">生年月日を消す</button>' : ''}`;
+}
+function whVal(k) { const c = document.querySelector('#bd-wheel .wh-' + k); if (!c) return 0; const it = c.querySelectorAll('.wh-it')[Math.round(c.scrollTop / WH_H)]; return it ? Number(it.dataset.v) : 0; }
+function whTo(c, i, smooth) { const n = c.querySelectorAll('.wh-it').length; i = Math.max(0, Math.min(n - 1, i)); if (smooth && c.scrollTo) c.scrollTo({top:i * WH_H, behavior:'smooth'}); else c.scrollTop = i * WH_H; c.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('on', j === i)); }
+function whSettle(c) {
+  const i = Math.round(c.scrollTop / WH_H); c.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('on', j === i));
+  // その月にない日（2月30日など）は、月末に合わせる
+  const y = whVal('y'), mo = whVal('m'), dc = document.querySelector('#bd-wheel .wh-d'), max = new Date(y, mo, 0).getDate();
+  if (dc) { dc.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('wh-x', j + 1 > max)); if (whVal('d') > max) whTo(dc, max - 1, true); }
+  const b = document.getElementById('bd-band'); if (b && y && mo) { const bd = `${y}-${String(mo).padStart(2, '0')}-${String(Math.min(whVal('d'), max)).padStart(2, '0')}`; if (validBirth(bd)) b.textContent = `年代：${ageBandOfBirth(bd)}（生年月日から自動で決まります）`; }
+}
+function whInit() {
+  const w = document.getElementById('bd-wheel'); if (!w || w.dataset.on) return; w.dataset.on = '1';
+  w.querySelectorAll('.wh-col').forEach(c => {
+    const on = c.querySelector('.wh-it.on'), all = [...c.querySelectorAll('.wh-it')]; c.scrollTop = Math.max(0, all.indexOf(on)) * WH_H;
+    c.addEventListener('scroll', () => { clearTimeout(c._t); c._t = setTimeout(() => whSettle(c), 110); }, {passive:true});
+    c.addEventListener('click', e => { const it = e.target.closest('.wh-it'); if (it) whTo(c, all.indexOf(it), true); });
+    c.addEventListener('keydown', e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); whTo(c, Math.round(c.scrollTop / WH_H) + (e.key === 'ArrowDown' ? 1 : -1), true); } });
+  });
+  whSettle(w.querySelector('.wh-d'));
+}
+function birthSet(v) {
+  const st = state.settings; st.birthDate = v || ''; if (v) st.ageBand = ageBandOfBirth(v);
+  if (st.ageBand === '17歳以下' && researchState().on) setTimeout(() => researchWithdraw(), 0); // 17歳以下は研究に協力しない（送ったデータも消す）
+  if (save()) { hapticSaved(); if (researchState().on) researchSend(); return true; } return false;
 }
 function accGroupsHtml() {
   const D = accItemDefs();
@@ -16004,7 +16047,6 @@ function accGroupsHtml() {
     if (!rows.length) return '';
     return `<h3 class="ai-sec acc-grp-h">${esc(g)}</h3><div class="card acc-sec acc-grp">${rows.map(([k, x]) => { const v = x.val ? x.val() : '';
       const inner = `${icon(x.icon)}<span><b>${esc(x.t)}</b></span><em class="acc-val">${esc(v)}</em><i aria-hidden="true">›</i>`;
-      if (x.quick) return `<div class="acc-row acc-quick" id="acc-it-${k}">${inner}${x.quick()}</div>`; // 押すと、その場で選べる（性別・生年月日）
       return x.action ? `<button type="button" class="acc-row" data-action="${x.action}"${x.id ? ` data-id="${x.id}"` : ''} id="acc-it-${k}">${inner}</button>` : `<a class="acc-row" href="#/account/s/${k}" id="acc-it-${k}">${inner}</a>`; }).join('')}</div>`; }).join('');
 }
 function accItems(sec) {
@@ -16473,7 +16515,10 @@ const actions = {
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
   'vision-diag': () => runVisionDiag(),
   'life-goal': () => openLifeGoal(),
-  'acc-num': (id) => openAccNum(id === 'weight' ? 'weight' : 'height'),
+  'acc-gender': (v) => { state.settings.gender = ['男性', '女性'].includes(v) ? v : ''; if (save()) { hapticSaved(); if (researchState().on) researchSend(); render(); setTimeout(() => { if (parseRoute().id === 's/gender') location.hash = '#/account'; }, 280); } },
+  'acc-birth-save': () => { const y = whVal('y'), mo = whVal('m'), max = new Date(y, mo, 0).getDate(), d = Math.min(whVal('d'), max), bd = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    if (!validBirth(bd)) { toast('生年月日を正しく選んでください', 'error'); return; } if (birthSet(bd)) { toast('保存しました'); location.hash = '#/account'; } },
+  'acc-birth-clear': () => { if (birthSet('')) { toast('生年月日を消しました'); location.hash = '#/account'; } },
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
   'photo-delete': async id => {
@@ -16877,10 +16922,9 @@ document.addEventListener('change', e => {
 // 肌質・年代・敏感肌
 document.addEventListener('change', e => {
   const id = e.target.id;
-  if (id === 'f_birth' || id === 'acc-q-birth') { const v = e.target.value; if (v && !validBirth(v)) { toast('生年月日を正しく選んでください', 'error'); return; } const st = state.settings; st.birthDate = v || ''; if (v) st.ageBand = ageBandOfBirth(v);
+  if (id === 'f_birth') { const v = e.target.value; if (v && !validBirth(v)) { toast('生年月日を正しく選んでください', 'error'); return; } const st = state.settings; st.birthDate = v || ''; if (v) st.ageBand = ageBandOfBirth(v);
     if (st.ageBand === '17歳以下' && researchState().on) setTimeout(() => researchWithdraw(), 0); // 17歳以下は研究に協力しない（送ったデータも消す）
     if (save()) { hapticSaved(); if (researchState().on) researchSend(); accQuickPaint(); } return; }
-  if (id === 'acc-q-gender') { state.settings.gender = e.target.value; if (save()) { hapticSaved(); if (researchState().on) researchSend(); accQuickPaint(); } return; }
   if (!['f_skinType', 'f_ageBand', 'f_sensitive', 'f_gender'].includes(id)) return;
   const st = state.settings;
   if (id === 'f_skinType') st.skinType = e.target.value; else if (id === 'f_ageBand') st.ageBand = e.target.value; else if (id === 'f_gender') st.gender = e.target.value; else st.sensitive = e.target.checked;
@@ -16940,6 +16984,9 @@ async function onScanPhoto(input) {
 document.addEventListener('submit', e => {
   if (e.target.id === 'acct-form') { e.preventDefault(); handleAuthSubmit(e.target); return; }
   if (e.target.id === 'pw-form') { e.preventDefault(); handlePwSubmit(e.target); return; }
+  if (e.target.id === 'acc-num-form') { e.preventDefault(); const f = e.target, k = f.dataset.k === 'weight' ? 'weight' : 'height', lo = k === 'height' ? 80 : 20, raw = toHalf(f.elements.v.value).trim(), n = raw === '' ? 0 : Number(raw);
+    if (!(n === 0 || (n >= lo && n <= 250))) { showErrors(f, {v:`${lo}〜250の数字で入力してください（空欄でも大丈夫です）。`}); return; }
+    state.settings[k] = Math.round(n * 10) / 10; if (save()) { hapticSaved(); toast('保存しました'); location.hash = '#/account'; } return; }
   if (e.target.id === 'goal-form') {
     e.preventDefault(); const f = e.target, er = {};
     const w = f.elements.weight.value.trim() === '' ? 0 : Number(toHalf(f.elements.weight.value)), pg = f.elements.proteinGoal.value.trim() === '' ? 0 : Number(toHalf(f.elements.proteinGoal.value));
@@ -17422,7 +17469,7 @@ function ptrRepaint() {
   };
   const easeOutCubic = k => 1 - Math.pow(1 - k, 3);
   const easeSettle = k => 1 - Math.pow(1 - k, 4); // Safariの戻り方に近い：はじめは速く、最後はなめらかに減速
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs'));
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.querySelector('.au-ov,.pm-ov') || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs,.wh'));
   const settle = () => { // settling：くるくるを消してから、画面を元の位置へ戻す
     phase = 'settling'; ptr.classList.add('fade');
     setTimeout(() => animate(0, 480, easeSettle, null, () => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; phase = 'idle'; }), 160);
