@@ -1619,6 +1619,32 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       try { closeModal(true); } catch (e) {} const rx = RX_DRUGS.find((d) => !isOralKind(d[0])); rxPick(rx[1]); await w(900); if (document.querySelector('#modal-root #mf-dn')) bad.push('塗り薬にも飲む量の画面が出る');
     } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 動画：飲む量を入れたあと開き直すと「保存データを読み込めなかったため、初期状態で起動しました」になった（読み込みより後ろで用意した物を、読み込みのときに使っていた）。
+  // 全部の項目が入ったデータを保存して、本当に開き直して読めることを確かめる。読めなかったデータは、準備が終わったあとに自動で元に戻す
+  { const keepRaw = await p.evaluate(() => localStorage.getItem(STORE_KEY));
+    const rich = await ev(() => { const d = todayStr(), st = JSON.parse(JSON.stringify(state)); Object.assign(st.settings, {gender: '女性', birthDate: '1995-07-03', preg: 'nursing', pregAt: addDays(d, -10), policyAgreed: POLICY_VER, onboarded: true, surveyDone: true, concernKeys: ['acne'], diag: {a: {tight: 'yes', oilDay: 'little', acne: 'some', red: 'rare', sens: 'no', preg: 'nursing'}, r: diagCompute({tight: 'yes', oilDay: 'little', acne: 'some', red: 'rare', sens: 'no'}, ['acne'])}, height: 160, weight: 52});
+      const P = (id, name, cat, extra) => Object.assign({id, demo: false, purchases: [], catalogId: null, name, brand: 'B', category: cat, purposes: [], ingredients: '水', timing: '朝・夜', frequency: '毎日', startDate: addDays(d, -20), status: '使用中', endDate: '', memo: '', pao: 0, order: null}, extra || {});
+      st.myProducts = [P('o1', 'テスト錠', ORAL_CAT, {dose: {n: 2, unit: '錠', when: ['朝', '夜']}}), P('c1', 'テスト化粧水', '化粧水・トナー', {ng: {date: d, sym: ['赤み'], when: '数日〜1週間後', days: 5, freq: '毎日', level: '軽い', where: ['ほほ'], note: '', newOther: false}}), P('r1', 'テスト軟膏', '皮膚科の塗り薬')];
+      st.skinLogs = [{id: 'L1', date: d, condition: 3, acneCount: 1, acneTypes: ['赤ニキビ'], usedProducts: ['c1'], usageRecorded: true, memo: '', photo: ''}];
+      localStorage.setItem(STORE_KEY, JSON.stringify(st)); localStorage.removeItem(STORE_KEY + '_broken_backup'); return true; });
+    await p.reload(); await p.waitForTimeout(1500);
+    const r1 = await ev(() => ({w: loadWarning, dose: (getMy('o1') || {}).dose, bd: state.settings.birthDate, preg: state.settings.preg, ng: (getMy('c1') || {}).ng && getMy('c1').ng.days, logs: state.skinLogs.length}));
+    const ok1 = r1 && !r1.w && r1.dose && r1.dose.n === 2 && r1.bd === '1995-07-03' && r1.preg === 'nursing' && r1.ng === 5 && r1.logs === 1;
+    // 読めなかったデータが退避されていたら、開き直したときに自動で元に戻す（今のデータも残す）
+    await ev(() => { const old = localStorage.getItem(STORE_KEY); const fresh = JSON.parse(JSON.stringify(normalize(freshState()))); fresh.skinLogs = [{id: 'L2', date: addDays(todayStr(), -1), condition: 4, acneCount: 0, usedProducts: [], memo: '', photo: ''}]; fresh.recT = {}; localStorage.setItem(STORE_KEY + '_broken_backup', old); localStorage.setItem(STORE_KEY, JSON.stringify(fresh)); return true; });
+    await p.reload(); await p.waitForTimeout(1500);
+    const r2 = await ev(() => ({w: loadWarning, dose: (getMy('o1') || {}).dose, bd: state.settings.birthDate, logs: state.skinLogs.map((l) => l.id).sort().join(), left: !!localStorage.getItem(STORE_KEY + '_broken_backup')}));
+    const ok2 = r2 && r2.dose && r2.dose.n === 2 && r2.bd === '1995-07-03' && r2.logs === 'L1,L2' && !r2.left && /元に戻しました/.test(r2.w);
+    if (!(ok1 && ok2)) console.log('  ' + JSON.stringify([r1, r2]));
+    check('全部の項目が入ったデータを、開き直しても読める・読めなかったデータは自動で元に戻す', ok1 && ok2);
+    await p.evaluate((k) => { if (k) localStorage.setItem(STORE_KEY, k); else localStorage.removeItem(STORE_KEY); localStorage.removeItem(STORE_KEY + '_broken_backup'); localStorage.removeItem(STORE_KEY + '_restored_copy'); }, keepRaw); await p.reload(); await p.waitForTimeout(1500); }
+  // 2026-11-21 アイコンの「写真を撮る」は、押したらすぐカメラになる（アプリの中のカメラ）。「ライブラリから選択」は写真を選ぶだけ（カメラを指定しない）
+  check('アイコンの写真を撮るは押したらすぐカメラ・ライブラリは写真を選ぶ', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms));
+    try { openAvatarMenu(); await w(300); const m = document.getElementById('av-menu');
+      const lib = [...m.querySelectorAll('label.avm-b')].find((l) => /ライブラリ/.test(l.textContent)); const li = lib && lib.querySelector('input[type=file]'); if (!li || li.hasAttribute('capture') || !/image/.test(li.accept)) bad.push('ライブラリから選択が、写真を選ぶ入力になっていない');
+      const cam = m.querySelector('[data-avm="cam"]'); if (!cam) bad.push('写真を撮るのボタンがない'); else { cam.click(); await w(600); const k = document.getElementById('av-cam'); if (!k || !k.querySelector('video') || !k.querySelector('[data-avk="shot"]')) bad.push('写真を撮るを押しても、すぐカメラにならない'); else { k.querySelector('[data-avk="cancel"]').click(); await w(200); if (document.getElementById('av-cam')) bad.push('カメラのキャンセルで閉じない'); } }
+    } catch (e) { bad.push('エラー ' + e.message); } finally { document.getElementById('av-menu')?.remove(); document.getElementById('av-cam')?.remove(); try { unlockScroll(); } catch (e) {} }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

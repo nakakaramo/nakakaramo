@@ -2137,6 +2137,14 @@ body::before{transform:translate3d(0,var(--vv-top,0px),0)}
 .cm-drugs em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--warn);background:var(--warn-s);border-radius:999px;padding:1px 8px}
 .cm-drugs span{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted)}.cm-drugs span svg{width:13px;height:13px;flex:none}
 .rx-dup{margin:0 0 12px}
+.av-cam{position:fixed;inset:0;z-index:1200;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.av-cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.av-cam video.mir{transform:scaleX(-1)}
+.avk-ring{position:relative;width:min(78vw,340px);aspect-ratio:1;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.9);pointer-events:none}
+.avk-msg{position:absolute;top:calc(env(safe-area-inset-top) + 24px);left:16px;right:16px;margin:0;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.6);color:#fff;font-size:14px;text-align:center}
+.avk-bar{position:absolute;left:0;right:0;bottom:0;padding:20px 24px calc(env(safe-area-inset-bottom) + 24px);display:flex;align-items:center;justify-content:space-between}
+.avk-t{background:none;border:0;color:#fff;font-size:16px;min-width:80px;min-height:44px;cursor:pointer}
+.avk-shut{width:74px;height:74px;border-radius:50%;border:4px solid #fff;background:transparent;padding:4px;cursor:pointer}.avk-shut i{display:block;width:100%;height:100%;border-radius:50%;background:#fff}
+.avk-shut:active i{transform:scale(.92)}
 .mf-note{font-size:13px;line-height:1.6;color:var(--muted);margin:0 0 12px}
 .mf-l small{font-weight:400;color:var(--muted);margin-left:6px;font-size:12px}
 .ds-n{display:flex;align-items:center;gap:10px;margin-bottom:10px}.ds-n .input{flex:1;text-align:center;font-size:20px;font-weight:700}
@@ -2847,6 +2855,10 @@ const CAT_BG = {'皮膚科の塗り薬':'#EEF1F8', '飲み薬・サプリ':'#F2E
 const ORIGINS = ['韓国','日本','その他'];
 const PURPOSES = ['洗浄','保湿','鎮静・肌あれ対策','皮脂・毛穴ケア','角質ケア','ニキビ対策','くすみ対策','ハリ・エイジングケア','紫外線対策','その他'];
 const TIMINGS = ['朝','夜','朝・夜','必要なときだけ'];
+// 2026-11-21 飲む量：保存データを読むとき（normalize）に使うので、読み込みより前に用意しておく（後ろに置くと、起動のときに読み込みが失敗する）
+const DOSE_UNITS = ['錠', 'カプセル', '包', '粒', 'mL', '滴', 'g'], DOSE_WHEN = ['朝', '昼', '夜', '寝る前', '必要なとき'];
+function doseClean(d) { if (!d || typeof d !== 'object') return null; const n = Number(d.n); if (!(n > 0 && n <= 100)) return null;
+  return {n:Math.round(n * 100) / 100, unit:DOSE_UNITS.includes(d.unit) ? d.unit : '錠', when:Array.isArray(d.when) ? DOSE_WHEN.filter(w => d.when.includes(w)) : []}; }
 const FREQS = ['毎日','週4〜6回','週2〜3回','週1回','不定期'];
 const FREQ_RANGE = {'毎日':[7,7],'週4〜6回':[4,6],'週2〜3回':[2,3],'週1回':[1,1],'不定期':null};
 const STOCK = 'ストック（未開封）';
@@ -3110,7 +3122,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121172658'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121180010'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3886,7 +3898,7 @@ function sampleCatalog() {
 
 /* ---------- 保存・読み込み ---------- */
 let storageOK = true;
-let loadWarning = '';
+let loadWarning = '', LOAD_ERR = null;
 function freshState() {
   return {version:2, catalog:[], myProducts:[], skinLogs:[], lifeLogs:[], customFoods:[], settings:{monthlyBudget:0, concerns:[]}};
 }
@@ -4086,6 +4098,22 @@ function normalize(d) {
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
 }
+// 2026-11-21 読み込めなかったデータ（別名で退避した物）を、アプリの準備がすべて終わったあとにもう一度読む。読めたら、今のデータと合わせて元に戻す
+// （準備の順番の不具合で読めなかっただけなら、これで記録が戻る。本当にこわれていて読めないときは、退避したまま残す）
+function restoreBroken() {
+  let raw = null; try { raw = localStorage.getItem(STORE_KEY + '_broken_backup'); } catch (e) { return false; }
+  if (!raw) return false;
+  let old; try { old = phUnmark(normalize(JSON.parse(raw))); } catch (e) { return false; }
+  try {
+    const m = normalize(syncMerge(state, old)); m.photoRefs = Object.assign({}, old.photoRefs || {}, state.photoRefs || {});
+    // 設定は、読み込めなかったあとに入れ直した物だけ今の値、それ以外は前の値（初期状態の空の設定で、前の設定を消さない）
+    const F = normalize(freshState()).settings, S = {}; Object.keys(Object.assign({}, old.settings, state.settings)).forEach(k => { S[k] = state.settings[k] !== undefined && JSON.stringify(state.settings[k]) !== JSON.stringify(F[k]) ? state.settings[k] : old.settings[k] !== undefined ? old.settings[k] : state.settings[k]; });
+    m.settings = normalize(Object.assign({}, m, {settings:S})).settings;
+    state = m;
+    if (save()) { try { localStorage.setItem(STORE_KEY + '_restored_copy', raw); localStorage.removeItem(STORE_KEY + '_broken_backup'); } catch (e) { /* 何もしない */ } }
+    loadWarning = '前に読み込めなかった記録を、元に戻しました。'; return true;
+  } catch (e) { return false; }
+}
 function load() {
   let raw = null;
   try { raw = localStorage.getItem(STORE_KEY); }
@@ -4094,6 +4122,7 @@ function load() {
   try { return phUnmark(normalize(JSON.parse(raw))); }
   catch (e) {
     try { localStorage.setItem(STORE_KEY + '_broken_backup', raw); } catch (_) {}
+    LOAD_ERR = e; setTimeout(() => { try { logError('保存データの読み込み失敗：' + (e && e.message), 'load', e && e.stack); } catch (x) { /* 何もしない */ } }, 3000);
     loadWarning = '保存データを読み込めなかったため、初期状態で起動しました。元のデータは別名で退避しています。';
     return normalize(freshState());
   }
@@ -8140,9 +8169,6 @@ function viewMyDetail(id) {
 
 /* Myアイテムの詳細：使用タイミング・頻度・使用開始日・メモを、それぞれ横の鉛筆から直す */
 // 2026-11-21 飲み薬・サプリの飲む量（1回の量・単位・飲むタイミング）は人それぞれなので、登録のときに自分で入れる（アプリは量を判断しない）
-const DOSE_UNITS = ['錠', 'カプセル', '包', '粒', 'mL', '滴', 'g'], DOSE_WHEN = ['朝', '昼', '夜', '寝る前', '必要なとき'];
-function doseClean(d) { if (!d || typeof d !== 'object') return null; const n = Number(d.n); if (!(n > 0 && n <= 100)) return null;
-  return {n:Math.round(n * 100) / 100, unit:DOSE_UNITS.includes(d.unit) ? d.unit : '錠', when:Array.isArray(d.when) ? DOSE_WHEN.filter(w => d.when.includes(w)) : []}; }
 const doseUnitGuess = name => /カプセル/.test(name) ? 'カプセル' : /顆粒|細粒|散|包|パウダー/.test(name) ? '包' : /シロップ|液|ドリンク/.test(name) ? 'mL' : /粒/.test(name) ? '粒' : '錠';
 function doseText(p) { const d = p && p.dose; if (!d) return ''; const fix = d.when.filter(w => w !== '必要なとき');
   return `1回${d.n}${d.unit}${d.when.length ? `・${d.when.join('・')}` : ''}${fix.length >= 2 ? `（1日${fix.length}回）` : ''}`; }
@@ -15979,7 +16005,7 @@ function openAvatarMenu() {
   el.innerHTML = `<div class="avm-bg" data-avm="close"></div><div class="avm-box" role="dialog" aria-label="プロフィール画像の変更">
     <div class="avm-grp"><p class="avm-t">プロフィール画像の変更</p>
       <label class="avm-b">ライブラリから選択<input type="file" accept="image/*" class="vh" data-avfile></label>
-      <label class="avm-b">写真を撮る<input type="file" accept="image/*" capture="user" class="vh" data-avfile></label>
+      <button type="button" class="avm-b" data-avm="cam">写真を撮る</button><input type="file" accept="image/*" capture="user" class="vh" data-avfile id="avm-cap">
       <button type="button" class="avm-b" data-avm="emoji">絵文字で作る</button>
       ${has ? '<button type="button" class="avm-b red" data-avm="del">現在の写真を削除</button>' : ''}</div>
     <button type="button" class="avm-b avm-cancel" data-avm="close">キャンセル</button></div>`;
@@ -15988,9 +16014,29 @@ function openAvatarMenu() {
   el.addEventListener('click', e => { const b = e.target.closest('[data-avm]'); if (!b) return; hapticTick();
     if (b.dataset.avm === 'close') close();
     else if (b.dataset.avm === 'emoji') { close(); setTimeout(openProfile, 200); }
+    else if (b.dataset.avm === 'cam') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { close(); setTimeout(openAvatarCam, 120); } else el.querySelector('#avm-cap').click(); } /* 2026-11-21 押したらすぐカメラ（アプリの中のカメラ）。使えない端末は今までのカメラ */
     else if (b.dataset.avm === 'del') { close(); state.settings.avatar = null; if (save()) { toast('写真を削除しました'); render(); } } });
   el.querySelectorAll('[data-avfile]').forEach(inp => inp.addEventListener('change', async () => { const f = inp.files && inp.files[0]; if (!f) return; close();
     try { const src = await readImage(f, 1400, 0.9); openAvatarCrop(src); } catch (er) { toast(er.message || '画像を読み込めませんでした', 'error'); } }));
+}
+// 2026-11-21 アイコンの「写真を撮る」：押したらすぐ、アプリの中でカメラが開く（内カメラ。切り替えもできる）。撮ったら丸に合わせる画面へ
+async function openAvatarCam() {
+  document.getElementById('av-cam')?.remove();
+  const el = document.createElement('div'); el.id = 'av-cam'; el.className = 'av-cam'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '写真を撮る');
+  el.innerHTML = `<video playsinline muted autoplay></video><div class="avk-ring" aria-hidden="true"></div><p class="avk-msg" hidden></p>
+    <div class="avk-bar"><button type="button" class="avk-t" data-avk="cancel">キャンセル</button><button type="button" class="avk-shut" data-avk="shot" aria-label="撮る"><i></i></button><button type="button" class="avk-t" data-avk="flip" aria-label="カメラを切り替える">切り替え</button></div>`;
+  document.body.appendChild(el); try { lockScroll(); } catch (e) { /* 何もしない */ }
+  const v = el.querySelector('video'), msg = el.querySelector('.avk-msg'); let stream = null, face = 'user';
+  const stop = () => { if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; };
+  const close = () => { stop(); el.remove(); try { unlockScroll(); } catch (e) { /* 何もしない */ } };
+  const start = async () => { stop(); try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:face, width:{ideal:1440}, height:{ideal:1440}}, audio:false}); if (!el.isConnected) { stop(); return; } v.srcObject = stream; v.classList.toggle('mir', face === 'user'); try { await v.play(); } catch (e) { /* 何もしない */ } msg.hidden = true; }
+    catch (e) { msg.textContent = 'カメラを使えませんでした。iPhoneの設定で、カメラを許可してください。'; msg.hidden = false; } };
+  el.addEventListener('click', e => { const b = e.target.closest('[data-avk]'); if (!b) return; try { hapticTick(); } catch (x) { /* 何もしない */ }
+    if (b.dataset.avk === 'cancel') close();
+    else if (b.dataset.avk === 'flip') { face = face === 'user' ? 'environment' : 'user'; start(); }
+    else if (b.dataset.avk === 'shot') { const w = v.videoWidth, h = v.videoHeight; if (!w || !h) return; const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); if (face === 'user') { x.translate(w, 0); x.scale(-1, 1); } x.drawImage(v, 0, 0, w, h); const src = c.toDataURL('image/jpeg', 0.9); close(); openAvatarCrop(src); } });
+  window.addEventListener('hashchange', close, {once:true});
+  start();
 }
 // 写真を丸い枠に合わせる：指で動かす・2本の指で拡大縮小（パソコンはホイール）。枠の中がいつも写真で埋まるようにする
 function openAvatarCrop(src) {
@@ -17707,6 +17753,7 @@ setTbh(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(
 if (researchState() && researchState().on) setTimeout(() => { if (researchState().lastSent !== todayStr()) researchSend(); }, 5000); // 研究に協力中なら、1日1回まで統計を新しくする
 if (hasSavedLogin() || AUTH_RET) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = SERVICE;
+restoreBroken();
 render();
 // はじめて開いたときは、先に「はじめの質問」を出す
 if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML && !document.getElementById('login-gate')) openSetupWizard(); }, 400);
