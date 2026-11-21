@@ -208,7 +208,7 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .wh-col{position:relative;z-index:1;flex:0 0 31%;height:200px;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:auto;touch-action:pan-y;padding:80px 0;box-sizing:border-box;scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);outline:none}
 .wh-col::-webkit-scrollbar{display:none}
 .wh-it{height:40px;line-height:40px;scroll-snap-align:center;text-align:center;font-size:20px;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;will-change:transform,opacity;backface-visibility:hidden;transform-origin:50% 50%}
-.wh-it.on{color:var(--ink);font-weight:600}
+.wh-it.on{color:var(--ink)} /* 2026-11-21 まん中の数字も太字にしない（色だけ濃く） */
 .wh-it.wh-x{color:var(--line)!important}
 .acc-multi>.card{margin-bottom:12px}.acc-multi>.card>.card-h h2{display:block}
 .acc-num-u{display:flex;align-items:center;gap:8px}.acc-num-u .input{flex:1}
@@ -3122,7 +3122,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121183808'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121190528'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {

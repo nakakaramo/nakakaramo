@@ -1482,7 +1482,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         if (its.indexOf(c.querySelector('.wh-it.on')) !== i0 + 3) bad.push('回している間、まん中の数字がすぐ変わらない（止まるまで待つ）');
         const mid = its[i0 + 3], far = its[i0 + 5]; if (!(Number(mid.style.opacity) > Number(far.style.opacity))) bad.push('まん中から離れた数字が薄くならない');
         if (!/rotateX/.test(far.style.transform)) bad.push('離れた数字が傾かない');
-        if (/font-size/.test([...document.styleSheets].map((ss) => { try { return [...ss.cssRules].map((r) => r.cssText).join(''); } catch (e) { return ''; } }).join('').match(/\.wh-it\.on\s*\{[^}]*\}/) || '')) bad.push('まん中の数字だけ大きさが変わり、カクッと動く'); }
+        if (/font-size/.test([...document.styleSheets].map((ss) => { try { return [...ss.cssRules].map((r) => r.cssText).join(''); } catch (e) { return ''; } }).join('').match(/\.wh-it\.on\s*\{[^}]*\}/) || '')) bad.push('まん中の数字だけ大きさが変わり、カクッと動く');  if (Number(getComputedStyle(c.querySelector('.wh-it.on') || c).fontWeight) > 500) bad.push('生年月日のまん中の数字が太字'); }
     } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   // 2026-11-21 肌質診断のやり直しは、肌質の質問だけ（性別・生年月日・身長体重・肌悩みは聞かない）。いちばん最初の質問は、性別・生年月日・身長体重・肌質・肌悩みを全部聞く
