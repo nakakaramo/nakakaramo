@@ -42,5 +42,5 @@ const PERSONAS = [
 ];
 // 2026-11-21 はじめの質問は「年代」ではなく「生年月日」。テストの人物の年代に合う生年月日を入れる
 const BD_OF = (band) => ({ '17歳以下': '2011-06-15', '18〜19歳': '2007-06-15', '20代': '2001-06-15', '30代': '1991-06-15', '40代': '1981-06-15', '50代': '1971-06-15', '60代以上': '1955-06-15' })[band] || '';
-const setBD = (p, band) => p.evaluate((d) => { const e = document.getElementById('sw-bd'); if (!e) return false; e.value = d; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); return true; }, BD_OF(band)).catch(() => false);
+const setBD = (p, band) => p.evaluate((d) => { const w = document.getElementById('bd-wheel'); if (!w) return false; try { whInit(); } catch (e) {} const [y, m, dd] = d.split('-').map(Number), col = (k) => w.querySelector('.wh-' + k), idx = (k, v) => [...col(k).querySelectorAll('.wh-it')].findIndex((x) => Number(x.dataset.v) === v); whTo(col('y'), idx('y', y)); whTo(col('m'), idx('m', m)); whTo(col('d'), idx('d', dd)); w.dataset.touched = '1'; return true; }, BD_OF(band)).catch(() => false); // 2026-11-21 生年月日は回して選ぶ形
 module.exports = { PERSONAS, P, RX, OR, base, BD_OF, setBD };

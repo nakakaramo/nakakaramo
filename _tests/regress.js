@@ -717,7 +717,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (!on && !used.includes('レチノール美容液')) bad.push('男性なのにレチノールを休む'); }
     { const Ps = run('', {sens: 'yes', red: 'often'}, ['sensitive', 'redness'], [['化粧水', '化粧水・トナー', '水、グリセリン、メントール']]); if (Ps.some((P) => P.steps.some((z) => z.prods.some((x) => /メントール/.test(x.p.ingredients))))) bad.push('敏感肌にメントール'); }
     state = normalize(JSON.parse(keep)); window.isPremium = keepPrem; render();
-    { const w = (ms) => new Promise((r) => setTimeout(r, ms)); const keepS = JSON.stringify(state.settings); state.settings.gender = '女性'; openSetupWizard(); await w(300); const pc = document.getElementById('sw-s-preg');
+    { const w = (ms) => new Promise((r) => setTimeout(r, ms)); const keepS = JSON.stringify(state.settings); state.settings.gender = '女性'; openSetupWizard('first'); await w(300); const pc = document.getElementById('sw-s-preg');
       if (!pc || pc.hidden) bad.push('診断に妊娠の質問がない'); else { document.querySelector('#sw-s-gender [data-v="男性"]').click(); await w(100); if (!pc.hidden) bad.push('男性にも妊娠の質問'); document.querySelector('#sw-s-gender [data-v="女性"]').click(); await w(100);
         pc.querySelector('[data-v="nursing"]').click(); await w(100); document.querySelector('#sw-s-skin [data-v="yes"]') && 0; ['tight', 'oilDay', 'acne'].forEach((k) => { const o = document.querySelector('#sw-s-skin [data-sw="' + k + '"]'); if (o) o.click(); }); document.querySelector('#modal-root [data-action="setup-finish"]').click(); await w(400);
         if (((state.settings.diag || {}).a || {}).preg !== 'nursing') bad.push('妊娠の答えが保存されない ' + JSON.stringify((state.settings.diag || {}).a)); }
@@ -1411,7 +1411,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         whTo(col('y'), idxOf('y', 2001)); whTo(col('m'), idxOf('m', 2)); whTo(col('d'), idxOf('d', 31)); whSettle(col('d')); await w(700);
         if (whVal('d') !== 28) bad.push('2月31日のような、ない日を選べてしまう（' + whVal('d') + '日）');
         whTo(col('y'), idxOf('y', 1990)); whTo(col('m'), idxOf('m', 4)); whTo(col('d'), idxOf('d', 10)); whSettle(col('d')); await w(300);
-        if (!/30代/.test(((document.getElementById('bd-band') || {}).textContent || '').replace(/\u200b/g, ''))) bad.push('回すと、年代の表示が変わらない');
+        if (document.getElementById('bd-band') || /年代：/.test(document.getElementById('main').textContent)) bad.push('生年月日の下に年代の文が残っている'); // 2026-11-21 年代の文は消す
         document.querySelector('[data-action="acc-birth-save"]').click(); await w(500);
         if (state.settings.birthDate !== '1990-04-10' || state.settings.ageBand !== ageBandOfBirth('1990-04-10')) bad.push('生年月日を選んで保存しても保存されない：' + state.settings.birthDate);
         await w(200); if (!/1990年4月10日/.test((document.getElementById('acc-it-age') || {}).textContent || '')) bad.push('選んだ生年月日が一覧に出ない');
@@ -1426,7 +1426,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         if (state.settings[k] !== want) bad.push(`${nm}が保存されない（${state.settings[k]}）`);
         if (!new RegExp(String(want) + unit).test((document.getElementById('acc-it-' + k) || {}).textContent || '')) bad.push(`${nm}が一覧に出ない`); }
       // はじめの質問：年代ではなく生年月日
-      { const tmp = document.createElement('div'); swState = {v: {birthDate: ''}}; tmp.innerHTML = swStepHtml('age'); swState = null; if (!tmp.querySelector('input[type="date"]') || /20代/.test(tmp.textContent)) bad.push('はじめの質問が生年月日になっていない'); }
+      { const tmp = document.createElement('div'); swState = {v: {birthDate: ''}}; tmp.innerHTML = swStepHtml('age'); swState = null; if (!tmp.querySelector('.wh .wh-y') || tmp.querySelector('input[type="date"]') || /20代/.test(tmp.textContent)) bad.push('はじめの質問の生年月日が、回して選ぶ形になっていない'); }
       // ログイン：まちがいの知らせはログインボタンのすぐ上・見えない空白や全角が入っていても通る・入れ直すと消える
       if (authErrMsg({message: 'Invalid login credentials'}) !== 'メールアドレスまたはパスワードを正しく入力してください') bad.push('メールアドレス・パスワードがちがうときの知らせが違う');
       const pr = openAuth('login'); await w(350); const ov = document.querySelector('.au-ov');
@@ -1476,6 +1476,37 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         if (!/rotateX/.test(far.style.transform)) bad.push('離れた数字が傾かない');
         if (/font-size/.test([...document.styleSheets].map((ss) => { try { return [...ss.cssRules].map((r) => r.cssText).join(''); } catch (e) { return ''; } }).join('').match(/\.wh-it\.on\s*\{[^}]*\}/) || '')) bad.push('まん中の数字だけ大きさが変わり、カクッと動く'); }
     } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 肌質診断のやり直しは、肌質の質問だけ（性別・生年月日・身長体重・肌悩みは聞かない）。いちばん最初の質問は、性別・生年月日・身長体重・肌質・肌悩みを全部聞く
+  check('いちばん最初は全部聞き、肌質診断のやり直しは肌質の質問だけ', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state);
+    try {
+      await w(500); try { closeModal(true); } catch (e) {} document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
+      const secs = () => [...document.querySelectorAll('#sw-body .sw-card')].filter((x) => !x.hidden).map((x) => x.id.replace('sw-s-', ''));
+      // いちばん最初
+      state.settings.onboarded = false; openSetupWizard(); await w(400);
+      const f = secs(); for (const k of ['gender', 'age', 'body', 'skin', 'concerns']) if (!f.includes(k)) bad.push('いちばん最初の質問に「' + ({gender: '性別', age: '生年月日', body: '身長・体重', skin: '肌質', concerns: '肌悩み'})[k] + '」がない');
+      if (!document.querySelector('#sw-body #bd-wheel .wh-y')) bad.push('いちばん最初の生年月日が、回して選ぶ形になっていない');
+      if (!document.getElementById('sw-h') || !document.getElementById('sw-w')) bad.push('いちばん最初に身長・体重を聞かない');
+      // 生年月日にさわらなければ「答えない」、回したらその日
+      document.getElementById('sw-h').value = '158'; document.getElementById('sw-w').value = '50';
+      const ans = (k, v) => { const b = document.querySelector(`#sw-body [data-sw="${k}"][data-v="${v}"]`); if (b) b.click(); };
+      ans('gender', '女性'); ans('tight', 'yes'); ans('oilDay', 'little'); ans('oilDay', document.querySelector('#sw-body [data-sw="oilDay"]').dataset.v); ans('acne', 'rare'); ans('red', 'rare'); ans('sens', 'no');
+      const wh = document.getElementById('bd-wheel'); const col = (k) => wh.querySelector('.wh-' + k), idx = (k, v) => [...col(k).querySelectorAll('.wh-it')].findIndex((x) => Number(x.dataset.v) === v);
+      if (whBirth() !== '') bad.push('生年月日にさわっていないのに、2000年1月1日として保存されてしまう');
+      wh.dispatchEvent(new Event('pointerdown')); whTo(col('y'), idx('y', 1995)); whTo(col('m'), idx('m', 7)); whTo(col('d'), idx('d', 3)); await w(200);
+      document.querySelector('[data-action="setup-finish"]').click(); await w(700);
+      if (document.querySelector('#sw-body')) bad.push('いちばん最初の質問を終えられない：' + ((document.querySelector('.sw-err-in') || {}).textContent || ''));
+      const st = state.settings; if (st.birthDate !== '1995-07-03') bad.push('回して選んだ生年月日が保存されない：' + st.birthDate); if (st.height !== 158 || st.weight !== 50) bad.push('いちばん最初の身長・体重が保存されない'); if (st.gender !== '女性') bad.push('いちばん最初の性別が保存されない');
+      // やり直し：肌質の質問だけ
+      const before = JSON.stringify([st.gender, st.birthDate, st.height, st.weight, concernKeysNow()]);
+      location.hash = '#/account/s/skintype'; await w(500); const rb = document.querySelector('#main .dg-redo'); if (rb) rb.click(); else openSetupWizard(); await w(400);
+      const r = secs(); if (r.join(',') !== 'skin,preg') bad.push('やり直しで、肌質（と安全のための妊娠・授乳）以外も聞く：' + r.join(','));
+      if (document.querySelector('#sw-body #bd-wheel, #sw-body #sw-h, #sw-body [data-sw="concerns"], #sw-body [data-sw="gender"]')) bad.push('やり直しに、生年月日・身長体重・肌悩み・性別が入っている');
+      ans('tight', 'no'); document.querySelector('[data-action="setup-finish"]').click(); await w(700);
+      if (document.querySelector('#sw-body')) bad.push('やり直しを終えられない');
+      if (JSON.stringify([st.gender, st.birthDate, st.height, st.weight, concernKeysNow()]) !== before) bad.push('やり直しで、性別・生年月日・身長体重・肌悩みが変わってしまう');
+      if (!state.settings.diag || state.settings.diag.a.tight !== 'no') bad.push('やり直しの答えが肌質に入らない');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} swState = null; state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();

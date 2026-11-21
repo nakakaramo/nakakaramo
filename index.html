@@ -3082,7 +3082,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121124550'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121132158'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5721,9 +5721,9 @@ function findPick(i) {
 }
 // ---------- はじめの質問（身長・体重・肌質・肌悩みなど） ----------
 let swState = null;
-function openSetupWizard() {
+function openSetupWizard(mode) {
   const st = state.settings;
-  swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', birthDate:st.birthDate || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
+  swState = {mode:mode || (st.onboarded ? 'redo' : 'first'), acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', birthDate:st.birthDate || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
   openModal({title:'肌質診断', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
@@ -5731,7 +5731,8 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_ALL = ['hello', 'gender', 'age', 'skin', 'concerns', 'preg', 'account', 'done']; // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
+const SW_ALL = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'preg', 'account', 'done']; // 2026-11-21 いちばん最初：性別・生年月日・身長体重・肌質・肌悩み（＋妊娠・授乳）。やり直しは肌質の質問だけ（SW_REDO）
+const SW_REDO = ['skin', 'preg']; // 妊娠・授乳は、控えたい成分（レチノールなど）を外す安全のため、やり直しでも聞く（男性には出さない） // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
 // はじめの質問の「アカウントを作成／ログイン」：成功したら次の質問へ進む
 async function swAuth() {
   if (!swState || swState.busy) return;
@@ -6124,7 +6125,7 @@ function otpPrompt(email, {resendFirst = false} = {}) {
   });
 }
 // 研究への協力の質問は、年代で18歳以上を選んだ人にだけ出す
-const swSteps = () => SW_ALL.filter(s => (s !== 'research' || isAdultBand(swState && swState.v.ageBand)) && (s !== 'account' || (swState && swState.acct))); // 新規登録は、まだログインしていない人にだけ
+const swSteps = () => (swState && swState.mode === 'redo' ? SW_REDO : SW_ALL).filter(s => (s !== 'research' || isAdultBand(swState && swState.v.ageBand)) && (s !== 'account' || (swState && swState.acct))); // 新規登録は、まだログインしていない人にだけ
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts ${multi ? 'multi' : 'single'}" role="${multi ? 'group' : 'radiogroup'}">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : v === '' ? !!(swState && swState.none && swState.none[key]) && cur === '' : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swStepHtml(step) {
   const s = swState, v = s.v;
@@ -6135,7 +6136,7 @@ function swStepHtml(step) {
     <div class="auth-entry sw-entry"><button type="button" class="btn btn-primary" data-swauth="signup">新規登録</button><button type="button" class="btn btn-ghost" data-swauth="login">ログイン</button></div>
     ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}`; }
   if (step === 'gender') h = `<p class="sw-q">性別</p>` + swOpts('gender', [['男性', '男性'], ['女性', '女性'], ['', '回答しない', 1]], v.gender);
-  if (step === 'age') h = `<p class="sw-q">生年月日</p><p class="sw-sub">年代に合わせたケアの提案と、17歳以下かどうかの確認に使います。空欄でも大丈夫です</p><input class="input sw-bd" type="date" id="sw-bd" min="1900-01-01" max="${todayStr()}" value="${esc(v.birthDate || '')}" aria-label="生年月日">`;
+  if (step === 'age') h = `<p class="sw-q">生年月日</p><p class="sw-sub">年代に合わせたケアの提案と、17歳以下かどうかの確認に使います。答えないときは、そのままで大丈夫です</p>${wheelHtml(v.birthDate, !!v.birthDate)}<p class="small muted" style="text-align:center;margin:2px 0 0">回して選んでください。答えないときは、さわらずにそのままで大丈夫です</p>`;
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
     <div class="sw-nums"><label>身長<span class="unit"><input class="input" id="sw-h" inputmode="decimal" placeholder="例：160" value="${esc(v.height)}">cm</span></label><label>体重<span class="unit"><input class="input" id="sw-w" inputmode="decimal" placeholder="例：52" value="${esc(v.weight)}">kg</span></label></div>`;
   const dq = (k, first) => { const q = DIAG_Q.find(x => x.k === k); return `<p class="sw-sec${first ? ' sw-sec1' : ''}">${esc(q.q)}${q.multi ? '<small>（いくつでも）</small>' : ''}</p>` + swOpts(k, q.o, q.multi ? (Array.isArray(v[k]) ? v[k] : []) : (v[k] || ''), q.multi); };
@@ -6157,7 +6158,7 @@ function swStepHtml(step) {
 function swGrab() { // 入力欄の今の値を覚えておく（描き直しても消えないように）
   const v = swState.v, g = id => { const e = $('#' + id); return e ? e.value : null; };
   const h = g('sw-h'), w = g('sw-w'), sl = g('sw-sleep'), bg = g('sw-budget');
-  const bd = g('sw-bd'); if (bd !== null) { v.birthDate = validBirth(bd) ? bd : ''; if (v.birthDate) v.ageBand = ageBandOfBirth(v.birthDate); }
+  const bd = whBirth(); if (bd !== null) { v.birthDate = bd; if (v.birthDate) v.ageBand = ageBandOfBirth(v.birthDate); }
   if (h !== null) v.height = h; if (w !== null) v.weight = w; if (sl !== null) v.sleepNeed = Number(sl) || 420; if (bg !== null) v.budget = bg;
 }
 function swPaint() {
@@ -6165,11 +6166,12 @@ function swPaint() {
   const mb = $('#modal-root .modal-body'), top = mb ? mb.scrollTop : 0;
   if (b.firstChild) swGrab();
   const list = swSteps().filter(x => x !== 'hello' && x !== 'done');
-  b.innerHTML = `<p class="sw-intro">あてはまるものを選んでください（1分ほど）。肌質を診断して、朝・夜のケアを組み立てます。</p>`
+  b.innerHTML = `<p class="sw-intro">${s.mode === 'redo' ? '今の肌にあてはまるものを選んでください。肌質を診断し直して、朝・夜のケアを組み立て直します。' : 'あてはまるものを選んでください（1分ほど）。肌質を診断して、朝・夜のケアを組み立てます。'}</p>`
     + list.map(step => `<section class="sw-card" id="sw-s-${step}"${step === 'preg' && s.v.gender === '男性' ? ' hidden' : ''}>${swStepHtml(step)}</section>`).join('') /* 妊娠の質問は、男性と答えた人には出さない */
     + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-action="setup-finish">診断する</button>`;
   if (mb) mb.scrollTop = top;
+  whInit(); // 生年月日を回して選ぶところ
 }
 const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? true : step === 'skin' ? !!(v.tight || v.oilDay) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
@@ -6177,7 +6179,7 @@ function swRead() {
   const v = swState.v, err = $('#sw-err');
   const bad = (m, at) => { const sec = $('#sw-s-' + at); if (sec) { sec.classList.add('sw-bad'); const p = document.createElement('p'); p.className = 'sw-err sw-err-in'; p.textContent = m; sec.appendChild(p); sec.scrollIntoView({block:'center', behavior:'smooth'}); } else if (err) { err.hidden = false; err.textContent = m; } return false; };
   $$('.sw-card.sw-bad').forEach(x => x.classList.remove('sw-bad')); $$('.sw-err-in').forEach(x => x.remove()); if (err) err.hidden = true;
-  if ($('#sw-bd')) { const bd = $('#sw-bd').value; if (bd && !validBirth(bd)) return bad('生年月日を正しく選んでください（空欄でも大丈夫です）', 'age'); v.birthDate = bd || ''; if (bd) v.ageBand = ageBandOfBirth(bd); }
+  { const bd = whBirth(); if (bd !== null) { v.birthDate = bd; if (bd) v.ageBand = ageBandOfBirth(bd); } }
   if ($('#sw-h')) {
     const h = toHalf($('#sw-h').value).trim(), w = toHalf($('#sw-w').value).trim();
     if (h && !(Number(h) >= 80 && Number(h) <= 250)) return bad('身長は80〜250の数字で入れてください（空欄でも大丈夫です）', 'body');
@@ -16013,15 +16015,20 @@ function accNumHtml(k) {
 }
 // 生年月日：年・月・日を、指でくるくる回して選ぶ（iPhoneの時刻の選び方と同じ形）
 const WH_H = 40;
-function birthWheelHtml() {
-  const st = state.settings, m = BD_RE.exec(st.birthDate || ''), ty = Number(todayStr().slice(0, 4));
+function wheelHtml(bd, touched) { // bd：今の生年月日（なければ2000年1月1日の位置から）
+  const m = BD_RE.exec(bd || ''), ty = Number(todayStr().slice(0, 4));
   const y0 = m ? Number(m[1]) : 2000, mo0 = m ? Number(m[2]) : 1, d0 = m ? Number(m[3]) : 1;
-  const col = (k, from, to, cur, suf) => { let h = ''; for (let v = from; v <= to; v++) h += `<div class="wh-it${v === cur ? ' on' : ''}" data-v="${v}">${v}${suf}</div>`; return `<div class="wh-col wh-${k}" data-k="${k}" role="listbox" aria-label="${suf === '年' ? '年' : suf === '月' ? '月' : '日'}" tabindex="0">${h}</div>`; };
-  return `<div class="wh" id="bd-wheel">${col('y', 1900, ty, y0, '年')}${col('m', 1, 12, mo0, '月')}${col('d', 1, 31, d0, '日')}</div>
-    <p class="hint" id="bd-band" style="text-align:center">${m ? `年代：${esc(st.ageBand || '')}（生年月日から自動で決まります）` : 'まだ設定していません'}</p>
+  const col = (k, from, to, cur, suf) => { let h = ''; for (let v = from; v <= to; v++) h += `<div class="wh-it${v === cur ? ' on' : ''}" data-v="${v}">${v}${suf}</div>`; return `<div class="wh-col wh-${k}" data-k="${k}" role="listbox" aria-label="${suf}" tabindex="0">${h}</div>`; };
+  return `<div class="wh" id="bd-wheel"${touched ? ' data-touched="1"' : ''}>${col('y', 1900, ty, y0, '年')}${col('m', 1, 12, mo0, '月')}${col('d', 1, 31, d0, '日')}</div>`;
+}
+function birthWheelHtml() {
+  const st = state.settings, m = BD_RE.exec(st.birthDate || '');
+  return `${wheelHtml(st.birthDate, true)}
     <button type="button" class="btn btn-primary acc-save" data-action="acc-birth-save">保存する</button>
     ${m ? '<button type="button" class="btn btn-ghost acc-save" data-action="acc-birth-clear">生年月日を消す</button>' : ''}`;
 }
+// 回して選んだ生年月日（はじめの質問では、指でさわっていなければ「答えない」）。回すところがなければ null
+function whBirth() { const w = document.getElementById('bd-wheel'); if (!w) return null; if (!w.dataset.touched) return ''; const y = whVal('y'), mo = whVal('m'), d = Math.min(whVal('d'), new Date(y, mo, 0).getDate()), bd = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`; return validBirth(bd) ? bd : ''; }
 function whVal(k) { const c = document.querySelector('#bd-wheel .wh-' + k); if (!c) return 0; const it = c.querySelectorAll('.wh-it')[Math.round(c.scrollTop / WH_H)]; return it ? Number(it.dataset.v) : 0; }
 function whTo(c, i, smooth) { const n = c.querySelectorAll('.wh-it').length; i = Math.max(0, Math.min(n - 1, i)); if (smooth && c.scrollTo) c.scrollTo({top:i * WH_H, behavior:'smooth'}); else { c.scrollTop = i * WH_H; whPaint(c); } }
 function whSettle(c) {
@@ -16029,7 +16036,6 @@ function whSettle(c) {
   // その月にない日（2月30日など）は、月末に合わせる
   const y = whVal('y'), mo = whVal('m'), dc = document.querySelector('#bd-wheel .wh-d'), max = new Date(y, mo, 0).getDate();
   if (dc) { dc.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('wh-x', j + 1 > max)); if (whVal('d') > max) whTo(dc, max - 1, true); }
-  const b = document.getElementById('bd-band'); if (b && y && mo) { const bd = `${y}-${String(mo).padStart(2, '0')}-${String(Math.min(whVal('d'), max)).padStart(2, '0')}`; if (validBirth(bd)) b.textContent = `年代：${ageBandOfBirth(bd)}（生年月日から自動で決まります）`; }
 }
 // 回している間も、まん中に来た数字を濃く・離れるほど奥に傾けて薄く（iPhoneの選び方に近い、なめらかな見た目）
 function whPaint(c) {
@@ -16040,6 +16046,7 @@ function whPaint(c) {
 }
 function whInit() {
   const w = document.getElementById('bd-wheel'); if (!w || w.dataset.on) return; w.dataset.on = '1';
+  ['touchstart', 'pointerdown', 'wheel', 'keydown'].forEach(ev => w.addEventListener(ev, () => { w.dataset.touched = '1'; }, {passive:true})); // 指でさわったら「答えた」
   w.querySelectorAll('.wh-col').forEach(c => {
     const on = c.querySelector('.wh-it.on'), all = [...c.querySelectorAll('.wh-it')]; c.scrollTop = Math.max(0, all.indexOf(on)) * WH_H;
     c.addEventListener('scroll', () => { if (!c._raf) c._raf = requestAnimationFrame(() => { c._raf = 0; whPaint(c); }); clearTimeout(c._t); c._t = setTimeout(() => whSettle(c), 140); }, {passive:true});
