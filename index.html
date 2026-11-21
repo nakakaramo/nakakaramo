@@ -1685,6 +1685,8 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .chart .grid{stroke:#EEEAE3;stroke-width:1}
 .chart .ax{font-size:11px;fill:#8F968F;font-family:var(--font)}
 .chart .rowlbl{font-size:11.5px;fill:#46524B;font-family:var(--font)}
+/* 2026-11-22 ダーク表示：グラフの商品名（使用商品と肌記録の時系列）が暗い色のままで読めなかった */
+:root[data-theme="dark"] .chart .rowlbl{fill:var(--ink2)}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chart .rowlbl{fill:var(--ink2)}}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink2);margin-bottom:8px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
@@ -3122,7 +3124,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121190528'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261122041617'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -6721,7 +6723,7 @@ function viewShop() {
 // おすすめ成分を押したら：成分の説明と、その成分を使った人気商品（ランキング順）を4〜5個出す
 function ingEntryOf(word) {
   const w = normIng(String(word || '').replace(/（.*?）|\(.*?\)/g, '').trim()); if (!w) return null;
-  return ING_INDEX.get(w) || ING_DB.find(e => [e.name.replace(/（.*?）/g, ''), ...(e.aliases || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || n.includes(w)); })) || ingMasterEntry(w);
+  return ING_INDEX.get(w) || ING_DB.find(e => [e.name.replace(/（.*?）/g, ''), ...(e.aliases || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || (w.length >= 2 && n.includes(w))); })) || ingMasterEntry(w);
 }
 // 成分辞典にない成分は、おすすめを決めるときに使う成分表（ING_MASTER）の説明で出す（押しても何も出ない、をなくす）
 const ING_ME_C = new Map();
@@ -6729,7 +6731,7 @@ function ingMasterEntry(w) {
   if (ING_ME_C.has(w)) return ING_ME_C.get(w);
   let out = null;
   try {
-    const m = (typeof ING_MASTER !== 'undefined' ? ING_MASTER : []).find(x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || n.includes(w)); }));
+    const m = (typeof ING_MASTER !== 'undefined' ? ING_MASTER : []).find(x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || (w.length >= 2 && n.includes(w))); }));
     if (m) out = {key:m.k, name:m.ja.replace(/（.*?）/g, ''), aliases:(m.inci || []).slice(), feature:m.mech || '', purpose:m.eff ? m.eff + 'を目的に使われます。' : '', caution:[m.side, m.combo && !/一緒に使えます/.test(m.combo) ? m.combo : ''].filter(Boolean).join('') || '肌に合わないと感じたら使うのをやめてください。', fromMaster:true};
   } catch (e) { out = null; }
   ING_ME_C.set(w, out); return out;
@@ -8119,7 +8121,7 @@ function viewMyDetail(id) {
           ${isOralP ? `<dt>飲む量</dt><dd class="kv-e"><span>${p.dose ? esc(doseText(p)) : '<span class="muted">未設定</span>'}</span>${fEd('dose', '飲む量')}</dd>` : `<dt>使用頻度</dt><dd class="kv-e"><span>${esc(useFreqText(p))}</span>${fEd('use', '使用頻度')}</dd>`}
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd class="kv-e"><span>${fmtDate(p.startDate)}</span>${fEd('startDate', '使用開始日')}</dd>
           <dt>${!isRx && ing && !fullIngsOfMy(p) ? '主な成分' : '成分'}</dt><dd>${(() => { // 成分は1回だけ。解説のある成分は緑の下線（押すと成分の説明へ）
-            const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || e.includes(w)); }) : null; };
+            const kOf = t => { const w = normIng(t); return w ? known.find(k => { const e = normIng(k.entry.name); return e && (w === e || w.includes(e) || (w.length >= 2 && e.includes(w))); }) : null; };
             const lk = (k, t) => `<a class="care-link" href="#/ingredients/${k.entry.key}">${esc(t)}</a>`;
             if (!ing) return '<span class="muted">未登録</span>';
             const tok = t => { const k = kOf(t); return k ? lk(k, t) : isRx ? rxIngLink(t) : `<button type="button" class="care-link" data-ingsheet="${esc(t)}">${esc(t)}</button>`; }; // 解説のない成分も押せる（説明・その成分の商品が出る）
@@ -13459,7 +13461,7 @@ const ADV_LABELS = {スキンケア:['おすすめ', '控えたい'], 食事:['�
 // 説明を短く：最初の1文（短すぎるときは2文）だけにする
 // 成分の説明と効果（簡潔に）：成分マスター（作用・効果）を優先し、なければ辞典の説明から、産地などのどうでもいい文は外す
 // 成分マスターの元のデータ（作用・効果・副作用）を名前で探す
-function masterOf(name) { const w = normIng(chipText(name)); if (!w) return null; try { const nm = x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].map(normIng); return ING_MASTER.find(x => nm(x).includes(w)) || ING_MASTER.find(x => nm(x).some(n => n.length >= 2 && (w.includes(n) || n.includes(w)))) || null; } catch (e) { return null; } }
+function masterOf(name) { const w = normIng(chipText(name)); if (!w) return null; try { const nm = x => [x.ja.replace(/（.*?）/g, ''), ...(x.inci || [])].map(normIng); return ING_MASTER.find(x => nm(x).includes(w)) || ING_MASTER.find(x => nm(x).some(n => n.length >= 2 && (w.includes(n) || (w.length >= 2 && n.includes(w))))) || null; } catch (e) { return null; } }
 function ingInfo(e, name) {
   let m = null; try { m = ING_MASTER.find(x => e && x.db === e.key) || (name ? masterOf(name) : null); } catch (er) { /* 何もしない */ }
   const first = t => (String(t || '').replace(/。/g, '。\u0001').split('\u0001').filter(x => x.trim())[0] || '').trim();

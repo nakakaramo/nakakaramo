@@ -1654,6 +1654,22 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       d.style.transform = 'translateX(200px)'; await w(50); if (uiMoving(d)) bad.push('止まったままずれている物を見のがす');
     } catch (e) { bad.push('エラー ' + e.message); } finally { UI_TOUCH = false; d.remove(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-22 画面の点検で見つけた：Myアイテムの成分「水」を押すと、ヒアルロン酸の説明が出ていた（「加水分解ヒアルロン酸」の「水」の1文字に当たっていた）。1文字の成分は、名前が同じときだけ当てる
+  check('成分「水」などの1文字の成分を押しても、別の成分の説明が出ない', await ev(() => { const bad = [];
+    ['水', '酸', '油', '塩'].forEach((w) => { const e = ingEntryOf(w), m = masterOf(w), I = ingInfo(e, w);
+      if (e && normIng(e.name.replace(/（.*?）/g, '')) !== normIng(w) && !(e.aliases || []).some((a) => normIng(a) === normIng(w))) bad.push(w + '→' + e.name);
+      if (m && normIng(m.ja.replace(/（.*?）/g, '')) !== normIng(w) && !(m.inci || []).some((a) => normIng(a) === normIng(w))) bad.push(w + '→' + m.ja);
+      if (w === '水' && /抱えこみ/.test(I.desc)) bad.push('水にヒアルロン酸の説明'); });
+    const h = ingEntryOf('ヒアルロン酸Na'); if (!h || !/ヒアルロン/.test(h.name)) bad.push('ヒアルロン酸Naが見つからなくなった');
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-22 画面の点検で見つけた：ダーク表示で、グラフ「使用商品と肌記録の時系列」の商品名が暗い色のままで読めなかった
+  check('ダーク表示でも、グラフの商品名が読める色になっている', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), th = document.documentElement.getAttribute('data-theme');
+    const lum = (c) => { const m = String(c).match(/[\d.]+/g).slice(0, 3).map((v) => { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v - 0.03928) / 1.055, 2.4); }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+    try { document.documentElement.setAttribute('data-theme', 'dark'); const d = document.createElement('div'); d.className = 'card'; d.innerHTML = '<svg class="chart"><text class="rowlbl" x="0" y="10">テスト</text></svg>'; document.getElementById('main').appendChild(d); await w(50);
+      const fg = lum(getComputedStyle(d.querySelector('.rowlbl')).fill), bgc = getComputedStyle(d).backgroundColor, bg = /rgba?\(/.test(bgc) && !/,\s*0\)$/.test(bgc) ? lum(bgc) : lum(getComputedStyle(document.body).backgroundColor);
+      const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05); if (ratio < 4.5) bad.push('文字と背景の差が小さい（' + ratio.toFixed(2) + '）'); d.remove();
+    } catch (e) { bad.push('エラー ' + e.message); } finally { if (th) document.documentElement.setAttribute('data-theme', th); else document.documentElement.removeAttribute('data-theme'); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
