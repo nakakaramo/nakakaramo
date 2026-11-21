@@ -899,6 +899,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     location.hash = '#/home'; render(); await new Promise((r) => setTimeout(r, 200)); UI_CHK_SEEN.clear(); uiSelfCheck(); const n0 = got.length;
     const p = document.createElement('p'); p.className = 'test-x'; p.textContent = '合計 undefined 円（ひみつのメモ）'; document.getElementById('main').appendChild(p); uiSelfCheck();
     const d = document.createElement('div'); d.style.width = '2000px'; d.style.height = '1px'; d.className = 'test-wide'; document.getElementById('main').appendChild(d); uiSelfCheck();
+    await new Promise((r) => setTimeout(r, 2800)); /* 2026-11-21 はみ出しは、2.5秒たってもまだはみ出しているときだけ知らせる */
     p.remove(); d.remove(); window.logError = keep;
     const ok = n0 === 0 && got.some((m) => /undefined/.test(m) && /test-x/.test(m)) && !got.some((m) => /ひみつ/.test(m)) && got.some((m) => /はみ出し/.test(m));
     if (!ok) console.log('  ' + JSON.stringify(got)); return ok; }));
@@ -1644,6 +1645,14 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const lib = [...m.querySelectorAll('label.avm-b')].find((l) => /ライブラリ/.test(l.textContent)); const li = lib && lib.querySelector('input[type=file]'); if (!li || li.hasAttribute('capture') || !/image/.test(li.accept)) bad.push('ライブラリから選択が、写真を選ぶ入力になっていない');
       const cam = m.querySelector('[data-avm="cam"]'); if (!cam) bad.push('写真を撮るのボタンがない'); else { cam.click(); await w(600); const k = document.getElementById('av-cam'); if (!k || !k.querySelector('video') || !k.querySelector('[data-avk="shot"]')) bad.push('写真を撮るを押しても、すぐカメラにならない'); else { k.querySelector('[data-avk="cancel"]').click(); await w(200); if (document.getElementById('av-cam')) bad.push('カメラのキャンセルで閉じない'); } }
     } catch (e) { bad.push('エラー ' + e.message); } finally { document.getElementById('av-menu')?.remove(); document.getElementById('av-cam')?.remove(); try { unlockScroll(); } catch (e) {} }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 使っている人の画面から「Myアイテムが横にはみ出している」が届いた：タブを横になぞっている途中・切り替えの動きの途中を測っていた。動いている途中は知らせず、止まってもはみ出しているときだけ知らせる
+  check('横になぞっている途中・動きの途中は「はみ出し」と知らせない（止まってもずれていれば知らせる）', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const m = document.getElementById('main'), d = document.createElement('div'); d.style.cssText = 'width:300px;height:20px'; m.appendChild(d);
+    try { UI_TOUCH = true; d.style.transform = 'translateX(200px)'; if (!uiMoving(d)) bad.push('指でなぞっている途中を、動いている途中と見なさない'); UI_TOUCH = false;
+      const an = d.animate([{transform: 'translateX(200px)'}, {transform: 'none'}], {duration: 2000}); await w(50); if (!uiMoving(d)) bad.push('動きの途中を、動いている途中と見なさない'); an.cancel();
+      d.style.transform = 'translateX(200px)'; await w(50); if (uiMoving(d)) bad.push('止まったままずれている物を見のがす');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { UI_TOUCH = false; d.remove(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();

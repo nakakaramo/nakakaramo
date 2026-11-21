@@ -3122,7 +3122,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121180010'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121183808'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3137,7 +3137,14 @@ function logError(msg, src, stack) {
   } catch (e) { /* 何もしない */ }
 }
 // 2026-11-20 エラーにならない表示のおかしさ（「undefined」「NaN」などの文字・画面の横へのはみ出し）も、使っている人の画面で見つけて知らせる（運営が自動で直すため。記録の中身は送らない）
-let UI_CHK_T = 0; const UI_CHK_SEEN = new Set();
+let UI_CHK_T = 0, UI_TOUCH = false; const UI_CHK_SEEN = new Set();
+try { addEventListener('touchstart', () => { UI_TOUCH = true; }, {passive:true, capture:true}); addEventListener('touchend', e => { if (!e.touches || !e.touches.length) UI_TOUCH = false; }, {passive:true, capture:true}); addEventListener('touchcancel', () => { UI_TOUCH = false; }, {passive:true, capture:true}); } catch (e) { /* 何もしない */ }
+// 動いている途中の物（横になぞって切り替え中・入ってくる動き・ずらして見せている物）か
+function uiMoving(e) {
+  if (UI_TOUCH || window.__hSwipe || document.querySelector('.hp-ghost')) return true;
+  for (let x = e; x && x.id !== 'main'; x = x.parentElement) { if (x.classList && /(^| )(hp-ghost|sw-open)( |$)/.test(x.className)) return true; if (x.getAnimations && x.getAnimations().some(a => a.playState === 'running')) return true; } /* 止まったままずれている物（動きが終わっても戻らない）は、本当の不具合として知らせる */
+  return false;
+}
 function uiSelfCheck() {
   try {
     const page = String(location.hash || '#/').split('?')[0].split('/').slice(0, 2).join('/');
@@ -3145,7 +3152,9 @@ function uiSelfCheck() {
     const RE = /(^|[^a-zA-Z])(undefined|NaN|\[object Object\]|Infinity)(?![a-zA-Z])/;
     for (const b of box) { if (!RE.test(b.textContent || '')) continue; const tw = document.createTreeWalker(b, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { const m = (n.textContent || '').match(RE); if (!m || !n.parentElement || n.parentElement.closest('textarea,input,[contenteditable],.memo,.prose')) continue; const el = n.parentElement, cls = [el.tagName.toLowerCase(), ...String(el.className || '').split(' ').filter(Boolean).slice(0, 2)].join('.'), par = el.parentElement ? String(el.parentElement.className || '').split(' ')[0] : ''; const k = page + '|' + m[2] + '|' + cls; if (UI_CHK_SEEN.has(k)) continue; UI_CHK_SEEN.add(k); logError(`表示: 「${m[2]}」が出ている（${par ? par + ' > ' : ''}${cls}）`, 'ui-check:' + (b.id || '')); break; } } /* 書いた文字（メモなど）は送らない。どの部品かだけ */
     const vw = window.innerWidth, wk = page + '|wide'; if (!UI_CHK_SEEN.has(wk)) { const sc = e => { for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) { const st = getComputedStyle(x); if (/(auto|scroll)/.test(st.overflowX) || (st.overflowX === 'hidden' && x.scrollWidth > x.clientWidth + 1) || st.position === 'fixed') return true; } return false; };
-      const L = document.querySelectorAll('#main *'); for (let n = 0; n < L.length && n < 1500; n++) { const e = L[n], r = e.getBoundingClientRect(); if (!r.width || r.right <= vw + 2 || r.left >= vw || r.bottom < 0) continue; if (sc(e)) continue; UI_CHK_SEEN.add(wk); logError(`表示: 画面の横にはみ出している（${[e.tagName.toLowerCase(), ...String(e.className || '').split(' ').filter(Boolean).slice(0, 2)].join('.')}・右端${Math.round(r.right)}>${vw}）`, 'ui-check:wide'); break; } }
+      const L = document.querySelectorAll('#main *'); for (let n = 0; n < L.length && n < 1500; n++) { const e = L[n], r = e.getBoundingClientRect(); if (!r.width || r.right <= vw + 2 || r.left >= vw || r.bottom < 0) continue; if (sc(e) || uiMoving(e)) continue; /* 2026-11-21 横になぞっている途中・切り替えの動きの途中は、はみ出しではない */
+        const name = [e.tagName.toLowerCase(), ...String(e.className || '').split(' ').filter(Boolean).slice(0, 2)].join('.'), right = Math.round(r.right);
+        UI_CHK_SEEN.add(wk); setTimeout(() => { /* 2.5秒たっても、まだはみ出していたときだけ知らせる */ const r2 = e.isConnected ? e.getBoundingClientRect() : null; if (!r2 || r2.right <= window.innerWidth + 2 || uiMoving(e) || UI_TOUCH) { UI_CHK_SEEN.delete(wk); return; } logError(`表示: 画面の横にはみ出している（${name}・右端${right}>${vw}）`, 'ui-check:wide'); }, 2500); break; } }
   } catch (e) { /* 何もしない */ }
 }
 try { new MutationObserver(() => { clearTimeout(UI_CHK_T); UI_CHK_T = setTimeout(uiSelfCheck, 1500); }).observe(document.documentElement, {childList:true, subtree:true}); } catch (e) { /* 何もしない */ }
