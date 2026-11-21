@@ -1619,6 +1619,18 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       try { closeModal(true); } catch (e) {} const rx = RX_DRUGS.find((d) => !isOralKind(d[0])); rxPick(rx[1]); await w(900); if (document.querySelector('#modal-root #mf-dn')) bad.push('塗り薬にも飲む量の画面が出る');
     } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 使っている人の画面から「Myアイテムではみ出している（hp-ghost・mk-pane）」と届いた：横スワイプ・切り替えの動きの途中で、となりのタブが一時的に横に出ているのを、はみ出しと知らせていた
+  check('横スワイプ・切り替えの動きの途中は、はみ出しと知らせない（動きが終われば知らせる）', await ev(async () => { const got = [], keep = window.logError, w = (ms) => new Promise((r) => setTimeout(r, ms)); window.logError = (m, src) => got.push(m + ' ' + src); const bad = [];
+    try {
+      location.hash = '#/my'; render(); await w(800); const mn = document.getElementById('main'), pane = mn.querySelector('.home-pane');
+      UI_CHK_SEEN.clear(); clearTimeout(UI_CHK_T); got.length = 0;
+      const g = document.createElement('div'); g.className = 'home-pane hp-ghost'; g.style.cssText = 'position:absolute;top:0;left:' + (window.innerWidth + 16) + 'px;width:300px;height:40px'; (pane ? pane.parentElement : mn).appendChild(g);
+      uiSelfCheck(); if (got.some((m) => /はみ出し/.test(m))) bad.push('スワイプ中のとなりのタブをはみ出しと知らせた'); g.remove(); clearTimeout(UI_CHK_T);
+      const a = document.createElement('div'); a.className = 'test-anim'; a.style.cssText = 'width:200px;height:10px;margin-left:' + (window.innerWidth - 150) + 'px'; mn.appendChild(a); const an = a.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-200px)' }], { duration: 600 });
+      uiSelfCheck(); if (got.some((m) => /はみ出し/.test(m))) bad.push('動きの途中の中身をはみ出しと知らせた'); an.cancel(); clearTimeout(UI_CHK_T);
+      uiSelfCheck(); if (!got.some((m) => /はみ出し/.test(m) && /test-anim/.test(m))) bad.push('動きが終わって本当にはみ出しているのに知らせない'); a.remove();
+    } catch (e) { bad.push('エラー ' + e.message); } finally { window.logError = keep; clearTimeout(UI_CHK_T); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ') + ' ' + JSON.stringify(got)); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
