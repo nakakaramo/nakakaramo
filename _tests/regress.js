@@ -1487,6 +1487,8 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const f = secs(); for (const k of ['gender', 'age', 'body', 'skin', 'concerns']) if (!f.includes(k)) bad.push('いちばん最初の質問に「' + ({gender: '性別', age: '生年月日', body: '身長・体重', skin: '肌質', concerns: '肌悩み'})[k] + '」がない');
       if (!document.querySelector('#sw-body #bd-wheel .wh-y')) bad.push('いちばん最初の生年月日が、回して選ぶ形になっていない');
       if (!document.getElementById('sw-h') || !document.getElementById('sw-w')) bad.push('いちばん最初に身長・体重を聞かない');
+      // 「あとで」で閉じた人（まだ最初の質問を終えていない）が、あとで「肌質診断をする」を押したときも、全部の質問を出す
+      { const k0 = JSON.stringify(state.settings); try { closeModal(true); } catch (e) {} swState = null; state.settings.onboarded = true; state.settings.surveyDone = false; state.settings.diag = null; openSetupWizard(); await w(400); const f2 = secs(); if (!['gender', 'age', 'body', 'skin', 'concerns'].every((k) => f2.includes(k))) bad.push('「あとで」で閉じた人が、あとで診断するときに全部の質問が出ない：' + f2.join(',')); try { closeModal(true); } catch (e) {} swState = null; Object.assign(state.settings, JSON.parse(k0)); state.settings.onboarded = false; openSetupWizard(); await w(400); }
       // 生年月日にさわらなければ「答えない」、回したらその日
       document.getElementById('sw-h').value = '158'; document.getElementById('sw-w').value = '50';
       const ans = (k, v) => { const b = document.querySelector(`#sw-body [data-sw="${k}"][data-v="${v}"]`); if (b) b.click(); };
@@ -1579,6 +1581,14 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (fs.size !== 1) bad.push('肌質のカードの本文の字の大きさ・太さ・行の高さがそろっていない：' + [...fs].join(' | '));
       if ([...document.querySelectorAll('#main .dg-c p b')].length) bad.push('本文の中に太字のラベルがまざっている（ラベルは上に分ける）');
     } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 点検で見つけた：データのページのいちばん上に区切り線だけが出る・研究への協力の説明が古い（肌質は「選ぶ」ではなく「診断」）・妊娠の確認とポリシーの同意が重なって出る
+  check('データの上の区切り線・研究の説明・確認の窓が重ならない', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state), T = (el) => (el ? el.textContent : '').replace(/​/g, '');
+    try {
+      await w(300); location.hash = '#/account/s/data'; await w(450); const f = document.querySelector('#main .acc-item .card > .set-sub'); if (!f) bad.push('データのページに自動バックアップがない'); else if (parseFloat(getComputedStyle(f).borderTopWidth) > 0) bad.push('データのページのいちばん上に区切り線だけが出る');
+      state.settings.skinType = ''; location.hash = '#/account/s/research'; await w(450); const t = T(document.getElementById('main')); if (/肌質を選ぶ/.test(t)) bad.push('研究の説明が「肌質を選ぶ」のまま'); if (!/肌質診断をすると/.test(t)) bad.push('研究の説明に「肌質診断をすると」がない');
+      const src = await (await fetch(location.href.split('#')[0])).text(); if (!/getElementById\('pol-ov'\) \|\| document\.getElementById\('preg-ov'\)/.test(src)) bad.push('ポリシーの同意が、妊娠の確認と重なって出ることがある');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();

@@ -609,6 +609,7 @@ label.btn{position:relative}
 .sc-opt b{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
 .acc-sec .acc-row{padding:16px 18px}
 .set-sub{padding:12px 0;border-top:1px dashed var(--line)}
+.acc-item .card>.set-sub:first-child,.acc-item .card>.card-h+.set-sub{border-top:0;padding-top:0} /* いちばん上の区切り線は出さない */
 .set-sub:first-of-type{border-top:0;padding-top:4px}
 .set-sub h3{font-size:13.5px;margin:0 0 8px;color:var(--ink2)}
 .set-sub details.fold{margin-top:8px!important}
@@ -3098,7 +3099,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121152105'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121161548'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5743,7 +5744,7 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard(mode) {
   const st = state.settings;
-  swState = {mode:mode || (st.onboarded ? 'redo' : 'first'), acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', birthDate:st.birthDate || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
+  swState = {mode:mode || (st.surveyDone || (st.diag && st.diag.r) ? 'redo' : 'first'), acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', birthDate:st.birthDate || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice(), preg:pregStatus()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
   openModal({title:'肌質診断', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
@@ -11273,7 +11274,7 @@ function policyAgreedNow() {
 // 前からログインしている人：改定したポリシーへの同意を1回だけ聞く（同意しないときは、バックアップを止める）
 function policyGate() {
   try {
-    if (!acct.user || SYNC.pulledFor !== acct.user.id || document.getElementById('pol-ov') || document.getElementById('login-gate')) return;
+    if (!acct.user || SYNC.pulledFor !== acct.user.id || document.getElementById('pol-ov') || document.getElementById('preg-ov') || document.getElementById('login-gate')) return;
     if (policyAgreedNow() || state.settings.backupPaused) return;
     if ($('#modal-root') && $('#modal-root').innerHTML) { clearTimeout(policyGate.t); policyGate.t = setTimeout(policyGate, 3000); return; } // ほかの画面が開いているときは、閉じてから
     const ov = document.createElement('div'); ov.className = 'otp-ov'; ov.id = 'pol-ov';
@@ -16311,7 +16312,7 @@ function researchCardHtml() {
     : state.settings.ageBand === '17歳以下' ? '<p class="small muted" style="margin:10px 0 0">研究への協力は、18歳以上の方だけにお願いしています。</p>'
     : `<label class="check" style="margin-top:10px"><input type="checkbox" id="f_adult"> 18歳以上です</label>
       <button class="btn btn-primary btn-sm" style="margin-top:10px;display:flex" data-action="research-on">内容に同意して協力する</button>
-      ${state.settings.skinType ? '' : '<p class="hint">先に「肌の情報」の「肌質」で肌質を選ぶと、肌質ごとの統計に入ります。</p>'}`}
+      ${state.settings.skinType ? '' : '<p class="hint">先に「肌の情報」の「肌質」で肌質診断をすると、肌質ごとの統計に入ります。</p>'}`}
   </div>`;
 }
 function viewSettings() {
