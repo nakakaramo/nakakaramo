@@ -1528,6 +1528,28 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       state.settings.gender = '男性'; location.hash = '#/account'; await w(400); render(); await w(150); if (document.getElementById('acc-it-preg')) bad.push('男性にも妊娠・授乳が出る'); if (pregNow()) bad.push('男性なのに妊娠中として扱う');
     } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} swState = null; state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 妊娠中のまま10か月・授乳中のまま1年たったら「今もそうですか？」と一度だけ聞く（「あとで」なら30日は聞かない）
+  check('妊娠中・授乳中のまま長くたったら、今もそうか一度だけ聞く', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state);
+    const ask = async () => { document.getElementById('preg-ov')?.remove(); pregCheck(); await w(300); return document.getElementById('preg-ov'); };
+    try {
+      await w(400); try { closeModal(true); } catch (e) {} document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov,#pol-ov').forEach((e) => e.remove());
+      const st = state.settings; st.onboarded = true; st.gender = '女性';
+      st.preg = 'nursing'; st.pregAt = addDays(todayStr(), -200); st.pregAskAt = ''; if (await ask()) bad.push('授乳中になってまだ200日なのに聞く');
+      st.pregAt = addDays(todayStr(), -370); let ov = await ask(); if (!ov || !/今も授乳中ですか/.test(ov.textContent.replace(/​/g, ''))) bad.push('授乳中のまま1年たっても聞かない');
+      else { ov.querySelector('[data-preg="later"]').click(); await w(300); if (st.preg !== 'nursing') bad.push('「あとで」で答えが変わる'); if (await ask()) bad.push('「あとで」のあと、すぐまた聞く');
+        st.pregAskAt = addDays(todayStr(), -31); ov = await ask(); if (!ov) bad.push('「あとで」から30日たっても聞かない');
+        else { ov.querySelector('[data-preg="no"]').click(); await w(300); if (pregNow() !== '' || st.preg !== 'no') bad.push('「どちらでもない」を選んでも反映されない'); if (await ask()) bad.push('答えたのにまた聞く'); } }
+      st.preg = 'preg'; st.pregAt = addDays(todayStr(), -301); st.pregAskAt = ''; ov = await ask(); if (!ov || !/今も妊娠中ですか/.test(ov.textContent.replace(/​/g, ''))) bad.push('妊娠中のまま10か月たっても聞かない');
+      else { ov.querySelector('[data-preg="preg"]').click(); await w(300); if (st.pregAt !== todayStr()) bad.push('「今も妊娠中」と答えたら、また数え直さない'); if (await ask()) bad.push('答えたのにまた聞く'); }
+      st.preg = 'no'; st.pregAt = addDays(todayStr(), -900); if (await ask()) bad.push('どちらでもない人に聞く');
+      st.gender = '男性'; st.preg = 'preg'; if (await ask()) bad.push('男性に聞く');
+      // 前から答えていた人（答えた日がない）：肌質診断の日から数える
+      st.gender = '女性'; st.preg = ''; st.pregAt = ''; st.diag = {a: {preg: 'nursing'}, r: Object.assign(diagCompute({}, []), {at: addDays(todayStr(), -400)})}; if (!(await ask())) bad.push('前から授乳中と答えていた人に、1年たっても聞かない');
+      // アカウントで選んだら、その日から数え直す
+      document.getElementById('preg-ov')?.remove(); st.pregAt = ''; actions['acc-preg']('nursing'); await w(400); if (st.pregAt !== todayStr()) bad.push('アカウントで選んだ日を覚えない');
+      if (normalize(JSON.parse(JSON.stringify(state))).settings.pregAt !== todayStr()) bad.push('答えた日が保存されない');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { document.getElementById('preg-ov')?.remove(); state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

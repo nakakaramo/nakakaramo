@@ -199,6 +199,7 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .pick-list{margin:-4px 0}
 .pick-row{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:50px;padding:0 4px;background:none;border:0;border-radius:0;font:inherit;font-size:16px;color:var(--ink);text-align:left;cursor:pointer}
 .pick-row+.pick-row{border-top:1px solid var(--line)}
+.preg-pick{margin:6px 0 4px;text-align:left}
 .pick-row i{display:flex;color:var(--green-d);opacity:0}.pick-row i svg{width:20px;height:20px}
 .pick-row.on{font-weight:600}.pick-row.on i{opacity:1}
 .acc-save{width:100%;justify-content:center;margin-top:14px}.acc-save+.acc-save{margin-top:8px}
@@ -3082,7 +3083,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121135431'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121142205'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4012,6 +4013,8 @@ function normalize(d) {
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.birthDate = validBirth(ds.birthDate) ? ds.birthDate : ''; // 生年月日（任意）
+  out.settings.pregAt = typeof ds.pregAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ds.pregAt) ? ds.pregAt : ''; // 妊娠・授乳を答えた日（長く同じままなら、今もそうか一度だけ聞く）
+  out.settings.pregAskAt = typeof ds.pregAskAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ds.pregAskAt) ? ds.pregAskAt : '';
   out.settings.preg = ['preg', 'nursing', 'no'].includes(ds.preg) ? ds.preg : (ds.preg === undefined && ds.diag && ds.diag.a && ['preg', 'nursing', 'no'].includes(ds.diag.a.preg) ? ds.diag.a.preg : ''); // 妊娠・授乳（前は肌質診断の答えの中にあった）
   out.settings.ageBand = out.settings.birthDate ? ageBandOfBirth(out.settings.birthDate) : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
@@ -6230,7 +6233,7 @@ function swSave(done) {
     st.gender = v.gender; st.birthDate = v.birthDate || ''; st.ageBand = st.birthDate ? ageBandOfBirth(st.birthDate) : v.ageBand;
     // 肌質診断：答えを保存して、肌質を判断する（前からある肌質・肌悩みの項目にも入れる）
     const a = {}; DIAG_Q.forEach(q => { a[q.k] = q.multi ? (Array.isArray(v[q.k]) ? v[q.k].slice() : []) : (v[q.k] || ''); });
-    st.preg = ['preg', 'nursing', 'no'].includes(v.preg) ? v.preg : st.preg || '';
+    { const np = ['preg', 'nursing', 'no'].includes(v.preg) ? v.preg : st.preg || ''; if (np !== pregStatus() || !st.pregAt) st.pregAt = todayStr(); st.preg = np; }
     st.diag = {a, r:null}; setConcernKeys(v.concerns || []); st.diag.r = diagCompute(a, st.concernKeys);
     st.skinType = SKIN_TYPE_INFO[st.diag.r.main].old; st.sensitive = st.diag.r.sensitive;
     st.height = Number(v.height) || 0; st.weight = Number(v.weight) || 0; st.sleepNeed = v.sleepNeed || 420; st.monthlyBudget = Number(v.budget) || 0;
@@ -9185,6 +9188,34 @@ const DIAG_Q = [
 ];
 // 妊娠中・授乳中（肌質診断で答えた人だけ）。男性と答えた人は対象外
 function pregStatus() { const st = state.settings; return st.preg || (((st.diag || {}).a || {}).preg || ''); } // 妊娠・授乳（アカウントで選んだもの。なければ肌質診断の答え）
+// 妊娠中のまま10か月・授乳中のまま1年たったら、「今もそうですか？」と一度だけ聞く（控えたい成分の判断が古いままにならないように）
+const PREG_ASK_DAYS = {preg:300, nursing:365};
+function pregAskDue() {
+  const st = state.settings, p = pregNow(); if (!p) return false;
+  const since = st.pregAt || ((st.diag && st.diag.r && st.diag.r.at) || ''); if (!since) return false;
+  if (diffDays(since, todayStr()) < PREG_ASK_DAYS[p]) return false;
+  if (st.pregAskAt && diffDays(st.pregAskAt, todayStr()) < 30) return false; // 「あとで」を押したら、30日は聞かない
+  return true;
+}
+function pregCheck() {
+  try {
+    if (!state.settings.onboarded || !pregAskDue() || document.getElementById('preg-ov') || document.getElementById('pol-ov') || document.getElementById('login-gate')) return;
+    if ($('#modal-root') && $('#modal-root').innerHTML) { clearTimeout(pregCheck.t); pregCheck.t = setTimeout(pregCheck, 4000); return; }
+    const p = pregNow(), ov = document.createElement('div'); ov.className = 'otp-ov'; ov.id = 'preg-ov';
+    ov.innerHTML = `<div class="otp-card" role="dialog" aria-modal="true" aria-labelledby="preg-t">
+      <p class="otp-t" id="preg-t">今も${p === 'preg' ? '妊娠中' : '授乳中'}ですか？</p>
+      <p class="otp-s">「${p === 'preg' ? '妊娠中' : '授乳中'}」と答えてから${p === 'preg' ? '10か月' : '1年'}たちました。妊娠中・授乳中に控えたい成分（レチノールなど）を提案から外すかどうかに使います。</p>
+      <div class="pick-list preg-pick">${DIAG_Q.find(q => q.k === 'preg').o.map(([v, l]) => `<button type="button" class="pick-row${v === p ? ' on' : ''}" data-preg="${v}"><span>${esc(l)}</span><i aria-hidden="true">${icon('check')}</i></button>`).join('')}</div>
+      <div class="otp-sub" style="justify-content:center"><button type="button" class="otp-link otp-x" data-preg="later">あとで</button></div>
+    </div>`;
+    document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('in'));
+    ov.addEventListener('click', e => { const b = e.target.closest('[data-preg]'); if (!b) return; const st = state.settings, v = b.dataset.preg;
+      try { hapticTick(); } catch (x) { /* 何もしない */ }
+      if (v === 'later') st.pregAskAt = todayStr();
+      else { st.preg = v; st.pregAt = todayStr(); st.pregAskAt = ''; if (st.diag && st.diag.a) st.diag.a.preg = v; toast('ありがとうございます。提案に反映しました'); }
+      save(); ov.classList.add('out'); setTimeout(() => ov.remove(), 200); try { render(); } catch (x) { /* 何もしない */ } });
+  } catch (e) { /* 何もしない */ }
+}
 function pregNow() { const p = pregStatus(); return state.settings.gender !== '男性' && (p === 'preg' || p === 'nursing') ? p : ''; }
 const PREG_ING_RE = /レチノ|レチナ|ハイドロキノン|トレチノイン|タザロテン|バクチオール(?!フリー)/;
 const PREG_RX_RE = /アダパレン|ディフェリン|エピデュオ|トレチノイン|タザロテン/;
@@ -16539,7 +16570,7 @@ const actions = {
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
   'vision-diag': () => runVisionDiag(),
   'life-goal': () => openLifeGoal(),
-  'acc-preg': (v) => { const st = state.settings; st.preg = ['preg', 'nursing', 'no'].includes(v) ? v : ''; if (st.diag && st.diag.a) st.diag.a.preg = st.preg; if (save()) { hapticSaved(); render(); setTimeout(() => { if (parseRoute().id === 's/preg') location.hash = '#/account'; }, 280); } },
+  'acc-preg': (v) => { const st = state.settings; st.preg = ['preg', 'nursing', 'no'].includes(v) ? v : ''; st.pregAt = todayStr(); if (st.diag && st.diag.a) st.diag.a.preg = st.preg; if (save()) { hapticSaved(); render(); setTimeout(() => { if (parseRoute().id === 's/preg') location.hash = '#/account'; }, 280); } },
   'acc-gender': (v) => { state.settings.gender = ['男性', '女性'].includes(v) ? v : ''; if (save()) { hapticSaved(); if (researchState().on) researchSend(); render(); setTimeout(() => { if (parseRoute().id === 's/gender') location.hash = '#/account'; }, 280); } },
   'acc-birth-save': () => { const y = whVal('y'), mo = whVal('m'), max = new Date(y, mo, 0).getDate(), d = Math.min(whVal('d'), max), bd = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     if (!validBirth(bd)) { toast('生年月日を正しく選んでください', 'error'); return; } if (birthSet(bd)) { toast('保存しました'); location.hash = '#/account'; } },
@@ -17261,6 +17292,7 @@ function render() {
   try { SHOWN_DAY = todayStr(); } catch (e) { /* 何もしない */ }
   try { gateSync(); } catch (e) { /* 何もしない */ }
   setTimeout(policyGate, 600);
+  setTimeout(pregCheck, 1500);
   applyHelpPref();
   const r = parseRoute();
   // アカウント（すべて）・ホーム・記録一覧のボタンは、押しても沈まない（2026-11-16）
