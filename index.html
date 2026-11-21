@@ -3082,7 +3082,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121132158'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121135431'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4012,6 +4012,7 @@ function normalize(d) {
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.birthDate = validBirth(ds.birthDate) ? ds.birthDate : ''; // 生年月日（任意）
+  out.settings.preg = ['preg', 'nursing', 'no'].includes(ds.preg) ? ds.preg : (ds.preg === undefined && ds.diag && ds.diag.a && ['preg', 'nursing', 'no'].includes(ds.diag.a.preg) ? ds.diag.a.preg : ''); // 妊娠・授乳（前は肌質診断の答えの中にあった）
   out.settings.ageBand = out.settings.birthDate ? ageBandOfBirth(out.settings.birthDate) : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.nickname = typeof ds.nickname === 'string' ? ds.nickname.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20) : ''; // アカウントに出す名前
   out.settings.avatar = ds.avatar && ds.avatar.t === 'img' && safeImg(ds.avatar.v) ? {t:'img', v:ds.avatar.v} : ds.avatar && ds.avatar.t === 'emoji' && AVATAR_EMOJI.includes(ds.avatar.v) ? {t:'emoji', v:ds.avatar.v, c:AVATAR_COLORS.includes(ds.avatar.c) ? ds.avatar.c : AVATAR_COLORS[0]} : null; // アカウントのアイコン
@@ -5724,7 +5725,7 @@ let swState = null;
 function openSetupWizard(mode) {
   const st = state.settings;
   swState = {mode:mode || (st.onboarded ? 'redo' : 'first'), acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', birthDate:st.birthDate || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
-  Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
+  Object.assign(swState.v, JSON.parse(JSON.stringify((st.diag && st.diag.a) || {})), {concerns:concernKeysNow().slice(), preg:pregStatus()}); ['dryAreas', 'trouble'].forEach(k => { if (!Array.isArray(swState.v[k])) swState.v[k] = []; });
   openModal({title:'肌質診断', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
   root.querySelector('.modal-head [data-action="close-modal"]').setAttribute('data-action', 'setup-later');
@@ -5732,7 +5733,7 @@ function openSetupWizard(mode) {
   swPaint();
 }
 const SW_ALL = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'preg', 'account', 'done']; // 2026-11-21 いちばん最初：性別・生年月日・身長体重・肌質・肌悩み（＋妊娠・授乳）。やり直しは肌質の質問だけ（SW_REDO）
-const SW_REDO = ['skin', 'preg']; // 妊娠・授乳は、控えたい成分（レチノールなど）を外す安全のため、やり直しでも聞く（男性には出さない） // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
+const SW_REDO = ['skin']; // 妊娠・授乳は、アカウントの「肌の情報」の「妊娠・授乳」でいつでも変えられる // 質問は少なく：性別・年代・肌の5問・肌悩みだけ（身長・睡眠・予算・研究への協力などは設定から） // 肌質診断の質問を先に // アカウント作成は質問のあと（最初にやめてしまわないように）
 // はじめの質問の「アカウントを作成／ログイン」：成功したら次の質問へ進む
 async function swAuth() {
   if (!swState || swState.busy) return;
@@ -6229,6 +6230,7 @@ function swSave(done) {
     st.gender = v.gender; st.birthDate = v.birthDate || ''; st.ageBand = st.birthDate ? ageBandOfBirth(st.birthDate) : v.ageBand;
     // 肌質診断：答えを保存して、肌質を判断する（前からある肌質・肌悩みの項目にも入れる）
     const a = {}; DIAG_Q.forEach(q => { a[q.k] = q.multi ? (Array.isArray(v[q.k]) ? v[q.k].slice() : []) : (v[q.k] || ''); });
+    st.preg = ['preg', 'nursing', 'no'].includes(v.preg) ? v.preg : st.preg || '';
     st.diag = {a, r:null}; setConcernKeys(v.concerns || []); st.diag.r = diagCompute(a, st.concernKeys);
     st.skinType = SKIN_TYPE_INFO[st.diag.r.main].old; st.sensitive = st.diag.r.sensitive;
     st.height = Number(v.height) || 0; st.weight = Number(v.weight) || 0; st.sleepNeed = v.sleepNeed || 420; st.monthlyBudget = Number(v.budget) || 0;
@@ -9182,7 +9184,8 @@ const DIAG_Q = [
   {k:'timePm', q:'夜のスキンケアに使える時間は？', o:[['1','1分くらい'],['3','3分くらい'],['5','5分くらい'],['10','10分以上']]}
 ];
 // 妊娠中・授乳中（肌質診断で答えた人だけ）。男性と答えた人は対象外
-function pregNow() { const a = (state.settings.diag && state.settings.diag.a) || {}; return state.settings.gender !== '男性' && (a.preg === 'preg' || a.preg === 'nursing') ? a.preg : ''; }
+function pregStatus() { const st = state.settings; return st.preg || (((st.diag || {}).a || {}).preg || ''); } // 妊娠・授乳（アカウントで選んだもの。なければ肌質診断の答え）
+function pregNow() { const p = pregStatus(); return state.settings.gender !== '男性' && (p === 'preg' || p === 'nursing') ? p : ''; }
 const PREG_ING_RE = /レチノ|レチナ|ハイドロキノン|トレチノイン|タザロテン|バクチオール(?!フリー)/;
 const PREG_RX_RE = /アダパレン|ディフェリン|エピデュオ|トレチノイン|タザロテン/;
 function diagAnswers() { return (state.settings.diag && state.settings.diag.a) || {}; }
@@ -10535,7 +10538,7 @@ function rtPlan(slot, solo) {
     if (calm && /アダパレン|過酸化ベンゾイル|ディフェリン|ベピオ|エピデュオ|デュアック/.test(t)) return `${calmW === '赤み・肌あれ' ? '赤み・ヒリヒリが強い日です' : `${calmW}がある日です`}。塗る範囲・量を守り、保湿をしっかりします。ヒリヒリがつらいときは自分でやめずに、塗る回数を減らしてよいか皮膚科に相談します`;
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
-  const pregAsk = state.settings.gender !== '男性' && (((state.settings.diag || {}).a || {}).preg || '') !== 'no';
+  const pregAsk = state.settings.gender !== '男性' && pregStatus() !== 'no';
   const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || [], an = (acneNote.get(r) || []).concat(OR.iso && ACL(r).some(c => c === 'ada' || c === 'bpo') ? [`イソトレチノインを飲んでいる間に${ACL(r).includes('ada') ? 'アダパレン' : '過酸化ベンゾイル'}を重ねると、乾燥・刺激が強く出るおそれがあります。一緒に使うよう医師に言われているか確かめましょう`] : []); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : `皮膚科の塗り薬（${rxIngLabel(r.x.p)}）`, prods:[r.x], fixed:true, per:r.per, how:r.how,
     today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(an.map(t => T(t, '確認'))) /* 医師・薬剤師に確かめること：薬の手順でも、いつも見せる */.concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const eyeT = has('darkcircle') || has('puffy');
@@ -15975,7 +15978,7 @@ function widgetPreviewCard() {
 }
 // からだと肌・設定・プライバシーの中身を、カードごとに分ける（名前はカードの見出し）
 // ===== アカウントの設定：6つの区分（プロフィール・肌の情報・アプリ設定・データ・サービス・サポート）に分けて、項目を一覧で並べる =====
-const ACC_GROUPS = [['プロフィール', ['gender', 'age', 'height', 'weight']], ['肌の情報', ['skintype', 'concerns']], ['アプリ設定', ['notify', 'display', 'install', 'reminder', 'widget']], ['データ', ['data']], ['サービス', ['about', 'research']], ['サポート', ['privacy', 'support']]];
+const ACC_GROUPS = [['プロフィール', ['gender', 'age', 'height', 'weight']], ['肌の情報', ['skintype', 'concerns', 'preg']], ['アプリ設定', ['notify', 'display', 'install', 'reminder', 'widget']], ['データ', ['data']], ['サービス', ['about', 'research']], ['サポート', ['privacy', 'support']]];
 function accPool() { // 前からある設定の枠（タイトル → 中身）
   const m = {}; ['body', 'settings', 'privacy'].forEach(k => accItems(k).forEach(x => { m[x.t] = x.html; })); return m;
 }
@@ -15992,6 +15995,7 @@ function accItemDefs() {
       if (!diagNow()) return card('肌質', '<p class="muted" style="margin:0 0 12px">まだ肌質診断をしていません。1〜2分の質問に答えると、肌質と肌悩みに合わせたケアを提案します。</p><button type="button" class="btn btn-primary acc-save" data-action="setup">肌質診断をする</button>');
       let h = ''; try { h = '<div class="acc-multi">' + careDiagHtml({redoTop:true}) + '</div>'; } catch (e) { console.error(e); h = card('肌質', skinTypePartHtml()); }
       return h + '<p class="small muted rt-foot">自己申告からの推定で、医学的な診断ではありません。</p>'; }},
+    preg: {t:'妊娠・授乳', icon:'heart', hide:st.gender === '男性', val:() => ({preg:'妊娠中', nursing:'授乳中', no:'どちらでもない'})[pregStatus()] || '未設定', html:() => card('妊娠・授乳', `<p class="small muted" style="margin:0 0 10px">妊娠中・授乳中に控えたい成分（レチノールなど）を、提案から外します。</p><div class="pick-list" role="radiogroup" aria-label="妊娠・授乳">${DIAG_Q.find(q => q.k === 'preg').o.map(([v, l]) => `<button type="button" class="pick-row${pregStatus() === v ? ' on' : ''}" role="radio" aria-checked="${pregStatus() === v}" data-action="acc-preg" data-id="${v}"><span>${esc(l)}</span><i aria-hidden="true">${icon('check')}</i></button>`).join('')}</div>`)},
     concerns: {t:'肌悩み', icon:'spark', val:() => ck.length ? ck.length + '件' : '未設定', html:() => card('肌悩み', concernsPartHtml())},
     notify: {t:'お知らせ', icon:'bell', hide:NATIVE_APP, html:pick(/^お知らせ$/)},
     display: {t:'画面の表示', icon:'moon', val:() => ({auto:'自動', light:'ライト', dark:'ダーク'})[themePref()], html:pick(/^画面の表示$/)},
@@ -16535,6 +16539,7 @@ const actions = {
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
   'vision-diag': () => runVisionDiag(),
   'life-goal': () => openLifeGoal(),
+  'acc-preg': (v) => { const st = state.settings; st.preg = ['preg', 'nursing', 'no'].includes(v) ? v : ''; if (st.diag && st.diag.a) st.diag.a.preg = st.preg; if (save()) { hapticSaved(); render(); setTimeout(() => { if (parseRoute().id === 's/preg') location.hash = '#/account'; }, 280); } },
   'acc-gender': (v) => { state.settings.gender = ['男性', '女性'].includes(v) ? v : ''; if (save()) { hapticSaved(); if (researchState().on) researchSend(); render(); setTimeout(() => { if (parseRoute().id === 's/gender') location.hash = '#/account'; }, 280); } },
   'acc-birth-save': () => { const y = whVal('y'), mo = whVal('m'), max = new Date(y, mo, 0).getDate(), d = Math.min(whVal('d'), max), bd = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     if (!validBirth(bd)) { toast('生年月日を正しく選んでください', 'error'); return; } if (birthSet(bd)) { toast('保存しました'); location.hash = '#/account'; } },

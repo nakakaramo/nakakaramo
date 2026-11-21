@@ -1361,7 +1361,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       state.settings.onboarded = true; document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
       state.skinLogs.push({id: 'demo-x', date: todayStr(), demo: true, condition: 3}); // デモデータがあるときの「デモデータを削除」
       location.hash = '#/account'; await w(400); render(); await w(200);
-      const want = [['プロフィール', ['性別', '生年月日', '身長', '体重']], ['肌の情報', ['肌質', '肌悩み']], ['アプリ設定', ['お知らせ', '画面の表示', 'アプリとして使う']], ['データ', ['データ']], ['サービス', ['ナカカラモについて', '研究への協力']], ['サポート', ['プライバシー', 'お問い合わせ']]];
+      const want = [['プロフィール', ['性別', '生年月日', '身長', '体重']], ['肌の情報', ['肌質', '肌悩み'].concat(state.settings.gender === '男性' ? [] : ['妊娠・授乳'])], ['アプリ設定', ['お知らせ', '画面の表示', 'アプリとして使う']], ['データ', ['データ']], ['サービス', ['ナカカラモについて', '研究への協力']], ['サポート', ['プライバシー', 'お問い合わせ']]];
       const hs = [...document.querySelectorAll('#main .acc-grp-h')].map((h) => h.textContent.trim());
       if (hs.join(',') !== want.map((x) => x[0]).join(',')) bad.push('区分の見出しが違う：' + hs.join(','));
       [...document.querySelectorAll('#main .acc-grp-h')].forEach((h, i) => { const rows = [...h.nextElementSibling.querySelectorAll('.acc-row b')].map((b) => b.textContent.trim()); if (want[i] && rows.join(',') !== want[i][1].join(',')) bad.push(`「${h.textContent}」の項目が違う：${rows.join(',')}`); });
@@ -1500,12 +1500,32 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       // やり直し：肌質の質問だけ
       const before = JSON.stringify([st.gender, st.birthDate, st.height, st.weight, concernKeysNow()]);
       location.hash = '#/account/s/skintype'; await w(500); const rb = document.querySelector('#main .dg-redo'); if (rb) rb.click(); else openSetupWizard(); await w(400);
-      const r = secs(); if (r.join(',') !== 'skin,preg') bad.push('やり直しで、肌質（と安全のための妊娠・授乳）以外も聞く：' + r.join(','));
+      const r = secs(); if (r.join(',') !== 'skin') bad.push('やり直しで、肌質以外も聞く：' + r.join(','));
       if (document.querySelector('#sw-body #bd-wheel, #sw-body #sw-h, #sw-body [data-sw="concerns"], #sw-body [data-sw="gender"]')) bad.push('やり直しに、生年月日・身長体重・肌悩み・性別が入っている');
       ans('tight', 'no'); document.querySelector('[data-action="setup-finish"]').click(); await w(700);
       if (document.querySelector('#sw-body')) bad.push('やり直しを終えられない');
       if (JSON.stringify([st.gender, st.birthDate, st.height, st.weight, concernKeysNow()]) !== before) bad.push('やり直しで、性別・生年月日・身長体重・肌悩みが変わってしまう');
       if (!state.settings.diag || state.settings.diag.a.tight !== 'no') bad.push('やり直しの答えが肌質に入らない');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} swState = null; state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 妊娠・授乳は、肌質診断のやり直しから外し、アカウントの「肌の情報」でいつでも変えられるようにする（控えたい成分を外す安全のため）
+  check('妊娠・授乳をアカウントの肌の情報で変えられ、提案に反映される', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state);
+    try {
+      await w(500); try { closeModal(true); } catch (e) {} document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
+      state.settings.onboarded = true; state.settings.gender = '女性'; state.settings.preg = ''; state.settings.diag = {a: {preg: 'no'}, r: diagCompute({}, [])};
+      location.hash = '#/account'; await w(400); render(); await w(150);
+      const grp = [...document.querySelectorAll('#main .acc-grp-h')].find((h) => h.textContent.trim() === '肌の情報');
+      const row = document.getElementById('acc-it-preg'); if (!row || !grp || !grp.nextElementSibling.contains(row)) bad.push('「肌の情報」に「妊娠・授乳」がない');
+      if (row && !/どちらでもない/.test(row.textContent)) bad.push('今の答え（肌質診断のときの答え）が一覧に出ない');
+      location.hash = '#/account/s/preg'; await w(450); const bs = [...document.querySelectorAll('#main .pick-row')];
+      if (bs.length !== 3) bad.push('妊娠・授乳のページの選ぶところが違う');
+      else { bs[0].click(); await w(700); if (pregNow() !== 'preg') bad.push('妊娠中を選んでも反映されない'); if (state.settings.diag.a.preg !== 'preg') bad.push('肌質診断の答えと食い違う');
+        if (!normalize(JSON.parse(JSON.stringify(state))).settings.preg) bad.push('妊娠・授乳が保存されない'); }
+      // 肌質診断をやり直しても、妊娠・授乳の答えは消えない
+      openSetupWizard(); await w(400); if (document.getElementById('sw-s-preg')) bad.push('やり直しに妊娠・授乳が入っている');
+      ['tight', 'oilDay', 'acne'].forEach((k) => { const b = document.querySelector(`#sw-body [data-sw="${k}"]`); if (b) b.click(); }); document.querySelector('[data-action="setup-finish"]').click(); await w(700);
+      if (pregNow() !== 'preg') bad.push('肌質診断をやり直すと、妊娠中の答えが消える');
+      state.settings.gender = '男性'; location.hash = '#/account'; await w(400); render(); await w(150); if (document.getElementById('acc-it-preg')) bad.push('男性にも妊娠・授乳が出る'); if (pregNow()) bad.push('男性なのに妊娠中として扱う');
     } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} swState = null; state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
