@@ -1597,6 +1597,28 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const src = await (await fetch(location.href.split('#')[0])).text(); if (!/getElementById\('pol-ov'\) \|\| document\.getElementById\('preg-ov'\)/.test(src)) bad.push('ポリシーの同意が、妊娠の確認と重なって出ることがある');
     } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 飲み薬・サプリは1日に何錠かが人それぞれなので、登録したらすぐ飲む量（1回の量・単位・タイミング）を入れる。あとから商品の画面でも変えられる
+  check('飲み薬は登録のときに飲む量を入れられ、あとから変えられる', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state), T = (el) => (el ? el.textContent : '').replace(/​/g, '');
+    try {
+      await w(300); try { closeModal(true); } catch (e) {} state.myProducts = []; state.settings.onboarded = true;
+      const oral = RX_DRUGS.find((d) => isOralKind(d[0]) && /錠/.test(d[1])) || RX_DRUGS.find((d) => isOralKind(d[0]));
+      rxPick(oral[1]); await w(900); const m = document.getElementById('modal-root');
+      if (!m.querySelector('#mf-dn')) bad.push('飲み薬を登録しても、飲む量を入れる画面が出ない');
+      else { if (!/医師・薬剤師の指示/.test(T(m))) bad.push('飲む量は指示どおりに入れる、の一言がない');
+        m.querySelector('[data-dsn="1"]').click(); await w(50); if (m.querySelector('#mf-dn').value !== '2') bad.push('＋で量が増えない：' + m.querySelector('#mf-dn').value);
+        m.querySelector('input[name="mf-du"][value="錠"]').click(); $$('#modal-root input[name="mf-dw"]').forEach((x) => { x.checked = ['朝', '昼', '夜'].includes(x.value); });
+        document.querySelector('[data-action="my-field-save"]').click(); await w(400);
+        const p = state.myProducts.find((x) => x.name === oral[1]); if (!p || !p.dose || p.dose.n !== 2 || p.dose.unit !== '錠' || p.dose.when.join() !== '朝,昼,夜') bad.push('飲む量が保存されない：' + JSON.stringify(p && p.dose));
+        if (p && p.timing !== '朝・夜') bad.push('飲むタイミングがケアの朝・夜に反映されない');
+        if (p && doseText(p) !== '1回2錠・朝・昼・夜（1日3回）') bad.push('飲む量の書き方：' + doseText(p));
+        ui.myKind = 'oral'; location.hash = '#/my'; render(); await w(300); if (!/1回2錠・朝・昼・夜（1日3回）/.test(T(document.getElementById('main')))) bad.push('Myアイテムの一覧に飲む量が出ない');
+        location.hash = '#/my/' + p.id; await w(400); const ed = document.querySelector('#main [data-action="my-field"][data-id$="|dose"]'); if (!ed) bad.push('商品の画面で飲む量を変えられない');
+        else { ed.click(); await w(400); const ip = document.getElementById('mf-dn'); ip.value = '0'; document.querySelector('[data-action="my-field-save"]').click(); await w(200); if (!/数字で入れてください/.test(T(document.getElementById('modal-root')))) bad.push('0錠でも保存できてしまう'); try { closeModal(true); } catch (e) {} }
+        if (normalize(JSON.parse(JSON.stringify(state))).myProducts.find((x) => x.id === p.id).dose.n !== 2) bad.push('飲む量が残らない'); }
+      // 塗り薬は今までどおり（飲む量の画面は出さない）
+      try { closeModal(true); } catch (e) {} const rx = RX_DRUGS.find((d) => !isOralKind(d[0])); rxPick(rx[1]); await w(900); if (document.querySelector('#modal-root #mf-dn')) bad.push('塗り薬にも飲む量の画面が出る');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
