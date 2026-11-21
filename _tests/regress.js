@@ -619,10 +619,11 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     state.myProducts = [mk('r1', 'エピデュオゲル', 'アダパレン・過酸化ベンゾイル', '夜'), mk('r2', 'ディフェリンゲル0.1%', 'アダパレン', '夜'), mk('r3', 'ベピオゲル2.5%', '過酸化ベンゾイル', '夜'), mk('r4', 'アクアチムクリーム1%', 'ナジフロキサシン', '朝・夜')];
     state.settings.concernKeys = ['acne']; state.skinLogs = [{id: 'rl1', date: d, condition: 3, acneCount: 3, acneTypes: ['赤ニキビ', '黄ニキビ（膿あり）'], usedProducts: [], memo: '', photo: ''}];
     const y2 = blankLife(addDays(d, -2)); y2.bed = '23:00'; y2.wake = '07:00'; state.lifeLogs = [y2]; state = normalize(JSON.parse(JSON.stringify(state)));
-    let ok1 = false, info = ''; try { const P = rtPlan('pm'), rx = P.steps.filter((z) => z.k.startsWith('rx:')), ids = rx.map((z) => z.prods[0].p.id);
+    let ok1 = false, info = ''; try { const P = rtPlan('pm'), rx = P.steps.filter((z) => z.k.startsWith('rx:')), ids = rx.flatMap((z) => z.prods.map((x) => x.p.id)); /* 2026-11-21 塗り薬は1つのカードにまとめる */
       /* 2026-11-20 処方の塗り薬は、医師の指示どおり全部手順に入れる（外さない）。同じ成分が重なる薬には「重ねて塗るかは医師・薬剤師に」と出す */
       const tx = (id) => (rx.find((z) => z.prods[0].p.id === id) || {today: []}).today.map((t) => t.t).join(' ');
-      ok1 = ids.length === 4 && ['r1', 'r2', 'r3', 'r4'].every((i) => ids.includes(i) && !P.rested.has(i)) && /同じ成分.*医師・薬剤師に確かめ/.test(tx('r2')) && /同じ成分.*医師・薬剤師に確かめ/.test(tx('r3')) && !/同じ成分/.test(tx('r1')) && /赤ニキビ・黄ニキビに塗りましょう/.test(tx('r4')); info = ids.join(','); } catch (e) { info = e.message; }
+      const st = P.steps.find((z) => z.k === 'rx:drug'), stx = st ? st.today.map((t) => t.t).join(' ') : '';
+      ok1 = ids.length === 4 && ['r1', 'r2', 'r3', 'r4'].every((i) => ids.includes(i) && !P.rested.has(i)) && (stx.match(/同じ成分（/g) || []).length === 1 && /医師か薬剤師に確認/.test(stx) && !!st.drugs.find((x) => x.l === 'ナジフロキサシン' && x.where === '赤ニキビ・黄ニキビ' && !x.dup) && st.drugs.filter((x) => x.dup).length === 3; info = ids.join(','); } catch (e) { info = e.message; }
     openLifeForm(null, 'sleep', d); await w(200); const sb = document.querySelector('#modal-root [data-lsame]'); const ok2a = !!sb && /前回（.+）と同じ/.test(sb.textContent); try { closeModal(true); } catch (e) {} await w(150); /* 昨日の記録がなくても、前の記録があれば「前回と同じ」を出す（2026-11-19 ボタンが消えていた） */
     state.lifeLogs = []; openLifeForm(null, 'sleep', d); await w(200); const ok2 = ok2a && !document.querySelector('#modal-root [data-lsame]'); try { closeModal(true); } catch (e) {}
     state = normalize(JSON.parse(keep)); window.isPremium = keepPrem; render(); if (!(ok1 && ok2)) console.log('  ' + [ok1, ok2, info]); return ok1 && ok2; }));
@@ -992,11 +993,11 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     try { const mk = (id, name, ing, cat, ago) => ({id, demo: false, purchases: [], catalogId: null, name, brand: '処方薬', category: cat, purposes: [], ingredients: ing, timing: cat === ORAL_CAT ? '朝・夜' : '夜', frequency: '毎日', startDate: addDays(d, -ago), status: '使用中', endDate: '', memo: '', pao: 0, order: null});
       state.myProducts = [mk('a1', 'ディフェリンゲル0.1%', 'アダパレン', '皮膚科の塗り薬', 200), mk('a2', 'ダラシンTゲル1%', 'クリンダマイシン', '皮膚科の塗り薬', 120), mk('a3', 'ミノマイシン（ミノサイクリン）', 'ミノサイクリン', ORAL_CAT, 100)];
       state.settings.concernKeys = []; state.skinLogs = [{id: 'z1', date: d, condition: 4, acneCount: 0, acneTypes: [], usedProducts: [], memo: '', photo: ''}]; state = normalize(JSON.parse(JSON.stringify(state)));
-      const P = rtPlan('pm'), ids = P.steps.filter((z) => z.k.startsWith('rx:')).map((z) => z.prods[0].p.id);
+      const P = rtPlan('pm'), ids = P.steps.filter((z) => z.k.startsWith('rx:')).flatMap((z) => z.prods.map((x) => x.p.id));
       if (!ids.includes('a1') || !ids.includes('a2')) bad.push('ニキビの記録がないと塗り薬が外れる ' + ids.join(','));
       if (JSON.stringify(P.tips).match(/手順に入れていません|やめ(ま|て)/)) bad.push('やめる・外すと読める説明');
       if (!P.tips.some((t) => /アダパレン.*再発を防ぐために続ける/.test(t))) bad.push('アダパレンの再発予防の説明がない');
-      const a2 = P.steps.find((z) => z.k === 'rx:a2'); if (!a2 || !a2.today.some((t) => /使う期間は医師が決めます/.test(t.t))) bad.push('抗菌薬の塗り薬の期間の説明がない');
+      const a2 = P.steps.find((z) => z.prods.some((x) => x.p.id === 'a2')); if (!a2 || !a2.today.some((t) => /使う期間は医師が決めます/.test(t.t))) bad.push('抗菌薬の塗り薬の期間の説明がない');
       if (!P.tips.some((t) => /抗菌薬の飲み薬（ミノサイクリン）.*飲む期間は医師が決めます/.test(t))) bad.push('抗菌薬の飲み薬の期間の説明がない');
       if (JSON.stringify([P.tips, P.steps.map((z) => z.today)]).match(/ディフェリン|ダラシン|ミノマイシン/)) bad.push('処方薬の商品名が説明に出る');
     } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepPrem; render(); }
@@ -1013,13 +1014,19 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepPrem; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   // 2026-11-20 動画：夜のケアに「皮膚科の塗り薬」が4つ同じ名前で並び、同じ成分の注意・イソトレチノインとの注意が画面に出ていなかった。Myアイテムに同じ商品を2つ登録しない
-  check('塗り薬の手順は成分名つき・医師に確認する注意が画面に出る・同じ商品は2つ登録しない', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state), keepPrem = window.isPremium, d = todayStr(); window.isPremium = () => true;
+  check('塗り薬は1つのカードに一覧で・同じ成分の重なりの注意は1回・医師に確認する注意が画面に出る・同じ商品は2つ登録しない', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state), keepPrem = window.isPremium, d = todayStr(); window.isPremium = () => true;
     try { const mk = (id, name, ing, cat, timing) => ({id, demo: false, purchases: [], catalogId: null, name, brand: '処方薬', category: cat, purposes: [], ingredients: ing, timing, frequency: '毎日', startDate: addDays(d, -10), status: '使用中', endDate: '', memo: '', pao: 0, order: null});
       state.myProducts = [mk('r1', 'エピデュオゲル', 'アダパレン・過酸化ベンゾイル', '皮膚科の塗り薬', '夜'), mk('r2', 'ディフェリンゲル0.1%', 'アダパレン', '皮膚科の塗り薬', '夜'), mk('r4', 'ベピオゲル2.5%', '過酸化ベンゾイル', '皮膚科の塗り薬', '夜'), mk('o1', 'イソトレチノイン（内服）', 'イソトレチノイン', ORAL_CAT, '朝・夜')];
       state.settings.concernKeys = ['acne']; state.skinLogs = [{id: 'l', date: d, condition: 3, acneCount: 3, acneTypes: ['赤ニキビ'], usedProducts: [], memo: '', photo: ''}]; state = normalize(JSON.parse(JSON.stringify(state)));
       ui.rtTab = 'pm'; location.hash = '#/routine'; render(); await w(500); const txt = document.getElementById('main').innerText;
-      const titles = [...document.querySelectorAll('#main .cm-t')].map((e) => e.textContent).filter((t) => /皮膚科の塗り薬/.test(t)); /* 2026-11-21 題名は「皮膚科の塗り薬」だけ。どの薬かは下の商品のところで分かる */ if (titles.map((t) => t.replace(/\u200b/g, '').trim()).join() !== '皮膚科の塗り薬①,皮膚科の塗り薬②,皮膚科の塗り薬③') bad.push('塗り薬の手順の名前（いくつかあるときは①②③で見分ける） ' + titles.join('/')); { const cards = [...document.querySelectorAll('#main .cm-t')].filter((e) => /皮膚科の塗り薬/.test(e.textContent)).map((e) => (e.closest('.cm-b') || e.parentElement).textContent.replace(/\u200b/g, '')); if (!['アダパレン・過酸化ベンゾイル', 'アダパレン', '過酸化ベンゾイル'].every((x, i) => cards[i] && cards[i].includes(x))) bad.push('どの塗り薬か、カードの中で分からない'); }
-      if (!/医師・薬剤師に確認[\s\S]*同じ成分（アダパレン）が入っています/.test(txt)) bad.push('同じ成分の注意が画面に出ない'); if (!/イソトレチノインを飲んでいる間にアダパレンを重ねると/.test(txt)) bad.push('イソトレチノインとの注意が画面に出ない'); if (/ディフェリン|ベピオ|エピデュオ/.test(txt.replace(/皮膚科の塗り薬[^\n]*/g, '')) && /ディフェリンを|ベピオを/.test(txt)) bad.push('商品名で注意している');
+      /* 2026-11-21 動画：同じ成分の塗り薬（アダパレン＋過酸化ベンゾイル・アダパレン・過酸化ベンゾイル）が「皮膚科の塗り薬①②③」と別々の手順で並び、全部重ねて塗るように見えた。塗り薬は1つのカードにまとめ、どれか分かる一覧と、重なりの注意を1回だけ出す */
+      const titles = [...document.querySelectorAll('#main .cm-t')].map((e) => e.textContent.replace(/\u200b/g, '').trim()).filter((t) => /皮膚科の塗り薬/.test(t)); if (titles.join() !== '皮膚科の塗り薬') bad.push('塗り薬が1つのカードにまとまっていない：' + titles.join('/'));
+      { const card = [...document.querySelectorAll('#main .cm-t')].find((e) => /皮膚科の塗り薬/.test(e.textContent)); const c = card && (card.closest('li') || card.parentElement); const rows = c ? [...c.querySelectorAll('.cm-drugs li')].map((li) => li.textContent.replace(/\u200b/g, '')) : [];
+        if (rows.length !== 3 || !rows[0].startsWith('アダパレン・過酸化ベンゾイル') || !rows[1].startsWith('アダパレン') || !rows[2].startsWith('過酸化ベンゾイル')) bad.push('どの塗り薬をいつ塗るかの一覧が、Myアイテムと同じ順で出ない：' + rows.join(' / '));
+        if (rows.filter((r) => /成分が重なっています/.test(r)).length !== 3) bad.push('成分が重なっている薬に印が出ない');
+        const ct = c ? c.textContent.replace(/\u200b/g, '') : ''; if ((ct.match(/同じ成分（/g) || []).length !== 1) bad.push('同じ成分の注意が1回ではない'); if ((ct.match(/イソトレチノインを飲んでいる間に/g) || []).length !== 1) bad.push('イソトレチノインとの注意が1回ではない'); if (/自分の判断でやめたり/.test(ct) === false) bad.push('「自分でやめない」の一言がない'); }
+      state.myProducts.forEach((x) => { x.status = '使用中'; }); ui.myKind = 'rx'; location.hash = '#/my'; render(); await w(400); { const n = document.querySelector('#main .rx-dup'); if (!n || !/エピデュオゲル/.test(n.textContent) || !/ディフェリンゲル/.test(n.textContent) || !/ベピオゲル/.test(n.textContent)) bad.push('Myアイテムの塗り薬に、成分の重なりの知らせが出ない'); } location.hash = '#/routine'; render(); await w(300);
+      if (/ディフェリン|ベピオ|エピデュオ/.test(txt.replace(/皮膚科の塗り薬[^\n]*/g, '')) && /ディフェリンを|ベピオを/.test(txt)) bad.push('商品名で注意している');
       /* 同じ商品 */
       state.myProducts = []; rxPick('ベピオゲル2.5%'); await w(700); closeModal(true); rxPick('ベピオゲル2.5%'); await w(300); closeModal(true); if (state.myProducts.filter((x) => x.name === 'ベピオゲル2.5%').length !== 1) bad.push('同じ塗り薬が2つ登録される');
       state.myProducts[0].status = '一時停止'; rxPick('ベピオゲル2.5%'); await w(300); closeModal(true); if (state.myProducts.length !== 1) bad.push('停止中の薬と同じ物が登録される');

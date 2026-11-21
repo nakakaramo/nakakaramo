@@ -2131,6 +2131,12 @@ body::before{transform:translate3d(0,var(--vv-top,0px),0)}
 .dg-ol small{margin-left:4px;font-size:12.5px;color:var(--muted)}
 .dg-c .dg-note{font-size:13px;line-height:1.6;color:var(--muted);margin:10px 0 0}
 .dg-go{margin-top:12px}
+.cm-drugs{list-style:none;margin:10px 0 4px;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cm-drugs li{padding:10px 12px;display:flex;flex-direction:column;gap:3px}.cm-drugs li+li{border-top:1px solid var(--line)}
+.cm-drugs b{font-size:14.5px;font-weight:700;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.cm-drugs em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--warn);background:var(--warn-s);border-radius:999px;padding:1px 8px}
+.cm-drugs span{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted)}.cm-drugs span svg{width:13px;height:13px;flex:none}
+.rx-dup{margin:0 0 12px}.rx-dup b{display:flex;align-items:center;gap:6px;margin-bottom:4px}.rx-dup b svg{width:16px;height:16px;flex:none}.rx-dup p{margin:0;font-size:13.5px;line-height:1.65}
 .ngf-q h3 i svg{width:14px;height:14px}
 .ngf-est{background:var(--surface2);border-radius:14px;padding:12px 14px}
 .ngf-er{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px}.ngf-er+.ngf-er{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
@@ -3099,7 +3105,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121161548'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121165719'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5242,6 +5248,20 @@ function openRxSheet(oral) {
     findState = Object.assign({kind:'my', q:'', items:null, loading:true, err:'', timer:null, noRx:true}, oral ? {oral:true, mode:'otc'} : {}); shop.hidden = false; shop.innerHTML = `<p class="find-sec">${oral ? '市販の飲み薬・サプリ' : '市販の薬・化粧品'}</p>`;
     openRxSheet.t = setTimeout(() => findRun(v), 500); }); /* 一覧の塗り薬の下に、通販で売っている市販薬・化粧品も出す */
   box.addEventListener('click', e => { const b = e.target.closest('[data-rx]'); if (b) rxPick(b.dataset.rx); });
+}
+// 2026-11-21 ニキビの塗り薬の成分（アダパレン・過酸化ベンゾイル）が重なっている薬を見つける。エピデュオ＝アダパレン＋過酸化ベンゾイル
+const ACNE_ING = {ada:['アダパレン', /アダパレン|ディフェリン|エピデュオ/], bpo:['過酸化ベンゾイル', /過酸化ベンゾイル|ベピオ|エピデュオ|デュアック/]};
+const acneIngOf = p => Object.keys(ACNE_ING).filter(k => ACNE_ING[k][1].test(`${p.name} ${p.ingredients || ''}`));
+// 使用中の塗り薬のうち、同じ成分が重なっている組（[{a, b, ings}]）
+function rxOverlaps(list) {
+  const L = (list || state.myProducts.filter(p => p.status === '使用中' && p.category === '皮膚科の塗り薬')).map(p => ({p, c:acneIngOf(p)})).filter(x => x.c.length), out = [];
+  L.forEach((x, i) => L.slice(i + 1).forEach(y => { const ings = x.c.filter(c => y.c.includes(c)); if (ings.length) out.push({a:x.p, b:y.p, ings:ings.map(c => ACNE_ING[c][0])}); }));
+  return out;
+}
+function rxOverlapNoticeHtml() {
+  const O = rxOverlaps(); if (!O.length) return '';
+  const ids = [...new Set(O.flatMap(o => [o.a.id, o.b.id]))], P = ids.map(id => getMy(id)).filter(Boolean), ings = [...new Set(O.flatMap(o => o.ings))];
+  return `<div class="notice warn rx-dup" role="note"><b>${icon('alert')}同じ成分の塗り薬が重なっています</b><p>${P.map(p => `「${esc(truncate(p.name, 20))}」（${esc(acneIngOf(p).map(c => ACNE_ING[c][0]).join('・'))}）`).join('、')}には、同じ成分（${esc(ings.join('・'))}）が入っています。同じ日に重ねて塗るよう医師に言われていなければ、塗る前に処方した医師か薬剤師に確認してください。自分の判断でやめたり、量を変えたりはしないでください。</p></div>`;
 }
 function rxPick(name) {
   const d = RX_DRUGS.find(x => x[1] === name); if (!d) return;
@@ -7751,7 +7771,7 @@ function viewMy() {
   const kind = ui.myKind;
   const list = state.myProducts.filter(p => kOf(p) === kind)
     .sort((a,b) => myStRank(a) - myStRank(b) || (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
-  let html = ui.myKind === 'oral' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="oral-sheet">${icon('plus')}飲み薬・サプリを追加</button></div>` : ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
+  let html = ui.myKind === 'oral' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="oral-sheet">${icon('plus')}飲み薬・サプリを追加</button></div>` : ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>${rxOverlapNoticeHtml()}` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a class="mt-wide" href="#/combo">${icon('flask')}<span>成分の組み合わせ</span><i>›</i></a><a class="mt-wide" href="#/trouble">${icon('alert')}<span>肌に合わなかった化粧品</span>${(() => { const n = state.myProducts.filter(p => p.ng).length; return n ? `<em class="mt-n">${n}</em>` : ''; })()}<i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
   html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬'], ['oral', '飲み薬']].map(([k, l]) => { const n = nK[k]; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span><b class="ht-n">${n}</b></button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
@@ -10617,7 +10637,22 @@ function rtPlan(slot, solo) {
   const spotSteps = () => here.filter(s => s.kind === 'spot').forEach(s => add('spot:' + s.x.p.id, {name:STEP_LABEL.spot, prods:[s.x], how:'気になるところだけに、少量をのせます。'}));
   // 同じ成分の薬（例：クリームとローション）を2つ登録していても、手順は1つにまとめる（同じ物を2回出さない）
   const rxSteps = role => { const G = new Map(); rxOn.filter(r => r.role === role).forEach(r => { const k = normIng(rxIngLabel(r.x.p)); if (G.has(k)) G.get(k).more.push(r.x); else G.set(k, {r, more:[]}); });
+    if (role === 'drug' && G.size >= 2) { rxMulti([...G.values()]); return; } // 2026-11-21 塗り薬がいくつかあるときは、1つの手順にまとめる（同じ成分の重なり・同じ注意を、1回だけ出す）
     G.forEach(({r, more}) => { rxStep(r); if (more.length) steps[steps.length - 1].prods.push(...more); }); };
+  const rxMulti = G => {
+    const ix = r => state.myProducts.indexOf(r.x.p), R = G.map(g => g.r).sort((a, b) => ix(a) - ix(b)), lab = r => rxIngLabel(r.x.p), today = []; // Myアイテムと同じ順番
+    // 同じ成分が重なっている（例：アダパレン＋過酸化ベンゾイルの薬と、アダパレンだけの薬）
+    const ov = []; R.forEach((a, i) => R.slice(i + 1).forEach(b => { const c = ACL(a).filter(k => k !== 'abx' && ACL(b).includes(k)); if (c.length) ov.push([a, b, c]); }));
+    if (ov.length) { const inv = [...new Set(ov.flatMap(o => [o[0], o[1]]))], ci = [...new Set(ov.flatMap(o => o[2]))].map(k => ({ada:'アダパレン', bpo:'過酸化ベンゾイル'})[k]);
+      today.push(T(`${inv.map(r => `「${lab(r)}」`).join('・')}の塗り薬は、同じ成分（${ci.join('・')}）が重なっています。同じ日に重ねて塗るよう医師に言われていなければ、塗る前に処方した医師か薬剤師に確認しましょう。自分の判断でやめたり、量を変えたりはしないでください`, '確認')); }
+    if (OR.iso && R.some(r => ACL(r).some(c => c === 'ada' || c === 'bpo'))) today.push(T('イソトレチノインを飲んでいる間に、アダパレン・過酸化ベンゾイルの塗り薬を重ねると、乾燥・刺激が強く出るおそれがあります。一緒に使うよう医師に言われているか確かめましょう', '確認'));
+    // それぞれの薬：いつ・どこに（カードの中に一覧で出す）
+    const drugs = R.map(r => ({l:lab(r), per:r.per || '医師の指示どおり', where:(acneSel.get(r) || []).join('・'), dup:ov.some(o => o[0] === r || o[1] === r)}));
+    // そのほかの注意（同じ文は1回だけ。「同じ成分」の注意は上にまとめた）
+    const seen = new Set(today.map(t => t.t)); const push = (t, k) => { if (t && !seen.has(t)) { seen.add(t); today.push(T(t, k)); } };
+    R.forEach(r => { (acneNote.get(r) || []).filter(t => !/と同じ成分/.test(t)).forEach(t => push(t, '確認')); r.note.filter(t => !/妊娠/.test(t) || pregAsk).forEach(t => push(t, '薬')); push(rxCalm(r), '肌'); });
+    add('rx:drug', {name:'皮膚科の塗り薬', prods:G.flatMap(g => [g.r.x].concat(g.more)), fixed:true, per:'', drugs, how:'洗顔して保湿をしたあと、それぞれ医師に言われた回数・場所・量を守って塗ります。目・口・小鼻のわきは避けましょう。', today, avoid:uniq(R.flatMap(r => r.avoid))});
+  };
   const calmItem = D && D.items.find(x => /をお休み$/.test(x.title));
   if (slot === 'am') {
     const todayW = (m.dry || 0) >= 3 || (m.red || 0) >= 3 || lowHum || cold; /* 2026-11-20 おすすめケアの「朝はぬるま湯だけで洗う」と同じ条件の日は、ケア管理も必ずぬるま湯にする（混合肌の人で食いちがっていた） */
@@ -10908,6 +10943,7 @@ function rtPaneHtml(slot) {
     <div class="cm-b"><div class="cm-hd"><button type="button" class="cm-n" data-action="cm-check" data-id="${esc(slot + '|' + s.k)}" aria-pressed="${done(s)}" aria-label="${esc(s.name)}を${done(s) ? '未完了にする' : 'やった'}">${done(s) ? icon('check') : i + 1}</button><div class="cm-hd-t"><span class="cm-ph ${phase(s)[1]}"><i>${phase(s)[0]}</i></span><b class="cm-t">${s.fixed && /^皮膚科の塗り薬（.+）$/.test(s.name) ? '皮膚科の塗り薬（' + s.name.slice(8, -1).split('・').map(rxIngLink).join('・') + '）' : esc(s.name)}</b></div></div>
       ${s.per ? `<span class="cm-per">${icon('clock')}${esc(s.per)}</span>` : ''}
       <p class="cm-how no-ph">${ingLinkHtml(esc(letsTone(s.how)), s._lk = new Set())}</p>
+      ${s.drugs ? `<ul class="cm-drugs">${s.drugs.map(d => `<li${d.dup ? ' class="dup"' : ''}><b>${ingLinkHtml(esc(d.l), new Set())}${d.dup ? '<em>成分が重なっています</em>' : ''}</b><span>${icon('clock')}${esc(d.per)}${d.where ? `・${esc(d.where)}に` : ''}</span></li>`).join('')}</ul>` : ''}
       ${s.today.filter(x => !(s.fixed && x.src === '薬')).map(x => `<p class="cm-today no-ph ${x.src === '薬' || x.src === '確認' ? 'rx' : ''}"><i>${x.src === '確認' ? '医師・薬剤師に確認' : x.src === '天気' ? '天気から' : x.src === '薬' ? '薬の注意' : x.src === '成分' ? '成分の使い方' : '肌の記録から'}</i>${ingLinkHtml(ownLinkText(letsTone(x.t), s), s._lk)}${/[。！？]$/.test(x.t) ? '' : '。'}</p>`).join('')}
       ${s.good.length || s.own.length || s === drugStep ? `<div class="cm-ing"><small class="g">${icon('check')}${'おすすめ'}</small><div>${oChips(s)}${gChips(s)}${dChips(s)}</div></div>` : ''}
       ${s.avoid.length || (s.avoidOwn || []).length ? `<div class="cm-ing"><small class="b">${icon('alert')}控えたい</small><div>${aoChips(s)}${chips(s.avoid.filter(v => !(s.avoidOwn || []).some(o => prodIngLabel(o.p) === chipText(v))))}</div></div>` : ''}
