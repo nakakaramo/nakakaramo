@@ -210,7 +210,6 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .wh-it{height:40px;line-height:40px;scroll-snap-align:center;text-align:center;font-size:20px;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;will-change:transform,opacity;backface-visibility:hidden;transform-origin:50% 50%}
 .wh-it.on{color:var(--ink);font-weight:600}
 .wh-it.wh-x{color:var(--line)!important}
-.dg-redo{margin-top:12px}
 .acc-multi>.card{margin-bottom:12px}.acc-multi>.card>.card-h h2{display:block}
 .acc-num-u{display:flex;align-items:center;gap:8px}.acc-num-u .input{flex:1}
 .acc-sec.acc-grp .acc-row{grid-template-columns:22px 1fr auto 12px;min-height:52px;padding:0 18px;box-sizing:border-box}
@@ -2116,10 +2115,26 @@ body::before{transform:translate3d(0,var(--vv-top,0px),0)}
 .dg-top{text-align:center;padding:20px 16px}
 .dg-top small{display:block;color:var(--muted);font-size:12px}
 .dg-type{display:block;font-size:24px;margin:4px 0 8px;letter-spacing:.02em}
-.dg-conf{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--surface2)}
-.dg-conf.c2{background:var(--green-s);color:var(--green-d)}.dg-conf.c0{background:var(--warn-s);color:var(--warn)}
-.dg-ul,.dg-ol{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
-.dg-ol small{margin-left:4px}
+.dg-meta{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px 14px;margin:0;font-size:13px;color:var(--muted)}
+.dg-conf{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink-2,var(--ink))}
+.dg-conf i{width:8px;height:8px;border-radius:50%;background:var(--muted)}.dg-conf.c2 i{background:var(--green)}.dg-conf.c1 i{background:#c9a227}.dg-conf.c0 i{background:var(--warn)}
+.dg-redo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:16px;border:1.5px solid var(--green-d)!important;color:var(--green-d)!important;background:transparent!important;font-weight:700}
+.dg-redo svg{width:18px;height:18px}
+.dg-c p,.dg-c li{font-size:15px;line-height:1.75;font-weight:400;color:var(--ink)}
+.dg-c .dg-p{margin:0}
+.dg-r+.dg-r{margin-top:12px}
+.dg-k{display:block;font-size:12.5px;font-weight:700;color:var(--green-d);letter-spacing:.04em;margin-bottom:2px}
+.dg-r p{margin:0}
+.dg-ul,.dg-ol{margin:0;padding-left:20px}
+.dg-ul li+li,.dg-ol li+li{margin-top:4px}
+.dg-ol small{margin-left:4px;font-size:12.5px;color:var(--muted)}
+.dg-c .dg-note{font-size:13px;line-height:1.6;color:var(--muted);margin:10px 0 0}
+.dg-go{margin-top:12px}
+.ngf-q h3 i svg{width:14px;height:14px}
+.ngf-est{background:var(--surface2);border-radius:14px;padding:12px 14px}
+.ngf-er{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px}.ngf-er+.ngf-er{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.ngf-er>span{color:var(--muted);flex:none}.ngf-er b{text-align:right;font-weight:600}.ngf-er small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.ngf-eo{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .cmp-col{border-radius:14px;padding:12px;background:var(--surface2)}
 .cmp-col.ai{background:var(--green-p);border:1px solid var(--green-s)}
@@ -3083,7 +3098,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121142205'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121152105'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -3607,6 +3622,7 @@ const ICONS = {
   trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/>',
   bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   leaf:'<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 15.3-6.4L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.3 6.4L3 16"/><path d="M3 21v-5h5"/>',
   check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
   compare:'<path d="M8 3v18M16 3v18"/><path d="M3 8h5M16 16h5"/>',
   user:'<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>', // Lucide: user-round（アカウント）
@@ -3969,7 +3985,7 @@ function normalize(d) {
     offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offTried:!!p.offTried, offErr:String(p.offErr || '').slice(0, 80), offErrAt:Number(p.offErrAt) || 0, /* 調べて失敗した時刻も残す（開き直すたびに調べ直さない。3時間たったら調べ直す） */ offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 全成分をメーカー公式で調べた日・ページ
     offV:Number(p.offV) || 0, ingUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.ingUrl || '')) ? String(p.ingUrl) : '', ingSite:String(p.ingSite || '').slice(0, 40),
     ng:p.ng && isValidYmd(p.ng.date) ? {date:p.ng.date, sym:strArr(p.ng.sym, NG_SYMS), note:String(p.ng.note || '').slice(0, 300),
-      when:NG_WHEN.includes(p.ng.when) ? p.ng.when : '', level:NG_LEVEL.includes(p.ng.level) ? p.ng.level : '', where:strArr(p.ng.where, NG_WHERE), newOther:!!p.ng.newOther, // 肌に合わなかったときのアンケート
+      when:NG_WHEN.includes(p.ng.when) ? p.ng.when : '', days:Number.isFinite(p.ng.days) && p.ng.days >= 0 ? Math.min(3650, Math.round(p.ng.days)) : null, freq:FREQS.includes(p.ng.freq) ? p.ng.freq : '', level:NG_LEVEL.includes(p.ng.level) ? p.ng.level : '', where:strArr(p.ng.where, NG_WHERE), newOther:!!p.ng.newOther, // 肌に合わなかったときのアンケート
       snap:ngSnapClean(p.ng.snap), rid:/^[a-z0-9]{6,24}$/.test(String(p.ng.rid || '')) ? String(p.ng.rid) : '', sentH:String(p.ng.sentH || '').slice(0, 20)} : null, // 肌に合わなかった記録（記録したときの肌質など・研究に送った印）
     image:safeImg(p.image) // 自分で付けた写真
   })) : [];
@@ -4934,7 +4950,7 @@ function lifeSumHtml(lf, date) {
   let sMain = '未記録', sSub = `必要 ${esc(fmtDur(g.sleep))}`, sCls = '';
   if (sm != null) { sMain = fmtDur(sm); const d = sm - g.sleep; if (d < -10) { sSub = `−${esc(fmtDur(-d))}<small>（必要 ${esc(fmtDur(g.sleep))}）</small>`; sCls = 'bad'; } else { sSub = `十分<small>（必要 ${esc(fmtDur(g.sleep))}）</small>`; sCls = 'good'; } }
   // 運動
-  let eMain = 'なし', eSub = '', eCls = ''; // 記録がない日は「運動しなかった」
+  let eMain = '未記録', eSub = '', eCls = ''; // 2026-11-21 記録がない日は「未記録」（記録して0分なら「なし」）
   if (lf && lf.exRecorded) { const k = exKcal(lf, g.weight), m = exTotal(lf); eMain = m ? `${k.toLocaleString()}kcal` : 'なし'; eSub = m ? `${esc(fmtMin(m))}<small>（体重${g.weight}kg${g.weightSet ? '' : '・仮'}で計算）</small>` : ''; eCls = m ? 'good' : ''; }
   // 食事（カロリーと、肌に必要なたんぱく質）
   let fMain = '未記録', fSub = `たんぱく質の目標 ${g.protein}g`, fCls = '';
@@ -7820,6 +7836,25 @@ function myMenuOpen() {
   requestAnimationFrame(() => m.classList.add('in'));
 }
 window.addEventListener('hashchange', () => { const m = document.querySelector('.my-pop'); if (m) m.remove(); const b = document.getElementById('my-menu'); if (b) b.classList.remove('x'); });
+// 2026-11-21 肌に合わなかったとき：使い始めた日と、どれくらい使っていたかを、Myアイテムと毎日の記録から自動で出す
+function ngUseEst(p, date) {
+  const d = isValidYmd(date) && date <= todayStr() ? date : todayStr(), start = isValidYmd(p.startDate) ? p.startDate : '';
+  const days = start && start <= d ? diffDays(start, d) : null;
+  const when = days == null ? '' : days === 0 ? '使ってすぐ' : days === 1 ? '翌日' : days < 14 ? '数日〜1週間後' : '2週間以上たってから';
+  // 使用頻度：使い始めてから気づいた日までの、肌の記録（使った物を記録した日）から。少なければ、Myアイテムに登録した頻度
+  const logs = state.skinLogs.filter(l => l.usageRecorded && (!start || l.date >= start) && l.date <= d), used = logs.filter(l => (l.usedProducts || []).includes(p.id)).length;
+  let freq = p.frequency || '毎日', basis = 'reg';
+  if (logs.length >= 3) { const wk = used / logs.length * 7; freq = wk >= 6.5 ? '毎日' : wk >= 3.5 ? '週4〜6回' : wk >= 1.5 ? '週2〜3回' : wk >= 0.5 ? '週1回' : '不定期'; basis = 'log'; }
+  // 同じころ（気づいた日の前14日以内）に使い始めたほかの物
+  const others = state.myProducts.filter(x => x.id !== p.id && isValidYmd(x.startDate) && x.startDate <= d && x.startDate >= addDays(d, -14));
+  return {start, days, when, freq, timing:p.timing || '', basis, logN:logs.length, used, others};
+}
+function ngEstHtml(p, date) {
+  const e = ngUseEst(p, date), tm = e.timing === '朝・夜' ? '朝と夜' : e.timing === '必要なときだけ' ? '必要なときだけ' : e.timing;
+  return `<div class="ngf-est" id="ng-est"><div class="ngf-er"><span>使い始めた日</span><b>${e.start ? `${esc(fmtDate(e.start))}${e.days != null ? `<small>（気づいた日まで${e.days === 0 ? '当日' : e.days + '日'}）</small>` : ''}` : '<span class="muted">わかりません</span>'}</b></div>
+    <div class="ngf-er"><span>使用頻度</span><b>${esc(e.freq)}${tm && e.timing !== '必要なときだけ' ? `・${esc(tm)}` : ''}<small>${e.basis === 'log' ? `（記録${e.logN}日のうち${e.used}日使った）` : '（Myアイテムに登録した内容）'}</small></b></div>
+    ${e.others.length ? `<p class="ngf-eo">同じころに使い始めた物：${esc(e.others.slice(0, 3).map(x => isMedCat(x.category) ? `${x.category === ORAL_CAT ? '飲み薬' : '塗り薬'}（${truncate(rxIngLabel(x) || '成分不明', 14)}）` : truncate(x.name, 16)).join('、'))}${e.others.length > 3 ? ` ほか${e.others.length - 3}つ` : ''}</p>` : ''}</div>`;
+}
 function openNgForm(id, date) {
   const p = getMy(id); if (!p) return;
   const cur = Object.assign({date:date || todayStr(), sym:[], note:'', when:'', level:'', where:[], newOther:false}, p.ng || {});
@@ -7829,15 +7864,15 @@ function openNgForm(id, date) {
   openModal({title:'肌に合わなかった', body:`<div class="ngf"><div class="ngf-p"><span class="ngf-th">${myThumb(p)}</span><b>${esc(p.name)}</b></div>
     ${q(1, '気づいた日', '', `<input type="date" class="input" id="ng-date" value="${esc(cur.date)}" max="${todayStr()}">`)}
     ${q(2, '出た症状', 'いくつでも', chips('ng-sym', NG_SYMS, cur.sym, true))}
-    ${q(3, '使い始めてから、出るまで', '', chips('ng-when', NG_WHEN, cur.when))}
-    ${q(4, '出た場所', 'いくつでも', chips('ng-where', NG_WHERE, cur.where, true))}
-    ${q(5, '強さ', '', chips('ng-level', NG_LEVEL, cur.level))}
-    ${q(6, 'メモ', '任意', `<textarea class="input" id="ng-note" rows="3" maxlength="300" placeholder="例：つけた次の日、あごに赤いブツブツ">${esc(cur.note)}</textarea>`)}
-    <section class="ngf-q ngf-chk"><label class="check"><input type="checkbox" id="ng-other" ${cur.newOther ? 'checked' : ''}>同じころに、ほかの新しい物も使い始めた</label>
-    ${p.status === '使用中' ? `<label class="check"><input type="checkbox" id="ng-stop" ${isRx ? '' : 'checked'}>使うのをやめる（停止中にする）</label>` : ''}</section>
+    ${q(3, '出た場所', 'いくつでも', chips('ng-where', NG_WHERE, cur.where, true))}
+    ${q(4, '強さ', '', chips('ng-level', NG_LEVEL, cur.level))}
+    ${q(5, 'メモ', '任意', `<textarea class="input" id="ng-note" rows="3" maxlength="300" placeholder="例：つけた次の日、あごに赤いブツブツ">${esc(cur.note)}</textarea>`)}
+    <section class="ngf-q"><h3><i>${icon('clock')}</i>使っていた期間と頻度<small>自動で推定</small></h3>${ngEstHtml(p, cur.date)}</section>
+    <section class="ngf-q ngf-chk">${p.status === '使用中' ? `<label class="check"><input type="checkbox" id="ng-stop" ${isRx ? '' : 'checked'}>使うのをやめる（停止中にする）</label>` : ''}</section>
     <p class="small muted ngf-foot">記録した商品と、それに入っていた成分は、ケア管理の提案で使わないようにします。</p></div>
     ${isRx ? '<p class="hint" style="margin-top:10px">処方された薬は、自分の判断でやめずに、まず処方した医師か薬剤師に相談してください。</p>' : ''}`,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="button" class="btn btn-primary" data-action="ng-save" data-id="${esc(p.id)}">保存する</button>`});
+  const di = document.getElementById('ng-date'); if (di) di.addEventListener('change', () => { const el = document.getElementById('ng-est'); if (el) el.outerHTML = ngEstHtml(p, di.value); }); // 気づいた日を変えたら、期間も出し直す
 }
 // 合わなかったときの肌質など（記録したときの状態を取っておく。あとで肌質が変わっても、当時の状態でくらべられる）
 function ngSnapNow() {
@@ -10205,15 +10240,17 @@ function careDiagHtml(o = {}) {
   const d = diagNow(); if (!d) return '';
   const mi = SKIN_TYPE_INFO[d.main];
   const conf = ['低い', 'ふつう', '高い'][d.conf];
-  let h = `<div class="card dg-top"><small>推定肌質</small><b class="dg-type">${esc(typeLabel(d))}</b><span class="dg-conf c${d.conf}">確信度：${conf}</span><p class="small muted">${fmtDate(d.at)}に診断</p>${o.redoTop ? '<button type="button" class="btn btn-soft btn-sm dg-redo" data-action="setup">診断をやり直す</button>' : ''}</div>`;
-  h += `<div class="card"><div class="card-h"><h2>肌質の特徴</h2></div>${d.types.map(t => `<p><b>${esc(SKIN_TYPE_INFO[t].l)}</b>：${esc(SKIN_TYPE_INFO[t].f)}</p>`).join('')}</div>`;
-  h += `<div class="card"><div class="card-h"><h2>診断の理由</h2></div>${d.why.length ? `<ul class="dg-ul">${d.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : '<p class="small muted">質問への答えが少ないため、理由を出せませんでした。</p>'}${d.confWhy.length ? `<p class="small muted">確信度が${conf}理由：${esc(d.confWhy.join('、'))}</p>` : ''}</div>`;
+  // 2026-11-21 確信度はただの表示（ボタンに見えないように）、「やり直す」ははっきりボタンに。ほかのカードも、見出し・本文・ラベルの太さと段落をそろえる
+  let h = `<div class="card dg-top"><small>推定肌質</small><b class="dg-type">${esc(typeLabel(d))}</b><p class="dg-meta"><span class="dg-conf c${d.conf}"><i aria-hidden="true"></i>確信度 ${conf}</span><span class="dg-at">${fmtDate(d.at)}に診断</span></p>${o.redoTop ? `<button type="button" class="btn btn-ghost dg-redo" data-action="setup">${icon('refresh')}診断をやり直す</button>` : ''}</div>`;
+  const row = (k, v) => `<div class="dg-r"><span class="dg-k">${esc(k)}</span><p>${v}</p></div>`;
+  h += `<div class="card dg-c"><div class="card-h"><h2>肌質の特徴</h2></div>${d.types.map(t => row(SKIN_TYPE_INFO[t].l, esc(SKIN_TYPE_INFO[t].f))).join('')}</div>`;
+  h += `<div class="card dg-c"><div class="card-h"><h2>診断の理由</h2></div>${d.why.length ? `<ul class="dg-ul">${d.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : '<p class="dg-p">質問への答えが少ないため、理由を出せませんでした。</p>'}${d.confWhy.length ? `<p class="dg-note">確信度が${conf}理由：${esc(d.confWhy.join('、'))}</p>` : ''}</div>`;
   const warn = {normal:'季節の変わり目・寝不足で崩れることがある', dry:'刺激を受けやすく、小じわ・肌荒れが起きやすい', oily:'毛穴のつまり・ニキビ・化粧くずれが起きやすい', combo:'同じケアでは、Tゾーンはべたつき、頬は乾燥しやすい', innerdry:'さっぱり系のケアだけだと、乾燥と皮脂が悪化しやすい'}[d.main];
-  h += `<div class="card"><div class="card-h"><h2>肌の強みと注意点</h2></div><p><b>強み</b>：${esc(mi.good)}</p><p><b>注意点</b>：${esc(warn)}${d.sensitive ? '。刺激を感じやすいので、新しい商品は1つずつ試す' : ''}</p></div>`;
-  h += `<div class="card"><div class="card-h"><h2>優先的に改善したい肌悩み</h2></div>${d.priority.length ? `<ol class="dg-ol">${d.priority.slice(0, 5).map(k => `<li>${esc(concernOf(k).l)}${d.fromAns.includes(k) && !(state.settings.concernKeys || []).includes(k) ? '<small class="muted">（答えから）</small>' : ''}</li>`).join('')}</ol><p class="small muted">赤み・刺激・ニキビの炎症など、肌の土台に関わる悩みを先にしています。</p>` : '<p class="small muted">選ばれた悩みはありません。</p>'}</div>`;
-  h += `<div class="card"><div class="card-h"><h2>おすすめのケア方針</h2></div><p>${esc(CARE_POLICY(d))}</p><a class="btn btn-primary btn-sm" href="#/routine">朝・夜のケアを見る</a></div>`;
+  h += `<div class="card dg-c"><div class="card-h"><h2>肌の強みと注意点</h2></div>${row('強み', esc(mi.good))}${row('注意点', esc(warn) + (d.sensitive ? '。刺激を感じやすいので、新しい商品は1つずつ試す' : ''))}</div>`;
+  h += `<div class="card dg-c"><div class="card-h"><h2>優先的に改善したい肌悩み</h2></div>${d.priority.length ? `<ol class="dg-ol">${d.priority.slice(0, 5).map(k => `<li>${esc(concernOf(k).l)}${d.fromAns.includes(k) && !(state.settings.concernKeys || []).includes(k) ? '<small>（答えから）</small>' : ''}</li>`).join('')}</ol><p class="dg-note">赤み・刺激・ニキビの炎症など、肌の土台に関わる悩みを先にしています。</p>` : '<p class="dg-p">選ばれた悩みはありません。</p>'}</div>`;
+  h += `<div class="card dg-c"><div class="card-h"><h2>おすすめのケア方針</h2></div><p class="dg-p">${esc(CARE_POLICY(d))}</p><a class="btn btn-primary btn-sm dg-go" href="#/routine">朝・夜のケアを見る</a></div>`;
   const T = careTrends();
-  h += `<div class="card"><p class="small muted">肌質は、季節・生活・年齢で変わります。肌の記録の変化や季節の変わり目に、やり直してください。${T.retype ? esc(T.retype) : ''}</p>${o.redoTop ? '' : '<button type="button" class="btn btn-soft btn-sm" data-action="setup">肌質診断をやり直す</button>'}</div>`;
+  h += `<div class="card dg-c"><p class="dg-note" style="margin:0">肌質は、季節・生活・年齢で変わります。肌の記録の変化や季節の変わり目に、やり直してください。${T.retype ? esc(T.retype) : ''}</p>${o.redoTop ? '' : '<button type="button" class="btn btn-soft btn-sm dg-go" data-action="setup">肌質診断をやり直す</button>'}</div>`;
   return h;
 }
 
@@ -10570,7 +10607,8 @@ function rtPlan(slot, solo) {
     if (/クリンダマイシン|ナジフロキサシン|オゼノキサシン/.test(t) && !/過酸化ベンゾイル/.test(t) && !acneT && !(ff.inflamed > 0)) return '最近の肌の記録では、赤いニキビは落ち着いています。抗菌薬の塗り薬は、いつまで使うかを医師に確認します';
     return ''; };
   const pregAsk = state.settings.gender !== '男性' && pregStatus() !== 'no';
-  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || [], an = (acneNote.get(r) || []).concat(OR.iso && ACL(r).some(c => c === 'ada' || c === 'bpo') ? [`イソトレチノインを飲んでいる間に${ACL(r).includes('ada') ? 'アダパレン' : '過酸化ベンゾイル'}を重ねると、乾燥・刺激が強く出るおそれがあります。一緒に使うよう医師に言われているか確かめましょう`] : []); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : `皮膚科の塗り薬（${rxIngLabel(r.x.p)}）`, prods:[r.x], fixed:true, per:r.per, how:r.how,
+  const rxStep = r => { const cn = rxCalm(r), tp = acneSel.get(r) || [], an = (acneNote.get(r) || []).concat(OR.iso && ACL(r).some(c => c === 'ada' || c === 'bpo') ? [`イソトレチノインを飲んでいる間に${ACL(r).includes('ada') ? 'アダパレン' : '過酸化ベンゾイル'}を重ねると、乾燥・刺激が強く出るおそれがあります。一緒に使うよう医師に言われているか確かめましょう`] : []); add('rx:' + r.x.p.id, {name:r.role === 'moist' ? '皮膚科の保湿剤' : r.role === 'cover' ? '仕上げの保護（皮膚科の薬）' : r.role === 'wash' ? '洗い流す塗り薬（皮膚科の薬）' : '皮膚科の塗り薬', // 2026-11-21 題名は短く（成分名は下の商品のところに出る）
+ prods:[r.x], fixed:true, per:r.per, how:r.how,
     today:(tp.length ? [T(`${tp.join('・')}に塗りましょう`, '肌')] : []).concat(an.map(t => T(t, '確認'))) /* 医師・薬剤師に確かめること：薬の手順でも、いつも見せる */.concat(r.note.filter(t => !/妊娠/.test(t) || pregAsk).map(t => T(t, '薬'))) /* 妊娠の注意は、妊娠中・授乳中か、まだ答えていない人だけ */.concat(cn ? [T(cn, '肌')] : []), avoid:r.avoid}); };
   const eyeT = has('darkcircle') || has('puffy');
   const eyeStep = () => { const L = R ? R.A.infos.filter(x => x.step === 'other' && /アイクリーム|アイセラム|アイジェル|アイケア|アイバーム|目元|目もと|eye/i.test(x.p.name) && !(R.paused || []).includes(x) && fitSlot(x)) : []; if (!L.length && !eyeT) return; /* 目元用の物は、黙って消さずに目元ケアの手順で使う */
@@ -10823,6 +10861,7 @@ function rtPlan(slot, solo) {
       if (rxN.length && orN.length) { const lb = uniq([OR.lab('photo'), OR.lab('spot')].filter(Boolean)).join('・'); const merged = T(`塗り薬と、飲んでいる「${lb}」で、肌が紫外線の影響を受けやすい時期です。毎朝欠かさず塗り、外では2〜3時間ごとに塗り直しましょう`, '薬'); sun.today = sun.today.filter(t => !rxN.includes(t) && !orN.includes(t)); sun.today.unshift(merged); }
       if (sun.today.some(t => t && t.src === '薬')) sun.today = sun.today.filter(t => !(t && t.src === '肌' && /紫外線で(濃く|悪く)なりやすい/.test(t.t))); } }
   { const seenIng = new Set(); steps.forEach(st => { st.today = (st.today || []).filter(t => { if (!t || t.src !== '成分') return true; const k = String(t.t); if (seenIng.has(k)) return false; seenIng.add(k); return true; }); }); } /* 2026-11-20 同じ成分の説明（サリチル酸：…）を、洗顔と部分用の両方に書かない */
+  { const NUM = '①②③④⑤⑥⑦⑧⑨'; const n = {}; steps.forEach(x => { n[x.name] = (n[x.name] || 0) + 1; }); const k = {}; steps.forEach(x => { if (n[x.name] > 1) { k[x.name] = (k[x.name] || 0) + 1; x.name = x.name + (NUM[k[x.name] - 1] || k[x.name]); } }); } // 2026-11-21 同じ名前の手順（皮膚科の塗り薬が2つなど）は①②で見分ける
   return {steps, d, w, tips, lead, calm, hasProd:all.length > 0, R, acne:acneT, hasAcneRx, skinL, rested:RESTED};
 }
 // 時短：落とす（クレンジング・洗顔・ぬるま湯）・皮膚科の薬・保湿・日焼け止めだけ残す。化粧水・美容液・部分用は省く
@@ -16456,8 +16495,9 @@ const actions = {
     const d = (document.getElementById('ng-date') || {}).value;
     const pick = n => [...document.querySelectorAll(`#modal-root input[name="${n}"]:checked`)].map(i => i.value);
     const old = p.ng || {};
-    p.ng = {date:isValidYmd(d) && d <= todayStr() ? d : todayStr(), sym:pick('ng-sym'), note:String((document.getElementById('ng-note') || {}).value || '').trim().slice(0, 300),
-      when:pick('ng-when')[0] || '', level:pick('ng-level')[0] || '', where:pick('ng-where'), newOther:!!(document.getElementById('ng-other') || {}).checked,
+    const ngd = isValidYmd(d) && d <= todayStr() ? d : todayStr(), E = ngUseEst(p, ngd);
+    p.ng = {date:ngd, when:E.when, days:E.days, freq:E.freq, newOther:E.others.length > 0, sym:pick('ng-sym'), note:String((document.getElementById('ng-note') || {}).value || '').trim().slice(0, 300),
+      level:pick('ng-level')[0] || '', where:pick('ng-where'),
       snap:old.snap || ngSnapNow(), rid:old.rid || uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20).padEnd(8, '0'), sentH:old.sentH || ''};
     const st = document.getElementById('ng-stop'); if (st && st.checked && p.status === '使用中') p.status = '一時停止';
     save(); closeModal(); toast('記録しました'); render(); researchNgSync();

@@ -529,12 +529,12 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     const r = []; for (const sl of ['am', 'pm']) { ui.rtTab = sl; location.hash = '#/routine'; render(); await w(200); r.push(!document.querySelector('#main .at-drugs') && !/ニキビは触らない/.test(document.getElementById('main').textContent)); }
     state = normalize(JSON.parse(keep)); window.isPremium = keepPrem; render(); return r.every(Boolean); }));
   // 2026-11-19 睡眠・運動に「昨日と同じ」（押すとその日に同じ記録）。運動の「この日は運動しなかった」はなし（記録がなければ、していない）
-  check('睡眠・運動の「昨日と同じ」・運動は記録がなければなし', await ev(async () => {
+  check('睡眠・運動の「昨日と同じ」・運動は記録がなければ未記録', await ev(async () => {
     const w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state), d = todayStr();
     state.skinLogs = [{id: 'll0', date: d, condition: 3, acneCount: 0, usedProducts: [], memo: '', photo: ''}];
     const y = blankLife(addDays(d, -1)); y.bed = '23:30'; y.wake = '07:00'; y.exercise = [{type: EX_TYPES[0], minutes: 30}]; y.exRecorded = true; state.lifeLogs = [y]; state = normalize(JSON.parse(JSON.stringify(state)));
     ui.logTab = 'list'; ui.logDay = d; location.hash = '#/log'; render(); await w(300);
-    const ok1 = !document.querySelector('#main .ls-same') && /運動\s*なし/.test(document.getElementById('main').textContent.replace(/​/g, '')); // 記録一覧の行には出さない（窓を開いてから）
+    const ok1 = !document.querySelector('#main .ls-same') && /運動\s*未記録/.test(document.getElementById('main').textContent.replace(/​/g, '')); // 記録一覧の行には出さない（窓を開いてから）
     for (const part of ['sleep', 'exercise']) { openLifeForm(null, part, d); await w(200); const b = document.querySelector(`#modal-root [data-lsame$="|${part}"]`); if (b) b.click(); await w(400); }
     const t = getLife(d), ok2 = !!t && t.bed === '23:30' && t.wake === '07:00' && t.exercise.length === 1 && t.exercise[0].minutes === 30;
     openLifeForm(null, 'exercise', addDays(d, -2)); await w(200); const ok3 = !/この日は運動しなかった/.test(document.getElementById('modal-root').textContent); try { closeModal(true); } catch (e) {}
@@ -1018,7 +1018,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       state.myProducts = [mk('r1', 'エピデュオゲル', 'アダパレン・過酸化ベンゾイル', '皮膚科の塗り薬', '夜'), mk('r2', 'ディフェリンゲル0.1%', 'アダパレン', '皮膚科の塗り薬', '夜'), mk('r4', 'ベピオゲル2.5%', '過酸化ベンゾイル', '皮膚科の塗り薬', '夜'), mk('o1', 'イソトレチノイン（内服）', 'イソトレチノイン', ORAL_CAT, '朝・夜')];
       state.settings.concernKeys = ['acne']; state.skinLogs = [{id: 'l', date: d, condition: 3, acneCount: 3, acneTypes: ['赤ニキビ'], usedProducts: [], memo: '', photo: ''}]; state = normalize(JSON.parse(JSON.stringify(state)));
       ui.rtTab = 'pm'; location.hash = '#/routine'; render(); await w(500); const txt = document.getElementById('main').innerText;
-      const titles = [...document.querySelectorAll('#main .cm-t')].map((e) => e.textContent).filter((t) => /皮膚科の塗り薬/.test(t)); if (titles.join() !== '皮膚科の塗り薬（アダパレン・過酸化ベンゾイル）,皮膚科の塗り薬（アダパレン）,皮膚科の塗り薬（過酸化ベンゾイル）') bad.push('塗り薬の手順の名前 ' + titles.join('/'));
+      const titles = [...document.querySelectorAll('#main .cm-t')].map((e) => e.textContent).filter((t) => /皮膚科の塗り薬/.test(t)); /* 2026-11-21 題名は「皮膚科の塗り薬」だけ。どの薬かは下の商品のところで分かる */ if (titles.map((t) => t.replace(/\u200b/g, '').trim()).join() !== '皮膚科の塗り薬①,皮膚科の塗り薬②,皮膚科の塗り薬③') bad.push('塗り薬の手順の名前（いくつかあるときは①②③で見分ける） ' + titles.join('/')); { const cards = [...document.querySelectorAll('#main .cm-t')].filter((e) => /皮膚科の塗り薬/.test(e.textContent)).map((e) => (e.closest('.cm-b') || e.parentElement).textContent.replace(/\u200b/g, '')); if (!['アダパレン・過酸化ベンゾイル', 'アダパレン', '過酸化ベンゾイル'].every((x, i) => cards[i] && cards[i].includes(x))) bad.push('どの塗り薬か、カードの中で分からない'); }
       if (!/医師・薬剤師に確認[\s\S]*同じ成分（アダパレン）が入っています/.test(txt)) bad.push('同じ成分の注意が画面に出ない'); if (!/イソトレチノインを飲んでいる間にアダパレンを重ねると/.test(txt)) bad.push('イソトレチノインとの注意が画面に出ない'); if (/ディフェリン|ベピオ|エピデュオ/.test(txt.replace(/皮膚科の塗り薬[^\n]*/g, '')) && /ディフェリンを|ベピオを/.test(txt)) bad.push('商品名で注意している');
       /* 同じ商品 */
       state.myProducts = []; rxPick('ベピオゲル2.5%'); await w(700); closeModal(true); rxPick('ベピオゲル2.5%'); await w(300); closeModal(true); if (state.myProducts.filter((x) => x.name === 'ベピオゲル2.5%').length !== 1) bad.push('同じ塗り薬が2つ登録される');
@@ -1549,6 +1549,36 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       document.getElementById('preg-ov')?.remove(); st.pregAt = ''; actions['acc-preg']('nursing'); await w(400); if (st.pregAt !== todayStr()) bad.push('アカウントで選んだ日を覚えない');
       if (normalize(JSON.parse(JSON.stringify(state))).settings.pregAt !== todayStr()) bad.push('答えた日が保存されない');
     } catch (e) { bad.push('エラー ' + e.message); } finally { document.getElementById('preg-ov')?.remove(); state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 ①運動は記録がなければ「未記録」 ②塗り薬の題名は「皮膚科の塗り薬」だけ ③肌に合わなかったときの「使い始めてから出るまで」は聞かず、使い始めた日と使用頻度を自動で出す ④「同じころに、ほかの新しい物も使い始めた」は消す（自動で調べる） ⑤肌質の確信度はボタンに見えない表示、やり直すははっきりボタン、ほかのカードの字の太さ・段落をそろえる
+  check('運動の未記録・塗り薬の題名・合わなかったときの自動の期間と頻度・肌質のカードの見やすさ', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state), d = todayStr(), T = (el) => (el ? el.textContent : '').replace(/​/g, '');
+    try {
+      await w(400); try { closeModal(true); } catch (e) {} document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
+      state.settings.onboarded = true; state.lifeLogs = []; location.hash = '#/'; await w(300); render(); await w(200);
+      { const box = document.createElement('div'); box.innerHTML = lifeSumHtml(null); const rows = [...box.querySelectorAll('.ls-row')].map(T); const ex = rows.find((t) => /運動/.test(t)); /* 画面のタブに左右されないよう、ホームの睡眠・運動・食事の表をそのまま作って確かめる */ if (!ex || !/未記録/.test(ex) || /なし/.test(ex)) bad.push('運動が記録されていないのに「なし」と出る：' + ex); }
+      // ③④
+      const mk = (id, name, start) => ({id, demo: false, purchases: [], catalogId: null, name, brand: 'B', category: '美容液・アンプル', purposes: [], ingredients: '水', timing: '朝・夜', frequency: '週2〜3回', startDate: start, status: '使用中', endDate: '', memo: '', pao: 0, order: null});
+      state.myProducts = [mk('a1', 'テスト美容液', addDays(d, -20)), mk('a2', 'ほかの化粧水', addDays(d, -5))];
+      state.skinLogs = []; for (let i = 0; i < 10; i++) state.skinLogs.push({id: 'k' + i, date: addDays(d, -i), condition: 3, acneCount: 0, usedProducts: i % 2 ? [] : ['a1'], usageRecorded: true, memo: '', photo: ''});
+      state = normalize(JSON.parse(JSON.stringify(state)));
+      openNgForm('a1'); await w(400); const m = document.getElementById('modal-root');
+      if (/使い始めてから、出るまで/.test(T(m)) || m.querySelector('[name="ng-when"]')) bad.push('「使い始めてから、出るまで」が残っている');
+      if (/同じころに、ほかの新しい物も使い始めた/.test(T(m)) || m.querySelector('#ng-other')) bad.push('「同じころに…」のチェックが残っている');
+      const est = m.querySelector('#ng-est'); if (!est) bad.push('使っていた期間と頻度が自動で出ない');
+      else { if (!/気づいた日まで20日/.test(T(est))) bad.push('使い始めてからの日数が違う：' + T(est)); if (!/週2〜3回|週4〜6回/.test(T(est)) || !/記録10日のうち5日使った/.test(T(est))) bad.push('使用頻度が記録から推定されない：' + T(est)); if (!/ほかの化粧水/.test(T(est))) bad.push('同じころに使い始めた物が自動で出ない');
+        const di = m.querySelector('#ng-date'); di.value = addDays(d, -15); di.dispatchEvent(new Event('change', {bubbles: true})); await w(100); if (!/気づいた日まで5日/.test(T(m.querySelector('#ng-est')))) bad.push('気づいた日を変えても、期間が変わらない'); }
+      m.querySelector('[name="ng-sym"]').click(); document.querySelector('[data-action="ng-save"]').click(); await w(400);
+      { const ng = getMy('a1').ng || {}; if (ng.when !== '数日〜1週間後' || ng.days !== 5 || !ng.freq || ng.newOther !== false) bad.push('自動の推定が保存されない：' + JSON.stringify({when: ng.when, days: ng.days, freq: ng.freq, o: ng.newOther})); }
+      // ⑤
+      state.settings.diag = {a: {}, r: diagCompute({}, [])}; location.hash = '#/account/s/skintype'; await w(500);
+      const top = document.querySelector('#main .dg-top'), cf = top && top.querySelector('.dg-conf'), rb = top && top.querySelector('.dg-redo');
+      if (!cf || !rb) bad.push('確信度か、やり直すボタンがない');
+      else { const a = getComputedStyle(cf), b = getComputedStyle(rb); if (cf.tagName === 'BUTTON' || a.backgroundColor === b.backgroundColor && a.borderRadius === b.borderRadius) bad.push('確信度とやり直すボタンが同じ見た目');
+        if (!(parseFloat(b.borderTopWidth) >= 1) || rb.getBoundingClientRect().height < 40) bad.push('やり直すがボタンに見えない・押しにくい'); if (parseFloat(a.paddingLeft) > 2 && a.backgroundColor !== 'rgba(0, 0, 0, 0)') bad.push('確信度がボタンのような形'); }
+      const ps = [...document.querySelectorAll('#main .dg-c p:not(.dg-note), #main .dg-c li')].filter((e) => e.offsetParent); const fs = new Set(ps.map((e) => getComputedStyle(e).fontSize + '/' + getComputedStyle(e).fontWeight + '/' + getComputedStyle(e).lineHeight));
+      if (fs.size !== 1) bad.push('肌質のカードの本文の字の大きさ・太さ・行の高さがそろっていない：' + [...fs].join(' | '));
+      if ([...document.querySelectorAll('#main .dg-c p b')].length) bad.push('本文の中に太字のラベルがまざっている（ラベルは上に分ける）');
+    } catch (e) { bad.push('エラー ' + e.message); } finally { try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
