@@ -204,11 +204,13 @@ html.no-press a,html.no-press button,html.no-press .btn,html.no-press [data-acti
 .acc-save{width:100%;justify-content:center;margin-top:14px}.acc-save+.acc-save{margin-top:8px}
 .wh{position:relative;display:flex;justify-content:center;gap:2px;height:200px;margin:4px 0 6px;user-select:none;-webkit-user-select:none}
 .wh::before{content:'';position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:rgba(127,127,127,.13);pointer-events:none}
-.wh-col{position:relative;z-index:1;flex:0 0 31%;height:200px;overflow-y:auto;scroll-snap-type:y mandatory;padding:80px 0;box-sizing:border-box;scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);outline:none}
+.wh-col{position:relative;z-index:1;flex:0 0 31%;height:200px;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:auto;touch-action:pan-y;padding:80px 0;box-sizing:border-box;scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 32%,#000 68%,transparent);outline:none}
 .wh-col::-webkit-scrollbar{display:none}
-.wh-it{height:40px;line-height:40px;scroll-snap-align:center;text-align:center;font-size:19px;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;transition:color .15s}
-.wh-it.on{color:var(--ink);font-size:21px;font-weight:600}
-.wh-it.wh-x{opacity:.3}
+.wh-it{height:40px;line-height:40px;scroll-snap-align:center;text-align:center;font-size:20px;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;will-change:transform,opacity;backface-visibility:hidden;transform-origin:50% 50%}
+.wh-it.on{color:var(--ink);font-weight:600}
+.wh-it.wh-x{color:var(--line)!important}
+.dg-redo{margin-top:12px}
+.acc-multi>.card{margin-bottom:12px}.acc-multi>.card>.card-h h2{display:block}
 .acc-num-u{display:flex;align-items:center;gap:8px}.acc-num-u .input{flex:1}
 .acc-sec.acc-grp .acc-row{grid-template-columns:22px 1fr auto 12px;min-height:52px;padding:0 18px;box-sizing:border-box}
 .acc-grp button.acc-row{width:100%;background:none;border:0;border-radius:0;font:inherit;text-align:left;cursor:pointer}
@@ -3080,7 +3082,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261121044604'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261121124550'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -10163,11 +10165,11 @@ const CARE_AI_KEY = 'skinwise_care_ai';
 function careAiCache() { try { return JSON.parse(localStorage.getItem(CARE_AI_KEY) || 'null'); } catch (e) { return null; } }
 
 // ---------- 肌質診断の結果 ----------
-function careDiagHtml() {
+function careDiagHtml(o = {}) {
   const d = diagNow(); if (!d) return '';
   const mi = SKIN_TYPE_INFO[d.main];
   const conf = ['低い', 'ふつう', '高い'][d.conf];
-  let h = `<div class="card dg-top"><small>推定肌質</small><b class="dg-type">${esc(typeLabel(d))}</b><span class="dg-conf c${d.conf}">確信度：${conf}</span><p class="small muted">${fmtDate(d.at)}に診断</p></div>`;
+  let h = `<div class="card dg-top"><small>推定肌質</small><b class="dg-type">${esc(typeLabel(d))}</b><span class="dg-conf c${d.conf}">確信度：${conf}</span><p class="small muted">${fmtDate(d.at)}に診断</p>${o.redoTop ? '<button type="button" class="btn btn-soft btn-sm dg-redo" data-action="setup">診断をやり直す</button>' : ''}</div>`;
   h += `<div class="card"><div class="card-h"><h2>肌質の特徴</h2></div>${d.types.map(t => `<p><b>${esc(SKIN_TYPE_INFO[t].l)}</b>：${esc(SKIN_TYPE_INFO[t].f)}</p>`).join('')}</div>`;
   h += `<div class="card"><div class="card-h"><h2>診断の理由</h2></div>${d.why.length ? `<ul class="dg-ul">${d.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : '<p class="small muted">質問への答えが少ないため、理由を出せませんでした。</p>'}${d.confWhy.length ? `<p class="small muted">確信度が${conf}理由：${esc(d.confWhy.join('、'))}</p>` : ''}</div>`;
   const warn = {normal:'季節の変わり目・寝不足で崩れることがある', dry:'刺激を受けやすく、小じわ・肌荒れが起きやすい', oily:'毛穴のつまり・ニキビ・化粧くずれが起きやすい', combo:'同じケアでは、Tゾーンはべたつき、頬は乾燥しやすい', innerdry:'さっぱり系のケアだけだと、乾燥と皮脂が悪化しやすい'}[d.main];
@@ -10175,7 +10177,7 @@ function careDiagHtml() {
   h += `<div class="card"><div class="card-h"><h2>優先的に改善したい肌悩み</h2></div>${d.priority.length ? `<ol class="dg-ol">${d.priority.slice(0, 5).map(k => `<li>${esc(concernOf(k).l)}${d.fromAns.includes(k) && !(state.settings.concernKeys || []).includes(k) ? '<small class="muted">（答えから）</small>' : ''}</li>`).join('')}</ol><p class="small muted">赤み・刺激・ニキビの炎症など、肌の土台に関わる悩みを先にしています。</p>` : '<p class="small muted">選ばれた悩みはありません。</p>'}</div>`;
   h += `<div class="card"><div class="card-h"><h2>おすすめのケア方針</h2></div><p>${esc(CARE_POLICY(d))}</p><a class="btn btn-primary btn-sm" href="#/routine">朝・夜のケアを見る</a></div>`;
   const T = careTrends();
-  h += `<div class="card"><p class="small muted">肌質は、季節・生活・年齢で変わります。肌の記録の変化や季節の変わり目に、やり直してください。${T.retype ? esc(T.retype) : ''}</p><button type="button" class="btn btn-soft btn-sm" data-action="setup">肌質診断をやり直す</button></div>`;
+  h += `<div class="card"><p class="small muted">肌質は、季節・生活・年齢で変わります。肌の記録の変化や季節の変わり目に、やり直してください。${T.retype ? esc(T.retype) : ''}</p>${o.redoTop ? '' : '<button type="button" class="btn btn-soft btn-sm" data-action="setup">肌質診断をやり直す</button>'}</div>`;
   return h;
 }
 
@@ -15984,7 +15986,10 @@ function accItemDefs() {
     age: {t:'生年月日', icon:'calendar', val:() => fmtBirth(st.birthDate) || '未設定', html:() => card('生年月日', birthWheelHtml())},
     height: {t:'身長', icon:'bodyskin', val:() => st.height ? st.height + 'cm' : '未設定', html:() => card('身長', accNumHtml('height'))},
     weight: {t:'体重', icon:'weight', val:() => st.weight ? st.weight + 'kg' : '未設定', html:() => card('体重', accNumHtml('weight'))},
-    skintype: {t:'肌質', icon:'drop', val:() => d ? typeLabel(d) : '未診断', html:() => card('肌質', skinTypePartHtml())},
+    skintype: {t:'肌質', icon:'drop', val:() => d ? typeLabel(d) : '未診断', html:() => { // 開いたらすぐ診断結果。すぐ下に「診断をやり直す」
+      if (!diagNow()) return card('肌質', '<p class="muted" style="margin:0 0 12px">まだ肌質診断をしていません。1〜2分の質問に答えると、肌質と肌悩みに合わせたケアを提案します。</p><button type="button" class="btn btn-primary acc-save" data-action="setup">肌質診断をする</button>');
+      let h = ''; try { h = '<div class="acc-multi">' + careDiagHtml({redoTop:true}) + '</div>'; } catch (e) { console.error(e); h = card('肌質', skinTypePartHtml()); }
+      return h + '<p class="small muted rt-foot">自己申告からの推定で、医学的な診断ではありません。</p>'; }},
     concerns: {t:'肌悩み', icon:'spark', val:() => ck.length ? ck.length + '件' : '未設定', html:() => card('肌悩み', concernsPartHtml())},
     notify: {t:'お知らせ', icon:'bell', hide:NATIVE_APP, html:pick(/^お知らせ$/)},
     display: {t:'画面の表示', icon:'moon', val:() => ({auto:'自動', light:'ライト', dark:'ダーク'})[themePref()], html:pick(/^画面の表示$/)},
@@ -16018,19 +16023,27 @@ function birthWheelHtml() {
     ${m ? '<button type="button" class="btn btn-ghost acc-save" data-action="acc-birth-clear">生年月日を消す</button>' : ''}`;
 }
 function whVal(k) { const c = document.querySelector('#bd-wheel .wh-' + k); if (!c) return 0; const it = c.querySelectorAll('.wh-it')[Math.round(c.scrollTop / WH_H)]; return it ? Number(it.dataset.v) : 0; }
-function whTo(c, i, smooth) { const n = c.querySelectorAll('.wh-it').length; i = Math.max(0, Math.min(n - 1, i)); if (smooth && c.scrollTo) c.scrollTo({top:i * WH_H, behavior:'smooth'}); else c.scrollTop = i * WH_H; c.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('on', j === i)); }
+function whTo(c, i, smooth) { const n = c.querySelectorAll('.wh-it').length; i = Math.max(0, Math.min(n - 1, i)); if (smooth && c.scrollTo) c.scrollTo({top:i * WH_H, behavior:'smooth'}); else { c.scrollTop = i * WH_H; whPaint(c); } }
 function whSettle(c) {
-  const i = Math.round(c.scrollTop / WH_H); c.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('on', j === i));
+  whPaint(c);
   // その月にない日（2月30日など）は、月末に合わせる
   const y = whVal('y'), mo = whVal('m'), dc = document.querySelector('#bd-wheel .wh-d'), max = new Date(y, mo, 0).getDate();
   if (dc) { dc.querySelectorAll('.wh-it').forEach((x, j) => x.classList.toggle('wh-x', j + 1 > max)); if (whVal('d') > max) whTo(dc, max - 1, true); }
   const b = document.getElementById('bd-band'); if (b && y && mo) { const bd = `${y}-${String(mo).padStart(2, '0')}-${String(Math.min(whVal('d'), max)).padStart(2, '0')}`; if (validBirth(bd)) b.textContent = `年代：${ageBandOfBirth(bd)}（生年月日から自動で決まります）`; }
 }
+// 回している間も、まん中に来た数字を濃く・離れるほど奥に傾けて薄く（iPhoneの選び方に近い、なめらかな見た目）
+function whPaint(c) {
+  const its = c._its || (c._its = [...c.querySelectorAll('.wh-it')]), st = c.scrollTop, i0 = Math.max(0, Math.floor(st / WH_H) - 4), i1 = Math.min(its.length - 1, i0 + 9);
+  for (let j = i0; j <= i1; j++) { const d = (j * WH_H - st) / WH_H, a = Math.abs(d), it = its[j];
+    it.style.transform = `perspective(320px) rotateX(${Math.max(-70, Math.min(70, -d * 22)).toFixed(1)}deg) scale(${(1 - Math.min(a, 3) * 0.04).toFixed(3)})`;
+    it.style.opacity = String(Math.max(0.18, 1 - a * 0.28).toFixed(2)); it.classList.toggle('on', a < 0.5); }
+}
 function whInit() {
   const w = document.getElementById('bd-wheel'); if (!w || w.dataset.on) return; w.dataset.on = '1';
   w.querySelectorAll('.wh-col').forEach(c => {
     const on = c.querySelector('.wh-it.on'), all = [...c.querySelectorAll('.wh-it')]; c.scrollTop = Math.max(0, all.indexOf(on)) * WH_H;
-    c.addEventListener('scroll', () => { clearTimeout(c._t); c._t = setTimeout(() => whSettle(c), 110); }, {passive:true});
+    c.addEventListener('scroll', () => { if (!c._raf) c._raf = requestAnimationFrame(() => { c._raf = 0; whPaint(c); }); clearTimeout(c._t); c._t = setTimeout(() => whSettle(c), 140); }, {passive:true});
+    whPaint(c);
     c.addEventListener('click', e => { const it = e.target.closest('.wh-it'); if (it) whTo(c, all.indexOf(it), true); });
     c.addEventListener('keydown', e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); whTo(c, Math.round(c.scrollTop / WH_H) + (e.key === 'ArrowDown' ? 1 : -1), true); } });
   });

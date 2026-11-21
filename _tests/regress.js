@@ -1453,6 +1453,30 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         const dt = performance.now() - t0; if (dt > 5700) bad.push(`元に戻るまで${Math.round(dt)}ミリ秒かかった`); await w(400); }
     } catch (e) { bad.push('エラー ' + e.message); } finally { document.body.classList.remove('m-dragging'); try { closeModal(true); } catch (e) {} state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-21 アカウントの「肌質」は、開いたらすぐ診断結果が出て、すぐ下に「診断をやり直す」。生年月日は、回している間もなめらかに数字が変わる
+  check('肌質を開くとすぐ診断結果とやり直すボタン・生年月日がなめらかに回る', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = JSON.stringify(state);
+    try {
+      state.settings.onboarded = true; document.getElementById('modal-root').innerHTML = ''; document.querySelectorAll('.pm-ov').forEach((e) => e.remove());
+      await w(600); /* 前の確かめの画面の移り変わりが終わるのを待つ */ state.settings.diag = null; location.hash = '#/account/s/skintype'; await w(450); if (location.hash !== '#/account/s/skintype') { location.hash = '#/account/s/skintype'; await w(450); } render(); await w(150);
+      if (!/まだ肌質診断をしていません/.test(document.getElementById('main').textContent.replace(/​/g, '')) || !document.querySelector('#main [data-action="setup"]')) bad.push('まだ診断していない人に、診断するボタンが出ない（' + location.hash + '：' + document.getElementById('main').textContent.replace(/\s+/g, ' ').slice(0, 100) + '）');
+      state.settings.diag = {a: {}, r: diagCompute({}, [])}; location.hash = '#/account'; await w(300); location.hash = '#/account/s/skintype'; await w(450);
+      const top = document.querySelector('#main .dg-top'), d = diagNow();
+      if (!top) bad.push('肌質を開いても、すぐ診断結果が出ない');
+      else { if (!top.querySelector('.dg-type') || top.querySelector('.dg-type').textContent.replace(/​/g, '') !== typeLabel(d)) bad.push('診断結果の肌質が違う');
+        const rb = top.querySelector('[data-action="setup"]'); if (!rb || !/診断をやり直す/.test(rb.textContent.replace(/​/g, ''))) bad.push('診断結果のすぐ近くに「診断をやり直す」がない');
+        if (document.querySelectorAll('#main [data-action="setup"]').length !== 1) bad.push('やり直すボタンが2つある'); }
+      { const hs = [...document.querySelectorAll('#main .card-h h2')].filter((h) => h.offsetParent && /肌質の特徴/.test(h.textContent.replace(/\u200b/g, ''))); if (!hs.length) bad.push('診断結果のくわしい内容（見出しつき）が出ない'); }
+      // 生年月日：回している間に、まん中の数字が変わる（止まるまで待たない）・離れた数字は薄く傾く
+      location.hash = '#/account/s/age'; await w(500); const c = document.querySelector('#bd-wheel .wh-y');
+      if (!c) bad.push('生年月日の回すところがない');
+      else { const its = [...c.querySelectorAll('.wh-it')], on0 = c.querySelector('.wh-it.on'); const i0 = its.indexOf(on0);
+        c.scrollTop = (i0 + 3) * 40; c.dispatchEvent(new Event('scroll')); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        if (its.indexOf(c.querySelector('.wh-it.on')) !== i0 + 3) bad.push('回している間、まん中の数字がすぐ変わらない（止まるまで待つ）');
+        const mid = its[i0 + 3], far = its[i0 + 5]; if (!(Number(mid.style.opacity) > Number(far.style.opacity))) bad.push('まん中から離れた数字が薄くならない');
+        if (!/rotateX/.test(far.style.transform)) bad.push('離れた数字が傾かない');
+        if (/font-size/.test([...document.styleSheets].map((ss) => { try { return [...ss.cssRules].map((r) => r.cssText).join(''); } catch (e) { return ''; } }).join('').match(/\.wh-it\.on\s*\{[^}]*\}/) || '')) bad.push('まん中の数字だけ大きさが変わり、カクッと動く'); }
+    } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); location.hash = '#/'; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
