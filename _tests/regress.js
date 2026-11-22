@@ -1670,6 +1670,17 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05); if (ratio < 4.5) bad.push('文字と背景の差が小さい（' + ratio.toFixed(2) + '）'); d.remove();
     } catch (e) { bad.push('エラー ' + e.message); } finally { if (th) document.documentElement.setAttribute('data-theme', th); else document.documentElement.removeAttribute('data-theme'); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-22 おすすめの食べ物：「果物」「ナッツ」のような総称を出さず具体的に。どの食べ物も、押すと「効果を高めるコツ」（トマトは加熱＋油でリコピン、キウイはゴールドなど）が出る
+  check('おすすめの食べ物は具体的な名前で、全部に効果を高めるコツがある', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), ABS = /^(果物|フルーツ|ナッツ|きのこ|季節の野菜|野菜|水・お茶|お茶|青魚|魚|肉|乳製品|大豆製品|発酵食品|海藻)$/;
+    try { const goods = new Set(Object.keys(FOOD_INFO)); LIFE_AVOID.forEach((r) => { if (!r[5]) (r[4] || []).forEach((v) => goods.add(v)); }); goods.add(LIFE_ALT_DEF['食事']);
+      const html = advChips({area: '食事', good: ['果物', 'ナッツ', 'きのこ', '季節の野菜', '水・お茶', 'トマト'], avoid: ['菓子パン', '炭酸ジュース']}); const chips = [...html.matchAll(/data-food="([^"]+)"/g)].map((m) => m[1]);
+      chips.filter((v) => ABS.test(chipText(v))).forEach((v) => bad.push('総称のまま出ている：' + v)); if (!chips.includes('キウイ') || !chips.includes('アーモンド')) bad.push('果物・ナッツが具体的な食べ物にならない');
+      const mealGoods = ['キウイ', 'ブロッコリー', 'パプリカ', 'トマト', '水・麦茶', 'アーモンド', 'ヨーグルト', 'まいたけ', 'ほうれん草', 'にんじん', '納豆', '鮭', '卵', 'バナナ', 'いちご', 'みかん', '鶏むね肉', '豆腐', 'ギリシャヨーグルト', 'まぐろ', 'レバー', 'みそ汁', 'ミネストローネ', '鮭の塩焼き', '蒸し鶏', 'さば', 'わかめ', 'キムチ', '玄米'];
+      [...goods, ...mealGoods].forEach((v) => { const f = foodInfo(v); if (!f || !f[2] || f[2].length < 15) bad.push('コツがない：' + v); });
+      if (!/加熱|油/.test(foodInfo('トマト')[2]) || !/ゴールド/.test(foodInfo('キウイ')[2])) bad.push('トマト・キウイのコツが違う');
+      openFoodSheet('トマト'); await w(300); const t = document.querySelector('.modal-overlay:last-of-type') || document.body; if (!/効果を高めるコツ/.test(t.textContent)) bad.push('シートにコツが出ない'); closeModal && closeModal();
+    } catch (e) { bad.push('エラー ' + e.message); }
+    if (bad.length) console.log('  ' + bad.slice(0, 8).join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
