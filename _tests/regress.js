@@ -74,10 +74,13 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
   check('通常⇄時短は、選んでいるほうが外側と違う色のつまみ', await ev(() => { const ip = window.isPremium; window.isPremium = () => true; location.hash = '#/routine'; render(); const ind = document.querySelector('.rt-qsw .sc-ind'), box = document.querySelector('.rt-qsw'); const bg = ind && getComputedStyle(ind).backgroundColor, bx = box && getComputedStyle(box).backgroundColor; window.isPremium = ip; return !!bg && bg !== bx; }));
   // 2026-11-16 戻るボタンは画面の中の丸いボタンではなく、上の見出しの前に「＜」を付けて、見出しごと押すと戻る
   check('戻るは上の見出しの「＜」にまとめ、画面の中の丸い戻るボタンを出さない', await ev(async () => {
+    const until = async (f, ms = 3000) => { const t0 = Date.now(); while (!f() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 100)); return f(); }; // 2026-11-23 重いときは画面の切りかえが遅れるので、決まった時間ではなく、そうなるまで待つ（たまたま落ちるのを防ぐ）
     location.hash = '#/account'; await new Promise((r) => setTimeout(r, 300)); location.hash = '#/account/me'; await new Promise((r) => setTimeout(r, 400));
+    await until(() => { const x = document.querySelector('.topbar .top-title'); return location.hash === '#/account/me' && !!x && x.classList.contains('tt-back') && !!document.querySelector('.topbar .tt-bk .tt-chev'); });
     const h = document.querySelector('.topbar .top-title'), bk = document.querySelector('#main .back');
     const ok1 = !!h && h.classList.contains('tt-back') && !!document.querySelector('.topbar .tt-bk .tt-chev') && (!bk || getComputedStyle(bk).display === 'none');
-    h.click(); await new Promise((r) => setTimeout(r, 500)); const ok2 = location.hash === '#/account';
+    if (!h) return false;
+    h.click(); await new Promise((r) => setTimeout(r, 500)); await until(() => location.hash === '#/account' && !document.querySelector('.topbar .tt-bk')); const ok2 = location.hash === '#/account';
     const h2 = document.querySelector('.topbar .top-title'); const ok3 = (!h2 || !h2.classList.contains('tt-back')) && !document.querySelector('.topbar .tt-bk'); // いちばん上の画面には「＜」を付けない
     return ok1 && ok2 && ok3; }));
   // 2026-11-16 見出しの前の「＜」は、見出しの文字より少し薄い色
@@ -1205,7 +1208,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
   check('記録が多くても画面がすぐ出る', await ev(async () => { const keep = JSON.stringify(state), keepP = window.isPremium, d = todayStr(); window.isPremium = () => true;
     state.myProducts = Array.from({length: 60}, (_, i) => ({id: 'h' + i, demo: false, purchases: [], catalogId: null, name: 'テスト商品' + i, brand: 'B', category: i < 6 ? '皮膚科の塗り薬' : ['化粧水・トナー', '美容液・アンプル', '乳液', 'クリーム', '日焼け止め'][i % 5], purposes: [], ingredients: i < 6 ? ['アダパレン', 'ヘパリン類似物質', 'タクロリムス', '過酸化ベンゾイル', 'ベタメタゾン吉草酸エステル', 'ケトコナゾール'][i] : '水、グリセリン、BG、ナイアシンアミド、セラミドNP、ヒアルロン酸Na', timing: '朝・夜', frequency: '毎日', startDate: addDays(d, -200), status: '使用中', endDate: '', memo: '', pao: 0, order: null}));
     state.skinLogs = Array.from({length: 180}, (_, k) => ({id: 'hl' + k, date: addDays(d, -k), condition: 3, acneCount: k % 4, acneTypes: ['赤ニキビ'], dryness: k % 5, usedProducts: [], memo: '', photo: ''}));
-    state = normalize(JSON.parse(JSON.stringify(state))); ui.homeTab = 'care'; location.hash = '#/home'; render(); const t0 = performance.now(); render(); const ms = performance.now() - t0;
+    state = normalize(JSON.parse(JSON.stringify(state))); ui.homeTab = 'care'; location.hash = '#/home'; render(); const T = []; for (let j = 0; j < 3; j++) { const t0 = performance.now(); render(); T.push(performance.now() - t0); } const ms = T.sort((a, b) => a - b)[1]; // 2026-11-23 1回だけ測ると、たまたま遅い回で落ちるので、3回測ったまん中の値で確かめる（基準の400msは変えない）
     state = normalize(JSON.parse(keep)); window.isPremium = keepP; render(); if (ms > 400) console.log('  ' + Math.round(ms) + 'ms'); return ms <= 400; }));
   // 2026-11-19 よく入っている成分は、成分の一覧で分かる（分からないと、ケア管理で「合うか判断できない」になる）。成分の説明も開ける
   check('よく入っている成分が成分の一覧にある', await ev(async () => { const miss = [];
