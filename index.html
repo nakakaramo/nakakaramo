@@ -3124,7 +3124,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261123050454'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261123142611'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -9750,7 +9750,7 @@ function comboItem(v) {
   return {v, label:e.ja, sub:e.reg, tags:new Set(e.tags), keys:[e.k], act:e.act, rx:!!e.rx, oral:!!e.oral, ings:[e]};
 }
 function rxComboItem(name, kind, ingText, v) {
-  const ms = masterIngsOf(String(ingText).replace(/・/g, '、')), tags = new Set(ms.flatMap(e => e.tags)), oral = isOralKind(kind);
+  const ms = masterIngsOf(String(ingText).replace(/・/g, '、')), oral = isOralKind(kind), tags = new Set((oral ? ms.filter(e => e.oral) : ms).flatMap(e => e.tags)); // 2026-11-23 飲む物の成分（ビタミンCなど）を、塗る成分の組み合わせの注意に当てはめない
   const moist = /保湿/.test(kind);
   if (/ステロイド/.test(kind) && !/以外/.test(kind)) tags.add('steroid');
   if (!oral && !moist) tags.add('rxTopical');
@@ -9785,7 +9785,7 @@ function comboEval(A, B) {
   const t = `${A.label} × ${B.label}`, ta = [...A.tags], tb = [...B.tags];
   const m = r => (r.a.some(g => ta.includes(g)) && r.b.some(g => tb.includes(g))) || (r.a.some(g => tb.includes(g)) && r.b.some(g => ta.includes(g)));
   const hits = COMBO_DB.filter(m).sort((x, y) => y.lv - x.lv);
-  const dup = A.keys.filter(k => B.keys.includes(k)).map(k => ingM(k)).filter(Boolean);
+  const dup = A.keys.filter(k => B.keys.includes(k)).map(k => ingM(k)).filter(e => e && (!!A.oral === !!B.oral || e.rx)); // 2026-11-23 飲む物と塗る物で同じ成分（ビタミンCなど）は「重複」にしない。処方薬の成分（抗菌薬など）は、飲む・塗るがちがっても重複として注意する
   let res;
   if (dup.length && A.v !== B.v) {
     const rxDup = dup.some(e => e.rx);
@@ -9793,7 +9793,7 @@ function comboEval(A, B) {
     if (hits.length && hits[0].lv > res.lv) res = Object.assign({}, hits[0], {rule:hits[0].t});
   } else if (hits.length) res = Object.assign({}, hits[0], {rule:hits[0].t});
   else if (A.rx && B.rx && !(A.oral && B.oral)) res = {lv:2, rule:'処方薬どうし', why:'処方薬どうしの組み合わせです。併用を避けるという登録された情報はありませんが、塗る順番・間隔・場所は医師が決めています。', how:'医師・薬剤師に指示された使い方を守ってください。', freq:'—', skin:{}, target:'—', ev:'情報不足', src:['pmda'], checked:COMBO_CHECKED};
-  else if ((A.rx && !A.oral && B.act >= 1) || (B.rx && !B.oral && A.act >= 1)) res = {lv:2, rule:'処方の塗り薬 × 刺激が出やすい化粧品', why:'処方薬を使っている肌に、刺激が出ることのある化粧品を重ねる組み合わせです。登録された個別の注意情報はありません。', how:'一緒に使ってよいか、医師・薬剤師に確認してください。', freq:'—', skin:{sens:'敏感肌の人は、確認するまで化粧品の方を休みます。'}, target:'—', ev:'情報不足', src:['pmda'], checked:COMBO_CHECKED};
+  else if ((A.rx && !A.oral && B.act >= 1 && !B.oral) || (B.rx && !B.oral && A.act >= 1 && !A.oral)) res = {lv:2, rule:'処方の塗り薬 × 刺激が出やすい化粧品', why:'処方薬を使っている肌に、刺激が出ることのある化粧品を重ねる組み合わせです。登録された個別の注意情報はありません。', how:'一緒に使ってよいか、医師・薬剤師に確認してください。', freq:'—', skin:{sens:'敏感肌の人は、確認するまで化粧品の方を休みます。'}, target:'—', ev:'情報不足', src:['pmda'], checked:COMBO_CHECKED};
   else if (A.act >= 2 && B.act >= 2) res = {lv:2, rule:'刺激が出やすい成分どうし', why:'どちらも刺激が出やすい成分です（個別の注意情報は登録されていません）。', how:'同じタイミングで重ねず、朝夜や日を分けます。', freq:'—', skin:{sens:'敏感肌・乾燥肌の人は、どちらか1つに。'}, target:'—', ev:'情報不足', src:['review'], checked:COMBO_CHECKED};
   else res = {lv:1, rule:'', why:'この組み合わせで注意が必要という情報は、登録されていません。', how:'それぞれの製品の使い方を守って使えます。', freq:'—', skin:{}, target:'—', ev:'情報不足', src:[], checked:COMBO_CHECKED, none:true};
   res = Object.assign({}, res, {t, A, B, lvK:LV[res.lv]});

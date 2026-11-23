@@ -1684,6 +1684,23 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       openFoodSheet('トマト'); await w(300); const t = document.querySelector('.modal-overlay:last-of-type') || document.body; if (!/効果を高めるコツ/.test(t.textContent)) bad.push('シートにコツが出ない'); closeModal && closeModal();
     } catch (e) { bad.push('エラー ' + e.message); }
     if (bad.length) console.log('  ' + bad.slice(0, 8).join(' / ')); return !bad.length; }));
+  // 2026-11-23 飲むビタミンCのサプリとエピデュオゲルを一緒に登録すると、塗る物どうしの「高濃度ビタミンC × レチノール類」の注意が出ていた（飲む物を塗る物として扱わない。処方薬の抗菌薬の飲む・塗るの重複は、今までどおり強い注意）
+  check('飲む物（ビタミンCのサプリなど）に、塗る物どうしの組み合わせの注意を出さない', await ev(async () => { const bad = [];
+    try {
+      const R = (n) => { const d = RX_DRUGS.find((x) => x[1] === n); return rxComboItem(d[1], d[0], d[2]); };
+      const vc = R('ビタミンCのサプリメント'), epi = R('エピデュオゲル'), cin = R('シナール（ビタミンC）');
+      const r1 = comboEval(vc, epi); if (r1 && r1.lv > 1) bad.push('サプリ×エピデュオ：' + r1.rule);
+      for (const k of ['retinol', 'aha', 'bha', 'bpo', 'vitc']) { const it = comboItem(k); const r = it && comboEval(vc, it); if (r && r.lv > 1) bad.push('サプリ×' + k + '：' + r.rule); }
+      const r2 = comboEval(cin, comboItem('retinol')); if (r2 && /ビタミンC/.test(r2.rule || '')) bad.push('シナール×レチノール：' + r2.rule);
+      const r3 = comboEval(vc, cin); if (!r3 || r3.rule !== '同じ有効成分の重複') bad.push('飲むビタミンCどうしの重複が出ない');
+      const r4 = comboEval(R('ミノマイシン（ミノサイクリン）'), R('アクロマイシン軟膏3%')); if (!r4 || r4.lv !== 3) bad.push('抗菌薬の飲む・塗るの重複が強い注意でない');
+      const keep = JSON.stringify(state), d = todayStr();
+      const P = (id, n, cat, ing, br) => ({ id, demo: false, purchases: [], catalogId: null, name: n, brand: br, category: cat, purposes: [], ingredients: ing, timing: '朝・夜', frequency: '毎日', startDate: addDays(d, -10), status: '使用中', endDate: '', memo: '', pao: 0, order: null });
+      state.myProducts = [P('x1', 'エピデュオゲル', '皮膚科の塗り薬', 'アダパレン・過酸化ベンゾイル', '処方薬'), P('x2', 'ビタミンCのサプリメント', ORAL_CAT, 'ビタミンC', 'サプリ')];
+      state = normalize(JSON.parse(JSON.stringify(state))); state.savedAt = Date.now(); const pr = prodAnalysis0().pairs; if (pr.length) bad.push('Myアイテムの併用注意：' + pr.map((x) => x.r.t).join('、'));
+      state = normalize(JSON.parse(keep)); render();
+    } catch (e) { bad.push('エラー ' + e.message); }
+    if (bad.length) console.log('  ' + bad.slice(0, 8).join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
