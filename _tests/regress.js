@@ -1236,7 +1236,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     state.settings.concernKeys = ['acne']; state.skinLogs = [{id: 'hb0', date: d, condition: 3, acneCount: 2, usedProducts: [], memo: '', photo: ''}];
     state.lifeLogs = [1, 2, 3, 4, 5].map((k) => { const l = blankLife(addDays(d, -k)); l.foods = [{id: 'a' + k, meal: 'breakfast', name: '食パン', kcal: 250, p: 8, f: 4, c: 45, veg: 0, qty: 1}, {id: 'b' + k, meal: 'snack', name: 'チョコレート', kcal: 280, p: 3, f: 17, c: 28, veg: 0, qty: 1}]; return l; });
     state = normalize(JSON.parse(JSON.stringify(state))); let D = careTodayData(); const m = D.items.filter((x) => x.cat === '食事').map((x) => x.title + '／' + x.why).join(' ');
-    if (!/この2週間の記録（5日分）で、甘い間食が5日/.test(m)) bad.push('甘い間食の習慣 ' + m); if (!/たんぱく質が1日11g/.test(m)) bad.push('たんぱく質の習慣'); if (!D.has['食事']) bad.push('チップが出ない');
+    if (!/この2週間の記録（5日分）で、(甘い|お菓子の)間食が5日/.test(m)) bad.push('甘い間食の習慣 ' + m); if (!/たんぱく質が1日11g/.test(m)) bad.push('たんぱく質の習慣'); if (!D.has['食事']) bad.push('チップが出ない');
     state.lifeLogs = []; state = normalize(JSON.parse(JSON.stringify(state))); D = careTodayData(); if (D.items.some((x) => x.cat === '食事' && !/を記録する$/.test(x.title))) bad.push('記録なしで決めつけ');
     state = normalize(JSON.parse(keep)); if (bad.length) console.log('  ' + bad); return !bad.length; }));
   // 主な画面をすべて開いて、エラーが出ないこと
@@ -1683,9 +1683,9 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       const html = advChips({area: '食事', good: ['果物', 'ナッツ', 'きのこ', '季節の野菜', '水・お茶', 'トマト'], avoid: ['菓子パン', '炭酸ジュース']}); const chips = [...html.matchAll(/data-food="([^"]+)"/g)].map((m) => m[1]);
       chips.filter((v) => ABS.test(chipText(v))).forEach((v) => bad.push('総称のまま出ている：' + v)); if (!chips.includes('キウイ') || !chips.includes('アーモンド')) bad.push('果物・ナッツが具体的な食べ物にならない');
       const mealGoods = ['キウイ', 'ブロッコリー', 'パプリカ', 'トマト', '水・麦茶', 'アーモンド', 'ヨーグルト', 'まいたけ', 'ほうれん草', 'にんじん', '納豆', '鮭', '卵', 'バナナ', 'いちご', 'みかん', '鶏むね肉', '豆腐', 'ギリシャヨーグルト', 'まぐろ', 'レバー', 'みそ汁', 'ミネストローネ', '鮭の塩焼き', '蒸し鶏', 'さば', 'わかめ', 'キムチ', '玄米'];
-      [...goods, ...mealGoods].forEach((v) => { const f = foodInfo(v); if (!f || !f[2] || f[2].length < 15) bad.push('コツがない：' + v); });
+      [...goods, ...mealGoods].forEach((v) => { const f = foodInfo(v); if (!f || !Array.isArray(f[2]) || !f[2].length) bad.push('コツがない：' + v); else if (f[2].some((t) => t.length > 30) || f[2].length > 3) bad.push('コツが長い（1つ30文字・3つまで）：' + v); }); /* 2026-11-26 コツは短い箇条書きで見やすく */
       if (!/加熱|油/.test(foodInfo('トマト')[2]) || !/ゴールド/.test(foodInfo('キウイ')[2])) bad.push('トマト・キウイのコツが違う');
-      openFoodSheet('トマト'); await w(300); const t = document.querySelector('.modal-overlay:last-of-type') || document.body; if (!/効果を高めるコツ/.test(t.textContent)) bad.push('シートにコツが出ない'); closeModal && closeModal();
+      openFoodSheet('トマト'); await w(300); const t = document.querySelector('.modal-overlay:last-of-type') || document.body; if (!/効果を高めるコツ/.test(t.textContent) || document.querySelectorAll('#modal-root .tip-l li').length < 2) bad.push('シートにコツが箇条書きで出ない'); closeModal && closeModal();
     } catch (e) { bad.push('エラー ' + e.message); }
     if (bad.length) console.log('  ' + bad.slice(0, 8).join(' / ')); return !bad.length; }));
   // 2026-11-23 飲むビタミンCのサプリとエピデュオゲルを一緒に登録すると、塗る物どうしの「高濃度ビタミンC × レチノール類」の注意が出ていた（飲む物を塗る物として扱わない。処方薬の抗菌薬の飲む・塗るの重複は、今までどおり強い注意）
@@ -1773,6 +1773,38 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     const all = [].concat(r || ['確認できない'], r2 || ['確認できない']); if (all.length) console.log('  ' + all.join(' / '));
     check('食事写真の解析：結果を直す→計算し直す→追加→保存→開き直して内訳を直せる', !all.length);
     await p.evaluate((k) => { if (k) localStorage.setItem(STORE_KEY, k); else localStorage.removeItem(STORE_KEY); }, keepRaw); await p.reload(); await p.waitForTimeout(1500); }
+  // 2026-11-26 睡眠も、記録がなくても、おすすめケアに肌質に合う眠り方のおすすめを出す（食事と同じ）
+  check('睡眠の記録がなくても、おすすめケアに睡眠のおすすめが出る', await ev(async () => { const keep = JSON.stringify(state), keepP = window.isPremium; let ok = false, info = '';
+    try { window.isPremium = () => true; state.lifeLogs = []; state = normalize(JSON.parse(JSON.stringify(state))); ui.homeTab = 'care'; location.hash = '#/home'; render(); await new Promise((r) => setTimeout(r, 400));
+      const sec = [...document.querySelectorAll('#care-today .ct2-sec')].find((x) => /睡眠/.test((x.querySelector('.ct2-sh') || {}).textContent || ''));
+      ok = !!sec && !!sec.querySelector('.adv-box.good') && /眠り方です/.test(sec.textContent.replace(/​/g, '')); info = sec ? sec.textContent.slice(0, 120) : '睡眠のカードがない';
+    } catch (e) { info = e.message; } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepP; render(); }
+    if (!ok) console.log('  ' + info); return ok; }));
+  // 2026-11-26 架空の人で全部の提案を点検して見つかった食いちがい：①ポテトチップスを「甘い間食」②お菓子の代わりに鮭の塩焼き ③休ませた物の成分（スクワラン）を別の手順でおすすめ ④洗顔のサリチル酸を「今夜お休み」なのに洗顔では使う ⑤妊娠中のまぐろに何も言わない ⑥中高生の睡眠の目安が7時間 ⑦見出しは野菜なのに食べ物はたんぱく質から ⑧妊娠中の「今日は○○はお休み」
+  check('架空の人の点検：提案どうしの食いちがいがない', await ev(async () => { const keep = JSON.stringify(state), keepP = window.isPremium, bad = [], d = todayStr();
+    const mk = (o) => { const st = JSON.parse(keep), a = o.a, ck = o.ck; Object.assign(st.settings, {gender: '女性', birthDate: o.bd || '2001-06-15', preg: o.preg || 'no', onboarded: true, surveyDone: true, policyAgreed: POLICY_VER, concernKeys: ck, diag: {a, r: diagCompute(a, ck)}, sleepNeed: 420});
+      st.myProducts = (o.prods || []).map((x, i) => ({id: 'f' + i, demo: false, purchases: [], catalogId: null, name: x[0], brand: 'テスト', category: x[1], purposes: [], ingredients: x[2], timing: '朝・夜', frequency: '毎日', startDate: addDays(d, -30), status: '使用中', endDate: '', memo: '', pao: 0, order: null}));
+      st.skinLogs = Array.from({length: 7}, (_, i) => Object.assign({id: 'fs' + i, date: addDays(d, -i), usedProducts: st.myProducts.map((x) => x.id), usageRecorded: true, memo: '', photo: ''}, o.skin));
+      st.lifeLogs = Array.from({length: 3}, (_, i) => Object.assign(blankLife(addDays(d, -i)), {bed: o.bed || '23:00', wake: o.wake || '07:00', foods: (o.foods || []).map((f) => Object.assign({id: uid(), qty: 1}, f)), exRecorded: true}));
+      state = normalize(st); };
+    const careT = async () => { ui.homeTab = 'care'; location.hash = '#/home'; render(); for (let i = 0; i < 30 && !document.querySelector('#care-today .ct2-sec'); i++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 200)); if (!document.querySelector('#care-today .ct2-sec')) bad.push('おすすめケアが出ない'); return [...document.querySelectorAll('#care-today .ct2-sec')].map((x) => x.textContent.replace(/​/g, '')); };
+    try { window.isPremium = () => true;
+      mk({a: {tight: 'no', oilDay: 'much', acne: 'often', red: 'rare', sens: 'no'}, ck: ['acne', 'oily'], skin: {acneCount: 5, acneTypes: ['赤ニキビ'], oil: 4, redness: 2}, bed: '02:30', wake: '07:30', prods: [['洗顔', '洗顔', '水、ラウリン酸、サリチル酸'], ['オイル美容液', '美容液・アンプル', 'スクワラン、ホホバ種子油']], foods: [{meal: 'snack', name: 'ポテトチップス', kcal: 336, p: 3, f: 22, c: 30, veg: 0}, {meal: 'lunch', name: 'ラーメン', kcal: 520, p: 20, f: 18, c: 70, veg: 30}]});
+      let T = await careT(), meal = T.find((x) => /^食事/.test(x)) || '';
+      if (/甘い間食/.test(meal)) bad.push('ポテトチップスを甘い間食と書いた'); if (/鮭の塩焼き/.test(meal) && !/揚げ|唐揚げ|フライ/.test(meal)) bad.push('お菓子の代わりに鮭の塩焼き');
+      const pm = rtPlan('pm'), restIng = [...pm.rested.keys()].map((id) => getMy(id)).filter(Boolean).map((p) => normIng(chipText(prodIngLabel(p))));
+      pm.steps.forEach((st) => (st.good || []).forEach((g) => { if (restIng.includes(normIng(chipText(g)))) bad.push('休ませた物の成分をおすすめ：' + g); }));
+      if (pm.steps.some((st) => (st.today || []).some((t) => /サリチル酸」?を?お休み/.test(t.t || t))) && pm.steps.some((st) => st.k === 'wash' && (st.prods || []).some((x) => /サリチル酸/.test(x.p.ingredients)))) bad.push('洗顔のサリチル酸を「お休み」と言いながら洗顔で使う');
+      if (/AHA・BHA$|控えたい[^｜]*\bAHA・BHA\b/.test(T[0]) && !/ピーリング美容液/.test(T[0])) bad.push('洗い流す物とピーリング美容液の区別がない');
+      mk({a: {tight: 'some', oilDay: 'tzone', acne: 'some', red: 'rare', sens: 'no', preg: 'preg'}, ck: ['acne'], preg: 'preg', bd: '1993-06-15', skin: {acneCount: 1}, prods: [['レチノール美容液', '美容液・アンプル', '水、レチノール']], foods: [{meal: 'lunch', name: 'まぐろの刺身', kcal: 150, p: 30, f: 2, c: 0, veg: 0}]});
+      T = await careT(); meal = T.find((x) => /^食事/.test(x)) || ''; if (!/週80g/.test(meal)) bad.push('妊娠中にまぐろを食べても量の目安を言わない');
+      if (rtPlan('pm').steps.some((st) => (st.today || []).some((t) => /今日は「レチノール」はお休み/.test(t.t || '')))) bad.push('妊娠中の理由なのに「今日は」');
+      mk({a: {tight: 'no', oilDay: 'much', acne: 'often', red: 'rare', sens: 'no'}, ck: ['acne'], bd: '2011-06-15', skin: {acneCount: 4}, bed: '01:00', wake: '07:00', foods: [{meal: 'breakfast', name: '菓子パン', kcal: 380, p: 7, f: 15, c: 52, veg: 0}]});
+      if (lifeGoals().sleep !== 480) bad.push('中高生の睡眠の目安が8時間にならない ' + lifeGoals().sleep);
+      T = await careT(); meal = T.find((x) => /^食事/.test(x)) || ''; const fi = meal.indexOf('おすすめの食べ物'), first = meal.slice(fi + 8, fi + 20);
+      if (/野菜/.test(meal.slice(0, fi)) && !/ブロッコリー|ほうれん草|にんじん|トマト|パプリカ|小松菜|キャベツ|まいたけ/.test(first)) bad.push('見出しは野菜なのに、最初の食べ物が野菜でない：' + first);
+    } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepP; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
