@@ -1717,6 +1717,11 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (maIngNut({fid:'', match:'none', g:50}) !== null) bad.push('不明な食材が計算に入っている');
       const lab = maDishNut({label:{kcal:200, p:3, f:10, c:25, salt:0.5}, ing:[{fid:'01088', match:'exact', g:100}]}); if (lab.t.kcal !== 200 || !lab.label) bad.push('パッケージの表示を読めた商品は、表示の値を使わない');
       const v = fdbSearch('ほうれん'); if (!v.length || v[0].label !== 'ほうれん草') bad.push('食品名で探せない');
+      // 2026-11-26 本物の写真の確かめで見つかった：とんかつ（成分表のとんかつは衣と油を含む）の衣を、パン粉・小麦粉・卵として二重に数えていた／調理法が分からないのに生の値を「成分表」としていた
+      const st = maFromAI({conf: 0.9, dishes: [{name: 'とんかつ定食', kind: 'dish', ingredients: [{name: '豚ロース', cook: '揚げる', g: 120}, {name: 'パン粉', cook: '揚げる', g: 20}, {name: '卵', cook: '揚げる', g: 15}, {name: 'ごはん', cook: '生', g: 200}]}]});
+      const tk = maDishNut(st.dishes[0]).t.kcal, want = FDB.by.get('11276').v.kcal * 1.2 + 156 * 2; if (Math.abs(tk - want) > 0.5) bad.push('とんかつの衣を二重に数えている ' + Math.round(tk) + '≠' + Math.round(want));
+      if (st.dishes[0].ing.filter((x) => x.coat).length !== 2) bad.push('衣に印がない');
+      const un = fdbMatch('鶏もも肉', '不明'); if (un.match !== 'similar' || !/調理法を選んでください/.test(un.note || '')) bad.push('調理法が分からないのに生の値を成分表として使う');
     } catch (e) { bad.push('エラー ' + e.message); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   { // 写真 → 解析（AIの答えはテスト用）→ 直す → 計算し直す → 追加 → 保存 → 内訳を直す

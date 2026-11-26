@@ -3147,7 +3147,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261123142611'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261126184326'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -4054,7 +4054,8 @@ function fdbMatch(name, cook) {
   const a = FDB.alias.find(x => x.keys.includes(q)) || FDB.alias.find(x => x.keys.includes(FDB.fold(name)));
   if (a) {
     const raw = FDB.by.get(a.id), rawIsRaw = / (生|冷凍)$/.test(raw.n);
-    if (!rawIsRaw || cook === '生' || cook === '不明' || !cook) return {fid:a.id, match:'exact'};
+    if (!rawIsRaw || cook === '生') return {fid:a.id, match:'exact'};
+    if (cook === '不明' || !cook) return Object.keys(a.v).length ? {fid:a.id, match:'similar', note:'調理法が分からないため生の値で計算。調理法を選んでください'} : {fid:a.id, match:'exact'};
     if (a.v[cook]) return {fid:a.v[cook], match:'exact'};
     return {fid:a.id, match:'similar', note:`成分表に「${cook}」の値がないため、生の値で計算`};
   }
@@ -4078,8 +4079,14 @@ function fdbSearch(q, max = 8) {
   return al.concat(db).slice(0, max);
 }
 // 1つの食材の栄養（g 当たり）。成分表の値に g/100 をかけるだけ（AIの数字は使わない）。未測定の成分は null のまま
+const MA_FRIED = /とんかつ|フライ|天ぷら|から揚げ/, MA_COAT = /^(パン粉|小麦粉|薄力粉|片栗粉|卵|溶き卵|衣)$/;
+function maCoatMark(d) {
+  const fr = d.ing.find(x => x.fid && FDB && MA_FRIED.test((FDB.by.get(x.fid) || {}).n || ''));
+  d.ing.forEach(x => { if (x.match !== 'user' && x.cook === '揚げる' && MA_COAT.test(x.name)) { if (fr) { x.coat = fdbShort(FDB.by.get(fr.fid).n).split(' ').pop(); } else delete x.coat; } else delete x.coat; });
+  return d;
+}
 function maIngNut(x) {
-  const f = x.fid && FDB && FDB.by.get(x.fid); if (!f || !(x.g > 0) || x.match === 'none') return null;
+  const f = x.fid && FDB && FDB.by.get(x.fid); if (!f || !(x.g > 0) || x.match === 'none' || x.coat) return null;
   const o = {}, r = x.g / 100;
   Object.keys(f.v).forEach(k => { o[k] = f.v[k] == null ? null : f.v[k] * r; });
   o.sugar = f.v.c == null ? null : Math.max(0, f.v.c - (f.v.fib || 0)) * r; // 糖質＝炭水化物－食物繊維
@@ -4106,7 +4113,7 @@ function maFromAI(r) {
     // 前に直した料理名：同じ料理名で、直したあとの名前が候補にあれば、はじめからそちらにする
     const fx = F.find(y => y.from === o.name), j = fx ? o.alts.findIndex(a => a.name === fx.to) : -1;
     if (j >= 0) { const a = o.alts[j]; o.alts[j] = {name:o.name, ing:o.ing}; Object.assign(o, {fixedFrom:o.name, name:a.name, ing:a.ing}); }
-    return o; })};
+    maCoatMark(o); o.alts.forEach(a => maCoatMark(a)); return o; })};
 }
 const maConfLabel = c => c >= 0.75 ? ['高', 'hi'] : c >= 0.5 ? ['中', 'mid'] : ['低', 'lo'];
 // 食事の記録（1品）にする。内訳（食材・食品番号・重さ・推定か実測か・直した内容）と、計算の根拠も一緒に残す
@@ -4128,14 +4135,14 @@ function maNutTable(t, miss) {
 }
 function maIngHtml(d, x) {
   const n = maIngNut(x), f = x.fid && FDB ? FDB.by.get(x.fid) : null;
-  const tag = x.match === 'exact' ? '<span class="ma-tag ok">成分表</span>' : x.match === 'user' ? '<span class="ma-tag ok">選んだ食品</span>' : x.match === 'similar' ? '<span class="ma-tag sim">類似食品で推定</span>' : '<span class="ma-tag no">不明・選んでください</span>';
+  const tag = x.coat ? `<span class="ma-tag sim">衣は「${esc(x.coat)}」の値に含む</span>` : x.match === 'exact' ? '<span class="ma-tag ok">成分表</span>' : x.match === 'user' ? '<span class="ma-tag ok">選んだ食品</span>' : x.match === 'similar' ? '<span class="ma-tag sim">類似食品で推定</span>' : '<span class="ma-tag no">不明・選んでください</span>';
   const low = x.conf < 0.5 && x.match !== 'user' ? '<span class="ma-tag sim">確認してください</span>' : '';
   return `<div class="ma-ing${x.match === 'none' ? ' none' : ''}" data-maing="${d.id}|${x.id}">
     <div class="ma-r1"><button type="button" class="ma-name" data-mapick="${d.id}|${x.id}">${esc(x.name || '不明な食材')}${x.hint ? `<small>${esc(x.hint)}</small>` : ''}<i>›</i></button><button type="button" class="chip-x" data-madel="${d.id}|${x.id}" aria-label="${esc(x.name)}を外す">×</button></div>
     <div class="ma-r2"><select class="select ma-cook" data-macook="${d.id}|${x.id}" aria-label="調理法">${MA_COOKS.map(c => `<option ${c === x.cook ? 'selected' : ''}>${c}</option>`).join('')}</select>
       <span class="ma-g"><input class="input" inputmode="decimal" data-mag="${d.id}|${x.id}" value="${x.g}" aria-label="${esc(x.name)}の重さ（g）"><em>g</em></span>
       <label class="ma-meas"><input type="checkbox" data-mameas="${d.id}|${x.id}" ${x.meas ? 'checked' : ''}>実測</label></div>
-    <div class="ma-r3">${tag}${low}<span class="ma-range">${x.meas ? '量った重さ' : `推定 ${x.gmin}〜${x.gmax}g`}</span>${n ? `<span class="ma-k">${Math.round(n.kcal || 0)}kcal・P${maR(n.p)}・F${maR(n.f)}・C${maR(n.c)}</span>` : '<span class="ma-k">計算に入れていません</span>'}</div>
+    <div class="ma-r3">${tag}${low}<span class="ma-range">${x.meas ? '量った重さ' : `推定 ${x.gmin}〜${x.gmax}g`}</span>${n ? `<span class="ma-k">${Math.round(n.kcal || 0)}kcal・P${maR(n.p)}・F${maR(n.f)}・C${maR(n.c)}</span>` : `<span class="ma-k">${x.coat ? '二重に数えないため計算に入れません' : '計算に入れていません'}</span>`}</div>
     ${f ? `<div class="ma-basis">食品番号 ${esc(f.id)}「${esc(fdbShort(f.n))}」100g当たり ${f.v.kcal}kcal${x.note ? `・${esc(x.note)}` : ''}</div>` : x.hint ? `<div class="ma-basis">見た目：${esc(x.hint)}</div>` : ''}
     <div class="ma-search" data-masearch="${d.id}|${x.id}" hidden><input class="input" placeholder="食品名で探す（例：鶏もも）" data-maq="${d.id}|${x.id}" autocomplete="off"><div class="ma-sug" data-masug="${d.id}|${x.id}"></div></div>
   </div>`;
@@ -4163,7 +4170,7 @@ function maHtml(st, opt) {
 }
 // 画面に出して、直したらすぐ計算し直す（box の中だけで動く）
 function maMount(box, st, opt = {}) {
-  const paint = () => { if (!document.body.contains(box)) return; const a = document.activeElement, keep = a && box.contains(a) && a.dataset ? Object.keys(a.dataset)[0] + '=' + Object.values(a.dataset)[0] : '', pos = a && a.selectionStart; box.innerHTML = maHtml(st, opt); if (keep) { const [k, v] = keep.split('='); const el = box.querySelector(`[data-${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}="${CSS.escape(v)}"]`); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch (e) { /* 何もしない */ } } } if (opt.onChange) opt.onChange(st); };
+  const paint = () => { if (!document.body.contains(box)) return; st.dishes.forEach(maCoatMark); /* 食材を直したら、衣の二重計算の印もつけ直す */ const a = document.activeElement, keep = a && box.contains(a) && a.dataset ? Object.keys(a.dataset)[0] + '=' + Object.values(a.dataset)[0] : '', pos = a && a.selectionStart; box.innerHTML = maHtml(st, opt); if (keep) { const [k, v] = keep.split('='); const el = box.querySelector(`[data-${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}="${CSS.escape(v)}"]`); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch (e) { /* 何もしない */ } } } if (opt.onChange) opt.onChange(st); };
   const find = v => { const [di, xi] = String(v).split('|'); const d = st.dishes.find(y => y.id === di); return [d, d && xi ? d.ing.find(y => y.id === xi) : null]; };
   box.oninput = e => {
     const el = e.target, ds = el.dataset;
