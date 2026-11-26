@@ -1863,6 +1863,17 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         if (!sp.length) bad.push('商品の行がない'); } finally { ui.myKind = keepK; state.myProducts = keep; location.hash = keepH; render(); } }
     if (typeof f3LoadFail !== 'function') bad.push('読めないときの表示がない'); else { const l = document.createElement('div'); document.body.appendChild(l); f3LoadFail(l, {canvas:'nope', load:'x'}); if (!l.querySelector('svg') || !l.querySelector('[data-f3retry]')) bad.push('図か「もう一度」がない'); l.remove(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-27 「この4週間に『Anua アヌア 0.3 …』を使い始めています」「『しっとり保湿化粧…』はB日に使います」など、どの商品かを伝える文で商品名が短く切れていた
+  check('どの商品かを伝える文は、商品名を全部出して押すと商品のページへ', await ev(async () => { const bad = [], keep = state.myProducts;
+    try { const full = 'Anua アヌア 0.3 レチノール ナイトセラム 30mL'; state.myProducts = [{id:'pnf1', demo:false, purchases:[], catalogId:null, name:full, brand:'Anua', category:'美容液', purposes:[], ingredients:'水、レチノール', timing:'夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null}];
+      const d = document.createElement('div'); d.innerHTML = prodNameLinks(esc(`この4週間に「${full}」を使い始めています。`)); const a = d.querySelector('a.pn-link[href="#/my/pnf1"]'); if (!a || a.textContent.replace(/​/g, '') !== full) bad.push('文の商品名が押せない・全部出ない');
+      const d2 = document.createElement('div'); d2.innerHTML = careLinkHtml(`「${full}」を休む`); if (!d2.querySelector('a.pn-link[href="#/my/pnf1"]')) bad.push('おすすめの文の商品名が押せない');
+      let html = ''; try { html = await (await fetch(location.href.split('#')[0])).text(); } catch (e) { bad.push('読めない'); }
+      if (/「\$\{esc\(truncate\(/.test(html)) bad.push('「」の中で商品名を短く切っている所が残っている');
+      if (/truncate\(x\.p\.name, 14\)\)\.join\('」「'\)/.test(html)) bad.push('使い始めた商品名を短く切っている');
+      if (/truncate\(shortName\(p\.name\), 20\)|truncate\(p\.[xy]\.p\.name, 22\)|truncate\(x\.name, 16\)\)\.join\('、'\)/.test(html)) bad.push('組み合わせの注意で商品名を短く切っている'); }
+    catch (e) { bad.push(e.message); } finally { state.myProducts = keep; }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

@@ -2741,7 +2741,7 @@ html[data-theme="dark"] .cm-c.good{background:rgba(90,150,110,.16)}html[data-the
 .cm-tips p{margin:0;font-size:13px;line-height:1.7}.cm-tips p+p{margin-top:6px}
 .cm-hint p{margin:0 0 6px}
 .ct2-adv .adv1-t{margin:4px 0 0;font-size:12.5px;font-weight:400;color:var(--muted)} /* 小さな見出しは太字にしない（読みやすく） */
-.pc-ol li,.pc-ol .care-link{font-weight:400}
+.pc-ol li,.pc-ol .care-link{font-weight:400}.pn-link{word-break:break-word;overflow-wrap:anywhere}
 .ct2 .adv-foot{padding-top:12px;border-top:1px solid var(--line);margin-top:14px}
 .ct2-solo .adv-foot{padding-top:0;border-top:0;margin-top:0} /* 2026-11-20 分析のお知らせだけのカードに、上の線と空きが出ていた */
 .ct2-c .ct2-sec{margin-top:0;padding-top:0;border-top:0}
@@ -3147,7 +3147,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261127023418'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261127030812'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5519,7 +5519,7 @@ function rxOverlaps(list) {
 function rxOverlapNoticeHtml() {
   const O = rxOverlaps(); if (!O.length) return '';
   const ids = [...new Set(O.flatMap(o => [o.a.id, o.b.id]))], P = ids.map(id => getMy(id)).filter(Boolean), ings = [...new Set(O.flatMap(o => o.ings))];
-  return `<div class="notice warn rx-dup" role="note"><b>${icon('alert')}同じ成分の塗り薬が重なっています</b><p>${P.map(p => `「${esc(truncate(p.name, 20))}」（${esc(acneIngOf(p).map(c => ACNE_ING[c][0]).join('・'))}）`).join('、')}には、同じ成分（${esc(ings.join('・'))}）が入っています。同じ日に重ねて塗るよう医師に言われていなければ、塗る前に処方した医師か薬剤師に確認してください。自分の判断でやめたり、量を変えたりはしないでください。</p></div>`;
+  return `<div class="notice warn rx-dup" role="note"><b>${icon('alert')}同じ成分の塗り薬が重なっています</b><p>${P.map(p => `「${pnLink(p)}」（${esc(acneIngOf(p).map(c => ACNE_ING[c][0]).join('・'))}）`).join('、')}には、同じ成分（${esc(ings.join('・'))}）が入っています。同じ日に重ねて塗るよう医師に言われていなければ、塗る前に処方した医師か薬剤師に確認してください。自分の判断でやめたり、量を変えたりはしないでください。</p></div>`;
 }
 function rxPick(name) {
   const d = RX_DRUGS.find(x => x[1] === name); if (!d) return;
@@ -7381,7 +7381,7 @@ function comboNgHtml(p) {
     [[r.a, r.b], [r.b, r.a]].forEach(([mine, other]) => { if (!g.has(mine)) return; const hit = actG.filter(x => x.g.has(other)).map(x => x.m); rows.push({t:`${NAME[mine]} × ${NAME[other]}`, note:r.note, hit}); });
   });
   if (!rows.length) return '<p class="small muted" style="margin-top:10px"><b>併用に注意</b>：この商品の成分では、注意している組み合わせはありません（すべての組み合わせを確かめたものではありません）。</p>';
-  return `<div class="ng-list"><b class="ng-h">併用に注意（同じタイミングで重ねない）</b>${rows.map(r => `<div class="ng-row"><b>${esc(r.t)}</b><span>${esc(r.note)}</span>${r.hit.length ? `<em>使用中の「${r.hit.map(m => esc(truncate(shortName(m.name), 16))).join('」「')}」と重なります</em>` : ''}</div>`).join('')}<p class="small muted" style="margin:6px 0 0">成分名からの一般的な注意です。製品の使用方法・注意事項を優先してください。</p></div>`;
+  return `<div class="ng-list"><b class="ng-h">併用に注意（同じタイミングで重ねない）</b>${rows.map(r => `<div class="ng-row"><b>${esc(r.t)}</b><span>${esc(r.note)}</span>${r.hit.length ? `<em>使用中の「${r.hit.map(m => pnLink(m)).join('」「')}」と重なります</em>` : ''}</div>`).join('')}<p class="small muted" style="margin:6px 0 0">成分名からの一般的な注意です。製品の使用方法・注意事項を優先してください。</p></div>`;
 }
 function viewProduct(id) {
   const p = getCat(id);
@@ -8133,7 +8133,7 @@ function ngEstHtml(p, date) {
   const e = ngUseEst(p, date), tm = e.timing === '朝・夜' ? '朝と夜' : e.timing === '必要なときだけ' ? '必要なときだけ' : e.timing;
   return `<div class="ngf-est" id="ng-est"><div class="ngf-er"><span>使い始めた日</span><b>${e.start ? `${esc(fmtDate(e.start))}${e.days != null ? `<small>（気づいた日まで${e.days === 0 ? '当日' : e.days + '日'}）</small>` : ''}` : '<span class="muted">わかりません</span>'}</b></div>
     <div class="ngf-er"><span>使用頻度</span><b>${esc(e.freq)}${tm && e.timing !== '必要なときだけ' ? `・${esc(tm)}` : ''}<small>${e.basis === 'log' ? `（記録${e.logN}日のうち${e.used}日使った）` : '（Myアイテムに登録した内容）'}</small></b></div>
-    ${e.others.length ? `<p class="ngf-eo">同じころに使い始めた物：${esc(e.others.slice(0, 3).map(x => isMedCat(x.category) ? `${x.category === ORAL_CAT ? '飲み薬' : '塗り薬'}（${truncate(rxIngLabel(x) || '成分不明', 14)}）` : truncate(x.name, 16)).join('、'))}${e.others.length > 3 ? ` ほか${e.others.length - 3}つ` : ''}</p>` : ''}</div>`;
+    ${e.others.length ? `<p class="ngf-eo">同じころに使い始めた物：${e.others.slice(0, 3).map(x => isMedCat(x.category) ? esc(`${x.category === ORAL_CAT ? '飲み薬' : '塗り薬'}（${truncate(rxIngLabel(x) || '成分不明', 14)}）`) : pnLink(x)).join('、')}${e.others.length > 3 ? ` ほか${e.others.length - 3}つ` : ''}</p>` : ''}</div>`;
 }
 function openNgForm(id, date) {
   const p = getMy(id); if (!p) return;
@@ -8692,11 +8692,11 @@ function viewCombo() {
     const r = comboReport(active);
     r.alerts = r.alerts.filter(al => !al.pairs.length); // 商品どうしの組み合わせは「使っている商品の併用の注意」で出す
     // 何と何が注意なのかを、最初にまとめて出す
-    const PA = prodAnalysis(), uvN = uvLackNote(PA.infos), sn = n => esc(truncate(shortName(n), 20));
+    const PA = prodAnalysis(), uvN = uvLackNote(PA.infos);
     const nAl = r.alerts.length + (uvN ? 1 : 0) + PA.pairs.length;
-    const rows = PA.pairs.map(p => `<li>${lvChip(p.r.lv)}<span class="cs-pair"><b>${sn(p.x.p.name)}</b><i>と</i><b>${sn(p.y.p.name)}</b></span><small>${esc(p.r.rule || '')}</small></li>`)
-      .concat(uvN ? [`<li>${lvChip(uvN.lv)}<span class="cs-pair"><b>${esc(uvN.products.map(p => truncate(shortName(p.name), 20)).join('、'))}</b></span><small>${esc(uvN.label)}が入っていますが、日焼け止めが登録されていません</small></li>`] : [])
-      .concat(r.alerts.map(al => `<li>${lvChip(al.rule.lv || 2)}<span class="cs-pair"><b>${esc(al.products.map(p => truncate(shortName(p.name), 20)).join('、'))}</b></span><small>${esc(al.rule.title)}</small></li>`));
+    const rows = PA.pairs.map(p => `<li>${lvChip(p.r.lv)}<span class="cs-pair"><b>${pnLink(p.x.p)}</b><i>と</i><b>${pnLink(p.y.p)}</b></span><small>${esc(p.r.rule || '')}</small></li>`)
+      .concat(uvN ? [`<li>${lvChip(uvN.lv)}<span class="cs-pair"><b>${uvN.products.map(p => pnLink(p)).join('、')}</b></span><small>${esc(uvN.label)}が入っていますが、日焼け止めが登録されていません</small></li>`] : [])
+      .concat(r.alerts.map(al => `<li>${lvChip(al.rule.lv || 2)}<span class="cs-pair"><b>${al.products.map(p => pnLink(p)).join('、')}</b></span><small>${esc(al.rule.title)}</small></li>`));
     html += `<div class="card combo-sum ${nAl ? 'warn' : 'ok'}"><div class="cs-big"><b>${nAl ? `注意 ${nAl}件` : '注意はありません'}</b><span>使用中のアイテム ${active.length}件を確認しました</span></div>
       ${rows.length ? `<ul class="cs-list">${rows.join('')}</ul>` : ''}
       ${r.missing.length ? `<div class="cs-miss"><p class="small"><b>全成分がまだの商品（${r.missing.length}件）</b>：入れると、もっと正しく確かめられます</p>${r.missing.map(x => x.p).map(p => `<button type="button" class="btn btn-soft btn-sm" data-action="edit-my" data-id="${esc(p.id)}">${esc(truncate(shortName(p.name), 16))}の全成分を入れる</button>`).join('')}</div>` : ''}</div>`;
@@ -10242,7 +10242,7 @@ function careTrends() {
   const worse = rows.filter(r => r.prev != null && r.now != null && r.now - r.prev >= (r.k === 'acne' ? 2 : 1));
   const started = state.myProducts.filter(p => p.status === '使用中' && p.startDate >= addDays(t, -28)).map(prodInfo).filter(x => x.ings.some(e => e.act >= 1));
   if (worse.length) {
-    out.tips.push({lv:'warn', t:`${worse.map(r => r.l).join('・')}が、その前の2週間より増えています`, d:started.length ? `この4週間に「${started.map(x => truncate(x.p.name, 14)).join('」「')}」を使い始めています。原因かどうかは記録だけではわかりませんが、刺激を感じるなら、新しく始めた商品をいったん休み、保湿と紫外線対策だけのシンプルなケアにして様子を見る方法があります。` : '季節・睡眠・体調などでも変わります。2週間ほど記録を続けて、変化を見てみましょう。'});
+    out.tips.push({lv:'warn', t:`${worse.map(r => r.l).join('・')}が、その前の2週間より増えています`, d:started.length ? `この4週間に「${started.map(x => x.p.name).join('」「')}」を使い始めています。原因かどうかは記録だけではわかりませんが、刺激を感じるなら、新しく始めた商品をいったん休み、保湿と紫外線対策だけのシンプルなケアにして様子を見る方法があります。` : '季節・睡眠・体調などでも変わります。2週間ほど記録を続けて、変化を見てみましょう。'});
   }
   const strongRed = now.filter(x => Number(x.n.red) >= 4).length >= 3, manyAcne = now.filter(x => Number(x.n.acne) >= 10).length >= 3;
   if (strongRed || manyAcne) { out.derm = true; out.tips.push({lv:'derm', t:'皮膚科の受診も考えてみてください', d:`${strongRed ? '強い赤み' : 'たくさんのニキビ'}が何日も続いています。化粧品のケアを簡単にして、症状が続く・悪くなるときは皮膚科で相談しましょう。`}); }
@@ -10309,7 +10309,7 @@ function careRoutineHtml() {
   const allDone = shown.filter(s => !s.missing).every(s => lg[s.id]);
   if (shown.length && allDone) h += `<div class="rt-done">${icon('check')}<b>今日の${slot === 'am' ? '朝' : '夜'}のケアは完了です</b></div>`;
   const other = list.filter(s => s.day && s.day !== today);
-  if (other.length) h += `<p class="small muted rt-alt">今日は${today}日です。${other.map(s => `「${esc(truncate(s.x.p.name, 16))}」`).join('')}は${today === 'A' ? 'B' : 'A'}日（明日）に使います。</p>`;
+  if (other.length) h += `<p class="small muted rt-alt">今日は${today}日です。${other.map(s => `「${pnLink(s.x.p)}」`).join('')}は${today === 'A' ? 'B' : 'A'}日（明日）に使います。</p>`;
   h += careNotesHtml(R, slot);
   return h;
 }
@@ -10387,7 +10387,7 @@ function careNotesHtml(R, slot) {
   if (dr.length) h += `<div class="card"><div class="card-h"><h2>${slot === 'am' ? '朝' : '夜'}は使わない商品</h2><span class="chip">捨てなくてOK</span></div>${dr.map(o => `<div class="rt-drop"><a href="#/my/${encodeURIComponent(o.x.p.id)}">${esc(truncate(o.x.p.name, 28))}</a><p class="small muted">${esc(o.why)}</p></div>`).join('')}<p class="small muted">今は休ませる提案です。肌の調子や季節で、また使うことがあります。</p></div>`;
   if (R.asNeeded.length) h += `<div class="card"><div class="card-h"><h2>必要なときだけ使う商品</h2></div>${R.asNeeded.map(x => `<p class="small"><a href="#/my/${encodeURIComponent(x.p.id)}">${esc(truncate(x.p.name, 28))}</a>${x.rx ? '（医師の指示どおりに）' : ''}</p>`).join('')}</div>`;
   const T = careTrends();
-  if (T.tips.length || T.retype) h += `<div class="card"><div class="card-h"><h2>肌の記録から</h2><span class="chip">直近2週間</span></div>${T.tips.map(t => `<div class="rt-note ${t.lv}"><b>${esc(t.t)}</b><p class="small">${esc(t.d)}</p></div>`).join('')}${T.retype ? `<div class="rt-note"><p class="small">${esc(T.retype)}</p><button type="button" class="btn btn-soft btn-sm" data-action="setup">肌質診断をやり直す</button></div>` : ''}</div>`;
+  if (T.tips.length || T.retype) h += `<div class="card"><div class="card-h"><h2>肌の記録から</h2><span class="chip">直近2週間</span></div>${T.tips.map(t => `<div class="rt-note ${t.lv}"><b>${esc(t.t)}</b><p class="small">${prodNameLinks(esc(t.d))}</p></div>`).join('')}${T.retype ? `<div class="rt-note"><p class="small">${esc(T.retype)}</p><button type="button" class="btn btn-soft btn-sm" data-action="setup">肌質診断をやり直す</button></div>` : ''}</div>`;
   if (!state.myProducts.some(p => p.status === '使用中')) h += `<div class="card">${emptyBox('bottle', '使っている商品を登録しましょう', '登録した商品の成分と種類から、使う順番・使わない商品・足りないケアを判断します。', '<a class="btn btn-primary btn-sm" href="#/my">Myアイテムへ</a>')}</div>`;
   return h;
 }
@@ -11477,10 +11477,10 @@ function comboLevelsHtml() {
   const A = prodAnalysis(), uv = uvLackNote(A.infos);
   if (!A.pairs.length && !uv) return '';
   return `<div class="card"><div class="card-h"><h2>使っている商品の併用の注意</h2><span class="chip">${A.pairs.length + (uv ? 1 : 0)}件</span></div>
-    ${uv ? comboCardHtml(uv, {compact:true, a:uv.label, b:'日焼け止めなし', sub:`${esc(uv.products.map(p => truncate(p.name, 22)).join('、'))}に入っています`}) : ''}
+    ${uv ? comboCardHtml(uv, {compact:true, a:uv.label, b:'日焼け止めなし', sub:`${uv.products.map(p => `「${pnLink(p)}」`).join('、')}に入っています`}) : ''}
     ${(() => { /* 2026-11-20 同じ注意（同じ説明）の組み合わせは、1枚にまとめる（同じ文を何回も出さない） */ const G = new Map(); A.pairs.forEach(p => { const k = (p.r.lv || 0) + '|' + (p.r.rule || p.r.t || '') + '|' + (p.r.why || p.r.note || ''); if (!G.has(k)) G.set(k, []); G.get(k).push(p); });
-      return [...G.values()].map(L => { const p = L[0], more = L.slice(1).map(q => `「${esc(truncate(q.x.p.name, 18))}」と「${esc(truncate(q.y.p.name, 18))}」`);
-        return comboCardHtml(p.r, {compact:true, a:truncate(p.x.p.name, 22), b:truncate(p.y.p.name, 22), sub:`${p.shared.length ? `どちらも${esc(p.shared.join('・'))}に使っています` : '使う時間は別です'}${more.length ? `<br>同じ注意：${more.join('、')}` : ''}`}); }).join(''); })()}</div>`;
+      return [...G.values()].map(L => { const p = L[0], more = L.slice(1).map(q => `「${pnLink(q.x.p)}」と「${pnLink(q.y.p)}」`);
+        return comboCardHtml(p.r, {compact:true, a:p.x.p.name, b:p.y.p.name, sub:`${p.shared.length ? `どちらも${esc(p.shared.join('・'))}に使っています` : '使う時間は別です'}${more.length ? `<br>同じ注意：${more.join('、')}` : ''}`}); }).join(''); })()}</div>`;
 }
 // 商品名に書かれた濃度（例：「ナイアシンアミド10%」）。書かれていなければ空
 function concOf(name) { return [...String(name || '').normalize('NFKC').matchAll(/([぀-ヿ一-鿿A-Za-z\-]{2,}?)\s*([0-9]+(?:\.[0-9]+)?)\s*%/g)].map(m => `${m[1].replace(/^.*[ 　]/, '')} ${m[2]}%`).slice(0, 3); }
@@ -11498,7 +11498,7 @@ function ngWarnHtml(hits, compact) {
   if (!hits.length) return '';
   const names = [...new Set(hits.flatMap(h => h.same))];
   return `<div class="ngw">${icon('alert')}<div><b>前に肌に合わなかった化粧品と、同じ成分が入っています</b>
-    <p>${hits.slice(0, 3).map(h => `「${esc(truncate(h.q.name, 22))}」と同じ：${esc(h.same.slice(0, 5).join('、'))}${h.same.length > 5 ? ` など${h.same.length}つ` : ''}`).join('<br>')}</p>
+    <p>${hits.slice(0, 3).map(h => `「${pnLink(h.q)}」と同じ：${esc(h.same.slice(0, 5).join('、'))}${h.same.length > 5 ? ` など${h.same.length}つ` : ''}`).join('<br>')}</p>
     ${compact ? '' : '<p class="ngw-s">同じ成分が原因とは限りません。使うときは、腕の内側などで少しだけ試してからにすると安心です。</p>'}
     <a href="#/trouble" class="ngw-l">注意アイテムを見る ›</a></div></div>`;
 }
@@ -14734,7 +14734,7 @@ function viewMycare() {
     ${ok.length ? ok.map(x => { const better = x.diff > 0; return `<div class="pc-ln ${x.strong ? 'st' : ''}"><b>${esc(x.label)}</b><p>${x.strong ? `${esc(x.aL)}は、${esc(x.bL)}より${esc(A.metric.l)}が${better ? '良い' : '悪い'}傾向です（${x.nA}日と${x.nB}日）。関係があるかもしれません。` : `${esc(x.aL)}と${esc(x.bL)}で、大きな差は見られません（${x.nA}日と${x.nB}日）。`}</p></div>`; }).join('') : ''}
     ${lack.length ? `<p class="small muted" style="margin-top:8px">${lack.map(x => x.same ? `${esc(x.label)}は、いつも「${esc(x.same)}」なので、比べられません` : `${esc(x.label)}は記録が足りません（あと${x.need}日ほど）`).join('。')}。</p>` : ''}</div>`;
   const ch = A.changes.filter(c => c.enough);
-  if (A.changes.length) h += `<h2 class="pc-sec">使い始めた物の前後</h2><div class="card">${ch.length ? ch.map(c => `<div class="pc-ln"><b>${esc(truncate(c.p.name, 22))}</b><p>使う前と後で、${esc(A.metric.l)}は${Math.abs(c.diff) < A.metric.th / 2 ? '大きく変わっていません' : c.diff > 0 ? '良くなっています' : '悪くなっています'}。${c.others.length ? `同じ時期に「${esc(truncate(c.others[0].name, 14))}」も同じ頃に使い始めたので、どちらの影響か分かりません。` : ''}</p></div>`).join('') : ''}${A.changes.some(c => !c.enough) ? `<p class="small muted">${A.changes.filter(c => !c.enough).map(c => esc(truncate(c.p.name, 16))).join('・')}は記録が足りず、まだ比べられません。</p>` : ''}</div>`;
+  if (A.changes.length) h += `<h2 class="pc-sec">使い始めた物の前後</h2><div class="card">${ch.length ? ch.map(c => `<div class="pc-ln"><b>${pnLink(c.p)}</b><p>使う前と後で、${esc(A.metric.l)}は${Math.abs(c.diff) < A.metric.th / 2 ? '大きく変わっていません' : c.diff > 0 ? '良くなっています' : '悪くなっています'}。${c.others.length ? `同じ時期に「${pnLink(c.others[0])}」も使い始めたので、どちらの影響か分かりません。` : ''}</p></div>`).join('') : ''}${A.changes.some(c => !c.enough) ? `<p class="small muted">${A.changes.filter(c => !c.enough).map(c => `「${pnLink(c.p)}」`).join('')}は記録が足りず、まだ比べられません。</p>` : ''}</div>`;
   h += `<p class="small muted pg-foot" style="margin:14px 4px 0">記録からの目安で、診断ではありません。処方薬は皮膚科の指示を優先し、症状が強い・続くときは皮膚科へ。</p>`;
   return h;
 }
@@ -14744,6 +14744,10 @@ function careGoods() {
   return g;
 }
 // 2026-11-27 今日のポイントなどの「成分」（登録した商品から出したもの）は、ケア管理と同じく、押すとその成分が入った登録商品が出る
+// 2026-11-27 文の中で「どの商品か」を伝えるところは、商品名を短く切らずに全部出し、押すとその商品のページへ移る
+function pnLink(p, name) { const n = name || (p && p.name) || ''; return p && p.id && (state.myProducts || []).some(q => q.id === p.id) ? `<a class="care-link pn-link" href="#/my/${encodeURIComponent(p.id)}">${esc(n)}</a>` : esc(n); }
+function pnUnesc(q) { return String(q).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim(); }
+function prodNameLinks(html) { return String(html).split(/(「[^」]*」)/).map((seg, i) => { if (!(i % 2)) return seg; const t = pnUnesc(seg.slice(1, -1)), p = t && (state.myProducts || []).find(q => q && q.name === t); return p ? `「${pnLink(p)}」` : seg; }).join(''); }
 function prodsOfQuote(q) { // q：「」の中の文字（エスケープ済み）
   const t = String(q).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim(); if (!t) return [];
   const L = (state.myProducts || []).filter(p => p && p.name && p.status !== '使用終了');
@@ -14752,7 +14756,7 @@ function prodsOfQuote(q) { // q：「」の中の文字（エスケープ済み�
   const one = L.find(p => p.name === t) || L.find(p => { for (let n = 6; n <= 40; n++) if (truncate(p.name, n) === t) return true; return false; }); // 前の版で保存された「商品名…」
   return one ? [one] : [];
 }
-function prodQuoteLink(seg) { const m = String(seg).match(/^「([\s\S]*)」$/); const L = m ? prodsOfQuote(m[1]) : []; return L.length ? `<button type="button" class="care-link" data-owned="${m[1]}" data-pids="${esc(L.map(p => p.id).join(','))}">${seg}</button>` : seg; }
+function prodQuoteLink(seg) { { const full = prodNameLinks(seg); if (full !== seg) return full; } const m = String(seg).match(/^「([\s\S]*)」$/); const L = m ? prodsOfQuote(m[1]) : []; return L.length ? `<button type="button" class="care-link" data-owned="${m[1]}" data-pids="${esc(L.map(p => p.id).join(','))}">${seg}</button>` : seg; }
 function careLinkHtml(text, G) {
   G = G || careGoods();
   const map = [
