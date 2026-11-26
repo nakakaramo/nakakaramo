@@ -1840,6 +1840,15 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         if (h === '#/my' && document.querySelector('#main .mrow small') && !document.querySelector('#main .mrow small .nw')) bad.push('商品の使用日数が途中で折り返す'); } }
     catch (e) { bad.push('エラー ' + e.message); } finally { location.hash = keepH; render(); }
     if (bad.length) console.log('  ' + [...new Set(bad)].slice(0, 12).join(' / ')); return !bad.length; }));
+  // 2026-11-26 今日のポイントの「Anua アヌア 0.3 …」は赤みがある間はお休み：短くした商品名を押しても、名前の全部が見られなかった
+  check('今日のポイントの商品名を押すと、名前の全部が出る', await ev(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = state.myProducts, keepH = location.hash; let ok = false, info = '';
+    try { const full = 'Anua アヌア 0.3 レチノール ナイトセラム 30mL'; state.myProducts = keep.concat([{id:'pnq1', demo:false, purchases:[], catalogId:null, name:full, brand:'Anua', category:'美容液', purposes:[], ingredients:'水、レチノール', timing:'夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null}]);
+      const host = document.createElement('div'); host.innerHTML = careLinkHtml(`「${truncate(full, 14)}」は赤みがある間はお休み`); document.body.appendChild(host);
+      const btn = host.querySelector('[data-prodname="pnq1"]'); if (!btn) info = 'ボタンがない'; else { btn.click(); await w(300); const m = document.querySelector('#modal-root .modal'); ok = !!m && m.textContent.replace(/\u200b/g, '').includes(full) && !!m.querySelector('[data-pn-go]'); if (!ok) info = 'シートに名前がない'; }
+      host.remove(); try { closeModal(true); } catch (e) { /* 何もしない */ }
+      const h2 = document.createElement('div'); h2.innerHTML = careLinkHtml('「知らない商品」は控える'); if (h2.querySelector('[data-prodname]')) { ok = false; info = '登録していない名前までボタンになる'; } }
+    catch (e) { info = e.message; } finally { state.myProducts = keep; location.hash = keepH; }
+    if (!ok) console.log('  ' + info); return ok; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

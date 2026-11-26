@@ -14737,6 +14737,17 @@ function careGoods() {
   const g = {}; try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => { if (!g[st.k] && st.good && st.good.length) g[st.k] = st.good[0]; })); } catch (e) { /* 何もしない */ }
   return g;
 }
+// 2026-11-26 今日のポイントなどの「商品名…」（短くした名前）は、押すと商品の名前を全部見られるようにする
+function prodOfQuote(q) { // q：「」の中の文字（エスケープ済み）
+  const t = String(q).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim(); if (!t) return null;
+  const L = (state.myProducts || []).filter(p => p && p.name);
+  return L.find(p => p.name === t) || L.find(p => { for (let n = 6; n <= 40; n++) if (truncate(p.name, n) === t) return true; return false; }) || (/[…]$|\.\.\.$/.test(t) ? L.find(p => p.name.startsWith(t.replace(/\s*(…|\.\.\.)$/, ''))) : null) || L.find(p => { try { return prodIngLabel(p) === t; } catch (e) { return false; } }) || null;
+}
+function prodQuoteLink(seg) { const m = String(seg).match(/^「([\s\S]*)」$/); const p = m && prodOfQuote(m[1]); return p ? `<button type="button" class="care-link" data-prodname="${esc(p.id)}">${seg}</button>` : seg; }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-prodname]'); if (!b) return; e.preventDefault(); e.stopPropagation(); const p = (state.myProducts || []).find(x => x.id === b.dataset.prodname); if (!p) return; hapticTick();
+  openModal({title:'商品の名前', body:`<p class="pn-full" style="margin:0 0 6px;font-size:16px;font-weight:700;line-height:1.5;word-break:break-word">${esc(p.name)}</p><p class="small muted" style="margin:0">${[p.brand, p.category].filter(Boolean).map(esc).join('・')}</p>`,
+    footer:`<button type="button" class="btn btn-primary" data-pn-go="${esc(p.id)}">商品のページを見る</button>`, dismissable:true}); }, true);
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-pn-go]'); if (!b) return; const id = b.dataset.pnGo; try { closeModal(true); } catch (er) { /* 何もしない */ } location.hash = '#/my/' + encodeURIComponent(id); });
 function careLinkHtml(text, G) {
   G = G || careGoods();
   const map = [
@@ -14749,7 +14760,7 @@ function careLinkHtml(text, G) {
   ];
   const re = new RegExp(map.map(m => m[0].source).join('|'), 'g'), used = new Set();
   // 「」の中（商品名）はリンクにしない
-  return ingLinkHtml(esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? seg : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join(''));
+  return ingLinkHtml(esc(text).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? prodQuoteLink(seg) : seg.replace(re, w => { const m = map.find(x => new RegExp('^(?:' + x[0].source + ')$').test(w)); if (!m) return w; const q = m[1](); if (used.has(q)) return w; used.add(q); return q[0] === '@' ? `<button type="button" class="care-link" data-stepsheet="${q.slice(1)}">${w}</button>` : `<button type="button" class="care-link" data-ingsheet="${esc(q)}">${w}</button>`; })).join(''));
 }
 // 「保湿」「化粧水」「美容液」を押したとき：その人に合う、その工程の成分を並べる（押すと成分の説明とおすすめ商品）
 const STEP_T = {moist:['保湿（乳液・クリーム）', 'おすすめ'], toner:['化粧水', 'おすすめ'], serum:['美容液', 'おすすめ']};
@@ -14824,7 +14835,7 @@ function mycareMiniHtml() {
       const real = x.src.some(c => c === '肌' || c === '天気') || /時間|g|日/.test(x.why);
       let pr = /お休み/.test(x.title) ? 100 : /触らない|つぶさない/.test(x.title) ? 70 : x.when === '朝' && /UV/.test(x.title) ? (w.uv >= 6 ? 75 : 20) : x.cat === '肌' ? 60 : real ? 50 : 10;
       if (D.calm && /クリーム|うるおい|ふた/.test(x.title)) pr += 15;
-      push(ingLinkHtml(esc(x.title)), x.title, pr);
+      push(ingLinkHtml(esc(x.title).split(/(「[^」]*」)/).map((seg, i) => i % 2 ? prodQuoteLink(seg) : seg).join('')), x.title, pr);
     });
   }
   (A.week || []).forEach((t, i) => push(careLinkHtml(t, G), t, /薬/.test(t) ? 90 : 55 - i));
