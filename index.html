@@ -510,7 +510,7 @@ label.btn{position:relative}
 .f3-stage canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 .f3-stage canvas:active{cursor:grabbing}
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
-.f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
+.f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}.f3-fb{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted)}.f3-fb svg{width:56px;height:70px;opacity:.7}.f3-fb p{margin:0;font-size:13px;line-height:1.6;color:var(--muted)}.f3-fail{pointer-events:auto;z-index:2}.f3-fb p .nw{display:inline-block!important;white-space:nowrap}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
 .hero.hero-home{padding:12px;overflow:visible} /* 上下左右・中の間をすべて同じ広さ（12〜14px）にそろえる */
 .hero-home .twx{padding:0;line-height:1.2;font-size:14px;gap:1.1em;justify-content:center}.hero-home .twx.twx-set{padding:8px 14px}
@@ -774,7 +774,7 @@ details.acc-cmp{margin-top:14px}
 .mrow-t{display:flex;flex-direction:column;min-width:0}
 .mrow-b{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow-t b{font-size:14.5px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}.mrow-t small>.nw{white-space:nowrap}.mrow-t small>.nw:not(:last-child){margin-right:-5px} /* 「使用1回・朝・夜」は、点のあとにすき間を空けず、言葉の切れ目でだけ折り返す */
 .my-adds{margin:0 0 12px;width:100%}
 /* 化粧品を追加・塗り薬を追加：緑の点線で囲む（塗りつぶさない） */
 .my-adds .btn.btn-primary,.my-adds .hap-keep>.btn.btn-primary{background:var(--green-p,#F2F7F2)!important;color:var(--green-d)!important;border:2px dashed var(--green)!important;box-shadow:none!important;min-height:48px;font-weight:700}
@@ -8719,7 +8719,7 @@ function viewCombo() {
 function comboLevelPage(k) {
   const q = normIng(ui.ccQ2 || '');
   return `<a class="back" href="#/combo">← 成分の組み合わせ</a>` + pageHead(k === 'ng' ? '併用注意' : '併用OK', k === 'ng' ? '一緒に使うときに注意が必要な組み合わせです（注意の強い順）。' : '一緒に使っても、ふつうは問題ないとされている組み合わせです。') +
-    `<div class="card"><input type="search" class="input" id="cc-q2" data-lv="${k}" placeholder="成分名で探す（例：レチノール、エピデュオ）" value="${esc(ui.ccQ2 || '')}" aria-label="成分名で探す">
+    `<div class="card"><input type="search" class="input" id="cc-q2" data-lv="${k}" placeholder="成分名（例：レチノール）" value="${esc(ui.ccQ2 || '')}" aria-label="成分名で探す">
     <div id="cc-list2" style="margin-top:6px">${comboDbListHtml(q, k)}</div></div>`;
 }
 function comboMap(r) {
@@ -11459,7 +11459,7 @@ function comboPickerHtml() {
   // 登録されている組み合わせの一覧（検索・絞り込み）
   const q = normIng(ui.ccQ || ''), lvF = ui.ccLv || 0;
   h += `<div class="card"><div class="card-h"><h2>登録されている組み合わせ</h2><span class="chip">${COMBO_DB.length}件</span></div>
-    <input type="search" class="input" id="cc-q" placeholder="成分名で探す（例：レチノール、エピデュオ）" value="${esc(ui.ccQ || '')}" aria-label="成分名で探す">
+    <input type="search" class="input" id="cc-q" placeholder="成分名（例：レチノール）" value="${esc(ui.ccQ || '')}" aria-label="成分名で探す">
     <div class="ic-chips cc-lvf">${[[3, '避ける・医師に確認'], [2, '併用注意'], [1, '併用可能']].map(([v, l]) => `<button type="button" class="ic ${lvF === v ? 'on' : ''}" data-action="cc-lv" data-id="${v}">${l}</button>`).join('')}</div>
     <div id="cc-list">${comboDbListHtml(q, lvF)}</div></div>`;
   return h;
@@ -14155,6 +14155,12 @@ function t3AlignTop(st, cv) {
   } catch (e) { /* 何もしない */ }
 }
 window.addEventListener('resize', () => { const st = FACE3D.st; if (st && st.alignTop) setTimeout(st.alignTop, 50); });
+// 2026-11-27 3Dの顔を読み込めなかったとき：文字だけでなく、顔の形の図と「もう一度読み込む」を出す
+function f3LoadFail(l, opts) {
+  const keep = l.innerHTML; l.hidden = false; l.classList.add('f3-fail');
+  l.innerHTML = `<div class="f3-fb"><svg viewBox="0 0 64 80" aria-hidden="true"><ellipse cx="32" cy="38" rx="22" ry="29" fill="none" stroke="currentColor" stroke-width="2"/><path d="M22 34q3-3 6 0M36 34q3-3 6 0M30 44q2 3 4 0M25 54q7 5 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><p><span class="nw">3Dの顔を</span><span class="nw">読み込めませんでした。</span><br><span class="nw">電波のよい場所で、</span><span class="nw">もう一度お試しください。</span></p><button type="button" class="btn btn-soft btn-sm" data-f3retry>もう一度読み込む</button></div>`;
+  const b = l.querySelector('[data-f3retry]'); if (b) b.onclick = (e) => { e.stopPropagation(); l.classList.remove('f3-fail'); l.innerHTML = /skel/.test(keep) ? keep : '<span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span>'; drawFace3d(opts); };
+}
 async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
   const cv = document.getElementById(opts.canvas);
@@ -14162,7 +14168,7 @@ async function drawFace3d(opts) {
   { const snap = FACE3D.snap && FACE3D.snap[opts.canvas]; if (cv && snap) { cv.style.background = `center / 100% 100% no-repeat url(${snap})`; cv.dataset.snapBg = '1'; const l = document.getElementById(opts.load); if (l) l.hidden = true; } } // 前に写しておいた絵を、読み込むまで出しておく
   if (FACE3D.st) { FACE3D.st.stop = true; if (!FACE3D.st.lost) { FACE3D.st.lost = true; try { FACE3D.st.renderer.dispose(); FACE3D.st.renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } FACE3D.st = null; }
   if (!cv) return;
-  try { await face3dLoad(); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = '3Dの顔を表示できませんでした。電波のよい場所で、ページを読み込み直してください。'; return; }
+  try { await face3dLoad(); } catch (e) { const l = document.getElementById(opts.load); if (l) f3LoadFail(l, opts); return; }
   if (!document.body.contains(cv)) return;
   face3dPickMesh();
   const T = FACE3D.three, m = FACE3D.mesh;
@@ -14665,7 +14671,7 @@ function personalAnalysis() {
   // ⑧ 今週いちばん大事なこと（3つまで）
   const week = [];
   if (top[0] && top[0].care[0]) week.push(top[0].care[0]);
-  const rv = items.find(i => i.v === 'review'); if (rv) week.push(`「${truncate(rv.x.p.name, 14)}」は${rv.note}`);
+  const rv = items.find(i => i.v === 'review'); if (rv) week.push(`「${prodIngLabel(rv.x.p) || truncate(rv.x.p.name, 14)}」は${rv.note}`); // 2026-11-27 商品名を短く切ると何の物かわからないので、成分の名前にする（押すと、その成分が入った登録商品が出る）
   if (sl != null && sl < g.sleep - 45) week.push(`あと${Math.round((g.sleep - sl) / 15) * 15}分早く寝る`);
   else if (exRec >= 3 && exDays < 2) week.push('週2〜3回、20〜30分歩く');
   /* 食事のことは、食事の記録から出す（おすすめケアの食事）。悩みだけで決めつけて「今週大事なこと」には入れない */
@@ -14737,17 +14743,16 @@ function careGoods() {
   const g = {}; try { ['am', 'pm'].forEach(sl => rtPlan(sl).steps.forEach(st => { if (!g[st.k] && st.good && st.good.length) g[st.k] = st.good[0]; })); } catch (e) { /* 何もしない */ }
   return g;
 }
-// 2026-11-26 今日のポイントなどの「商品名…」（短くした名前）は、押すと商品の名前を全部見られるようにする
-function prodOfQuote(q) { // q：「」の中の文字（エスケープ済み）
-  const t = String(q).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim(); if (!t) return null;
-  const L = (state.myProducts || []).filter(p => p && p.name);
-  return L.find(p => p.name === t) || L.find(p => { for (let n = 6; n <= 40; n++) if (truncate(p.name, n) === t) return true; return false; }) || (/[…]$|\.\.\.$/.test(t) ? L.find(p => p.name.startsWith(t.replace(/\s*(…|\.\.\.)$/, ''))) : null) || L.find(p => { try { return prodIngLabel(p) === t; } catch (e) { return false; } }) || null;
+// 2026-11-27 今日のポイントなどの「成分」（登録した商品から出したもの）は、ケア管理と同じく、押すとその成分が入った登録商品が出る
+function prodsOfQuote(q) { // q：「」の中の文字（エスケープ済み）
+  const t = String(q).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim(); if (!t) return [];
+  const L = (state.myProducts || []).filter(p => p && p.name && p.status !== '使用終了');
+  const byLab = L.filter(p => { try { return prodIngLabel(p) === t; } catch (e) { return false; } });
+  if (byLab.length) return byLab;
+  const one = L.find(p => p.name === t) || L.find(p => { for (let n = 6; n <= 40; n++) if (truncate(p.name, n) === t) return true; return false; }); // 前の版で保存された「商品名…」
+  return one ? [one] : [];
 }
-function prodQuoteLink(seg) { const m = String(seg).match(/^「([\s\S]*)」$/); const p = m && prodOfQuote(m[1]); return p ? `<button type="button" class="care-link" data-prodname="${esc(p.id)}">${seg}</button>` : seg; }
-document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-prodname]'); if (!b) return; e.preventDefault(); e.stopPropagation(); const p = (state.myProducts || []).find(x => x.id === b.dataset.prodname); if (!p) return; hapticTick();
-  openModal({title:'商品の名前', body:`<p class="pn-full" style="margin:0 0 6px;font-size:16px;font-weight:700;line-height:1.5;word-break:break-word">${esc(p.name)}</p><p class="small muted" style="margin:0">${[p.brand, p.category].filter(Boolean).map(esc).join('・')}</p>`,
-    footer:`<button type="button" class="btn btn-primary" data-pn-go="${esc(p.id)}">商品のページを見る</button>`, dismissable:true}); }, true);
-document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-pn-go]'); if (!b) return; const id = b.dataset.pnGo; try { closeModal(true); } catch (er) { /* 何もしない */ } location.hash = '#/my/' + encodeURIComponent(id); });
+function prodQuoteLink(seg) { const m = String(seg).match(/^「([\s\S]*)」$/); const L = m ? prodsOfQuote(m[1]) : []; return L.length ? `<button type="button" class="care-link" data-owned="${m[1]}" data-pids="${esc(L.map(p => p.id).join(','))}">${seg}</button>` : seg; }
 function careLinkHtml(text, G) {
   G = G || careGoods();
   const map = [

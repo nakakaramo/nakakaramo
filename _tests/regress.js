@@ -1823,10 +1823,10 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
   check('字と背景の色の差が足りている（ライト・ダーク）', await ev(async () => { const bad = [], keepT = document.documentElement.dataset.theme, keepH = location.hash, w = (ms) => new Promise((r) => setTimeout(r, ms));
     const scan = () => { const parse = (c) => { const m = c.match(/[\d.]+/g); return m ? m.map(Number) : null; }, lum = (a) => { const x = a.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * x[0] + 0.7152 * x[1] + 0.0722 * x[2]; };
       const bgOf = (el) => { for (let e = el; e; e = e.parentElement) { const c = parse(getComputedStyle(e).backgroundColor); if (c && (c.length < 4 || c[3] > 0.85)) return c; } return parse(getComputedStyle(document.body).backgroundColor); };
-      const out = []; document.querySelectorAll('#main button, #main a, #main span, #main b, #main small, #main p, #main label').forEach((el) => { if (!el.offsetParent || el.closest('.sw-on,.tab.active,[aria-hidden="true"]')) return; const t = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(''); if (!t) return;
-        const cs = getComputedStyle(el), fg = parse(cs.color); if (!fg || (fg[3] != null && fg[3] < 0.5) || parseFloat(cs.opacity) < 0.6) return; const bg = bgOf(el), a = lum(fg), b = lum(bg), cr = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      const out = []; document.querySelectorAll('#main button, #main a, #main span, #main b, #main small, #main p, #main label').forEach((el) => { if (!el.offsetParent || el.closest('[aria-hidden="true"]')) return; const on = el.closest('.sw-on'), grp = on && on.closest('.sw-grp'), ind = grp && grp.querySelector(':scope > .sw-ind'); /* 2026-11-27 選ばれた切り替えボタンは、後ろで動く色の板（.sw-ind）の色で測る（前は測らずに飛ばしていた） */ const t = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(''); if (!t) return;
+        const cs = getComputedStyle(el), fg = parse(cs.color); if (!fg || (fg[3] != null && fg[3] < 0.5) || parseFloat(cs.opacity) < 0.6) return; const ib = ind && parse(getComputedStyle(ind).backgroundColor), bg = ib && (ib[3] == null || ib[3] > 0.5) ? ib : bgOf(el), a = lum(fg), b = lum(bg), cr = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
         const big = parseFloat(cs.fontSize) >= 18.6 || (parseFloat(cs.fontSize) >= 14 && Number(cs.fontWeight) >= 700); if (cr < (big ? 3 : 4.5)) out.push(`「${t.slice(0, 10)}」${cr.toFixed(1)}`); }); return [...new Set(out)]; };
-    try { for (const th of ['light', 'dark']) { document.documentElement.dataset.theme = th; for (const h of ['#/home', '#/my', '#/mycare', '#/report', '#/account', '#/account/s/data', '#/scan', '#/routine']) { location.hash = h; render(); await w(350); scan().slice(0, 3).forEach((x) => bad.push(`${th} ${h} ${x}`)); } } }
+    try { for (const th of ['light', 'dark']) { document.documentElement.dataset.theme = th; for (const h of ['#/home', '#/my', '#/mycare', '#/report', '#/account', '#/account/s/data', '#/account/s/display', '#/charts', '#/scan', '#/routine']) { location.hash = h; render(); await w(350); scan().slice(0, 3).forEach((x) => bad.push(`${th} ${h} ${x}`)); } } }
     catch (e) { bad.push('エラー ' + e.message); } finally { if (keepT) document.documentElement.dataset.theme = keepT; else delete document.documentElement.dataset.theme; location.hash = keepH; render(); }
     if (bad.length) console.log('  ' + bad.slice(0, 12).join(' / ')); return !bad.length; }));
   // 2026-11-26 見やすさの点検2：注意書きの字が10.5pxで小さい・小さい字の印・天気のボタンが押しにくい（高さ17px）・成分辞典の例文が切れる・週次レポートの「ニキビ（1日）」が途中で折り返す・商品の「31日目」が途中で折り返す
@@ -1840,16 +1840,29 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         if (h === '#/my' && document.querySelector('#main .mrow small') && !document.querySelector('#main .mrow small .nw')) bad.push('商品の使用日数が途中で折り返す'); } }
     catch (e) { bad.push('エラー ' + e.message); } finally { location.hash = keepH; render(); }
     if (bad.length) console.log('  ' + [...new Set(bad)].slice(0, 12).join(' / ')); return !bad.length; }));
-  // 2026-11-26 今日のポイントの「Anua アヌア 0.3 …」は赤みがある間はお休み：短くした商品名を押しても、名前の全部が見られなかった
-  check('今日のポイントの商品名を押すと、名前の全部が出る', await ev(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = state.myProducts, keepH = location.hash; let ok = false, info = '';
+  // 2026-11-26 今日のポイントの「Anua アヌア 0.3 …」は赤みがある間はお休み：短くした商品名では何の物かわからない
+  // 2026-11-27 → 成分の名前（「レチノール」）にして、押すとケア管理と同じく、その成分が入った登録商品が出る
+  check('今日のポイントは成分の名前で出て、押すと登録した商品が出る', await ev(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = state.myProducts, keepL = state.skinLogs, keepH = location.hash; let ok = false, info = '';
     await w(500); try { closeModal(true); } catch (e) { /* 何もしない */ } await w(300); /* 前の確かめの画面の切り替え（hashchange）が終わってから */
-    try { const full = 'Anua アヌア 0.3 レチノール ナイトセラム 30mL'; state.myProducts = keep.concat([{id:'pnq1', demo:false, purchases:[], catalogId:null, name:full, brand:'Anua', category:'美容液', purposes:[], ingredients:'水、レチノール', timing:'夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null}]);
-      const host = document.createElement('div'); host.innerHTML = careLinkHtml(`「${truncate(full, 14)}」は赤みがある間はお休み`); document.body.appendChild(host);
-      const btn = host.querySelector('[data-prodname="pnq1"]'); if (!btn) info = 'ボタンがない'; else { btn.click(); await w(300); const m = document.querySelector('#modal-root .modal'); ok = !!m && m.textContent.replace(/\u200b/g, '').includes(full) && !!m.querySelector('[data-pn-go]'); if (!ok) info = 'シートに名前がない'; }
-      host.remove(); try { closeModal(true); } catch (e) { /* 何もしない */ }
-      const h2 = document.createElement('div'); h2.innerHTML = careLinkHtml('「知らない商品」は控える'); if (h2.querySelector('[data-prodname]')) { ok = false; info = '登録していない名前までボタンになる'; } }
-    catch (e) { info = e.message; } finally { state.myProducts = keep; location.hash = keepH; }
+    try { const full = 'Anua アヌア 0.3 レチノール ナイトセラム 30mL', d = todayStr(); state.myProducts = [{id:'pnq1', demo:false, purchases:[], catalogId:null, name:full, brand:'Anua', category:'美容液', purposes:[], ingredients:'水、グリセリン、レチノール', timing:'夜', frequency:'毎日', startDate:addDays(d, -30), status:'使用中', endDate:'', memo:'', pao:0, order:null}];
+      state.skinLogs = [0, 1, 2, 3].map((i) => ({id:'pq' + i, date:addDays(d, -i), condition:2, acneCount:0, redness:4, dryness:0, oil:0, acneSpots:[], acneTypes:[], areas:[], usedProducts:['pnq1'], memo:'', photo:''})); try { state.skinLogs = normalize(Object.assign({}, state, {skinLogs:state.skinLogs})).skinLogs; } catch (e) { /* そのまま */ }
+      const A = personalAnalysis(), wk = (A.week || []).join(' / ');
+      if (/…|\.\.\./.test(wk) || wk.includes('Anua')) info = '短くした商品名が出る：' + wk;
+      else if (!/「レチノール」/.test(wk)) info = '成分の名前が出ない：' + wk;
+      else { const host = document.createElement('div'); host.innerHTML = careLinkHtml((A.week || []).find((x) => x.includes('「レチノール」'))); document.body.appendChild(host);
+        const btn = host.querySelector('[data-owned][data-pids*="pnq1"]'); if (!btn) info = 'ボタンがない'; else { btn.click(); await w(300); const m = document.querySelector('#modal-root .modal'); ok = !!m && m.textContent.replace(/​/g, '').includes(full) && !!m.querySelector('[data-ownpick="pnq1"]'); if (!ok) info = 'シートに登録した商品が出ない'; }
+        host.remove(); try { closeModal(true); } catch (e) { /* 何もしない */ } }
+      const h2 = document.createElement('div'); h2.innerHTML = careLinkHtml('「知らない商品」は控える'); if (h2.querySelector('[data-owned]')) { ok = false; info = '登録していない名前までボタンになる'; } }
+    catch (e) { info = e.message + ' ' + String(e.stack).split('\n').slice(1, 4).join(' '); } finally { state.myProducts = keep; state.skinLogs = keepL; location.hash = keepH; }
     if (!ok) console.log('  ' + info); return ok; }));
+  // 2026-11-27 成分の組み合わせの例文に処方薬の商品名（エピデュオ）が入っていた・3Dの顔を読み込めないと文字だけで、もう一度読む方法がなかった
+  check('例文に処方薬の名前がない・3Dの顔を読めないときは図と「もう一度」が出る・商品の「朝・夜」にすき間がない', await ev(async () => { const bad = [];
+    let html = ''; try { html = await (await fetch(location.href.split('#')[0])).text(); } catch (e) { bad.push('読めない'); } if (/placeholder="[^"]*(エピデュオ|ディフェリン|ベピオ|デュアック|ダラシン)/.test(html)) bad.push('例文に処方薬');
+    { const keep = state.myProducts, keepH = location.hash; try { const d = todayStr(); state.myProducts = [{id:'gq1', demo:false, purchases:[], catalogId:null, name:'しっとり化粧水', brand:'テスト', category:'化粧水・トナー', purposes:[], ingredients:'水', timing:'朝・夜', frequency:'毎日', startDate:addDays(d, -30), status:'使用中', endDate:'', memo:'', pao:0, order:null}]; location.hash = '#/my'; render(); await new Promise((r) => setTimeout(r, 300));
+        const sp = [...document.querySelectorAll('#main .mrow-t small > .nw')]; for (let i = 1; i < sp.length; i++) { const a = sp[i - 1].getBoundingClientRect(), c = sp[i].getBoundingClientRect(); if (Math.abs(a.top - c.top) < 2 && c.left - a.right > 1.5) { bad.push('「・」のあとにすき間'); break; } }
+        if (!sp.length) bad.push('商品の行がない'); } finally { state.myProducts = keep; location.hash = keepH; render(); } }
+    if (typeof f3LoadFail !== 'function') bad.push('読めないときの表示がない'); else { const l = document.createElement('div'); document.body.appendChild(l); f3LoadFail(l, {canvas:'nope', load:'x'}); if (!l.querySelector('svg') || !l.querySelector('[data-f3retry]')) bad.push('図か「もう一度」がない'); l.remove(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
