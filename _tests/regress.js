@@ -74,7 +74,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
   check('通常⇄時短は、選んでいるほうが外側と違う色のつまみ', await ev(() => { const ip = window.isPremium; window.isPremium = () => true; location.hash = '#/routine'; render(); const ind = document.querySelector('.rt-qsw .sc-ind'), box = document.querySelector('.rt-qsw'); const bg = ind && getComputedStyle(ind).backgroundColor, bx = box && getComputedStyle(box).backgroundColor; window.isPremium = ip; return !!bg && bg !== bx; }));
   // 2026-11-16 戻るボタンは画面の中の丸いボタンではなく、上の見出しの前に「＜」を付けて、見出しごと押すと戻る
   check('戻るは上の見出しの「＜」にまとめ、画面の中の丸い戻るボタンを出さない', await ev(async () => {
-    const until = async (f, ms = 3000) => { const t0 = Date.now(); while (!f() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 100)); return f(); }; // 2026-11-23 重いときは画面の切りかえが遅れるので、決まった時間ではなく、そうなるまで待つ（たまたま落ちるのを防ぐ）
+    const until = async (f, ms = 8000) => { const t0 = Date.now(); while (!f() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 100)); return f(); }; // 2026-11-23 重いときは画面の切りかえが遅れるので、決まった時間ではなく、そうなるまで待つ（たまたま落ちるのを防ぐ） 2026-11-26 それでもたまに落ちたので、待つ上限を8秒にのばした
     location.hash = '#/account'; await new Promise((r) => setTimeout(r, 300)); location.hash = '#/account/me'; await new Promise((r) => setTimeout(r, 400));
     await until(() => { const x = document.querySelector('.topbar .top-title'); return location.hash === '#/account/me' && !!x && x.classList.contains('tt-back') && !!document.querySelector('.topbar .tt-bk .tt-chev'); });
     const h = document.querySelector('.topbar .top-title'), bk = document.querySelector('#main .back');
