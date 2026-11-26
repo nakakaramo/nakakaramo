@@ -1781,7 +1781,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     } catch (e) { info = e.message; } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepP; render(); }
     if (!ok) console.log('  ' + info); return ok; }));
   // 2026-11-26 架空の人で全部の提案を点検して見つかった食いちがい：①ポテトチップスを「甘い間食」②お菓子の代わりに鮭の塩焼き ③休ませた物の成分（スクワラン）を別の手順でおすすめ ④洗顔のサリチル酸を「今夜お休み」なのに洗顔では使う ⑤妊娠中のまぐろに何も言わない ⑥中高生の睡眠の目安が7時間 ⑦見出しは野菜なのに食べ物はたんぱく質から ⑧妊娠中の「今日は○○はお休み」
-  check('架空の人の点検：提案どうしの食いちがいがない', await ev(async () => { const keep = JSON.stringify(state), keepP = window.isPremium, bad = [], d = todayStr();
+  check('架空の人の点検：提案どうしの食いちがいがない', await ev(async () => { const keep = JSON.stringify(state), keepP = window.isPremium, keepCV = window.callVision, bad = [], d = todayStr(); window.callVision = async () => { throw new Error('AIなし（テスト）'); }; /* AIの分析を待たずに、ルールの提案で確かめる */
     const mk = (o) => { const st = JSON.parse(keep), a = o.a, ck = o.ck; Object.assign(st.settings, {gender: '女性', birthDate: o.bd || '2001-06-15', preg: o.preg || 'no', onboarded: true, surveyDone: true, policyAgreed: POLICY_VER, concernKeys: ck, diag: {a, r: diagCompute(a, ck)}, sleepNeed: 420});
       st.myProducts = (o.prods || []).map((x, i) => ({id: 'f' + i, demo: false, purchases: [], catalogId: null, name: x[0], brand: 'テスト', category: x[1], purposes: [], ingredients: x[2], timing: '朝・夜', frequency: '毎日', startDate: addDays(d, -30), status: '使用中', endDate: '', memo: '', pao: 0, order: null}));
       st.skinLogs = Array.from({length: 7}, (_, i) => Object.assign({id: 'fs' + i, date: addDays(d, -i), usedProducts: st.myProducts.map((x) => x.id), usageRecorded: true, memo: '', photo: ''}, o.skin));
@@ -1803,7 +1803,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (lifeGoals().sleep !== 480) bad.push('中高生の睡眠の目安が8時間にならない ' + lifeGoals().sleep);
       T = await careT(); meal = T.find((x) => /^食事/.test(x)) || ''; const fi = meal.indexOf('おすすめの食べ物'), first = meal.slice(fi + 8, fi + 20);
       if (/野菜/.test(meal.slice(0, fi)) && !/ブロッコリー|ほうれん草|にんじん|トマト|パプリカ|小松菜|キャベツ|まいたけ/.test(first)) bad.push('見出しは野菜なのに、最初の食べ物が野菜でない：' + first);
-    } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepP; render(); }
+    } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepP; window.callVision = keepCV; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
