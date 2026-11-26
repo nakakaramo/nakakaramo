@@ -75,13 +75,16 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
   // 2026-11-16 戻るボタンは画面の中の丸いボタンではなく、上の見出しの前に「＜」を付けて、見出しごと押すと戻る
   check('戻るは上の見出しの「＜」にまとめ、画面の中の丸い戻るボタンを出さない', await ev(async () => {
     const until = async (f, ms = 8000) => { const t0 = Date.now(); while (!f() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 100)); return f(); }; // 2026-11-23 重いときは画面の切りかえが遅れるので、決まった時間ではなく、そうなるまで待つ（たまたま落ちるのを防ぐ） 2026-11-26 それでもたまに落ちたので、待つ上限を8秒にのばした
-    location.hash = '#/account'; await new Promise((r) => setTimeout(r, 300)); location.hash = '#/account/me'; await new Promise((r) => setTimeout(r, 400));
+    location.hash = '#/account'; await new Promise((r) => setTimeout(r, 300)); await until(() => location.hash === '#/account' && !REWIND); // 2026-11-26 主なページへ移るときの履歴の巻き戻し（最長0.7秒）が終わる前に次へ進むと、その移動が無視されるので、終わるまで待つ
+    location.hash = '#/account/me'; await new Promise((r) => setTimeout(r, 400));
     await until(() => { const x = document.querySelector('.topbar .top-title'); return location.hash === '#/account/me' && !!x && x.classList.contains('tt-back') && !!document.querySelector('.topbar .tt-bk .tt-chev'); });
     const h = document.querySelector('.topbar .top-title'), bk = document.querySelector('#main .back');
     const ok1 = !!h && h.classList.contains('tt-back') && !!document.querySelector('.topbar .tt-bk .tt-chev') && (!bk || getComputedStyle(bk).display === 'none');
-    if (!h) return false;
-    h.click(); await new Promise((r) => setTimeout(r, 500)); await until(() => location.hash === '#/account' && !document.querySelector('.topbar .tt-bk')); const ok2 = location.hash === '#/account';
+    if (!h) { console.log('  （見出しが見つからない：' + location.hash + '）'); return false; }
+    // 2026-11-26 押す直前に見出しを探し直す（描き直されていても押せるように）
+    const hc = document.querySelector('.topbar .top-title') || h; hc.click(); await new Promise((r) => setTimeout(r, 500)); await until(() => location.hash === '#/account' && !document.querySelector('.topbar .tt-bk')); const ok2 = location.hash === '#/account';
     const h2 = document.querySelector('.topbar .top-title'); const ok3 = (!h2 || !h2.classList.contains('tt-back')) && !document.querySelector('.topbar .tt-bk'); // いちばん上の画面には「＜」を付けない
+    if (!(ok1 && ok2 && ok3)) console.log('  （戻るの確かめ：' + JSON.stringify({ ok1, ok2, ok3, hash: location.hash }) + '）'); // 落ちたとき、どこで落ちたかを残す
     return ok1 && ok2 && ok3; }));
   // 2026-11-16 見出しの前の「＜」は、見出しの文字より少し薄い色
   check('見出しの前の「＜」は見出しより薄い色', await ev(async () => { location.hash = '#/account/me'; await new Promise((r) => setTimeout(r, 400)); const h = document.querySelector('.topbar .top-title'), c = document.querySelector('.topbar .tt-bk .tt-chev'); return !!c && getComputedStyle(c).backgroundColor !== getComputedStyle(h).color; }));
