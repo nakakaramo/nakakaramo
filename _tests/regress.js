@@ -1842,6 +1842,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     if (bad.length) console.log('  ' + [...new Set(bad)].slice(0, 12).join(' / ')); return !bad.length; }));
   // 2026-11-26 今日のポイントの「Anua アヌア 0.3 …」は赤みがある間はお休み：短くした商品名を押しても、名前の全部が見られなかった
   check('今日のポイントの商品名を押すと、名前の全部が出る', await ev(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), keep = state.myProducts, keepH = location.hash; let ok = false, info = '';
+    await w(500); try { closeModal(true); } catch (e) { /* 何もしない */ } await w(300); /* 前の確かめの画面の切り替え（hashchange）が終わってから */
     try { const full = 'Anua アヌア 0.3 レチノール ナイトセラム 30mL'; state.myProducts = keep.concat([{id:'pnq1', demo:false, purchases:[], catalogId:null, name:full, brand:'Anua', category:'美容液', purposes:[], ingredients:'水、レチノール', timing:'夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null}]);
       const host = document.createElement('div'); host.innerHTML = careLinkHtml(`「${truncate(full, 14)}」は赤みがある間はお休み`); document.body.appendChild(host);
       const btn = host.querySelector('[data-prodname="pnq1"]'); if (!btn) info = 'ボタンがない'; else { btn.click(); await w(300); const m = document.querySelector('#modal-root .modal'); ok = !!m && m.textContent.replace(/\u200b/g, '').includes(full) && !!m.querySelector('[data-pn-go]'); if (!ok) info = 'シートに名前がない'; }
