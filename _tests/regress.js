@@ -1874,6 +1874,21 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (/truncate\(shortName\(p\.name\), 20\)|truncate\(p\.[xy]\.p\.name, 22\)|truncate\(x\.name, 16\)\)\.join\('、'\)/.test(html)) bad.push('組み合わせの注意で商品名を短く切っている'); }
     catch (e) { bad.push(e.message); } finally { state.myProducts = keep; }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-27 不正の防止：商品名・メモ・食べ物の名前・AIの答えなどに、悪い命令（HTMLのタグ）が入っていても動かない（全部の画面を開いて確かめる）
+  check('入力やAIの答えに悪い命令が入っていても動かない（全部の画面）', await ev(async () => { const w = (ms) => new Promise((r) => setTimeout(r, ms)), keepS = JSON.stringify(state), keepH = location.hash, keepV = window.callVision; window.__xss = 0;
+    const X = '"><img src=x onerror="window.__xss++"><svg onload="window.__xss++">\'`${1}', bad = [];
+    try { const d = todayStr(); const P = (id, cat) => ({id, demo:false, purchases:[], catalogId:null, name:'名前' + X, brand:'ブランド' + X, category:cat, purposes:[], ingredients:'水、レチノール、' + X, timing:'朝・夜', frequency:'毎日', startDate:addDays(d, -10), status:'使用中', endDate:'', memo:'メモ' + X, pao:0, order:null});
+      const raw = JSON.parse(keepS); raw.myProducts = [P('x1', '美容液'), P('x2', '化粧水・トナー'), P('x3', '塗り薬')];
+      raw.skinLogs = [0, 1, 2, 3, 4, 5, 6].map((i) => ({id:'xl' + i, date:addDays(d, -i), condition:2, acneCount:2, redness:3, dryness:1, oil:2, acneSpots:[], acneTypes:[], areas:[], usedProducts:['x1', 'x2'], memo:'肌メモ' + X, photo:''}));
+      raw.lifeLogs = [{id:'xf', date:d, bed:'23:00', wake:'7:00', memo:'生活' + X, foods:[{name:'食べ物' + X, meal:'lunch', kcal:500, p:20}], exercise:[]}];
+      raw.customFoods = [{name:'自作' + X, kcal:100}];
+      state = normalize(raw);
+      window.callVision = async () => ({ok:true, result:{text:'AI' + X, advice:'AI' + X, items:[{name:'料理' + X, kind:'dish'}], dishes:[{name:'料理' + X, kind:'dish', conf:0.8, ingredients:[{name:'具' + X, cook:'生', g:50, gmin:40, gmax:60, conf:0.8}]}], meals:[], note:X}});
+      for (const h of ['#/home', '#/home?care', '#/log', '#/log?life', '#/charts', '#/my', '#/my/x1', '#/my/x3', '#/mycare', '#/combo', '#/ingredients', '#/routine', '#/report', '#/account', '#/settings', '#/plan', '#/visit', '#/trouble', '#/scan']) { try { closeModal(true); } catch (e) { /* 何もしない */ } location.hash = h; render(); await w(250); }
+      for (const t of ['名前', 'ブランド', 'メモ']) { const b = document.createElement('div'); b.innerHTML = careLinkHtml(`「${t + X}」は控える`) + prodNameLinks(esc(`「${'名前' + X}」`)); }
+      await w(400); if (window.__xss) bad.push('悪い命令が動いた ' + window.__xss + '回'); }
+    catch (e) { bad.push('エラー ' + e.message); } finally { window.callVision = keepV; state = JSON.parse(keepS); try { closeModal(true); } catch (e) { /* 何もしない */ } location.hash = keepH; render(); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
