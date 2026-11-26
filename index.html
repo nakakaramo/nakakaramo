@@ -15370,10 +15370,10 @@ function refCardHtml() {
   if (!acct.user) return '';
   const canUse = newAccount() && !lsGet(REF_DONE);
   return `<div class="card ref-card"><div class="card-h"><h2>お友だち紹介</h2></div>
-    <p class="small">あなたの紹介コードで友だちが登録すると、<b>2人とも${PREMIUM_NAME}が1か月無料</b>になります。${PREMIUM_NAME}を契約中の人は、次の請求から1か月分が引かれます。</p>
+    <p class="small">あなたの紹介コードで友だちが登録すると、<b>友だちは${PREMIUM_NAME}が1か月無料</b>になります。その友だちが${PREMIUM_NAME}の支払いを始めたら、<b>あなたも1か月無料</b>になります（契約中の人は、次の請求から1か月分が引かれます）。</p>
     <div class="ref-row"><span class="ref-code">${acct.refCode ? esc(acct.refCode) : acct.refErr ? '—' : '…'}</span><button type="button" class="btn btn-primary btn-sm" data-action="ref-copy" ${acct.refCode ? '' : 'disabled'}>紹介リンクを送る</button></div>
     ${canUse ? `<div class="divider"></div><p class="small" style="margin:0 0 8px">友だちから紹介コードをもらった場合（登録から14日以内・1回だけ）</p><div class="ref-row"><input class="input" id="ref-in" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="紹介コード" value="${esc(lsGet(REF_KEY))}"><button type="button" class="btn btn-ghost btn-sm" data-action="ref-redeem" ${acct.refRedeeming ? 'disabled' : ''}>使う</button></div>` : ''}
-    <p class="hint">紹介した人がもらえる特典は、1年に12回までです。</p></div>`;
+    <p class="hint">紹介した人がもらえる特典は、1年に12回までです。同じ人が作った別のアカウントへの紹介は、特典の対象外です。</p></div>`;
 }
 async function googleLogin() {
   try { if (acct.status !== 'ready') await initCloud(); if (!acct.client) throw new Error('offline');
@@ -15436,7 +15436,7 @@ const SNS_ICON = {
   x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'};
 const LEGAL = {
   draft: false,              // 下書きのあいだは true（画面に「下書き」と表示）。2026-11-15 に正式に公開
-  updated: '2026年11月21日',  // 最終改定日（2026-11-20 飲み薬・サプリの扱いを追記、2026-11-21 生年月日などのプロフィールを追記）
+  updated: '2026年11月27日',  // 最終改定日（2026-11-20 飲み薬・サプリの扱いを追記、2026-11-21 生年月日などのプロフィールを追記、2026-11-27 紹介した人の特典は、紹介された人が支払いを始めたときに付与）
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額600円（税込）または年額6,000円（税込）'
@@ -15461,7 +15461,7 @@ function viewTerms() {
 <li>有料プランの料金は、申し込み画面に表示する金額とします（${esc(LEGAL.price)}）。</li>
 <li>有料プランの利用にはアカウント登録が必要です。無料プランはアカウント登録なしで利用できます。</li>
 <li>新しくアカウントを登録した利用者は、登録から3日間、有料プランの機能を無料で利用できます（以下「お試し期間」）。お試し期間が終わると自動で無料プランに戻り、料金は発生しません。お試し期間は1つのアカウントにつき1回です。</li>
-<li>利用者が自分の紹介コードで別の方を紹介し、その方が登録から14日以内に紹介コードを使った場合、紹介した利用者と紹介された方の両方に、有料プランの1か月分の特典を付与します。特典は、有料プランを契約していない方には30日間の無料期間として、契約中の方には次回以降の請求から1か月分の料金を差し引く形で付与します。紹介した利用者への付与は1年に12回までとします。同じ人による複数のアカウントの作成など、不正な利用が分かった場合は、特典を取り消すことがあります。</li></ol>
+<li>利用者が自分の紹介コードで別の方を紹介し、その方が登録から14日以内に紹介コードを使った場合、紹介された方に、有料プランの1か月分の特典を付与します。紹介した利用者には、紹介された方が有料プランの支払いを初めて行った時点で、有料プランの1か月分の特典を付与します。特典は、有料プランを契約していない方には30日間の無料期間として、契約中の方には次回以降の請求から1か月分の料金を差し引く形で付与します。紹介した利用者への付与は1年に12回までとします。同じ人による複数のアカウントの作成など、不正な利用が分かった場合は、特典を取り消すことがあります。</li></ol>
 <h3>第3条（アカウント）</h3>
 <ol><li>利用者は、正確なメールアドレスを登録し、パスワードを自分の責任で管理するものとします。</li>
 <li>アカウントの第三者への貸与・譲渡・共有はできません。</li>
