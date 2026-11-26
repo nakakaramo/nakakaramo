@@ -1826,6 +1826,17 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     try { for (const th of ['light', 'dark']) { document.documentElement.dataset.theme = th; for (const h of ['#/home', '#/my', '#/mycare', '#/report', '#/account', '#/account/s/data', '#/scan', '#/routine']) { location.hash = h; render(); await w(350); scan().slice(0, 3).forEach((x) => bad.push(`${th} ${h} ${x}`)); } } }
     catch (e) { bad.push('エラー ' + e.message); } finally { if (keepT) document.documentElement.dataset.theme = keepT; else delete document.documentElement.dataset.theme; location.hash = keepH; render(); }
     if (bad.length) console.log('  ' + bad.slice(0, 12).join(' / ')); return !bad.length; }));
+  // 2026-11-26 見やすさの点検2：注意書きの字が10.5pxで小さい・小さい字の印・天気のボタンが押しにくい（高さ17px）・成分辞典の例文が切れる・週次レポートの「ニキビ（1日）」が途中で折り返す・商品の「31日目」が途中で折り返す
+  check('字が小さすぎない・ボタンが押しやすい・字が途中で切れない', await ev(async () => { const bad = [], keepH = location.hash, w = (ms) => new Promise((r) => setTimeout(r, ms));
+    try { for (const h of ['#/home', '#/log', '#/my', '#/mycare', '#/report', '#/ingredients', '#/routine', '#/settings', '#/charts']) { location.hash = h; render(); await w(350);
+        document.querySelectorAll('#main *').forEach((el) => { if (!el.offsetParent || el.closest('[aria-hidden="true"],.ph')) return; const t = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(''); if (!t) return; const f = parseFloat(getComputedStyle(el).fontSize); if (f < 11) bad.push(`${h} 小さい字${f}px「${t.slice(0, 8)}」`); });
+        document.querySelectorAll('#main .pg-foot, #main .rt-foot').forEach((el) => { if (el.offsetParent && parseFloat(getComputedStyle(el).fontSize) < 12) bad.push(`${h} 注意書きが小さい`); });
+        document.querySelectorAll('#main input[placeholder]').forEach((i) => { if (!i.offsetParent) return; const c = document.createElement('canvas').getContext('2d'), cs = getComputedStyle(i); c.font = cs.fontSize + ' ' + cs.fontFamily; if (c.measureText(i.placeholder).width > i.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 1) bad.push(`${h} 例文が切れる「${i.placeholder.slice(0, 10)}」`); });
+        const tw = document.querySelector('#main .twx-set'); if (tw && tw.getBoundingClientRect().height < 30) bad.push(`${h} 天気のボタンが小さい`);
+        const ac = document.querySelector('#main .rpc-stats b.c1'); if (ac && ac.getBoundingClientRect().height > parseFloat(getComputedStyle(ac).lineHeight || 20) * 1.5 + 2) bad.push(`${h} ニキビの見出しが折り返す`);
+        if (h === '#/my' && document.querySelector('#main .mrow small') && !document.querySelector('#main .mrow small .nw')) bad.push('商品の使用日数が途中で折り返す'); } }
+    catch (e) { bad.push('エラー ' + e.message); } finally { location.hash = keepH; render(); }
+    if (bad.length) console.log('  ' + [...new Set(bad)].slice(0, 12).join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
