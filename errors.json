@@ -1,4 +1,23 @@
 {
-  "rows": [],
-  "fetched_at": "2026-11-21T13:57:49Z"
+  "rows": [
+    {
+      "msg": "Failed to update a ServiceWorker for scope ('…') with script ('…'): An unknown error occurred when fetching the script.",
+      "src": "promise",
+      "page": "#/",
+      "ver": "2026.11.15",
+      "n": 3,
+      "last": "2026-11-26T09:45:11.395263+00:00",
+      "stack": "TypeError: Failed to update a ServiceWorker for scope ('/') with script ('/sw.js'): An unknown error occurred when fetching the script."
+    },
+    {
+      "msg": "Failed to update a ServiceWorker for scope ('…') with script ('…'): An unknown error occurred when fetching the script.",
+      "src": "promise",
+      "page": "#/home",
+      "ver": "2026.11.15",
+      "n": 1,
+      "last": "2026-11-26T09:14:29.767616+00:00",
+      "stack": "TypeError: Failed to update a ServiceWorker for scope ('/') with script ('/sw.js'): An unknown error occurred when fetching the script."
+    }
+  ],
+  "fetched_at": "2026-11-26T10:10:20Z"
 }
