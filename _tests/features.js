@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 const { setBD } = require('./people.js');
 const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html');
-const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
+const srv = http.createServer((q, r) => { if (/^\/fooddb\.json/.test(q.url)) { r.writeHead(200, { 'Content-Type': 'application/json' }); r.end(fs.readFileSync(require('path').join(__dirname, '..', 'fooddb.json'))); return; } r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
 const base = (o) => Object.assign({ gender: '女性', ageBand: '20代', tight: 'some', oilDay: 'tzone', acne: 'some', red: 'rare', sens: 'no', preg: 'no', concerns: ['acne'] }, o);
 const PERSONAS = [

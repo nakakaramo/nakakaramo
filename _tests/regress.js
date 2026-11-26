@@ -5,7 +5,7 @@
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html');
-const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
+const srv = http.createServer((q, r) => { if (/^\/fooddb\.json/.test(q.url)) { r.writeHead(200, { 'Content-Type': 'application/json' }); r.end(fs.readFileSync(require('path').join(__dirname, '..', 'fooddb.json'))); return; } r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
 const results = [];
 // 手元だけにあるファイル（サーバーの関数・公開の手順など）。クラウドの見回りには無いので、そのときは、それを読む確かめだけ飛ばす
@@ -768,15 +768,18 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     localStorage.removeItem(MENU_KEY); await runMenu(false); await runMenu(false); await runMenu(false); const ok = n === 1;
     callVision = keepCV; window.isPremium = keepPrem; localStorage.removeItem(MENU_KEY); if (!ok) console.log('  AI回数 ' + n); return ok; }));
   // 2026-11-19 食べ物の写真の読み取り：撮った時刻で食事を決める・結果を出す・チェックした物を栄養つきで保存・数字がない物は追加できない・読み取れない／通信エラーのときは案内を出す
-  for (const [k, res] of [['ok', {items: [{kind: 'dish', name: '親子丼', amount: '1杯', basis: '推定', kcal: 680, p: 28, f: 18, c: 95, salt: 3.2, veg: 40}, {kind: 'product', name: '午後の紅茶 ミルクティー', basis: '表示', kcal: 185, p: 5, f: 3.5, c: 33.5, salt: 0.2, veg: 0}, {kind: 'dish', name: 'みそ汁', basis: '確認できません', kcal: null}]}], ['empty', {items: [], note: '食べ物が写っていません'}], ['error', null]]) {
+  // 2026-11-26 食事写真の解析を作り直した（AIは食材と重さだけ・栄養は食品成分表で計算）。同じ確かめを新しい形で続ける：分からない料理は追加しない・表示を読めた商品は表示の値
+  const ING = (name, cook, g) => ({name, cook, g, gmin: Math.round(g * 0.8), gmax: Math.round(g * 1.25), conf: 0.8, role: '食材'});
+  for (const [k, res] of [['ok', {conf: 0.75, note: '', dishes: [{name: '親子丼', kind: 'dish', conf: 0.8, label: null, ingredients: [ING('ごはん', '生', 200), ING('鶏もも肉', '茹でる', 80), ING('卵', '茹でる', 60)]}, {name: '午後の紅茶 ミルクティー', kind: 'product', conf: 0.9, label: {kcal: 185, p: 5, f: 3.5, c: 33.5, salt: 0.2}, labelUnit: '1本（500ml）当たり', ingredients: []}, {name: 'みそ汁', kind: 'dish', conf: 0.3, label: null, ingredients: [Object.assign(ING('不明な食材', '生', 150), {unknown: true, hint: '茶色い汁'})]}]}], ['empty', {conf: 0, dishes: [], note: '食べ物が写っていません'}], ['error', null]]) {
     await ev(([res]) => { window.__keepCV = window.__keepCV || callVision; window.__keepPrem = window.__keepPrem || window.isPremium; window.isPremium = () => true; callVision = async () => { if (!res) throw new Error('通信できませんでした。'); return {result: JSON.parse(JSON.stringify(res))}; }; state.lifeLogs = []; actions['life-part']('meal'); }, [res]);
     await p.waitForTimeout(400); const inp = await p.$('#modal-root input[data-mphoto="auto"]'); let info = 'no input', ok = false;
-    if (inp) { await inp.setInputFiles(__dirname + '/food_test.jpg'); await p.waitForTimeout(1200);
-      const r = await ev(() => { const n = document.querySelector('#modal-root [data-pinfo] .notice'), c = document.querySelector('#modal-root input[name="meal-slot"]:checked'); return {t: n ? n.innerText : '', slot: c ? c.value : '', dis: [...document.querySelectorAll('#modal-root [data-aipick]')].map((x) => x.disabled), lunchPhoto: !!document.querySelector('#modal-root .meal-block[data-meal="lunch"] img')}; });
-      if (k === 'ok') { const add = await p.$('#modal-root [data-aiadd]'); if (add) { await add.click(); await p.waitForTimeout(200); await ev(() => document.getElementById('life-form').requestSubmit()); await p.waitForTimeout(400); }
+    if (inp) { await inp.setInputFiles(__dirname + '/food_test.jpg'); await p.waitForTimeout(2500);
+      const r = await ev(() => { const n = [...document.querySelectorAll('#modal-root [data-pinfo]')].map((x) => x.innerText + [...x.querySelectorAll('[data-madn]')].map((i) => '\n' + i.value).join('')).join('\n'), c = document.querySelector('#modal-root input[name="meal-slot"]:checked'); return {t: n.replace(/​/g, ''), slot: c ? c.value : '', lunchPhoto: !!document.querySelector('#modal-root .meal-block[data-meal="lunch"] img')}; });
+      if (k === 'ok') { const add = await p.$('#modal-root [data-maok]'); if (add) { await add.click(); await p.waitForTimeout(200); await ev(() => document.getElementById('life-form').requestSubmit()); await p.waitForTimeout(400); }
         const f = await ev(() => { const l = getLife(todayStr()); return l ? l.foods.map((x) => [x.meal, x.name, x.kcal, x.p, x.salt, x.basis]) : []; });
-        ok = /親子丼/.test(r.t) && /午後の紅茶/.test(r.t) && /確認できません/.test(r.t) && f.length === 2 && f.every((x) => x[0] === 'lunch' && x[2] > 0) && !f.some((x) => x[1] === 'みそ汁'); info = JSON.stringify([r, f]); }
-      else if (k === 'empty') { ok = /読み.?取れませんでした/.test(r.t.replace(/\u200b/g, '')) && /写っていません/.test(r.t); info = r.t; }
+        const tea = f.find((x) => /午後の紅茶/.test(x[1])), don = f.find((x) => x[1] === '親子丼');
+        ok = /親子丼/.test(r.t) && /午後の紅茶/.test(r.t) && /分からない食材/.test(r.t) && f.length === 2 && f.every((x) => x[0] === 'lunch' && x[2] > 0) && !f.some((x) => x[1] === 'みそ汁') && tea && tea[2] === 185 && tea[5] === '表示' && don && don[5] === '成分表' && don[2] === 312 + 173 + 80; info = JSON.stringify([r, f]); }
+      else if (k === 'empty') { ok = /見分けられませんでした/.test(r.t) && /写っていません/.test(r.t) && !!(await p.$('#modal-root [data-maretry]')); info = r.t; }
       else { ok = /通信できませんでした/.test(r.t) && !!(await p.$('#modal-root [data-premium]:not([disabled])')); info = r.t; } }
     await ev(() => { try { closeModal(true); } catch (e) {} callVision = window.__keepCV; window.isPremium = window.__keepPrem; });
     check(`食べ物の写真の読み取り（${k}）`, ok, info); }
@@ -1217,16 +1220,17 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     if (miss.length) console.log('  ' + miss); return !miss.length; }));
   // 2026-11-19 料理名の取り違えを減らす：①ほかの候補を押して直せる ②直した名前を覚えて次から優先する ③料理名のヒントを添えられる
   { const run = async (hint) => { await ev(([hint]) => { window.__keepCV2 = window.__keepCV2 || callVision; window.__keepP2 = window.__keepP2 || window.isPremium; window.isPremium = () => true; window.__sent = null;
-      callVision = async (mode, img, pl) => { window.__sent = pl; return {result: {items: [{kind: 'dish', name: '鶏の唐揚げとコロッケ', basis: '推定', kcal: 480, p: 15, f: 30, c: 38, salt: 1.8, veg: 0, alts: [{name: 'とんかつ', kcal: 450, p: 22, f: 28, c: 20, salt: 1.2, veg: 0}, {name: 'メンチカツ', kcal: 420, p: 14, f: 30, c: 22, salt: 1.3, veg: 0}]}]}}; };
+      const I = (name, cook, g) => ({name, cook, g, gmin: g - 20, gmax: g + 20, conf: 0.7, role: '食材'});
+      callVision = async (mode, img, pl) => { window.__sent = pl; return {result: {conf: 0.6, note: '', dishes: [{name: '鶏の唐揚げとコロッケ', kind: 'dish', conf: 0.5, label: null, ingredients: [I('鶏もも肉', '揚げる', 100), I('じゃがいも', '揚げる', 60)], alts: [{name: 'とんかつ', ingredients: [I('豚ロース', '揚げる', 100)]}, {name: 'メンチカツ', ingredients: [I('牛ひき肉', '揚げる', 80)]}]}]}}; };
       state.lifeLogs = []; actions['life-part']('meal'); setTimeout(() => { const h = document.getElementById('meal-hint'); if (h) h.value = hint; }, 200); }, [hint]); await p.waitForTimeout(450);
-      const inp = await p.$('#modal-root input[data-mphoto="auto"]'); if (inp) { await inp.setInputFiles(__dirname + '/food_test.jpg'); await p.waitForTimeout(1200); } };
+      const inp = await p.$('#modal-root input[data-mphoto="auto"]'); if (inp) { await inp.setInputFiles(__dirname + '/food_test.jpg'); await p.waitForTimeout(2500); } };
     await ev(() => { state.settings.foodFixes = []; });
-    await run('とんかつ定食'); const r1 = await ev(() => ({sent: window.__sent, alt: [...document.querySelectorAll('#modal-root [data-aialt]')].map((b) => b.textContent)}));
-    await ev(() => { const b = [...document.querySelectorAll('#modal-root [data-aialt]')].find((x) => x.textContent === 'とんかつ'); if (b) b.click(); }); await p.waitForTimeout(200);
-    const r2 = await ev(() => ({t: (document.querySelector('#modal-root [data-pinfo] .notice') || {}).innerText || '', fixes: state.settings.foodFixes})); await ev(() => { try { closeModal(true); } catch (e) {} }); await p.waitForTimeout(300);
-    await run(''); const r3 = await ev(() => ({t: (document.querySelector('#modal-root [data-pinfo] .notice') || {}).innerText || '', sent: window.__sent})); await ev(() => { try { closeModal(true); } catch (e) {} callVision = window.__keepCV2; window.isPremium = window.__keepP2; state.settings.foodFixes = []; });
-    const ok = r1.sent && r1.sent.hint === 'とんかつ定食' && r1.alt.join() === 'とんかつ,メンチカツ' && /とんかつ/.test(r2.t) && /450kcal/.test(r2.t) && (r2.fixes || []).some((f) => f.from === '鶏の唐揚げとコロッケ' && f.to === 'とんかつ') && /とんかつ/.test(r3.t) && /前に直した名前/.test(r3.t) && (r3.sent.fixes || []).length === 1;
-    check('料理名：候補で直せる・直した名前を覚える・ヒントを添えられる', ok, JSON.stringify([r1, r2.fixes, r3.t.slice(0, 80)])); }
+    await run('とんかつ定食'); const r1 = await ev(() => ({sent: window.__sent, alt: [...document.querySelectorAll('#modal-root [data-maalt]')].map((b) => b.textContent)}));
+    await ev(() => { const b = [...document.querySelectorAll('#modal-root [data-maalt]')].find((x) => x.textContent === 'とんかつ'); if (b) b.click(); }); await p.waitForTimeout(200);
+    const r2 = await ev(() => ({t: (document.querySelector('#modal-root .ma') || {}).innerText || '', v: (document.querySelector('#modal-root [data-madn]') || {}).value, fixes: state.settings.foodFixes, k: Math.round(fdbMatch('豚ロース', '揚げる').fid === '11276' ? FDB.by.get('11276').v.kcal : -1)})); await ev(() => { try { closeModal(true); } catch (e) {} }); await p.waitForTimeout(300);
+    await run(''); const r3 = await ev(() => ({t: (document.querySelector('#modal-root .ma') || {}).innerText || '', v: (document.querySelector('#modal-root [data-madn]') || {}).value, sent: window.__sent})); await ev(() => { try { closeModal(true); } catch (e) {} callVision = window.__keepCV2; window.isPremium = window.__keepP2; state.settings.foodFixes = []; });
+    const C = [r1.sent && r1.sent.hint === 'とんかつ定食', r1.alt.join() === 'とんかつ,メンチカツ', r2.v === 'とんかつ', r2.k > 0 && r2.t.includes(`${r2.k}kcal`), /食品番号 11276/.test(r2.t), (r2.fixes || []).some((f) => f.from === '鶏の唐揚げとコロッケ' && f.to === 'とんかつ'), r3.v === 'とんかつ', /前に直した名前/.test(r3.t.replace(/\u200b/g, '')), (r3.sent.fixes || []).length === 1], ok = C.every(Boolean); if (!ok) console.log('  料理名の確かめ ' + C.map((c, i) => c ? '' : i).join(''));
+    check('料理名：候補で直せる・直した名前を覚える・ヒントを添えられる', ok, JSON.stringify([r1, r2.v, r2.k, r2.fixes, r3.v, r3.t.slice(0, 80)])); }
   // 2026-11-19 おすすめケアの食事：今日の記録がなくても、この2週間の食事の記録（習慣）から出す。記録がまったくないときは決めつけない
   check('食事のおすすめは、今日の記録がなければ2週間の習慣から', await ev(() => { const keep = JSON.stringify(state), d = todayStr(); const bad = [];
     state.settings.concernKeys = ['acne']; state.skinLogs = [{id: 'hb0', date: d, condition: 3, acneCount: 2, usedProducts: [], memo: '', photo: ''}];
@@ -1701,6 +1705,69 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       state = normalize(JSON.parse(keep)); render();
     } catch (e) { bad.push('エラー ' + e.message); }
     if (bad.length) console.log('  ' + bad.slice(0, 8).join(' / ')); return !bad.length; }));
+  // 2026-11-26 食事写真の解析：AIは食材と重さだけ。栄養は日本食品標準成分表（八訂）増補2023年で計算する（AIの数字を使わない・生と調理後を混ぜない・分からない物は決めつけない）
+  check('食品成分表の計算：ごはん200g・調理法で値が変わる・値がないときは類似と書く・分からない物は計算に入れない', await ev(async () => { const bad = [];
+    try { await fdbLoad();
+      const m1 = fdbMatch('ごはん', '生'), n1 = maIngNut(Object.assign({g:200}, m1)); if (m1.fid !== '01088' || m1.match !== 'exact' || Math.round(n1.kcal) !== 312 || Math.round(n1.p * 10) !== 50) bad.push('ごはん200gが312kcal・たんぱく質5.0gにならない ' + JSON.stringify([m1, n1 && n1.kcal]));
+      const yaki = fdbMatch('鶏もも肉', '焼く'), raw = fdbMatch('鶏もも肉', '生'), age = fdbMatch('鶏もも肉', '揚げる'); if (yaki.fid !== '11222' || raw.fid !== '11221' || age.fid !== '11289') bad.push('鶏ももの生・焼き・から揚げが別の値にならない ' + [raw.fid, yaki.fid, age.fid]);
+      const mune = fdbMatch('鶏むね肉', '茹でる'); if (mune.match !== 'similar' || !/生の値/.test(mune.note || '')) bad.push('成分表にない調理法を「類似食品で推定」と書かない');
+      if (fdbMatch('不明な食材', '生').match !== 'none' || fdbMatch('ちくわぶではないもの', '生').match !== 'none') bad.push('分からない物を決めつけている');
+      if (fdbMatch('ちくわ', '生').fid !== '10381') bad.push('ちくわが焼き竹輪にならない（ちくわぶ等と取り違え）');
+      if (fdbMatch('和風ドレッシング', '生').fid !== '17116') bad.push('和風ドレッシングがノンオイルになっている');
+      if (maIngNut({fid:'', match:'none', g:50}) !== null) bad.push('不明な食材が計算に入っている');
+      const lab = maDishNut({label:{kcal:200, p:3, f:10, c:25, salt:0.5}, ing:[{fid:'01088', match:'exact', g:100}]}); if (lab.t.kcal !== 200 || !lab.label) bad.push('パッケージの表示を読めた商品は、表示の値を使わない');
+      const v = fdbSearch('ほうれん'); if (!v.length || v[0].label !== 'ほうれん草') bad.push('食品名で探せない');
+    } catch (e) { bad.push('エラー ' + e.message); }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  { // 写真 → 解析（AIの答えはテスト用）→ 直す → 計算し直す → 追加 → 保存 → 内訳を直す
+    const keepRaw = await p.evaluate(() => localStorage.getItem(STORE_KEY));
+    await ev(() => { window.__ip = window.isPremium; window.__cv = window.callVision; window.isPremium = () => true; window.__mcalls = [];
+      window.callVision = async (mode) => { __mcalls.push(mode); if (mode !== 'meal2') throw new Error('meal2以外を呼んだ：' + mode); return {ok:true, result:{conf:0.7, note:'', dishes:[{name:'親子丼', kind:'dish', conf:0.8, label:null, ingredients:[{name:'ごはん', cook:'生', g:200, gmin:170, gmax:240, conf:0.9, role:'食材'}, {name:'鶏もも肉', cook:'茹でる', g:80, gmin:60, gmax:100, conf:0.8, role:'食材'}, {name:'不明な食材', hint:'緑の葉', cook:'生', g:5, gmin:3, gmax:8, conf:0.3, role:'食材', unknown:true}]}]}}; };
+      const bt = document.createElement('button'); bt.dataset.action = 'life-part'; bt.dataset.id = 'meal'; document.body.appendChild(bt); bt.click(); bt.remove(); return true; });
+    await p.waitForTimeout(600);
+    await p.setInputFiles('input[data-mphoto="auto"]:not([capture])', path.join(__dirname, 'food_test.jpg'));
+    await p.waitForTimeout(3500);
+    const r = await ev(async () => { const bad = [], w = (ms) => new Promise((x) => setTimeout(x, ms)), $q = (q) => document.querySelector(q), tot = () => Number(($q('.ma-tot b') || {}).textContent);
+      try {
+        if (__mcalls.join() !== 'meal2') bad.push('解析で meal2 を使っていない：' + __mcalls.join());
+        const ma = $q('.ma'); if (!ma) { bad.push('解析結果が出ない'); return bad; }
+        const mt = ma.innerText.replace(/\u200b/g, ''); if (!/信頼度/.test(mt) || !/推定 170〜240g/.test(mt) || !/食品番号 01088/.test(mt)) bad.push('信頼度・推定範囲・計算の根拠が出ない');
+        if (!/分からない食材が1つ/.test(mt)) bad.push('分からない食材を知らせない');
+        const k0 = tot(); if (k0 !== 312 + 173) bad.push('合計が成分表の計算と違う ' + k0);
+        const gi = [...ma.querySelectorAll('[data-mag]')][0]; gi.value = '150'; gi.dispatchEvent(new Event('input', {bubbles:true})); gi.dispatchEvent(new Event('change', {bubbles:true})); await w(100);
+        if (tot() !== 234 + 173) bad.push('重さを直しても計算し直さない ' + tot());
+        const ck = [...document.querySelectorAll('.ma [data-macook]')][1]; ck.value = '焼く'; ck.dispatchEvent(new Event('change', {bubbles:true})); await w(100);
+        if (!/食品番号 11222/.test($q('.ma').innerText.replace(/\u200b/g, '')) || tot() !== 234 + 176) bad.push('調理法を直しても、焼きの値にならない ' + tot());
+        const pk = [...document.querySelectorAll('.ma [data-mapick]')][2]; pk.click(); await w(50); const qi = document.querySelector(`.ma [data-maq="${CSS.escape(pk.dataset.mapick)}"]`); qi.value = 'ほうれん'; qi.dispatchEvent(new Event('input', {bubbles:true})); await w(50);
+        const sg = document.querySelector('.ma [data-maset]'); if (!sg) bad.push('食品の候補が出ない'); else { sg.click(); await w(100); if (/分からない食材/.test($q('.ma').innerText.replace(/\u200b/g, '')) || tot() !== 234 + 176 + 1) bad.push('分からない食材を選んでも計算に入らない ' + tot()); }
+        const ms = document.querySelector('.ma [data-mameas]'); ms.click(); await w(50); if (!/量った重さ/.test($q('.ma').innerText.replace(/\u200b/g, ''))) bad.push('実測に切り替えられない');
+        const dn = document.querySelector('.ma [data-madn]'); dn.value = '親子丼（大）'; dn.dispatchEvent(new Event('input', {bubbles:true}));
+        document.querySelector('.ma [data-maok]').click(); await w(200);
+        const row = [...document.querySelectorAll('#life-form .food-row')].find((x) => /親子丼（大）/.test(x.textContent.replace(/\u200b/g, ''))); if (!row) bad.push('追加されない');
+        document.querySelector('#life-form button[type=submit], .modal button[type=submit]').click(); await w(500);
+        const lf = state.lifeLogs.find((l) => (l.foods || []).some((f) => f.name === '親子丼（大）')), f = lf && lf.foods.find((x) => x.name === '親子丼（大）');
+        if (!f) { bad.push('保存されない'); return bad; }
+        if (f.basis !== '成分表' || f.kcal !== 411 || !f.ing || f.ing.length !== 3 || f.ing[0].fid !== '01088' || f.ing[0].g !== 150 || !f.ing[0].meas || f.ing[0].ai.g !== 200 || f.ing[1].cook !== '焼く' || f.ing[2].match !== 'user' || !f.edited || !(f.nut && f.nut.fib > 0) || !(f.veg > 0)) bad.push('保存した内訳・根拠が足りない ' + JSON.stringify(f).slice(0, 300));
+        if ((foodFixes().find((x) => x.from === '親子丼') || {}).to !== '親子丼（大）') bad.push('直した料理名を覚えない');
+        window.__mlid = lf.id;
+      } catch (e) { bad.push('エラー ' + e.message + ' ' + String(e.stack).split('\n')[1]); }
+      return bad; });
+    await p.reload(); await p.waitForTimeout(1500);
+    const r2 = await ev(async () => { const bad = [], w = (ms) => new Promise((x) => setTimeout(x, ms));
+      try { window.isPremium = () => true; const lf = state.lifeLogs.find((l) => (l.foods || []).some((f) => f.name === '親子丼（大）')); const f = lf && lf.foods.find((x) => x.name === '親子丼（大）');
+        if (!f || !f.ing || f.ing.length !== 3 || f.basis !== '成分表') { bad.push('開き直すと内訳が消える'); return bad; }
+        openLifeForm(lf.id, 'meal'); await w(500);
+        const ib = document.querySelector('#life-form [data-fing]'); if (!ib) { bad.push('記録した料理に「内訳」がない'); return bad; } ib.click(); await w(600);
+        const gi = document.querySelector('#life-form .fr-ingbox [data-mag]'); if (!gi) { bad.push('内訳を開けない'); return bad; } gi.value = '300'; gi.dispatchEvent(new Event('input', {bubbles:true})); gi.dispatchEvent(new Event('change', {bubbles:true})); await w(150);
+        const k = (([...document.querySelectorAll('#life-form .food-row')].find((x) => /親子丼（大）/.test(x.textContent.replace(/\u200b/g, ''))) || {querySelector: () => ({textContent: '行がない'})}).querySelector('.fr-k')).textContent; if (k !== `${468 + 176 + 1}kcal`) bad.push('内訳を直しても料理の数字が変わらない ' + k);
+        document.querySelector('.modal button[type=submit]').click(); await w(500);
+        const f2 = state.lifeLogs.find((l) => l.id === lf.id).foods.find((x) => x.name === '親子丼（大）'); if (!f2 || f2.kcal !== 645 || f2.ing[0].g !== 300) bad.push('直した内訳が保存されない ' + (f2 && f2.kcal));
+      } catch (e) { bad.push('エラー ' + e.message + ' ' + String(e.stack).split('\n')[1]); }
+      return bad; });
+    await ev(() => { window.isPremium = window.__ip; window.callVision = window.__cv; try { closeModal(true); } catch (e) {} return true; });
+    const all = [].concat(r || ['確認できない'], r2 || ['確認できない']); if (all.length) console.log('  ' + all.join(' / '));
+    check('食事写真の解析：結果を直す→計算し直す→追加→保存→開き直して内訳を直せる', !all.length);
+    await p.evaluate((k) => { if (k) localStorage.setItem(STORE_KEY, k); else localStorage.removeItem(STORE_KEY); }, keepRaw); await p.reload(); await p.waitForTimeout(1500); }
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

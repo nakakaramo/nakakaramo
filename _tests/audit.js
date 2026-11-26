@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const { PERSONAS, setBD } = require('./people.js');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html');
-const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
+const srv = http.createServer((q, r) => { if (/^\/fooddb\.json/.test(q.url)) { r.writeHead(200, { 'Content-Type': 'application/json' }); r.end(fs.readFileSync(require('path').join(__dirname, '..', 'fooddb.json'))); return; } r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
 const ROUTES = ['#/home', '#/home?care', '#/routine', '#/routine?pm', '#/log', '#/charts', '#/my', '#/my?rx', '#/my?oral', '#/combo', '#/ingredients', '#/mycare', '#/report', '#/account', '#/settings', '#/plan', '#/visit', '#/trouble', '#/care/diag', '#/care/guide'];
 (async () => {

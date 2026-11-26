@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const { setBD } = require('./people.js');
 const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html'), SHOT = process.argv[3] || '';
-const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
+const srv = http.createServer((q, r) => { if (/^\/fooddb\.json/.test(q.url)) { r.writeHead(200, { 'Content-Type': 'application/json' }); r.end(fs.readFileSync(require('path').join(__dirname, '..', 'fooddb.json'))); return; } r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
 const P = (id, name, cat, ings, x) => Object.assign({ id, name, brand: x && x.brand || 'テスト', category: cat, ingredients: ings, status: '使用中', timing: x && x.timing || '朝・夜', purposes: [], purchases: [], demo: false }, x || {});
 const PERSONAS = [

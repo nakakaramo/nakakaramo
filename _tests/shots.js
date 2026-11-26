@@ -1,7 +1,7 @@
 // 画面写真をまとめて撮る（目で見て点検するため）：全部の画面と、そこで押せるボタンで開く窓
 const { chromium } = require('playwright'); const http = require('http'), fs = require('fs'), path = require('path');
 const FILE = path.resolve(process.argv[2] || '/home/claude/skinwise.html'), OUT = process.argv[3], DARK = process.env.DARK === '1';
-const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
+const srv = http.createServer((q, r) => { if (/^\/fooddb\.json/.test(q.url)) { r.writeHead(200, { 'Content-Type': 'application/json' }); r.end(fs.readFileSync(require('path').join(__dirname, '..', 'fooddb.json'))); return; } r.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); r.end(fs.readFileSync(FILE)); }).listen(0);
 const URL0 = `http://localhost:${srv.address().port}/`;
 const ROUTES = ['#/home', '#/home?care', '#/log', '#/log?life', '#/charts', '#/my', '#/my?rx', '#/my?oral', '#/my/c1', '#/my/r1', '#/my/o1', '#/combo', '#/combo/search', '#/ingredients', '#/routine', '#/routine?pm', '#/mycare', '#/report', '#/account', '#/account/s/gender', '#/account/s/age', '#/account/s/height', '#/account/s/weight', '#/account/s/skintype', '#/account/s/concerns', '#/account/s/preg', '#/account/s/notify', '#/account/s/display', '#/account/s/install', '#/account/s/data', '#/account/s/about', '#/account/s/research', '#/account/s/privacy', '#/account/me', '#/settings', '#/plan', '#/scan', '#/care/diag', '#/care/guide', '#/terms', '#/privacy', '#/law', '#/visit', '#/trouble'];
 const SKIP = /削除|消す|ログアウト|リセット|初期化|解約|申し込|支払|購入|退会|共有|ダウンロード|書き出|読み込む|復元|送信|ログイン|新規登録|印刷|通知を(オン|許可)/;
