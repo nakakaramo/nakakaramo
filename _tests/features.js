@@ -21,7 +21,9 @@ const PERSONAS = [
 const ROUTES = ['#/home', '#/home?care', '#/log', '#/charts', '#/my', '#/combo', '#/combo/ok', '#/combo/ng', '#/combo/search', '#/ingredients', '#/routine', '#/mycare', '#/report', '#/account', '#/account/me', '#/settings', '#/plan', '#/scan', '#/care/diag', '#/care/guide', '#/terms', '#/privacy', '#/law', '#/visit', '#/trouble'];
 (async () => {
   const b = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }), out = [];
-  for (const pz of PERSONAS.filter((x) => (!process.env.ONLY || x.k.startsWith(process.env.ONLY)) && (!process.env.SET || process.env.SET.split(',').some((c) => x.k.startsWith(c))))) {
+  // 2026-11-27 PEOPLE=100 で、その日（SEED）ごとにちがう架空の人を100人作って試す（PAR=同時に何人）
+  const LIST = (process.env.PEOPLE ? randomPeople(Number(process.env.PEOPLE) || 100, process.env.SEED || new Date().toISOString().slice(0, 10)) : PERSONAS).filter((x) => (!process.env.ONLY || x.k.startsWith(process.env.ONLY)) && (!process.env.SET || process.env.SET.split(',').some((c) => x.k.startsWith(c))));
+  const runOne = async (pz) => {
     const t0 = Date.now();
     const ctx = await b.newContext({ viewport: { width: pz.vw, height: 844 }, isMobile: true, hasTouch: true, colorScheme: pz.dark ? 'dark' : 'light', locale: 'ja-JP', timezoneId: 'Asia/Tokyo', acceptDownloads: true, permissions: ['camera'] });
     const p = await ctx.newPage(), bad = [], note = (m) => { if (!bad.includes(m)) bad.push(m); };
@@ -152,8 +154,30 @@ const ROUTES = ['#/home', '#/home?care', '#/log', '#/charts', '#/my', '#/combo',
     if (before !== after) note(`開き直すと記録が変わる ${before}→${after}`);
     if (!pz.skip) { await W(1200); const ph = await ev(() => { const l = state.skinLogs.find((x) => x.date === todayStr()); return l ? String(safeImg(l.photo) || '').length : -1; }); if (!(ph > 100)) note('開き直すと、肌の記録の写真が消える ' + ph); } /* 2026-11-14 写真を端末の大きい保存場所へ移したときの確認 */
     out.push([pz.k, bad, Math.round((Date.now() - t0) / 1000)]); await ctx.close();
-  }
+  };
+  const PAR = Math.max(1, Number(process.env.PAR) || 1); let next = 0;
+  await Promise.all(Array.from({ length: Math.min(PAR, LIST.length) }, async () => { while (next < LIST.length) { const pz = LIST[next++]; try { await runOne(pz); } catch (e) { out.push([pz.k, ['テストが止まった ' + String(e.message).split('\n')[0].slice(0, 150)], 0]); } } }));
+  out.sort((a, b) => a[0].localeCompare(b[0]));
   await b.close(); srv.close();
   let n = 0; for (const [k, L, s] of out) { console.log((L.length ? '✗ ' : '✓ ') + k + `（${s}秒）`); L.forEach((m) => console.log('   ・' + m)); n += L.length; }
   console.log(n ? `全部の機能テストで見つかった問題 ${n}件` : '全部の機能テスト：すべての人で問題なし'); process.exit(n ? 1 : 0);
 })();
+
+// ---------- 2026-11-27 毎日ちがう架空の人を作る（同じ日なら同じ人たち。不具合をあとで同じ条件でやり直せるように）----------
+function randomPeople(n, seed) {
+  let h = 1779033703 ^ String(seed).length; for (const c of String(seed)) { h = Math.imul(h ^ c.charCodeAt(0), 3432918353); h = (h << 13) | (h >>> 19); }
+  const rnd = () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const pick = (a) => a[Math.floor(rnd() * a.length)], some = (a, k) => a.filter(() => rnd() < k);
+  const AGES = ['17歳以下', '18〜19歳', '20代', '20代', '30代', '30代', '40代', '50代', '60代以上'], CONC = ['acne', 'aging', 'dry', 'dull', 'oily', 'pore', 'redness', 'sensitive', 'spot'];
+  const Q = ['化粧水', 'セラミド クリーム', 'ビタミンC 美容液', 'レチノール', '日焼け止め', 'オールインワン', '洗顔', 'クレンジング', 'ニキビ 薬', 'アヌア', 'ハトムギ', 'ナイアシンアミド', '敏感肌 化粧水', 'シカ'];
+  const RXS = ['ベピオゲル2.5%', 'ディフェリンゲル0.1%', 'エピデュオゲル', 'ダラシンTゲル1%', 'ヒルドイドソフト軟膏0.3%', 'ロコイド軟膏0.1%', 'プロトピック軟膏0.1%'];
+  const ORS = ['ビタミンB2・B6の市販薬', 'コラーゲンのサプリメント', 'トランサミン（トラネキサム酸）', 'ハイチオール（L-システイン）', 'ビタミンCのサプリメント', 'アレグラ（フェキソフェナジン）'];
+  return Array.from({ length: n }, (_, i) => {
+    const g = pick(['女性', '女性', '男性', '回答しない']), age = pick(AGES), prem = rnd() < 0.5, skip = rnd() < 0.05, offline = rnd() < 0.05;
+    const a = { gender: g, ageBand: age, tight: pick(['yes', 'some', 'no']), oilDay: pick(['much', 'tzone', 'little']), acne: pick(['often', 'some', 'rare']), red: pick(['often', 'some', 'rare']), sens: pick(['yes', 'some', 'no']),
+      preg: g === '女性' && /20|30|40/.test(age) && rnd() < 0.15 ? pick(['preg', 'nursing']) : g === '男性' ? undefined : 'no', concerns: (() => { const c = some(CONC, 0.25); return c.length ? c.slice(0, 4) : [pick(CONC)]; })() };
+    const k = `R${String(i + 1).padStart(3, '0')}_${g}${age}_${prem ? '有料' : '無料'}${skip ? '_診断しない' : ''}${offline ? '_電波なし' : ''}_${a.concerns.join('・')}`;
+    return { k, vw: pick([320, 360, 375, 390, 390, 414, 430]), prem, dark: rnd() < 0.3, offline, skip, heavy: rnd() < 0.08, a, q: pick(Q), rx: rnd() < 0.3 ? pick(RXS) : undefined, oral: rnd() < 0.3 ? pick(ORS) : undefined,
+      log: { condition: 1 + Math.floor(rnd() * 5), acneCount: Math.floor(rnd() * 8), redness: Math.floor(rnd() * 6), dryness: Math.floor(rnd() * 6) } };
+  });
+}

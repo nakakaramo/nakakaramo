@@ -1,6 +1,6 @@
 #!/bin/bash
 # ナカカラモ：全部のテストを、公開している index.html に対して実行する（クラウドの見回りでも、手元でも同じに動く）
-# 使い方：bash _tests/run.sh [quick|full]   quick＝公開のたびと同じ（機能テストは4人）、full＝機能テストも8人全員
+# 使い方：bash _tests/run.sh [quick|full|people]   quick＝公開のたびと同じ（機能テストは4人）、full＝機能テストも8人全員
 # 1つでも失敗したら、ここで止まって 1 を返す（公開しない）
 set -e
 T="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$T/.." && pwd)"
@@ -12,6 +12,8 @@ F="${NK_FILE:-}"
 if [ -z "$F" ]; then F="$(mktemp -d)/app.html"; sed "s/const APP_BUILD = '[0-9]*';/const APP_BUILD = 'dev';/" "$ROOT/index.html" > "$F"; fi
 python3 -c "import re,sys;s=open(sys.argv[1],encoding='utf-8').read();m=re.findall(r'<script>([\s\S]*?)</script>',s);open('/tmp/nk_app_check.js','w').write(max(m,key=len))" "$F" && node --check /tmp/nk_app_check.js
 for t in regress crawl persona safety audit gestures features; do node --check "$T/$t.js"; done
+# 2026-11-27 people：その日ごとにちがう架空の人を100人作って、全部の機能を使ってみる（同時に6人・約20分。SEED=日付 で同じ人たちをやり直せる）
+if [ "$MODE" = people ]; then echo "== 架空の人 ${N:-100}人（$(TZ=Asia/Tokyo date +%F)）"; PEOPLE=${N:-100} PAR=${PAR:-6} SEED=${SEED:-$(TZ=Asia/Tokyo date +%F)} node "$T/features.js" "$F"; echo "ALL_TESTS_PASSED"; exit 0; fi
 echo "== 再発防止テスト";     node "$T/regress.js" "$F"
 echo "== 全部のボタン";       node "$T/crawl.js" "$F"
 echo "== いろいろな人";       node "$T/persona.js" "$F"
