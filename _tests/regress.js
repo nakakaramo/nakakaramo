@@ -1816,6 +1816,16 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         const go = ov.querySelector('.au-go'), c = cr(getComputedStyle(go).color, getComputedStyle(go).backgroundColor); if (c < 4.5) bad.push(th + 'でログインボタンの字が読みにくい ' + c.toFixed(1));
         ov.remove(); try { unlockScroll(); } catch (e) {} } } catch (e) { bad.push('エラー ' + e.message); } finally { document.documentElement.dataset.theme = keepT || ''; if (!keepT) delete document.documentElement.dataset.theme; }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-26 見やすさの点検：小さい灰色の字・ダークの緑のボタン（白い字）・ダークの赤や緑の字が、背景との色の差が足りず読みにくかった（WCAGの基準：ふつうの字4.5・大きい字3）
+  check('字と背景の色の差が足りている（ライト・ダーク）', await ev(async () => { const bad = [], keepT = document.documentElement.dataset.theme, keepH = location.hash, w = (ms) => new Promise((r) => setTimeout(r, ms));
+    const scan = () => { const parse = (c) => { const m = c.match(/[\d.]+/g); return m ? m.map(Number) : null; }, lum = (a) => { const x = a.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * x[0] + 0.7152 * x[1] + 0.0722 * x[2]; };
+      const bgOf = (el) => { for (let e = el; e; e = e.parentElement) { const c = parse(getComputedStyle(e).backgroundColor); if (c && (c.length < 4 || c[3] > 0.85)) return c; } return parse(getComputedStyle(document.body).backgroundColor); };
+      const out = []; document.querySelectorAll('#main button, #main a, #main span, #main b, #main small, #main p, #main label').forEach((el) => { if (!el.offsetParent || el.closest('.sw-on,.tab.active,[aria-hidden="true"]')) return; const t = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(''); if (!t) return;
+        const cs = getComputedStyle(el), fg = parse(cs.color); if (!fg || (fg[3] != null && fg[3] < 0.5) || parseFloat(cs.opacity) < 0.6) return; const bg = bgOf(el), a = lum(fg), b = lum(bg), cr = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        const big = parseFloat(cs.fontSize) >= 18.6 || (parseFloat(cs.fontSize) >= 14 && Number(cs.fontWeight) >= 700); if (cr < (big ? 3 : 4.5)) out.push(`「${t.slice(0, 10)}」${cr.toFixed(1)}`); }); return [...new Set(out)]; };
+    try { for (const th of ['light', 'dark']) { document.documentElement.dataset.theme = th; for (const h of ['#/home', '#/my', '#/mycare', '#/report', '#/account', '#/account/s/data', '#/scan', '#/routine']) { location.hash = h; render(); await w(350); scan().slice(0, 3).forEach((x) => bad.push(`${th} ${h} ${x}`)); } } }
+    catch (e) { bad.push('エラー ' + e.message); } finally { if (keepT) document.documentElement.dataset.theme = keepT; else delete document.documentElement.dataset.theme; location.hash = keepH; render(); }
+    if (bad.length) console.log('  ' + bad.slice(0, 12).join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
