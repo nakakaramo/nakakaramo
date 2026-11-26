@@ -1859,9 +1859,9 @@ body.gated #bottom-nav{visibility:hidden}
 .au-head h2{margin:0;text-align:center;font-size:17px;font-weight:700;color:var(--ink)}
 .au-back{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .au-body{padding-top:20px}
-.au-lbl{display:block;font-size:15px;font-weight:700;color:var(--ink);margin:0 0 8px}
+.au-lbl{display:block;font-size:14px;font-weight:700;color:var(--ink2);margin:0 0 6px}
 .au-pw+.au-lbl,.au-hint+.au-lbl{margin-top:18px}
-.au-in{width:100%;height:48px;border-radius:10px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:17px;padding:0 14px;outline:none}
+.au-in{width:100%;height:50px;border-radius:12px;border:1.5px solid #CFC8BC;background:var(--surface);color:var(--ink);font-size:17px;padding:0 14px;outline:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}.au-in::placeholder{color:#A9A296;font-size:15px}:root[data-theme="dark"] .au-in{border-color:#4A524C}:root[data-theme="dark"] .au-go{color:#0E1A12}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .au-in{border-color:#4A524C}:root:not([data-theme="light"]) .au-go{color:#0E1A12}}
 .au-in:focus{border-color:var(--green-d)}
 .au-pw{position:relative}.au-pw .au-in{padding-right:54px}
 .au-eye{position:absolute;right:2px;top:50%;margin-top:-22px;transform:none!important;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}.au-eye.on{color:var(--green-d)}
@@ -1869,7 +1869,7 @@ body.gated #bottom-nav{visibility:hidden}
 .au-go{display:flex;align-items:center;justify-content:center;width:100%;height:50px;margin-top:22px;border:0;border-radius:999px;background:var(--green-d);color:#fff;font:inherit;font-size:15.5px;font-weight:700;cursor:pointer}
 .au-go:disabled{opacity:.6}
 .hap-wrap:has(>.au-go),.hap-wrap:has(>.au-sso){display:block;width:100%}
-.au-or{margin:30px 0 16px;text-align:center;font-size:13.5px;color:var(--ink2)}
+.au-or{display:flex;align-items:center;gap:12px;margin:28px 0 14px;text-align:center;font-size:13px;color:var(--ink2)}.au-or::before,.au-or::after{content:'';flex:1;height:1px;background:var(--line2)}
 .au-sso{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:50px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .au-sso svg{position:absolute;left:20px}
 .au-in:-webkit-autofill,.au-in:-webkit-autofill:hover,.au-in:-webkit-autofill:focus,.input:-webkit-autofill,.input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px var(--surface) inset!important;box-shadow:0 0 0 1000px var(--surface) inset!important;-webkit-text-fill-color:var(--ink)!important;caret-color:var(--ink);transition:background-color 99999s ease 0s} /* 自動入力した欄が黄色くならないように */
@@ -1877,13 +1877,13 @@ body.gated #bottom-nav{visibility:hidden}
 .au-fine{margin:10px 4px 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
 .au-who{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 22px;padding:12px 14px;border-radius:12px;background:var(--surface2);font-size:14.5px;color:var(--ink);word-break:break-all}
 .au-chg{flex:none;background:none;border:0;font:inherit;font-size:13.5px;color:var(--green-d);text-decoration:underline;cursor:pointer;padding:4px}
-.au-chk{margin-top:16px;font-size:13.5px}
+.au-chk{margin-top:16px;font-size:13.5px}.agree-line.au-chk{padding:12px 14px;border-radius:12px;background:var(--surface2,#F3EFE8);border:1px solid var(--line);align-items:center;cursor:pointer}.agree-line.au-chk input{width:22px;height:22px;flex:none;margin:0}.agree-line.au-chk>span{line-height:1.55;color:var(--ink)}
 .au-link{display:block;margin:18px auto 0;background:none;border:0;font:inherit;font-size:14px;color:var(--green-d);text-decoration:underline;cursor:pointer;padding:6px}
 .au-err{margin:14px 0 0;font-size:13.5px;color:var(--danger,#C0392B);line-height:1.6}
 .au-info{margin:0 0 18px;padding:12px 14px;border-radius:12px;background:var(--green-l,#E6F0EA);color:var(--green-d);font-size:13.5px;line-height:1.7}
 .au-foot{margin-top:auto;padding-top:40px;text-align:center}
-.au-foot p{margin:0 0 6px;font-size:14px;color:var(--ink2)}
-.au-foot button{background:none;border:0;font:inherit;font-size:16px;font-weight:700;color:var(--ink);padding:8px 16px;cursor:pointer}
+.au-foot p{margin:0 0 10px;font-size:13.5px;color:var(--ink2)}
+.au-foot button{display:flex;align-items:center;justify-content:center;width:100%;height:48px;background:none;border:1.5px solid var(--green-d);border-radius:999px;font:inherit;font-size:15px;font-weight:700;color:var(--green-d);padding:0 16px;cursor:pointer}
 .auth-entry .btn{width:100%}
 .auth-entry{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .plan-table td:not(:first-child),.plan-table th:not(:first-child){white-space:nowrap;text-align:center}
@@ -3147,7 +3147,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261126194202'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261126201125'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -6271,16 +6271,16 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
         <button type="button" class="au-sso" data-au="google">${GICON}<span>Googleで続行</span></button>
         ${up ? '<p class="au-fine">Googleで続行すると、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意したことになります。</p>' : ''}` : '';
       if (!up) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
-        <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="username" maxlength="254" value="${esc(st.email)}">
+        <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="username" maxlength="254" placeholder="例：name@example.com" value="${esc(st.email)}">
         <label class="au-lbl" for="au-pw" style="margin-top:14px">パスワード</label>
-        <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72">${eye('au-pw')}</div>
+        <div class="au-pw"><input class="au-in" id="au-pw" type="password" autocomplete="current-password" maxlength="72" placeholder="パスワードを入力">${eye('au-pw')}</div>
         <label class="check agree-line au-chk"><input type="checkbox" id="au-agree"><span><a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>（健康に関する情報の取り扱いを含む）に同意します</span></label>
         ${ERR}
         <button type="button" class="au-go" data-au="login" ${st.busy ? 'disabled' : ''}>${st.busy ? 'ログインしています…' : 'ログイン'}</button>
         <button type="button" class="au-link" data-au="forgot">パスワードを忘れた場合</button>
         ${sso}`;
       else if (s1) body = `<label class="au-lbl" for="au-email">メールアドレス</label>
-        <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(st.email)}">
+        <input class="au-in" id="au-email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="例：name@example.com" value="${esc(st.email)}">
         ${ERR}
         <button type="button" class="au-go" data-au="next">続行</button>
         ${CLOUD.google ? `<p class="au-or">または以下の方法でも${up ? '登録' : 'ログイン'}できます</p>
@@ -6300,7 +6300,7 @@ function openAuth(mode = 'login', {email = '', sync = true} = {}) {
       ov.innerHTML = `<div class="au-page" role="dialog" aria-modal="true" aria-labelledby="au-t">
         <div class="au-head"><button type="button" class="au-back" data-au="${s1 ? 'close' : 'back'}" aria-label="戻る"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5l-7 7 7 7"/></svg></button><h2 id="au-t">${title}</h2><span></span></div>
         <div class="au-body">${st.info ? `<p class="au-info">${esc(st.info)}</p>` : ''}${body}</div>
-        <div class="au-foot">${s1 ? (up ? '<p>既にアカウントをお持ちですか？</p><button type="button" data-au="tologin">ログイン</button>' : '<p>アカウントをまだ持っていませんか？</p><button type="button" data-au="tosignup">登録</button>') : ''}</div>
+        <div class="au-foot">${s1 ? (up ? '<p>既にアカウントをお持ちですか？</p><button type="button" data-au="tologin">ログインする</button>' : '<p>アカウントをまだ持っていませんか？</p><button type="button" data-au="tosignup">新しく登録する</button>') : ''}</div>
       </div>`;
       Object.keys(keep).forEach(id => { const i = ov.querySelector('#' + id); if (i) { if (i.type === 'checkbox') i.checked = keep[id]; else i.value = keep[id]; } });
       if (first) { first = false; requestAnimationFrame(() => ov.classList.add('in')); }

@@ -1805,6 +1805,17 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
       if (/野菜/.test(meal.slice(0, fi)) && !/ブロッコリー|ほうれん草|にんじん|トマト|パプリカ|小松菜|キャベツ|まいたけ/.test(first)) bad.push('見出しは野菜なのに、最初の食べ物が野菜でない：' + first);
     } catch (e) { bad.push('エラー ' + e.message); } finally { state = normalize(JSON.parse(keep)); window.isPremium = keepP; window.callVision = keepCV; render(); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-26 ログインの画面が見づらい：入力欄の枠がうすい・何を入れるか分からない・「登録」がボタンに見えない・ダークでログインボタンの字が読みにくい
+  check('ログインの画面が見やすい（入力の例・はっきりした枠・登録はボタン・字の色の差）', await ev(async () => { const bad = [], w = (ms) => new Promise((r) => setTimeout(r, ms)), keepT = document.documentElement.dataset.theme;
+    const lum = (c) => { const m = c.match(/\d+(\.\d+)?/g).map(Number).slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+    const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    try { for (const th of ['light', 'dark']) { document.documentElement.dataset.theme = th; openAuth('login'); await w(500); const ov = document.querySelector('.au-ov');
+        const em = ov.querySelector('#au-email'), pw = ov.querySelector('#au-pw'); if (!em.placeholder || !pw.placeholder) bad.push('入力の例がない');
+        const bc = cr(getComputedStyle(em).borderTopColor, getComputedStyle(document.body).backgroundColor); if (bc < 1.45) bad.push(th + 'で入力欄の枠がうすい ' + bc.toFixed(2));
+        const fb = ov.querySelector('.au-foot button'); if (!fb || parseFloat(getComputedStyle(fb).borderTopWidth) < 1 || fb.offsetHeight < 44) bad.push('登録がボタンに見えない');
+        const go = ov.querySelector('.au-go'), c = cr(getComputedStyle(go).color, getComputedStyle(go).backgroundColor); if (c < 4.5) bad.push(th + 'でログインボタンの字が読みにくい ' + c.toFixed(1));
+        ov.remove(); try { unlockScroll(); } catch (e) {} } } catch (e) { bad.push('エラー ' + e.message); } finally { document.documentElement.dataset.theme = keepT || ''; if (!keepT) delete document.documentElement.dataset.theme; }
+    if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);
