@@ -11195,7 +11195,7 @@ function startItems() {
 const POLICY_VER = '2026-11-20';
 function policyNoticeHtml() {
   if (policyAgreedNow() || state.settings.policySeen === POLICY_VER || !(state.myProducts.length || state.skinLogs.length)) return '';
-  return `<div class="card pol-note"><div class="st-head"><h2>プライバシーポリシーを改定しました</h2><button type="button" class="st-x" data-action="policy-seen" aria-label="このお知らせを閉じる">×</button></div><p class="small" style="margin:6px 0 10px">${esc(LEGAL.updated)}に改定しました。Myアイテムに登録した飲み薬・サプリの記録の取り扱い（端末とバックアップへの保存・ケアの提案への利用）を書き足しました。研究への協力には送りません。</p><a class="btn btn-ghost btn-sm" href="#/privacy" data-action="policy-open">内容を見る</a></div>`;
+  return `<div class="card pol-note"><div class="st-head"><h2>プライバシーポリシーを改定しました</h2><button type="button" class="st-x" data-action="policy-seen" aria-label="このお知らせを閉じる">×</button></div><p class="small" style="margin:6px 0 10px">${esc(LEGAL.privacyUpdated)}に改定しました。Myアイテムに登録した飲み薬・サプリの記録の取り扱い（端末とバックアップへの保存・ケアの提案への利用）を書き足しました。研究への協力には送りません。</p><a class="btn btn-ghost btn-sm" href="#/privacy" data-action="policy-open">内容を見る</a></div>`;
 }
 // 同意の記録：設定に残す（クラウドの設定で上書きされても消えないよう、この端末にも残す）
 const POL_LS = 'nk_pol_ok';
@@ -11219,7 +11219,7 @@ function policyGate() {
     const ov = document.createElement('div'); ov.className = 'otp-ov'; ov.id = 'pol-ov';
     ov.innerHTML = `<div class="otp-card" role="dialog" aria-modal="true" aria-labelledby="pol-t">
       <p class="otp-t" id="pol-t">プライバシーポリシーへの同意のお願い</p>
-      <p class="otp-s">Myアイテムに飲み薬・サプリを登録できるようになり、<b>健康に関する情報</b>（法律上の要配慮個人情報）を扱うため、プライバシーポリシーを改定しました（${esc(LEGAL.updated)}）。</p>
+      <p class="otp-s">Myアイテムに飲み薬・サプリを登録できるようになり、<b>健康に関する情報</b>（法律上の要配慮個人情報）を扱うため、プライバシーポリシーを改定しました（${esc(LEGAL.privacyUpdated)}）。</p>
       <p class="otp-s">記録のバックアップを続けるには、同意をお願いします。同意しない場合は、クラウドへのバックアップを止めて、記録はこの端末の中だけに残します。</p>
       <p class="otp-s" style="margin-bottom:0"><a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシーを読む</a></p>
       <button type="button" class="btn btn-primary otp-ok" data-pol="yes">同意する</button>
@@ -15436,14 +15436,15 @@ const SNS_ICON = {
   x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'};
 const LEGAL = {
   draft: false,              // 下書きのあいだは true（画面に「下書き」と表示）。2026-11-15 に正式に公開
+  privacyUpdated: '2026年11月21日', // プライバシーポリシーの最終改定日（2026-11-20 飲み薬・サプリの扱いを追記、2026-11-21 生年月日などのプロフィールを追記）。改定のお知らせにもこの日付を出す
   updated: '2026年11月27日',  // 最終改定日（2026-11-20 飲み薬・サプリの扱いを追記、2026-11-21 生年月日などのプロフィールを追記、2026-11-27 紹介した人の特典は、紹介された人が支払いを始めたときに付与）
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
   email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額600円（税込）または年額6,000円（税込）'
 };
-function legalWrap(title, body) {
+function legalWrap(title, body, updated) { // 2026-11-27 文書ごとの最終改定日（利用規約だけ変えたのに、プライバシーポリシーの日付まで変わっていた）
   const contact = LEGAL.email ? `<a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a>` : '（準備中）';
-  return `<a class="back" href="#/settings">← 設定</a>` + pageHead(title, `${SERVICE}　最終改定日：${LEGAL.updated}`) +
+  return `<a class="back" href="#/settings">← 設定</a>` + pageHead(title, `${SERVICE}　最終改定日：${updated || LEGAL.updated}`) +
     (LEGAL.draft ? '<div class="notice warn">この文書は<b>下書き</b>です。正式な公開前に内容を確定します。</div>' : '') +
     `<div class="card legal">${body.replace(/\{CONTACT\}/g, contact)}</div>
     <div class="ext-links" style="margin:6px 0 20px"><a class="btn btn-ghost btn-sm" href="#/terms">利用規約</a><a class="btn btn-ghost btn-sm" href="#/privacy">プライバシーポリシー</a><a class="btn btn-ghost btn-sm" href="#/law">特定商取引法に基づく表記</a></div>`;
@@ -15573,7 +15574,7 @@ ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本
 <p>運営者は、必要に応じて本ポリシーを改定します。重要な変更がある場合は、アプリ内でお知らせします。</p>
 <h3>11. お問い合わせ窓口</h3>
 <p>運営者：${C}<br>メールアドレス：{CONTACT}</p>
-<p class="small muted">以上</p>`);
+<p class="small muted">以上</p>`, LEGAL.privacyUpdated);
 }
 function viewLaw() {
   const C = esc(COMPANY), P = esc(PREMIUM_NAME);
