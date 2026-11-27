@@ -1899,7 +1899,7 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
   // 2026-11-27 利用規約だけ変えたのに、プライバシーポリシーの最終改定日と改定のお知らせの日付まで変わっていた（文書ごとに日付を持つ）
   check('利用規約とプライバシーポリシーの最終改定日が、それぞれ正しい', await ev(async () => { const bad = [], T = (h) => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent.replace(/[​\s]/g, ''); };
-    try { if (!/最終改定日：2026年11月27日/.test(T(viewTerms()))) bad.push('利用規約の日付'); if (!/最終改定日：2026年11月21日/.test(T(viewPrivacy()))) bad.push('プライバシーポリシーの日付');
+    try { if (!/最終改定日：2026年11月27日/.test(T(viewTerms()))) bad.push('利用規約の日付'); if (!/最終改定日：2026年11月21日/.test(T(viewPrivacy()))) bad.push('プライバシーポリシーの日付'); if (!/最終改定日：2026年11月21日/.test(T(viewLaw()))) bad.push('特定商取引法の表記の日付');
       const keep = JSON.stringify(state); try { state.settings.policySeen = ''; state.settings.policyAgreed = ''; try { localStorage.removeItem(POL_LS); } catch (e) {} state.myProducts = [{id:'pq', name:'テスト', brand:'テスト', category:'化粧水・トナー', status:'使用中', timing:'朝', frequency:'毎日', startDate:todayStr(), purchases:[]}]; state = normalize(JSON.parse(JSON.stringify(state)));
         const n = T(policyNoticeHtml()); if (n && !/2026年11月21日に改定/.test(n)) bad.push('改定のお知らせの日付 ' + n.slice(0, 40)); } finally { state = normalize(JSON.parse(keep)); } }
     catch (e) { bad.push('エラー ' + e.message); }
