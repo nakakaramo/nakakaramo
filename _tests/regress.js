@@ -1907,6 +1907,18 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
   // 2026-11-28 写真を選ぶ欄（見えない入力）に名前がなく、iPhoneの読み上げ（VoiceOver）で何の欄か分からなかった
   check('写真を選ぶ欄には、読み上げ用の名前がある', await ev(async () => { let html = ''; try { html = await (await fetch(location.href.split('#')[0])).text(); } catch (e) { return false; }
     const bad = (html.match(/<input type="file"[^>]*>/g) || []).filter((t) => !/aria-label=|aria-hidden="true"/.test(t)); if (bad.length) console.log('  ' + bad.slice(0, 3).join(' / ')); return !bad.length; }));
+  // 2026-11-28 記事のページ（/guide/）を足した：①アプリの保存（sw.js）が記事をアプリ本体として保存しない ②記事に効能をうたう言い方・処方薬の商品名がない ③全部の記事がサイトマップにあり、アプリへの入口がある
+  { const R = path.join(__dirname, '..'), bad = [];
+    const sw = fs.readFileSync(path.join(R, 'sw.js'), 'utf8'); if (!/const isApp = url\.pathname === '\/' \|\| url\.pathname === '\/index\.html'/.test(sw) || !/res\.ok && isApp/.test(sw)) bad.push('sw.js が記事もアプリとして保存する');
+    const dir = path.join(R, 'guide'), files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.html')) : [], sm = fs.readFileSync(path.join(R, 'sitemap.xml'), 'utf8');
+    if (files.length < 2) bad.push('記事がない');
+    for (const f of files) { const h = fs.readFileSync(path.join(dir, f), 'utf8'), t = h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/g, '');
+      const ng = t.match(/治る|治す|治ります|効く|効きます|効果があ|改善しま|改善する|予防でき|消えます|若返|アンチエイジング|ベピオ|ディフェリン|エピデュオ|デュアック|ダラシン|ゼビアックス|アクアチム|ヒルドイド|ロコイド|プロトピック|AI/g); if (ng) bad.push(`${f}：${[...new Set(ng)].join('・')}`);
+      if (f !== 'index.html' && !sm.includes(`/guide/${f}`)) bad.push(`${f} がサイトマップにない`);
+      if (!/href="\/"/.test(h)) bad.push(`${f} にアプリへの入口がない`);
+      if (f !== 'index.html' && !/診断や治療の代わりにはなりません/.test(h)) bad.push(`${f} に注意書きがない`); }
+    if (bad.length) console.log('  ' + bad.join(' / '));
+    check('記事のページ：アプリの保存を壊さない・効能をうたわない・サイトマップにある', !bad.length); }
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

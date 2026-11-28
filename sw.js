@@ -27,9 +27,11 @@ self.addEventListener('fetch', (e) => {
       // ※ ページを開く通信（navigate）はそのまま設定を変えられないので、URLから作り直して取りに行く
       // ※ 配信サーバーの一時保存（最大10分）も避けるため、毎回ちがう印（?v=時刻）を付ける
       fetch(new Request(url.origin + url.pathname + '?v=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })).then((res) => {
-        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put('./index.html', copy)); }
+        // 2026-11-28 保存するのはアプリ本体（/ と /index.html）だけ。記事のページ（/guide/）を開いたときに、アプリの代わりに記事を保存してしまわないように
+        const isApp = url.pathname === '/' || url.pathname === '/index.html';
+        if (res.ok && isApp) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put('./index.html', copy)); }
         return res;
-      }).catch(() => caches.match('./index.html'))
+      }).catch(() => (url.pathname === '/' || url.pathname === '/index.html') ? caches.match('./index.html') : caches.match(req).then((r) => r || caches.match('./index.html')))
     );
     return;
   }
