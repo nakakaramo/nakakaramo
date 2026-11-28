@@ -1904,6 +1904,9 @@ const check = (name, ok, info = '') => { if (HC_MISS) { SKIPPED.push(name); retu
         const n = T(policyNoticeHtml()); if (n && !/2026年11月21日に改定/.test(n)) bad.push('改定のお知らせの日付 ' + n.slice(0, 40)); } finally { state = normalize(JSON.parse(keep)); } }
     catch (e) { bad.push('エラー ' + e.message); }
     if (bad.length) console.log('  ' + bad.join(' / ')); return !bad.length; }));
+  // 2026-11-28 写真を選ぶ欄（見えない入力）に名前がなく、iPhoneの読み上げ（VoiceOver）で何の欄か分からなかった
+  check('写真を選ぶ欄には、読み上げ用の名前がある', await ev(async () => { let html = ''; try { html = await (await fetch(location.href.split('#')[0])).text(); } catch (e) { return false; }
+    const bad = (html.match(/<input type="file"[^>]*>/g) || []).filter((t) => !/aria-label=|aria-hidden="true"/.test(t)); if (bad.length) console.log('  ' + bad.slice(0, 3).join(' / ')); return !bad.length; }));
   check('読み込み時にエラーが出ない', errs.length === 0, errs.join(' / '));
   await b.close(); srv.close();
   const bad = results.filter((r) => !r.ok);

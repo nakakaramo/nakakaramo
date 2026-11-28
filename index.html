@@ -3141,7 +3141,7 @@ const CLOUD = {
 };
 // ===== 不具合（エラー）の記録：エラーの内容だけをSupabaseに送る（記録の中身・写真・メールアドレスは送らない） =====
 const APP_VER = '2026.11.15';
-const APP_BUILD = '20261127212254'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
+const APP_BUILD = '20261128211526'; // 公開するたびに、公開の手順（deploy.sh）が日時に書きかえる。下に引っぱって更新したとき、新しい版が出ているかをこれで確かめる
 const ERRLOG = {n:0, seen:new Set()};
 function logError(msg, src, stack) {
   try {
@@ -5842,7 +5842,7 @@ async function openCamLive(kind) {
   ov.innerHTML = `<video class="cl-v" playsinline muted autoplay></video><div class="cl-shade"></div><div class="cl-frame" hidden><i></i></div>
     <div class="cl-top"><button type="button" class="cl-ib" data-cl="back" aria-label="戻る">${CL_SVG.back}</button><b class="cl-t">${oral ? '飲み薬・サプリをカメラで探す' : rx ? '塗り薬をカメラで探す' : 'カメラで探す'}</b><span class="cl-tr"><button type="button" class="cl-ib" data-cl="torch" aria-label="ライト" hidden>${CL_SVG.torch}</button><button type="button" class="cl-ib" data-cl="help" aria-label="使い方">${CL_SVG.help}</button></span></div>
     <div class="cl-bot"><p class="cl-tip" id="cl-tip"></p>
-      <div class="cl-row"><label class="cl-sb"><span class="cl-c">${icon('image')}</span><small>写真</small><input type="file" accept="image/*" class="vh" id="cl-lib"></label>
+      <div class="cl-row"><label class="cl-sb"><span class="cl-c">${icon('image')}</span><small>写真</small><input type="file" aria-label="写真を選ぶ" accept="image/*" class="vh" id="cl-lib"></label>
         <button type="button" class="cl-shut" data-cl="shot" aria-label="撮って探す"><span>${icon('search')}</span></button>
         <button type="button" class="cl-sb" data-cl="bar"><span class="cl-c">${CL_SVG.bar}</span><small>バーコード</small></button></div>
       <small class="cl-sl">カメラ</small></div>
@@ -7424,7 +7424,7 @@ function openCatForm(id, prefill) {
     ${field('内容量', `<input class="input" id="f_volume" name="volume" maxlength="20" value="${esc(p.volume)}" placeholder="例：150ml、50g、30枚">`, {name:'volume', hint:'「ml」「g」「枚」を付けると、1mlあたりの価格を計算します'})}
     ${field('JANコード（バーコードの数字）', `<input class="input" id="f_jan" name="jan" inputmode="numeric" maxlength="16" value="${esc(p.jan || '')}" placeholder="13桁または8桁">`, {name:'jan', cls:'span2', hint:'登録すると、次からバーコードの数字で呼び出せます'})}
     ${field('効果', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
-    ${field('商品画像', `<input type="file" accept="image/*" id="f_image" name="image" class="input" style="padding:9px"><div id="img-prev">${image ? `<img class="img-prev" src="${image}" alt=""><button type="button" class="btn btn-ghost btn-sm" id="img-clear" style="margin-top:6px">画像を外す</button>` : ''}</div>`, {name:'image', hint:'画像はこのブラウザ内にのみ保存されます', cls:'span2'})}
+    ${field('商品画像', `<input type="file" aria-label="写真を選ぶ" accept="image/*" id="f_image" name="image" class="input" style="padding:9px"><div id="img-prev">${image ? `<img class="img-prev" src="${image}" alt=""><button type="button" class="btn btn-ghost btn-sm" id="img-clear" style="margin-top:6px">画像を外す</button>` : ''}</div>`, {name:'image', hint:'画像はこのブラウザ内にのみ保存されます', cls:'span2'})}
     ${field('全成分', `<textarea class="textarea" id="f_ingredients" name="ingredients" maxlength="4000" placeholder="読点（、）で区切って入力">${esc(p.ingredients)}</textarea><button type="button" class="btn btn-ghost btn-sm" id="ing-clean" style="margin-top:8px">貼り付けた文字を整える</button>`, {name:'ingredients', cls:'span2', hint:'iPhone・Macの「テキスト認識表示」を使うと、パッケージの写真から成分表示をコピーして貼り付けられます。改行やカンマは「整える」で読点に変わります。読み取りミスがないか、必ず目で確認してください。'})}
     ${field('商品の特徴', `<textarea class="textarea" id="f_features" name="features" maxlength="1000">${esc(p.features)}</textarea>`, {name:'features', cls:'span2'})}
     ${field('使用方法', `<textarea class="textarea" id="f_usage" name="usage" maxlength="1000">${esc(p.usage)}</textarea>`, {name:'usage', cls:'span2'})}
@@ -7830,7 +7830,7 @@ function viewScan() {
   let html = pageHead('カメラで登録', 'パッケージの写真・バーコード・文字を手がかりに、商品を探して登録します。') +
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別する機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
-      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}選ぶ<input type="file" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
+      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" aria-label="写真を選ぶ" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}選ぶ<input type="file" aria-label="写真を選ぶ" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
       ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm has-prem${isPremium() ? '' : ' is-locked'}" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'}${isPremium() ? '' : `${premLock()}`}</button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
         ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字を読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogle（Gemini）に送り、保存しません。</p>` : ''}
@@ -11555,7 +11555,7 @@ async function openGuideCam(done, o = {}) {
   // アプリ内のカメラが使えないとき（許可していない・対応していない）は、ふつうのカメラを開くボタンを出す（押した指の操作で開くので、iPhoneでも確実に開く）
   const fail = msg => {
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-    root.querySelector('.gcam-view').innerHTML = `<div class="gcam-fail"><p>${esc(msg)}</p><label class="btn btn-primary">${icon('camera')}ふつうのカメラで撮る<input type="file" accept="image/*" capture="user" class="vh" id="gcam-file"></label>
+    root.querySelector('.gcam-view').innerHTML = `<div class="gcam-fail"><p>${esc(msg)}</p><label class="btn btn-primary">${icon('camera')}ふつうのカメラで撮る<input type="file" aria-label="写真を選ぶ" accept="image/*" capture="user" class="vh" id="gcam-file"></label>
       <p class="small">アプリ内のカメラを使うには、iPhoneの「設定」→「Safari」→「カメラ」を「確認」か「許可」にしてください。</p></div>`;
     root.querySelector('.gcam-shot').style.visibility = 'hidden';
     const gb = root.querySelector('.gcam-bar'); if (gb) gb.style.visibility = 'hidden'; // 下の「やめる」は、真ん中の「やめて戻る」とだぶるので隠す
@@ -11697,7 +11697,7 @@ function openLogForm(id) {
       <p class="fp-sumline" id="fp-sumline"></p>
       <p class="fp-gest">1本の指で回す／2本の指で広げると拡大。</p>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
-    <div class="field face-ai"><span class="lbl">顔の写真</span><p class="hint face-ai-d" style="margin:-2px 0 8px">顔を枠に合わせて撮ると、日付ごとに残して見比べられます</p><div class="meal-photo-top mpt-even">${`<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`}</div><div id="faceai-info"></div></div>
+    <div class="field face-ai"><span class="lbl">顔の写真</span><p class="hint face-ai-d" style="margin:-2px 0 8px">顔を枠に合わせて撮ると、日付ごとに残して見比べられます</p><div class="meal-photo-top mpt-even">${`<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" aria-label="写真を選ぶ" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" aria-label="写真を選ぶ" accept="image/*" capture="user" id="f_faceai" class="vh">`}</div><div id="faceai-info"></div></div>
     <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
       <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
       <div id="photo-area"></div>
@@ -12113,7 +12113,7 @@ function openLifeForm(id, part, forDate) {
     <div class="meal-head">${m.k === 'snack' ? '' : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>食べた</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
 </div>
     ${part === 'meal' && m.k === slot0 ? '' : `<div class="meal-photo-top mpt-blk mpt-even">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" aria-label="写真を選ぶ" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" aria-label="写真を選ぶ" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>`}
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
@@ -12158,7 +12158,7 @@ function openLifeForm(id, part, forDate) {
     <div class="form-grid" data-part="meal" ${show('meal')}>${part ? '' : '<div class="section-title">MEAL 食事</div>'}
     ${isPremium() ? `<div class="mpt-hd"><button type="button" class="mpt-hd-b" data-mhint>料理名を先に伝える（任意）</button><input type="text" class="input mpt-hint" id="meal-hint" maxlength="40" placeholder="例：とんかつ定食" aria-label="写真の料理名（任意）" autocomplete="off" enterkeyhint="done" hidden></div>` : ''}
     <div class="meal-photo-top mpt-even">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" aria-label="写真を選ぶ" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" aria-label="写真を選ぶ" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
       : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span>${premLock()}</button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span>${premLock()}</button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
@@ -15726,8 +15726,8 @@ function openAvatarMenu() {
   const el = document.createElement('div'); el.id = 'av-menu'; el.className = 'av-menu';
   el.innerHTML = `<div class="avm-bg" data-avm="close"></div><div class="avm-box" role="dialog" aria-label="プロフィール画像の変更">
     <div class="avm-grp"><p class="avm-t">プロフィール画像の変更</p>
-      <label class="avm-b">ライブラリから選択<input type="file" accept="image/*" class="vh" data-avfile></label>
-      <button type="button" class="avm-b" data-avm="cam">写真を撮る</button><input type="file" accept="image/*" capture="user" class="vh" data-avfile id="avm-cap">
+      <label class="avm-b">ライブラリから選択<input type="file" aria-label="写真を選ぶ" accept="image/*" class="vh" data-avfile></label>
+      <button type="button" class="avm-b" data-avm="cam">写真を撮る</button><input type="file" aria-label="写真を選ぶ" accept="image/*" capture="user" class="vh" data-avfile id="avm-cap">
       <button type="button" class="avm-b" data-avm="emoji">絵文字で作る</button>
       ${has ? '<button type="button" class="avm-b red" data-avm="del">現在の写真を削除</button>' : ''}</div>
     <button type="button" class="avm-b avm-cancel" data-avm="close">キャンセル</button></div>`;
@@ -15798,7 +15798,7 @@ function openProfile() {
   avDraft = state.settings.avatar ? Object.assign({}, state.settings.avatar) : null;
   const cur = () => avDraft || {};
   openModal({title:'アイコン', body:`<div class="pf-top"><div id="pf-prev">${avatarHtml(84)}</div></div>
-    <div class="pf-row"><label class="btn btn-soft btn-sm pf-photo">${icon('camera')}写真から選ぶ<input type="file" accept="image/*" id="pf-file" hidden></label><button type="button" class="btn btn-ghost btn-sm" data-action="pf-reset">最初の文字に戻す</button></div>
+    <div class="pf-row"><label class="btn btn-soft btn-sm pf-photo">${icon('camera')}写真から選ぶ<input type="file" aria-label="写真を選ぶ" accept="image/*" id="pf-file" hidden></label><button type="button" class="btn btn-ghost btn-sm" data-action="pf-reset">最初の文字に戻す</button></div>
     <div class="pf-emo" role="group" aria-label="絵文字のアイコン">${AVATAR_EMOJI.map(e => `<button type="button" class="pf-e ${cur().t === 'emoji' && cur().v === e ? 'on' : ''}" data-action="pf-emoji" data-id="${e}">${e}</button>`).join('')}</div>
     <p class="lbl" style="margin:12px 0 8px">背景の色</p>
     <div class="pf-col">${AVATAR_COLORS.map(c => `<button type="button" class="pf-c ${(cur().c || AVATAR_COLORS[0]) === c ? 'on' : ''}" style="background:${c}" data-action="pf-color" data-id="${c}" aria-label="背景の色"></button>`).join('')}</div>
